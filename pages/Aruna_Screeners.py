@@ -3,12 +3,16 @@ import pandas as pd
 from utils.fetch_data import fetch_binance_data
 from utils.indicators import calculate_ema, calculate_stochastic_rsi
 
-st.set_page_config(page_title="Aruna Screener", layout="wide",
-    menu_items={
-        'Get Help': None,
-        'Report a bug': None,
-        'About': None
-    })
+st.set_page_config(page_title="Aruna Screener", layout="wide")
+st.markdown(
+        r"""
+        <style>
+        .stAppToolbar {
+                visibility: hidden;
+            }
+        </style>
+        """, unsafe_allow_html=True
+    )
 
 EMA_SHORT = 13
 EMA_LONG = 21

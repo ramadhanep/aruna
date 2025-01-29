@@ -1,11 +1,15 @@
 import streamlit as st
 
-st.set_page_config(page_title="Aruna", layout="wide",
-    menu_items={
-        'Get Help': None,
-        'Report a bug': None,
-        'About': None
-    })
+st.set_page_config(page_title="Aruna", layout="wide")
+st.markdown(
+        r"""
+        <style>
+        .stAppToolbar {
+                visibility: hidden;
+            }
+        </style>
+        """, unsafe_allow_html=True
+    )
 
 def main():
     st.markdown(

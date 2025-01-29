@@ -65,12 +65,16 @@ def get_detail_explanation(signal, signal_detail, strategy):
         return f"Error retrieving explanation from AI: {e}. Fallback: {fallback_explanations.get(signal_detail, 'No explanation available.')}"
 
 
-st.set_page_config(page_title="Aruna Chart", layout="wide",
-    menu_items={
-        'Get Help': None,
-        'Report a bug': None,
-        'About': None
-    })
+st.set_page_config(page_title="Aruna Chart", layout="wide")
+st.markdown(
+        r"""
+        <style>
+        .stAppToolbar {
+                visibility: hidden;
+            }
+        </style>
+        """, unsafe_allow_html=True
+    )
 
 def load_coin_list(file_path):
     return pd.read_csv(file_path)

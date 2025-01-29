@@ -2,12 +2,16 @@ import streamlit as st
 import requests
 import json
 
-st.set_page_config(page_title="Aruna AI", layout="wide",
-    menu_items={
-        'Get Help': None,
-        'Report a bug': None,
-        'About': None
-    })
+st.set_page_config(page_title="Aruna AI", layout="wide")
+st.markdown(
+        r"""
+        <style>
+        .stAppToolbar {
+                visibility: hidden;
+            }
+        </style>
+        """, unsafe_allow_html=True
+    )
 
 MODEL_URL = "http://localhost:11434/api/generate"
 MODEL_NAME = "deepseek-r1:14b"
