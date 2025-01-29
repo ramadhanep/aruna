@@ -8,9 +8,10 @@ Aruna is a cutting-edge tool for traders and investors, combining advanced AI wi
 - **Aruna Screeners**: Screen and filter cryptocurrencies based on technical signals and parameters.
 
 ## Installation
+### Option 1: Run Locally
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/aruna.git
+   git clone https://github.com/ramadhanep/aruna.git
    cd aruna
    ```
 
@@ -22,6 +23,22 @@ Aruna is a cutting-edge tool for traders and investors, combining advanced AI wi
 3. Run the app:
    ```bash
    streamlit run Home.py
+   ```
+
+### Option 2: Run with Docker
+1. Build and run the Docker container using the provided script:
+   - **Windows**:
+     ```
+     run_docker.bat
+     ```
+   - **Linux/Mac**:
+     ```bash
+     ./run_docker.sh
+     ```
+
+2. Access the app in your browser at:
+   ```
+   http://localhost:8501
    ```
 
 ## Project Structure
@@ -39,6 +56,8 @@ aruna/
 │   ├── indicators.py        # Technical indicators calculations
 │   └── charts.py            # Plotly charts for candlestick and indicators
 ├── requirements.txt         # Dependencies
+├── run_docker.bat           # Windows Docker script
+├── run_docker.sh            # Linux/Mac Docker script
 └── README.md                # Project documentation
 ```
 
@@ -54,7 +73,7 @@ aruna/
 - Internet connection (for fetching live data from Binance)
 
 ## License
-This project is licensed under the MIT License.
+This project is licensed under the GNU General Public License.
 
 ## Author
 Developed by [Ramadhan Edy](https://github.com/ramadhanep).
