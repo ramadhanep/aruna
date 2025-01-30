@@ -1,3 +1,4 @@
+import os
 import streamlit as st
 import pandas as pd
 import requests
@@ -6,8 +7,11 @@ from utils.fetch_data import fetch_binance_data
 from utils.indicators import calculate_ema, calculate_stochastic_rsi
 from utils.charts import plot_candlestick_chart
 
-MODEL_URL = "http://localhost:11434/api/generate"
-MODEL_NAME = "llama3.2:1b"
+from dotenv import load_dotenv
+load_dotenv()
+
+MODEL_URL = os.getenv("MODEL_URL")
+MODEL_NAME = os.getenv("MODEL_NAME")
 
 def parse_streaming_response(raw_response):
     try:
@@ -56,7 +60,7 @@ def get_detail_explanation(signal, signal_detail, strategy):
             "prompt": prompt,
             "history": []
         }
-        response = requests.post(MODEL_URL, json=payload)
+        response = requests.post(MODEL_URL + "/generate", json=payload)
         response.raise_for_status()
 
         raw_response = response.text
@@ -144,7 +148,7 @@ def main():
     symbol = coins[coins['name'] == coin_name]['symbol'].values[0]
 
     timeframe = st.sidebar.selectbox("Select Timeframe", options=["1m", "5m", "1h", "4h", "1d", "1w", "1M"], index=4)  # Default to daily
-    limit = st.sidebar.slider("Data Points", min_value=100, max_value=1000, value=100, step=100)  # Default to 100
+    limit = st.sidebar.slider("Data Points", min_value=100, max_value=1000, value=200, step=100)  # Default to 200
 
     ema_short = 13
     ema_long = 21

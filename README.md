@@ -2,10 +2,14 @@
 
 Aruna is a cutting-edge tool for traders and investors, combining advanced AI with robust analytics to provide actionable insights. With features like AI-driven market analysis, candlestick charts with technical indicators, and a cryptocurrency screener, Aruna empowers your financial decision-making.
 
+![Aruna AI](images/aruna-ai.png)
+
 ## Features
 - **Aruna AI**: Leverage powerful AI for market analysis with precision.
 - **Aruna Charts**: Analyze candlestick patterns with integrated EMA and Stochastic RSI indicators.
 - **Aruna Screeners**: Screen and filter cryptocurrencies based on technical signals and parameters.
+
+![Aruna Charts](images/aruna-charts.png)
 
 ## Installation
 ### Option 1: Run Locally

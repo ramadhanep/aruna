@@ -61,7 +61,7 @@ def plot_candlestick_chart(data, ema_13, ema_21, stoch_rsi, symbol, signal, sign
                 ${"{:,.2f}".format(last_close)}
             </span><br><br>
             <span style="color: white; font-family: sans-serif; font-size: 24px; font-weight: bold;">{badge_html}</span>
-            <br><br><div style="color: #afee00; font-family: monospace;">
+            <br><br><div style="color: #fea028; font-family: monospace;">
                 {description}
             </div>
         </div>
