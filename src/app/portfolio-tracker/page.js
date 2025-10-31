@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogTrigger, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Plus, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 
@@ -265,13 +265,9 @@ export default function PortfolioTrackerPage() {
   }
 
   return (
-  <div className="p-4 md:p-6 flex flex-col gap-4 md:gap-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+  <div className="flex flex-col gap-4">
+      <div>
         <h1 className="text-2xl font-bold">Portfolio Tracker</h1>
-        <Button onClick={openAdd}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Asset
-        </Button>
       </div>
       <Card>
         <CardHeader>
@@ -297,7 +293,7 @@ export default function PortfolioTrackerPage() {
         </CardHeader>
         <CardContent>
           {entries.length === 0 && (
-            <p className="text-xs text-muted-foreground">No assets yet. Click &quot;Add Asset&quot; to begin.</p>
+            <p className="text-xs text-muted-foreground">No assets yet. Click <span className="text-blue-500 font-medium cursor-pointer" onClick={openAdd}>Add Asset</span> to begin.</p>
           )}
           {entries.length > 0 && (
             <div className="divide-y border rounded-md overflow-hidden">
@@ -337,10 +333,15 @@ export default function PortfolioTrackerPage() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
-          <DialogTitle>{editingIndex != null ? 'Edit Asset' : 'Add Asset'}</DialogTitle>
-          <DialogDescription>Record your position details. Prices in your account&apos;s currency.</DialogDescription>
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4 mt-2">
+        <DialogContent className="fixed max-w-none m-0 h-screen rounded-none p-0 flex flex-col">
+          <div className="flex items-center gap-2 p-4 border-b">
+            <DialogTitle className="text-lg">{editingIndex != null ? 'Edit Asset' : 'Add Asset'}</DialogTitle>
+          </div>
+          
+          <div className="flex-1 overflow-auto">
+            <div className="p-4">
+              <DialogDescription className="mb-4">Record your position details. Prices in your account&apos;s currency.</DialogDescription>
+              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
             <div className="flex flex-col gap-1">
               <Label htmlFor="symbolSearch">Symbol</Label>
               <input
@@ -407,15 +408,25 @@ export default function PortfolioTrackerPage() {
               />
             </div>
 
-            <div className="flex justify-end gap-2">
-              <DialogClose asChild>
-                <Button type="button" variant="ghost">Cancel</Button>
-              </DialogClose>
-              <Button type="submit">{editingIndex != null ? 'Save' : 'Add'}</Button>
+                <div className="flex justify-end gap-2">
+                  <DialogClose asChild>
+                    <Button type="button" variant="ghost">Cancel</Button>
+                  </DialogClose>
+                  <Button type="submit">{editingIndex != null ? 'Save' : 'Add'}</Button>
+                </div>
+              </form>
             </div>
-          </form>
+          </div>
         </DialogContent>
       </Dialog>
+
+      <Button
+        size="icon"
+        className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg z-40"
+        onClick={openAdd}
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
     </div>
   );
 }

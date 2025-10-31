@@ -36,13 +36,22 @@ export async function GET(request) {
     const result = data.chart.result[0];
     const timestamps = result.timestamp;
     const adjclose = result.indicators.adjclose[0].adjclose;
+    const meta = result.meta;
 
     const prices = timestamps.map((ts, i) => ({
       date: new Date(ts * 1000).toISOString(),
       adjclose: adjclose[i],
     }));
 
-    return Response.json({ data: prices });
+    return Response.json({ 
+      data: prices,
+      meta: {
+        symbol: meta.symbol,
+        name: meta.longName || meta.shortName || meta.symbol,
+        currency: meta.currency,
+        exchangeName: meta.exchangeName,
+      }
+    });
   } catch (error) {
     console.error('Error fetching Yahoo Finance data:', error);
     return Response.json(

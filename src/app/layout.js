@@ -1,9 +1,10 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
-import { AppSidebar } from "@/components/app-sidebar";
-import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
+import { MobileBottomNav } from "@/components/mobile-bottom-nav";
+import { ModeToggle } from "@/components/mode-toggle";
+import { PWARegister } from "@/components/pwa-register";
+import { RefreshCcwDot, TrendingUp } from "lucide-react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,9 +16,42 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
+    { media: '(prefers-color-scheme: dark)', color: '#121212' }
+  ],
+};
+
 export const metadata = {
-  title: "Election Cycle Seasonal Pattern",
+  title: process.env.NEXT_PUBLIC_APP_NAME || "Aruna",
   description: "Hirsch-style seasonal profile with election-cycle overlays",
+  manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/aruna.png', sizes: 'any', type: 'image/png' },
+      { url: '/aruna.png', sizes: '32x32', type: 'image/png' },
+      { url: '/aruna.png', sizes: '192x192', type: 'image/png' },
+      { url: '/aruna.png', sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/aruna.png', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: '/aruna.png',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: process.env.NEXT_PUBLIC_APP_NAME || "Aruna",
+  },
+  applicationName: process.env.NEXT_PUBLIC_APP_NAME || "Aruna",
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export default function RootLayout({ children }) {
@@ -32,21 +66,24 @@ export default function RootLayout({ children }) {
           enableSystem
           disableTransitionOnChange
         >
-          <SidebarProvider>
-            <AppSidebar />
-            <SidebarInset>
-              <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-                <SidebarTrigger className="-ml-1" />
-                <Separator orientation="vertical" className="mr-2 h-4" />
-                <div className="flex items-center gap-2">
-                  <h1 className="text-lg font-semibold">Aruna Market Analytics</h1>
+          <PWARegister />
+          <div className="flex flex-col min-h-screen">
+            <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+              <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between px-4">
+                <div className="flex gap-2">
+                  <RefreshCcwDot className="size-6" />
+                  <h1 className="text-lg font-semibold">{process.env.NEXT_PUBLIC_APP_NAME || "Aruna"}</h1>
                 </div>
-              </header>
-              <main className="flex flex-1 flex-col gap-4 p-4">
+                <ModeToggle />
+              </div>
+            </header>
+            <main className="flex-1 pb-20">
+              <div className="mx-auto max-w-[768px] p-4">
                 {children}
-              </main>
-            </SidebarInset>
-          </SidebarProvider>
+              </div>
+            </main>
+            <MobileBottomNav />
+          </div>
         </ThemeProvider>
       </body>
     </html>
