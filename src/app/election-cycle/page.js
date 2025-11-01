@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   removeIncompleteYears,
   computeDailyReturns,
@@ -27,7 +28,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Loader2, SmilePlus, Search, X, Clock, TrendingUp, DollarSign } from "lucide-react";
+import { Loader2, SmilePlus, Search, X, Clock, TrendingUp, DollarSign, Star, SearchCode } from "lucide-react";
+import { AddAssetModal } from "@/components/add-asset-modal";
 
 const COLORS = {
   allYears: '#8B5CF6',
@@ -42,7 +44,10 @@ const SEARCH_HISTORY_KEY = 'aruna_search_history';
 const MAX_HISTORY_ITEMS = 10;
 
 export default function ElectionCyclePage() {
-  const [symbol, setSymbol] = useState('QQQ');
+  const searchParams = useSearchParams();
+  const symbolParam = searchParams.get('symbol');
+  
+  const [symbol, setSymbol] = useState(symbolParam || 'QQQ');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -55,6 +60,7 @@ export default function ElectionCyclePage() {
   const [assetName, setAssetName] = useState('');
   const [monthlyHeatmap, setMonthlyHeatmap] = useState({ rows: [], average: {} });
   const [quarterlyHeatmap, setQuarterlyHeatmap] = useState({ rows: [], average: {} });
+  const [portfolioDialogOpen, setPortfolioDialogOpen] = useState(false);
   
   const deriveDefaultCycles = () => {
     const y = new Date().getFullYear();
@@ -69,6 +75,13 @@ export default function ElectionCyclePage() {
     return [key, 'current'];
   };
   const [selectedCycles, setSelectedCycles] = useState(deriveDefaultCycles());
+
+  // Update symbol when URL param changes
+  useEffect(() => {
+    if (symbolParam) {
+      setSymbol(symbolParam);
+    }
+  }, [symbolParam]);
 
   useEffect(() => {
     const history = localStorage.getItem(SEARCH_HISTORY_KEY);
@@ -303,7 +316,22 @@ export default function ElectionCyclePage() {
 
   const formatTooltip = (value) => {
     if (value == null || isNaN(value)) return '-';
+    if (scaleChoice === 'log') {
+      // Convert back from multiplier to percentage
+      const pct = (value - 1) * 100;
+      return `${pct.toFixed(1)}%`;
+    }
     return `${value.toFixed(1)}%`;
+  };
+
+  const formatYAxis = (value) => {
+    if (value == null || isNaN(value)) return '-';
+    if (scaleChoice === 'log') {
+      // Convert back from multiplier to percentage
+      const pct = (value - 1) * 100;
+      return `${pct.toFixed(0)}%`;
+    }
+    return `${value.toFixed(0)}%`;
   };
 
   function hexToRgb(hex) {
@@ -357,7 +385,17 @@ export default function ElectionCyclePage() {
         if (!mergedData[point.dayOfYear]) {
           mergedData[point.dayOfYear] = { dayOfYear: point.dayOfYear };
         }
-        const value = scaleChoice === 'linear' ? point.pctChangeYtd : point.cumulativeFactor;
+        // For logarithmic: convert percentage to growth multiplier (e.g., 10% = 1.10)
+        // For linear: use percentage directly
+        let value;
+        if (scaleChoice === 'log') {
+          // Convert percentage to multiplier: -10% -> 0.90, 0% -> 1.0, 10% -> 1.10
+          value = 1 + (point.pctChangeYtd / 100);
+          // Ensure positive values for log scale (minimum 0.01)
+          value = Math.max(value, 0.01);
+        } else {
+          value = point.pctChangeYtd;
+        }
         mergedData[point.dayOfYear][line.key] = value;
       });
     });
@@ -381,16 +419,22 @@ export default function ElectionCyclePage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <Button 
-        onClick={() => setSearchDialogOpen(true)}
-        variant="outline" 
-        className="w-full h-12 justify-start text-left font-normal"
-      >
-        <span className="truncate font-semibold">{symbol}</span>
-      </Button>
+      <div className="w-full flex items-center gap-4">
+        <Button 
+          onClick={() => setSearchDialogOpen(true)}
+          variant="outline" 
+          className="w-auto h-10 justify-center text-center font-normal"
+        >
+          <span className="truncate font-semibold">{symbol}</span>
+          <Search className="h-4 w-4"/>
+        </Button>
+        {symbol.endsWith('.JK') && (
+          <p>🇮🇩 Hidup Jokowi</p>
+        )}
+      </div>
 
       <Dialog open={searchDialogOpen} onOpenChange={setSearchDialogOpen}>
-        <DialogContent className="fixed max-w-none h-screen rounded-none p-0 flex flex-col">
+        <DialogContent className="fixed max-w-none h-screen rounded-none p-0 flex flex-col" closeButtonPosition="right">
           <div className="flex items-center gap-2 p-4 border-b">
             <DialogTitle className="text-lg">Search Symbol</DialogTitle>
           </div>
@@ -474,9 +518,13 @@ export default function ElectionCyclePage() {
       </Dialog>
 
       {loading && (
-        <Card>
-          <CardContent className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Card className="overflow-hidden bg-transparent border-none">
+          <CardHeader className="animate-pulse">
+            <div className="h-3 bg-muted rounded w-32 mb-2"></div>
+            <div className="h-8 bg-muted rounded w-40"></div>
+          </CardHeader>
+          <CardContent className="px-0 pb-0">
+            <div className="w-full h-[280px] bg-muted animate-pulse rounded"></div>
           </CardContent>
         </Card>
       )}
@@ -516,7 +564,7 @@ export default function ElectionCyclePage() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="px-0 pb-0">
+            <CardContent className="px-0 -mr-5 pb-0">
               <ResponsiveContainer width="100%" height={280}>
                 <LineChart 
                   data={filteredChartData}
@@ -531,9 +579,10 @@ export default function ElectionCyclePage() {
                     height={30}
                   />
                   <YAxis
+                    orientation="right"
                     scale={scaleChoice === 'log' ? 'log' : 'linear'}
-                    domain={['dataMin', 'dataMax']}
-                    tickFormatter={formatTooltip}
+                    domain={scaleChoice === 'log' ? ['auto', 'auto'] : ['auto', 'auto']}
+                    tickFormatter={formatYAxis}
                     className="text-[10px]"
                     width={45}
                     allowDataOverflow={false}
@@ -547,6 +596,11 @@ export default function ElectionCyclePage() {
                       borderRadius: '8px',
                       fontSize: '12px'
                     }}
+                  />
+                  <Legend 
+                    align="left"
+                    verticalAlign="bottom"
+                    wrapperStyle={{ paddingTop: '10px', fontSize: '11px' }}
                   />
                   {chartData.linesData.map(line => (
                     <Line
@@ -597,6 +651,13 @@ export default function ElectionCyclePage() {
               <SelectItem value="pre,election,mid,post,current">All Cycles + Current</SelectItem>
             </SelectContent>
           </Select>
+
+          <Button 
+            onClick={() => setPortfolioDialogOpen(true)}
+            className="w-full bg-blue-800 hover:bg-blue-600 text-white font-semibold"
+          >
+            Add to Your Portfolio
+          </Button>
 
           <Accordion type="single" collapsible defaultValue="quarterly" className="border rounded-lg">
             <AccordionItem value="quarterly" className="border-b-0">
@@ -697,6 +758,34 @@ export default function ElectionCyclePage() {
           </Accordion>
         </>
       )}
+      
+      <AddAssetModal 
+        open={portfolioDialogOpen} 
+        onOpenChange={setPortfolioDialogOpen}
+        initialSymbol={symbol}
+        onSave={(entry) => {
+          // Load existing portfolio
+          let portfolio = [];
+          try {
+            const raw = localStorage.getItem('aruna_portfolio');
+            portfolio = raw ? JSON.parse(raw) : [];
+          } catch (e) {
+            console.warn('Failed to load portfolio', e);
+          }
+          
+          // Add new entry
+          portfolio.push(entry);
+          
+          // Save back to localStorage
+          try {
+            localStorage.setItem('aruna_portfolio', JSON.stringify(portfolio));
+            alert('Asset added to portfolio successfully!');
+          } catch (e) {
+            console.warn('Failed to save portfolio', e);
+            alert('Failed to save asset to portfolio');
+          }
+        }}
+      />
     </div>
   );
 }

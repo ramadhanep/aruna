@@ -2,9 +2,8 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
-import { ModeToggle } from "@/components/mode-toggle";
 import { PWARegister } from "@/components/pwa-register";
-import { RefreshCcwDot, TrendingUp } from "lucide-react";
+import { RefreshCcwDot } from "lucide-react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -69,12 +68,11 @@ export default function RootLayout({ children }) {
           <PWARegister />
           <div className="flex flex-col min-h-screen">
             <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-              <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between px-4">
+              <div className="mx-auto max-w-[768px] flex h-14 items-center justify-center px-4">
                 <div className="flex gap-2">
-                  <RefreshCcwDot className="size-6" />
-                  <h1 className="text-lg font-semibold">{process.env.NEXT_PUBLIC_APP_NAME || "Aruna"}</h1>
+                  <RefreshCcwDot className="size-6 fill-current" />
+                  <h1 className="text-lg font-bold">{process.env.NEXT_PUBLIC_APP_NAME || "Aruna"}</h1>
                 </div>
-                <ModeToggle />
               </div>
             </header>
             <main className="flex-1 pb-20">

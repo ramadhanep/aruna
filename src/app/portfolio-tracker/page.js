@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Plus, MoreVertical, Pencil, Trash2, Loader2 } from 'lucide-react';
 
 // Minimal asset search (reuses existing API route if present)
 async function searchSymbols(query) {
@@ -50,6 +50,11 @@ export default function PortfolioTrackerPage() {
   const [priceMap, setPriceMap] = useState({}); // { symbol: currentPrice }
   const [fxRate, setFxRate] = useState(0); // USD per IDR (e.g., 1/16500 = 0.0000606)
   const [idrPerUsd, setIdrPerUsd] = useState(0); // IDR per USD (e.g., 16500)
+  const justSelectedRef = React.useRef(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const touchStartY = React.useRef(0);
+  const containerRef = React.useRef(null);
   
   // Fetch latest prices (simple batch sequential)
   const fetchPrice = useCallback(async (symbol) => {
@@ -80,6 +85,69 @@ export default function PortfolioTrackerPage() {
     }
   }, [fetchPrice]);
   const [loadingSearch, setLoadingSearch] = useState(false);
+
+  // Pull to refresh handler
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing || entries.length === 0) return;
+    setIsRefreshing(true);
+    try {
+      // Fetch FX rate
+      const endDate = Math.floor(Date.now() / 1000);
+      const startDate = endDate - 60 * 60 * 24 * 5;
+      const res = await fetch(`/api/yahoo-finance?symbol=IDR=X&startDate=${startDate}&endDate=${endDate}`);
+      if (res.ok) {
+        const json = await res.json();
+        const data = json.data || [];
+        if (data.length > 0) {
+          const last = data[data.length - 1];
+          const idrPerUsdVal = last.adjclose;
+          if (idrPerUsdVal) {
+            setIdrPerUsd(idrPerUsdVal);
+            setFxRate(1 / idrPerUsdVal);
+          }
+        }
+      }
+      // Refresh prices
+      await refreshPrices(entries);
+    } catch (e) {
+      console.warn('Refresh failed', e);
+    } finally {
+      setIsRefreshing(false);
+      setPullDistance(0);
+    }
+  }, [isRefreshing, entries, refreshPrices]);
+
+  // Pull to refresh touch handlers
+  const handleTouchStart = useCallback((e) => {
+    if (containerRef.current && containerRef.current.scrollTop === 0) {
+      touchStartY.current = e.touches[0].clientY;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (isRefreshing || touchStartY.current === 0 || !containerRef.current) return;
+    if (containerRef.current.scrollTop > 0) {
+      touchStartY.current = 0;
+      setPullDistance(0);
+      return;
+    }
+    
+    const touchY = e.touches[0].clientY;
+    const distance = touchY - touchStartY.current;
+    
+    if (distance > 0) {
+      setPullDistance(Math.min(distance, 150));
+    }
+  }, [isRefreshing]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (pullDistance > 80) {
+      handleRefresh();
+    } else {
+      setPullDistance(0);
+    }
+    touchStartY.current = 0;
+  }, [pullDistance, handleRefresh]);
 
   // Initial load handled by lazy initializer above
 
@@ -113,15 +181,22 @@ export default function PortfolioTrackerPage() {
   // Persist changes and refresh prices when entries mutate
   useEffect(() => {
     savePortfolio(entries);
-    const id = setTimeout(() => {
-      refreshPrices(entries);
-    }, 0);
-    return () => clearTimeout(id);
+    if (entries.length > 0) {
+      const id = setTimeout(() => {
+        refreshPrices(entries);
+      }, 0);
+      return () => clearTimeout(id);
+    }
   }, [entries, refreshPrices]);
 
   // Search debounce
   useEffect(() => {
     const handle = setTimeout(async () => {
+      // Skip search if we just selected a symbol
+      if (justSelectedRef.current) {
+        justSelectedRef.current = false;
+        return;
+      }
       if (!symbolQuery) { setSymbolResults([]); return; }
       setLoadingSearch(true);
       const res = await searchSymbols(symbolQuery);
@@ -154,6 +229,8 @@ export default function PortfolioTrackerPage() {
       // ignore
     }
     setForm(f => ({ ...f, symbol, name, unit: isJk ? 'lot' : f.unit, avgPrice: latest != null ? String(latest) : f.avgPrice }));
+    // Set flag to prevent search trigger, then update query and clear results
+    justSelectedRef.current = true;
     setSymbolQuery(symbol);
     setSymbolResults([]);
   }
@@ -265,7 +342,25 @@ export default function PortfolioTrackerPage() {
   }
 
   return (
-  <div className="flex flex-col gap-4">
+  <div 
+      ref={containerRef}
+      className="flex flex-col gap-4"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Pull to refresh indicator */}
+      {pullDistance > 0 && (
+        <div 
+          className="flex items-center justify-center transition-all duration-200"
+          style={{ 
+            height: `${pullDistance}px`,
+            opacity: Math.min(pullDistance / 80, 1)
+          }}
+        >
+          <Loader2 className={`h-6 w-6 text-muted-foreground ${pullDistance > 80 || isRefreshing ? 'animate-spin' : ''}`} />
+        </div>
+      )}
       <div>
         <h1 className="text-2xl font-bold">Portfolio Tracker</h1>
       </div>
@@ -283,7 +378,7 @@ export default function PortfolioTrackerPage() {
             <p className={`text-sm ${totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>Unrealized PNL <span className="font-semibold">{totalPnL >= 0 ? '+' : ''}{formatUSD(Math.abs(totalPnL))}</span></p>
             <p className="text-xs text-muted-foreground">({formatIDR(usdToIdr(Math.abs(totalPnL)))})</p>
           </div>
-          <p className="text-xs text-muted-foreground mt-4">Prices refreshed on load and after changes. FX rate (IDR per USD): <span className="text-blue-500 font-medium">{idrPerUsd > 0 ? formatIDR(idrPerUsd) : 'loading...'}</span></p>
+          <p className="text-xs text-muted-foreground mt-4">Prices refreshed on load and after changes. FX rate (IDR per USD): <span className="text-blue-800 font-medium">{idrPerUsd > 0 ? formatIDR(idrPerUsd) : 'loading...'}</span></p>
         </CardContent>
       </Card>
 
@@ -293,7 +388,7 @@ export default function PortfolioTrackerPage() {
         </CardHeader>
         <CardContent>
           {entries.length === 0 && (
-            <p className="text-xs text-muted-foreground">No assets yet. Click <span className="text-blue-500 font-medium cursor-pointer" onClick={openAdd}>Add Asset</span> to begin.</p>
+            <p className="text-xs text-muted-foreground">No assets yet. Click <span className="text-blue-800 font-medium cursor-pointer" onClick={openAdd}>Add Asset</span> to begin.</p>
           )}
           {entries.length > 0 && (
             <div className="divide-y border rounded-md overflow-hidden">
@@ -321,7 +416,7 @@ export default function PortfolioTrackerPage() {
                       </DropdownMenu>
                     </div>
                     <div className="text-xs text-muted-foreground mt-1 flex flex-col gap-0.5">
-                      <span>{e.amount} {e.unit} @ {formatUSD(toUSD(e.symbol, e.avgPrice))} {priceMap[e.symbol] != null && `· Live ${formatUSD(toUSD(e.symbol, priceMap[e.symbol]))}`}</span>
+                      <span>{e.amount} {e.unit} @ {formatUSD(toUSD(e.symbol, e.avgPrice))}</span>
                       <span className="text-[10px]">({formatIDR(usdToIdr(toUSD(e.symbol, e.avgPrice) * getEffectiveAmount(e.amount, e.unit)))})</span>
                     </div>
                   </div>
@@ -333,7 +428,7 @@ export default function PortfolioTrackerPage() {
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="fixed max-w-none m-0 h-screen rounded-none p-0 flex flex-col">
+        <DialogContent className="fixed max-w-none m-0 h-screen rounded-none p-0 flex flex-col" closeButtonPosition="right">
           <div className="flex items-center gap-2 p-4 border-b">
             <DialogTitle className="text-lg">{editingIndex != null ? 'Edit Asset' : 'Add Asset'}</DialogTitle>
           </div>
