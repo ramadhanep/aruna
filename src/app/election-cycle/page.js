@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import {
   removeIncompleteYears,
@@ -43,7 +43,7 @@ const COLORS = {
 const SEARCH_HISTORY_KEY = 'aruna_search_history';
 const MAX_HISTORY_ITEMS = 10;
 
-export default function ElectionCyclePage() {
+function ElectionCyclePageContent() {
   const searchParams = useSearchParams();
   const symbolParam = searchParams.get('symbol');
   
@@ -787,5 +787,17 @@ export default function ElectionCyclePage() {
         }}
       />
     </div>
+  );
+}
+
+export default function ElectionCyclePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    }>
+      <ElectionCyclePageContent />
+    </Suspense>
   );
 }

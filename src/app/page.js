@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { TrendingUp, TrendingDown, Loader2, Download } from "lucide-react";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 const SYMBOLS = {
-  usStocks: ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA'],
+  usStocks: ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'AVGO'],
   idxStocks: ['BBCA.JK', 'BBRI.JK', 'BMRI.JK', 'BRIS.JK'],
   crypto: ['BTC-USD', 'ETH-USD', 'SOL-USD']
 };
@@ -124,28 +125,116 @@ function ShimmerItem() {
 export default function HomePage() {
   const [quotes, setQuotes] = useState({});
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [showInstallButton, setShowInstallButton] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const touchStartY = useRef(0);
+  const containerRef = useRef(null);
 
-  useEffect(() => {
-    async function loadQuotes() {
-      setLoading(true);
-      const allSymbols = [
-        ...SYMBOLS.usStocks,
-        ...SYMBOLS.idxStocks,
-        ...SYMBOLS.crypto
-      ];
-      
-      const results = {};
-      for (const symbol of allSymbols) {
-        const quote = await fetchQuote(symbol);
-        if (quote) results[symbol] = quote;
-      }
-      
-      setQuotes(results);
-      setLoading(false);
+  const loadQuotes = useCallback(async () => {
+    const allSymbols = [
+      ...SYMBOLS.usStocks,
+      ...SYMBOLS.idxStocks,
+      ...SYMBOLS.crypto
+    ];
+    
+    const results = {};
+    for (const symbol of allSymbols) {
+      const quote = await fetchQuote(symbol);
+      if (quote) results[symbol] = quote;
     }
     
-    loadQuotes();
+    setQuotes(results);
   }, []);
+
+  useEffect(() => {
+    const init = async () => {
+      setLoading(true);
+      await loadQuotes();
+      setLoading(false);
+    };
+    init();
+  }, [loadQuotes]);
+
+  // Check if app is installable
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                         window.navigator.standalone === true;
+    setShowInstallButton(!isStandalone);
+
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallButton(!isStandalone);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
+  }, []);
+
+  // Pull to refresh handler
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await loadQuotes();
+    } catch (e) {
+      console.warn('Refresh failed', e);
+    } finally {
+      setIsRefreshing(false);
+      setPullDistance(0);
+    }
+  }, [isRefreshing, loadQuotes]);
+
+  // Pull to refresh touch handlers
+  const handleTouchStart = useCallback((e) => {
+    if (containerRef.current && containerRef.current.scrollTop === 0) {
+      touchStartY.current = e.touches[0].clientY;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (isRefreshing || touchStartY.current === 0 || !containerRef.current) return;
+    if (containerRef.current.scrollTop > 0) {
+      touchStartY.current = 0;
+      setPullDistance(0);
+      return;
+    }
+    
+    const touchY = e.touches[0].clientY;
+    const distance = touchY - touchStartY.current;
+    
+    if (distance > 0) {
+      setPullDistance(Math.min(distance, 150));
+    }
+  }, [isRefreshing]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (pullDistance > 80) {
+      handleRefresh();
+    } else {
+      setPullDistance(0);
+    }
+    touchStartY.current = 0;
+  }, [pullDistance, handleRefresh]);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+    }
+    
+    setDeferredPrompt(null);
+    setShowInstallButton(false);
+  };
 
   if (loading) {
     return (
@@ -171,7 +260,26 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div 
+      ref={containerRef}
+      className="flex flex-col gap-4"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Pull to refresh indicator */}
+      {pullDistance > 0 && (
+        <div 
+          className="flex items-center justify-center transition-all duration-200"
+          style={{ 
+            height: `${pullDistance}px`,
+            opacity: Math.min(pullDistance / 80, 1)
+          }}
+        >
+          <Loader2 className={`h-6 w-6 text-muted-foreground ${pullDistance > 80 || isRefreshing ? 'animate-spin' : ''}`} />
+        </div>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Welcome!</CardTitle>
@@ -201,6 +309,22 @@ export default function HomePage() {
             <StockItem key={symbol} quote={quotes[symbol]} />
           ))}
         </div>
+      </div>
+
+      {showInstallButton && deferredPrompt && (
+        <Button 
+          onClick={handleInstall}
+          className="w-full bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Install App
+        </Button>
+      )}
+
+      <div className="flex justify-center">
+        <p className="text-sm text-muted-foreground">
+          Version {process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'}
+        </p>
       </div>
     </div>
   );

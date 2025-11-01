@@ -3,6 +3,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { PWARegister } from "@/components/pwa-register";
+import { PWAInstallDialog } from "@/components/pwa-install-dialog";
 import { RefreshCcwDot } from "lucide-react";
 
 const geistSans = Geist({
@@ -66,6 +67,7 @@ export default function RootLayout({ children }) {
           disableTransitionOnChange
         >
           <PWARegister />
+          <PWAInstallDialog />
           <div className="flex flex-col min-h-screen">
             <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
               <div className="mx-auto max-w-[768px] flex h-14 items-center justify-center px-4">
