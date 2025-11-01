@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import {
   removeIncompleteYears,
   computeDailyReturns,
@@ -45,6 +45,7 @@ const MAX_HISTORY_ITEMS = 10;
 
 function ElectionCyclePageContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const symbolParam = searchParams.get('symbol');
   
   const [symbol, setSymbol] = useState(symbolParam || 'QQQ');
@@ -419,7 +420,7 @@ function ElectionCyclePageContent() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="w-full flex items-center gap-4">
+      <div className="w-full flex items-center gap-6">
         <Button 
           onClick={() => setSearchDialogOpen(true)}
           variant="outline" 
@@ -429,7 +430,7 @@ function ElectionCyclePageContent() {
           <Search className="h-4 w-4"/>
         </Button>
         {symbol.endsWith('.JK') && (
-          <p>🇮🇩 Hidup Jokowi</p>
+          <p>🇮🇩 in Purbaya we trust.</p>
         )}
       </div>
 
@@ -518,24 +519,68 @@ function ElectionCyclePageContent() {
       </Dialog>
 
       {loading && (
-        <Card className="overflow-hidden bg-transparent border-none">
-          <CardHeader className="animate-pulse">
-            <div className="h-3 bg-muted rounded w-32 mb-2"></div>
-            <div className="h-8 bg-muted rounded w-40"></div>
-          </CardHeader>
-          <CardContent className="px-0 pb-0">
-            <div className="w-full h-[280px] bg-muted animate-pulse rounded"></div>
-          </CardContent>
-        </Card>
-      )}
-
-      {!loading && chartData.chartArray && chartData.chartArray.length > 0 && (
         <>
           <Card className="overflow-hidden bg-transparent border-none">
             <CardHeader>
               <div className="flex items-baseline justify-between">
                 <div className="flex-1">
-                  <CardDescription className="text-xs mb-1">{assetName}</CardDescription>
+                  <div className="h-3 bg-muted rounded w-32 mb-2 animate-pulse"></div>
+                  <div className="flex justify-between items-start">
+                    <div className="h-9 bg-muted rounded w-24 animate-pulse"></div>
+                    <div className="flex gap-2">
+                      <div className="h-8 w-16 bg-muted rounded-md animate-pulse"></div>
+                      <div className="h-8 w-24 bg-muted rounded-md animate-pulse"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="px-0 -mr-5 pb-0">
+              <div className="w-full h-[280px] bg-muted animate-pulse rounded"></div>
+            </CardContent>
+          </Card>
+
+          <div className="flex gap-2">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex-1 h-6 bg-muted rounded-md animate-pulse"></div>
+            ))}
+          </div>
+
+          <div className="h-11 bg-muted rounded-md animate-pulse"></div>
+
+          <div className="h-10 bg-muted rounded-md animate-pulse"></div>
+
+          <div className="border rounded-lg overflow-hidden">
+            <div className="px-4 py-3 border-b">
+              <div className="h-5 bg-muted rounded w-32 animate-pulse"></div>
+            </div>
+            <div className="p-4 space-y-2">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-8 bg-muted rounded animate-pulse"></div>
+              ))}
+            </div>
+          </div>
+
+          <div className="border rounded-lg overflow-hidden">
+            <div className="px-4 py-3 border-b">
+              <div className="h-5 bg-muted rounded w-32 animate-pulse"></div>
+            </div>
+            <div className="p-4 space-y-2">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-8 bg-muted rounded animate-pulse"></div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+
+      {!loading && chartData.chartArray && chartData.chartArray.length > 0 && (
+        <>
+          <Card className="overflow-hidden bg-transparent border-none rounded-none">
+            <CardHeader>
+              <div className="flex items-baseline justify-between">
+                <div className="flex-1">
+                  <CardDescription className="text-sm mb-1">{assetName}</CardDescription>
                   <CardTitle className="text-3xl font-bold flex justify-between items-start">
                     {symbolInfo?.currentPrice 
                       ? `${Math.round(symbolInfo.currentPrice).toLocaleString()}` 
@@ -779,10 +824,10 @@ function ElectionCyclePageContent() {
           // Save back to localStorage
           try {
             localStorage.setItem('aruna_portfolio', JSON.stringify(portfolio));
-            alert('Asset added to portfolio successfully!');
+            setPortfolioDialogOpen(false);
+            router.push('/portfolio-tracker');
           } catch (e) {
             console.warn('Failed to save portfolio', e);
-            alert('Failed to save asset to portfolio');
           }
         }}
       />

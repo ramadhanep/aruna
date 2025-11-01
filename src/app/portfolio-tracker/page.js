@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, MoreVertical, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Plus, MoreVertical, Pencil, Trash2, Loader2, SquarePen } from 'lucide-react';
 
 // Minimal asset search (reuses existing API route if present)
 async function searchSymbols(query) {
@@ -364,7 +364,7 @@ export default function PortfolioTrackerPage() {
       <div>
         <h1 className="text-2xl font-bold">Portfolio Tracker</h1>
       </div>
-      <Card>
+      <Card className="p-4">
         <CardHeader>
           <CardTitle>Overview</CardTitle>
         </CardHeader>
@@ -382,7 +382,7 @@ export default function PortfolioTrackerPage() {
         </CardContent>
       </Card>
 
-      <Card>
+      <Card className="p-4">
         <CardHeader>
           <CardTitle>Assets</CardTitle>
         </CardHeader>
@@ -520,7 +520,7 @@ export default function PortfolioTrackerPage() {
         className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg z-40"
         onClick={openAdd}
       >
-        <Plus className="h-6 w-6" />
+        <SquarePen size="h-6 w-6" />
       </Button>
     </div>
   );

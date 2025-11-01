@@ -2,15 +2,42 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
-import { TrendingUp, TrendingDown, Loader2, Download } from "lucide-react";
+import { TrendingUp, TrendingDown, Loader2, Download, Edit } from "lucide-react";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { ManageWatchlistDialog } from "@/components/manage-watchlist-dialog";
 
-const SYMBOLS = {
-  usStocks: ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'AVGO'],
-  idxStocks: ['BBCA.JK', 'BBRI.JK', 'BMRI.JK', 'BRIS.JK'],
-  crypto: ['BTC-USD', 'ETH-USD', 'SOL-USD']
-};
+const WATCHLIST_KEY = 'aruna_watchlist';
+const DEFAULT_WATCHLIST = [
+  { symbol: 'BBCA.JK', order: 1 },
+  { symbol: 'BTC-USD', order: 2 },
+  { symbol: 'QQQ', order: 3 },
+  { symbol: 'SPY', order: 4 },
+  { symbol: 'NVDA', order: 5 },
+];
+
+function loadWatchlist() {
+  if (typeof window === 'undefined') return DEFAULT_WATCHLIST;
+  try {
+    const raw = localStorage.getItem(WATCHLIST_KEY);
+    if (!raw) {
+      localStorage.setItem(WATCHLIST_KEY, JSON.stringify(DEFAULT_WATCHLIST));
+      return DEFAULT_WATCHLIST;
+    }
+    return JSON.parse(raw);
+  } catch (e) {
+    console.warn('Failed to parse watchlist', e);
+    return DEFAULT_WATCHLIST;
+  }
+}
+
+function saveWatchlist(data) {
+  try {
+    localStorage.setItem(WATCHLIST_KEY, JSON.stringify(data));
+  } catch (e) {
+    console.warn('Failed to save watchlist', e);
+  }
+}
 
 async function fetchQuote(symbol) {
   try {
@@ -123,30 +150,25 @@ function ShimmerItem() {
 }
 
 export default function HomePage() {
-  const [quotes, setQuotes] = useState({});
+  const [watchlist, setWatchlist] = useState(() => loadWatchlist());
+  const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [showInstallButton, setShowInstallButton] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [manageDialogOpen, setManageDialogOpen] = useState(false);
   const touchStartY = useRef(0);
   const containerRef = useRef(null);
 
   const loadQuotes = useCallback(async () => {
-    const allSymbols = [
-      ...SYMBOLS.usStocks,
-      ...SYMBOLS.idxStocks,
-      ...SYMBOLS.crypto
-    ];
+    const sorted = [...watchlist].sort((a, b) => a.order - b.order);
+    const quotesData = await Promise.all(
+      sorted.map(item => fetchQuote(item.symbol))
+    );
     
-    const results = {};
-    for (const symbol of allSymbols) {
-      const quote = await fetchQuote(symbol);
-      if (quote) results[symbol] = quote;
-    }
-    
-    setQuotes(results);
-  }, []);
+    setQuotes(quotesData.filter(q => q !== null));
+  }, [watchlist]);
 
   useEffect(() => {
     const init = async () => {
@@ -240,19 +262,9 @@ export default function HomePage() {
     return (
       <div className="flex flex-col">
         <div className="border rounded-lg overflow-hidden bg-card">
-          <SectionHeader title="US Stocks" />
+          <SectionHeader title="Watchlist" />
           <div className="divide-y">
-            {[...Array(7)].map((_, i) => <ShimmerItem key={i} />)}
-          </div>
-
-          <SectionHeader title="IDX Stocks" />
-          <div className="divide-y">
-            {[...Array(4)].map((_, i) => <ShimmerItem key={i} />)}
-          </div>
-
-          <SectionHeader title="Crypto" />
-          <div className="divide-y">
-            {[...Array(3)].map((_, i) => <ShimmerItem key={i} />)}
+            {[...Array(6)].map((_, i) => <ShimmerItem key={i} />)}
           </div>
         </div>
       </div>
@@ -280,7 +292,7 @@ export default function HomePage() {
         </div>
       )}
 
-      <Card>
+      <Card className="p-4">
         <CardHeader>
           <CardTitle>Welcome!</CardTitle>
           <CardDescription>
@@ -289,27 +301,21 @@ export default function HomePage() {
         </CardHeader>
       </Card>
       <div className="border rounded-lg overflow-hidden bg-card">
-        <SectionHeader title="US Stocks" />
+        <SectionHeader title="Watchlist" />
         <div className="divide-y">
-          {SYMBOLS.usStocks.map(symbol => (
-            <StockItem key={symbol} quote={quotes[symbol]} />
-          ))}
-        </div>
-
-        <SectionHeader title="IDX Stocks" />
-        <div className="divide-y">
-          {SYMBOLS.idxStocks.map(symbol => (
-            <StockItem key={symbol} quote={quotes[symbol]} />
-          ))}
-        </div>
-
-        <SectionHeader title="Crypto" />
-        <div className="divide-y">
-          {SYMBOLS.crypto.map(symbol => (
-            <StockItem key={symbol} quote={quotes[symbol]} />
+          {quotes.map(quote => (
+            <StockItem key={quote.symbol} quote={quote} />
           ))}
         </div>
       </div>
+
+      <button
+        onClick={() => setManageDialogOpen(true)}
+        className="flex items-center gap-2 text-blue-500 hover:text-blue-600 transition-colors justify-center py-2"
+      >
+        <Edit className="h-4 w-4" />
+        <span className="text-sm font-medium">Manage Watchlist</span>
+      </button>
 
       {showInstallButton && deferredPrompt && (
         <Button 
@@ -321,11 +327,16 @@ export default function HomePage() {
         </Button>
       )}
 
-      <div className="flex justify-center">
-        <p className="text-sm text-muted-foreground">
-          Version {process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'}
-        </p>
-      </div>
+      <ManageWatchlistDialog
+        open={manageDialogOpen}
+        onOpenChange={setManageDialogOpen}
+        watchlist={watchlist}
+        onSave={(newWatchlist) => {
+          saveWatchlist(newWatchlist);
+          setWatchlist(newWatchlist);
+          loadQuotes();
+        }}
+      />
     </div>
   );
 }

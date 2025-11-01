@@ -39,12 +39,17 @@ export default function SettingsPage() {
             <span className="text-sm font-medium">Dark</span>
           </div>
         </div>
-      
-        <div className="mt-12 flex items-center justify-center gap-1 text-sm text-muted-foreground pb-4">
-            <span>Made with</span>
-            <Heart className="h-4 w-4 fill-white" />
-            <span>by Ramadhan Edy from</span>
-            <span className="text-base">🇮🇩</span>
+
+        <div className="mt-12 flex flex-col w-full justify-center text-center gap-2">
+            <p className="text-sm text-muted-foreground">
+                Version {process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'}
+            </p>
+            <div className="flex items-center justify-center gap-1 text-sm text-muted-foreground pb-4">
+                <span>Made with</span>
+                <Heart className="h-4 w-4 fill-white" />
+                <span>by Ramadhan Edy from</span>
+                <span className="text-base">🇮🇩</span>
+            </div>
         </div>
       </div>
     </div>
