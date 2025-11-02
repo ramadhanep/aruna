@@ -378,7 +378,7 @@ export default function PortfolioTrackerPage() {
             <p className={`text-sm ${totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>Unrealized PNL <span className="font-semibold">{totalPnL >= 0 ? '+' : ''}{formatUSD(Math.abs(totalPnL))}</span></p>
             <p className="text-xs text-muted-foreground">({formatIDR(usdToIdr(Math.abs(totalPnL)))})</p>
           </div>
-          <p className="text-xs text-muted-foreground mt-4">Prices refreshed on load and after changes. FX rate (IDR per USD): <span className="text-blue-800 font-medium">{idrPerUsd > 0 ? formatIDR(idrPerUsd) : 'loading...'}</span></p>
+          <p className="text-xs text-muted-foreground mt-4">Prices refreshed on load and after changes. FX rate (IDR per USD): <span className="text-lime-500 font-medium">{idrPerUsd > 0 ? formatIDR(idrPerUsd) : 'loading...'}</span></p>
         </CardContent>
       </Card>
 
@@ -388,7 +388,7 @@ export default function PortfolioTrackerPage() {
         </CardHeader>
         <CardContent>
           {entries.length === 0 && (
-            <p className="text-xs text-muted-foreground">No assets yet. Click <span className="text-blue-800 font-medium cursor-pointer" onClick={openAdd}>Add Asset</span> to begin.</p>
+            <p className="text-xs text-muted-foreground">No assets yet. Click <span className="text-lime-500 font-medium cursor-pointer" onClick={openAdd}>Add Asset</span> to begin.</p>
           )}
           {entries.length > 0 && (
             <div className="divide-y border rounded-md overflow-hidden">

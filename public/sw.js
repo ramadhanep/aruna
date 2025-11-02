@@ -5,7 +5,7 @@ const urlsToCache = [
   '/election-cycle',
   '/portfolio-tracker',
   '/offline',
-  '/aruna.png'
+  '/aruna.webp'
 ];
 
 // Install Service Worker

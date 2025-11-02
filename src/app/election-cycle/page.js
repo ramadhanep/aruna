@@ -32,12 +32,12 @@ import { Loader2, SmilePlus, Search, X, Clock, TrendingUp, DollarSign, Star, Sea
 import { AddAssetModal } from "@/components/add-asset-modal";
 
 const COLORS = {
-  allYears: '#8B5CF6',
-  preElection: '#10B981',
-  election: '#3B82F6',
-  midTerm: '#EF4444',
-  postElection: '#F59E0B',
-  current: '#EC4899',
+  allYears: 'oklch(98.4% 0.014 180.72)',
+  preElection: 'oklch(79.5% 0.184 86.047)',
+  election: 'oklch(54.6% 0.245 262.881)',
+  midTerm: 'oklch(57.7% 0.245 27.325)',
+  postElection: 'oklch(75% 0.183 55.934)',
+  current: 'oklch(76.8% 0.233 130.85)',
 };
 
 const SEARCH_HISTORY_KEY = 'aruna_search_history';
@@ -420,7 +420,7 @@ function ElectionCyclePageContent() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="w-full flex items-center gap-6">
+      <div className="w-full flex items-center gap-4">
         <Button 
           onClick={() => setSearchDialogOpen(true)}
           variant="outline" 
@@ -430,7 +430,13 @@ function ElectionCyclePageContent() {
           <Search className="h-4 w-4"/>
         </Button>
         {symbol.endsWith('.JK') && (
-          <p>🇮🇩 in Purbaya we trust.</p>
+          <p>🇮🇩 Hey antek-antek asing!</p>
+        )}
+        {symbol.endsWith('-USD') && (
+          <p>🚀 to the moon</p>
+        )}
+        {['QQQ', 'SPY'].some((s) => symbol.endsWith(s)) && (
+          <p>Beli {symbol.endsWith('QQQ') ? 'QQQ' : 'SPY'} = pengecut 👎</p>
         )}
       </div>
 
@@ -699,7 +705,7 @@ function ElectionCyclePageContent() {
 
           <Button 
             onClick={() => setPortfolioDialogOpen(true)}
-            className="w-full bg-blue-800 hover:bg-blue-600 text-white font-semibold"
+            className="w-full bg-lime-500 hover:bg-lime-600 font-semibold"
           >
             Add to Your Portfolio
           </Button>

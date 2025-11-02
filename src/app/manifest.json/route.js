@@ -12,18 +12,18 @@ export async function GET() {
     orientation: "portrait",
     icons: [
       {
-        src: "/aruna.png",
+        src: "/aruna.webp",
         sizes: "any",
         type: "image/png",
         purpose: "any maskable"
       },
       {
-        src: "/aruna.png",
+        src: "/aruna.webp",
         sizes: "192x192",
         type: "image/png"
       },
       {
-        src: "/aruna.png",
+        src: "/aruna.webp",
         sizes: "512x512",
         type: "image/png"
       }

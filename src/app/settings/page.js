@@ -23,8 +23,8 @@ export default function SettingsPage() {
           
           <button
             onClick={() => setTheme(isDark ? "light" : "dark")}
-            className={`relative inline-flex h-8 w-14 items-center rounded-full cursor-pointer transition-colors ${
-              isDark ? "bg-blue-800" : "bg-gray-200"
+            className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
+              isDark ? "bg-lime-500" : "bg-gray-200"
             }`}
           >
             <span

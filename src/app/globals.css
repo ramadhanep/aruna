@@ -143,4 +143,8 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  button, a {
+    cursor: pointer;
+  }
 }

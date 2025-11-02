@@ -106,7 +106,7 @@ function StockItem({ quote }) {
   const color = isPositive ? 'text-green-600' : 'text-red-600';
   
   return (
-    <Link href={`/election-cycle?symbol=${encodeURIComponent(quote.symbol)}`} className="flex items-center gap-3 py-3 px-4 hover:bg-accent/30 transition-colors cursor-pointer">
+    <Link href={`/election-cycle?symbol=${encodeURIComponent(quote.symbol)}`} className="flex items-center gap-3 py-3 px-4 hover:bg-accent/30 transition-colors">
       <div className="flex-1 min-w-0">
         <div className="font-semibold text-base truncate">{quote.symbol}</div>
         <div className="text-xs text-muted-foreground truncate">{quote.name}</div>
@@ -311,7 +311,7 @@ export default function HomePage() {
 
       <button
         onClick={() => setManageDialogOpen(true)}
-        className="flex items-center gap-2 text-blue-500 hover:text-blue-600 transition-colors justify-center py-2"
+        className="flex items-center gap-2 text-lime-500 hover:text-lime-600 transition-colors justify-center py-2"
       >
         <Edit className="h-4 w-4" />
         <span className="text-sm font-medium">Manage Watchlist</span>
@@ -320,7 +320,7 @@ export default function HomePage() {
       {showInstallButton && deferredPrompt && (
         <Button 
           onClick={handleInstall}
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white flex items-center gap-2"
+          className="w-full bg-lime-500 hover:bg-lime-600 flex items-center gap-2"
         >
           <Download className="h-4 w-4" />
           Install App
