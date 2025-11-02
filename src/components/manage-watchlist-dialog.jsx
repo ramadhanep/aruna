@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { GripVertical, Trash2, Plus, X } from "lucide-react";
+import { Trash2, Plus, X, ChevronFirst, ChevronLast } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -17,18 +17,21 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [draggedIndex, setDraggedIndex] = useState(null);
   const searchTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (open) {
-      setItems([...watchlist]);
+      // Ensure items are sorted by order when opening
+      const sorted = Array.isArray(watchlist)
+        ? [...watchlist].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+        : [];
+      setItems(sorted);
       setSearchQuery("");
       setSearchResults([]);
     }
   }, [open, watchlist]);
 
-  // Search for symbols
+  // Search for symbols (debounced)
   useEffect(() => {
     if (!searchQuery.trim()) {
       setSearchResults([]);
@@ -67,16 +70,17 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
       return;
     }
 
-    const maxOrder = items.length > 0 ? Math.max(...items.map(i => i.order)) : 0;
+    const maxOrder = items.length > 0 ? Math.max(...items.map(i => i.order ?? 0)) : 0;
     const newItem = { symbol, order: maxOrder + 1 };
-    setItems([...items, newItem]);
+    const next = [...items, newItem].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    setItems(next);
     setSearchQuery("");
     setSearchResults([]);
   };
 
   const handleRemove = (symbol) => {
     const filtered = items.filter(item => item.symbol !== symbol);
-    // Reorder remaining items
+    // Reorder remaining items to keep order contiguous
     const reordered = filtered.map((item, idx) => ({
       ...item,
       order: idx + 1
@@ -84,31 +88,21 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
     setItems(reordered);
   };
 
-  const handleDragStart = (index) => {
-    setDraggedIndex(index);
-  };
-
-  const handleDragOver = (e, index) => {
-    e.preventDefault();
-    if (draggedIndex === null || draggedIndex === index) return;
+  const handleMove = (index, delta) => {
+    const newIndex = index + delta;
+    if (newIndex < 0 || newIndex >= items.length) return;
 
     const newItems = [...items];
-    const draggedItem = newItems[draggedIndex];
-    newItems.splice(draggedIndex, 1);
-    newItems.splice(index, 0, draggedItem);
+    const [moved] = newItems.splice(index, 1);
+    newItems.splice(newIndex, 0, moved);
 
-    // Update order numbers
+    // Normalize order numbers after move
     const reordered = newItems.map((item, idx) => ({
       ...item,
-      order: idx + 1
+      order: idx + 1,
     }));
 
     setItems(reordered);
-    setDraggedIndex(index);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
   };
 
   const handleSave = () => {
@@ -140,6 +134,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
                     setSearchResults([]);
                   }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="Clear search"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -168,25 +163,42 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
 
           {/* Watchlist Items */}
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground mb-2">Hold and drag to reorder</p>
+            <p className="text-xs text-muted-foreground mb-2">Tap arrows to reorder</p>
             {items.map((item, index) => (
               <div
                 key={item.symbol}
-                draggable
-                onDragStart={() => handleDragStart(index)}
-                onDragOver={(e) => handleDragOver(e, index)}
-                onDragEnd={handleDragEnd}
-                className={`flex items-center gap-3 p-3 border rounded-md bg-card cursor-move transition-all ${
-                  draggedIndex === index ? 'opacity-50' : ''
-                }`}
+                className="flex items-center gap-3 p-3 border rounded-md bg-card"
               >
-                <GripVertical className="h-5 w-5 text-muted-foreground flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="font-semibold">{item.symbol}</div>
                 </div>
+
+                {/* Up/Down controls (replace drag handle) */}
+                <div className="flex gap-2 mr-1 pr-3 border-r">
+                  <button
+                    type="button"
+                    onClick={() => handleMove(index, -1)}
+                    disabled={index === 0}
+                    aria-label="Move up"
+                    className="p-1 rounded hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed rotate-90"
+                  >
+                    <ChevronFirst className="size-4" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleMove(index, 1)}
+                    disabled={index === items.length - 1}
+                    aria-label="Move down"
+                    className="p-1 rounded hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed rotate-90"
+                  >
+                    <ChevronLast className="size-4" />
+                  </button>
+                </div>
+
                 <button
                   onClick={() => handleRemove(item.symbol)}
                   className="text-red-500 hover:text-red-600 transition-colors"
+                  aria-label={`Remove ${item.symbol}`}
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

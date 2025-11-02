@@ -526,7 +526,7 @@ function ElectionCyclePageContent() {
 
       {loading && (
         <>
-          <Card className="overflow-hidden bg-transparent border-none">
+          <Card className="overflow-hidden bg-transparent border-none rounded-none">
             <CardHeader>
               <div className="flex items-baseline justify-between">
                 <div className="flex-1">

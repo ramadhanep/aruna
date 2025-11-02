@@ -6,7 +6,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, MoreVertical, Pencil, Trash2, Loader2, SquarePen } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Plus, MoreVertical, Pencil, Trash2, Loader2, Wallet, Coins, TrendingUp, DollarSign } from 'lucide-react';
+
+// LocalStorage key for currency preference
+const PORTFOLIO_CURRENCY_KEY = 'portfolio_currency';
 
 // Minimal asset search (reuses existing API route if present)
 async function searchSymbols(query) {
@@ -40,13 +44,33 @@ function savePortfolio(data) {
   }
 }
 
+function loadCurrencyPreference() {
+  if (typeof window === 'undefined') return 'USD';
+  try {
+    const raw = localStorage.getItem(PORTFOLIO_CURRENCY_KEY);
+    return raw === 'IDR' ? 'IDR' : 'USD';
+  } catch (e) {
+    return 'USD';
+  }
+}
+
+function saveCurrencyPreference(currency) {
+  try {
+    localStorage.setItem(PORTFOLIO_CURRENCY_KEY, currency);
+  } catch (e) {
+    console.warn('Failed to save currency preference', e);
+  }
+}
+
 export default function PortfolioTrackerPage() {
   const [entries, setEntries] = useState(() => loadPortfolio());
+  const [currency, setCurrency] = useState(() => loadCurrencyPreference());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
   const [symbolQuery, setSymbolQuery] = useState('');
   const [symbolResults, setSymbolResults] = useState([]);
-  const [form, setForm] = useState({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '' });
+  const [assetType, setAssetType] = useState('digital'); // 'digital' or 'cash'
+  const [form, setForm] = useState({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '', type: 'digital', category: '', cashCurrency: 'USD' });
   const [priceMap, setPriceMap] = useState({}); // { symbol: currentPrice }
   const [fxRate, setFxRate] = useState(0); // USD per IDR (e.g., 1/16500 = 0.0000606)
   const [idrPerUsd, setIdrPerUsd] = useState(0); // IDR per USD (e.g., 16500)
@@ -88,7 +112,10 @@ export default function PortfolioTrackerPage() {
 
   // Pull to refresh handler
   const handleRefresh = useCallback(async () => {
-    if (isRefreshing || entries.length === 0) return;
+    if (isRefreshing) return;
+    const digitalEntries = entries.filter(e => e.type !== 'cash');
+    if (digitalEntries.length === 0) return; // Only refresh if there are digital assets
+    
     setIsRefreshing(true);
     try {
       // Fetch FX rate
@@ -107,8 +134,8 @@ export default function PortfolioTrackerPage() {
           }
         }
       }
-      // Refresh prices
-      await refreshPrices(entries);
+      // Refresh prices only for digital assets
+      await refreshPrices(digitalEntries);
     } catch (e) {
       console.warn('Refresh failed', e);
     } finally {
@@ -181,13 +208,19 @@ export default function PortfolioTrackerPage() {
   // Persist changes and refresh prices when entries mutate
   useEffect(() => {
     savePortfolio(entries);
-    if (entries.length > 0) {
+    const digitalEntries = entries.filter(e => e.type !== 'cash');
+    if (digitalEntries.length > 0) {
       const id = setTimeout(() => {
-        refreshPrices(entries);
+        refreshPrices(digitalEntries);
       }, 0);
       return () => clearTimeout(id);
     }
   }, [entries, refreshPrices]);
+
+  // Persist currency preference
+  useEffect(() => {
+    saveCurrencyPreference(currency);
+  }, [currency]);
 
   // Search debounce
   useEffect(() => {
@@ -207,10 +240,11 @@ export default function PortfolioTrackerPage() {
   }, [symbolQuery]);
 
   function resetForm() {
-    setForm({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '' });
+    setForm({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '', type: 'digital', category: '', cashCurrency: 'USD' });
     setSymbolQuery('');
     setSymbolResults([]);
     setEditingIndex(null);
+    setAssetType('digital');
   }
 
   // User selected a symbol from search results: set symbol, name, unit (lot for .JK),
@@ -242,8 +276,18 @@ export default function PortfolioTrackerPage() {
 
   function openEdit(idx) {
     const e = entries[idx];
-    setForm({ symbol: e.symbol, name: e.name, amount: String(e.amount), unit: e.unit, avgPrice: String(e.avgPrice) });
-    setSymbolQuery(e.symbol);
+    setForm({
+      symbol: e.symbol || '',
+      name: e.name || '',
+      amount: String(e.amount),
+      unit: e.unit || 'share',
+      avgPrice: String(e.avgPrice),
+      type: e.type || 'digital',
+      category: e.category || '',
+      cashCurrency: e.cashCurrency || 'USD'
+    });
+    setSymbolQuery(e.symbol || '');
+    setAssetType(e.type || 'digital');
     setEditingIndex(idx);
     setDialogOpen(true);
   }
@@ -251,35 +295,80 @@ export default function PortfolioTrackerPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     const amountNum = parseFloat(form.amount);
-    if (!form.symbol || isNaN(amountNum)) return;
+    if (isNaN(amountNum)) return;
 
-    // Ensure avgPrice is set; if not, attempt to fetch latest price
-    let avgPriceNum = parseFloat(form.avgPrice);
-    if (isNaN(avgPriceNum) || avgPriceNum <= 0) {
-      avgPriceNum = null;
-      try {
-        const p = await fetchPrice(form.symbol);
-        if (p != null) avgPriceNum = p;
-      } catch (err) {
-        // ignore
+    if (assetType === 'cash') {
+      // Cash asset
+      if (!form.category.trim()) {
+        alert('Please enter a category for cash asset (e.g., Bank BCA)');
+        return;
       }
-    }
-    if (avgPriceNum == null || isNaN(avgPriceNum)) {
-      alert('Could not determine average price for this symbol. Please enter it manually.');
-      return;
-    }
-
-    const unit = form.unit;
-    const entry = { symbol: form.symbol, name: form.name, amount: amountNum, unit, avgPrice: avgPriceNum };
-    let newEntries = [...entries];
-    if (editingIndex != null) {
-      newEntries[editingIndex] = entry;
+      const avgPriceNum = parseFloat(form.avgPrice);
+      if (isNaN(avgPriceNum) || avgPriceNum <= 0) {
+        alert('Please enter the cash amount per unit');
+        return;
+      }
+      
+      // Convert to USD for storage
+      let avgPriceUSD = avgPriceNum;
+      if (form.cashCurrency === 'IDR' && fxRate > 0) {
+        avgPriceUSD = avgPriceNum * fxRate; // IDR * (USD per IDR) = USD
+      }
+      
+      const entry = {
+        symbol: `CASH_${form.cashCurrency}`,
+        name: form.category,
+        amount: amountNum,
+        unit: 'unit',
+        avgPrice: avgPriceUSD,
+        type: 'cash',
+        category: form.category,
+        cashCurrency: form.cashCurrency
+      };
+      let newEntries = [...entries];
+      if (editingIndex != null) {
+        newEntries[editingIndex] = entry;
+      } else {
+        newEntries.push(entry);
+      }
+      setEntries(newEntries);
+      setDialogOpen(false);
+      resetForm();
     } else {
-      newEntries.push(entry);
+      // Digital asset
+      if (!form.symbol) {
+        alert('Please select a symbol');
+        return;
+      }
+
+      // Ensure avgPrice is set; if not, attempt to fetch latest price
+      let avgPriceNum = parseFloat(form.avgPrice);
+      if (isNaN(avgPriceNum) || avgPriceNum <= 0) {
+        avgPriceNum = null;
+        try {
+          const p = await fetchPrice(form.symbol);
+          if (p != null) avgPriceNum = p;
+        } catch (err) {
+          // ignore
+        }
+      }
+      if (avgPriceNum == null || isNaN(avgPriceNum)) {
+        alert('Could not determine average price for this symbol. Please enter it manually.');
+        return;
+      }
+
+      const unit = form.unit;
+      const entry = { symbol: form.symbol, name: form.name, amount: amountNum, unit, avgPrice: avgPriceNum, type: 'digital' };
+      let newEntries = [...entries];
+      if (editingIndex != null) {
+        newEntries[editingIndex] = entry;
+      } else {
+        newEntries.push(entry);
+      }
+      setEntries(newEntries);
+      setDialogOpen(false);
+      resetForm();
     }
-    setEntries(newEntries);
-    setDialogOpen(false);
-    resetForm();
   }
 
   function removeEntry(idx) {
@@ -314,19 +403,32 @@ export default function PortfolioTrackerPage() {
     return isLot(unit) ? amount * 100 : amount;
   }
 
-  const totalCost = entries.reduce((sum, e) => {
+  // Separate digital and cash assets
+  const digitalAssets = entries.filter(e => e.type !== 'cash');
+  const cashAssets = entries.filter(e => e.type === 'cash');
+
+  // Calculate digital assets metrics (in USD)
+  const digitalCost = digitalAssets.reduce((sum, e) => {
     const effectiveAmount = getEffectiveAmount(e.amount, e.unit);
     return sum + toUSD(e.symbol, e.avgPrice) * effectiveAmount;
   }, 0);
   
-  const totalMarket = entries.reduce((sum, e) => {
+  const digitalMarket = digitalAssets.reduce((sum, e) => {
     const live = priceMap[e.symbol];
     const costOrLive = live != null ? live : e.avgPrice;
     const effectiveAmount = getEffectiveAmount(e.amount, e.unit);
     return sum + toUSD(e.symbol, costOrLive) * effectiveAmount;
   }, 0);
   
-  const totalPnL = totalMarket - totalCost;
+  const digitalPnL = digitalMarket - digitalCost;
+
+  // Calculate total cash (already in USD)
+  const totalCash = cashAssets.reduce((sum, e) => {
+    return sum + e.avgPrice * e.amount;
+  }, 0);
+
+  // Total Net Worth
+  const totalNetWorth = digitalMarket + totalCash;
 
   function formatUSD(v) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
@@ -339,6 +441,17 @@ export default function PortfolioTrackerPage() {
   function usdToIdr(usdAmount) {
     if (idrPerUsd <= 0) return 0;
     return usdAmount * idrPerUsd;
+  }
+
+  // Format value based on selected currency
+  function formatValue(usdAmount) {
+    if (currency === 'IDR') {
+      const idrAmount = usdToIdr(usdAmount);
+      return { primary: formatIDR(idrAmount), secondary: formatUSD(usdAmount) };
+    } else {
+      const idrAmount = usdToIdr(usdAmount);
+      return { primary: formatUSD(usdAmount), secondary: formatIDR(idrAmount) };
+    }
   }
 
   return (
@@ -361,42 +474,131 @@ export default function PortfolioTrackerPage() {
           <Loader2 className={`h-6 w-6 text-muted-foreground ${pullDistance > 80 || isRefreshing ? 'animate-spin' : ''}`} />
         </div>
       )}
-      <div>
-        <h1 className="text-2xl font-bold">Portfolio Tracker</h1>
-      </div>
       <Card className="p-4">
-        <CardHeader>
-          <CardTitle>Overview</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
+          <CardTitle className="text-lg font-semibold">Overview</CardTitle>
+          <Select value={currency} onValueChange={setCurrency}>
+            <SelectTrigger className="w-[100px] h-8">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="USD">USD</SelectItem>
+              <SelectItem value="IDR">IDR</SelectItem>
+            </SelectContent>
+          </Select>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col gap-1">
-            <p className="text-sm">Market Value</p>
-            <span className="font-bold text-xl tracking-wide">{formatUSD(totalMarket)}</span>
-            <p className="text-xs text-muted-foreground">({formatIDR(usdToIdr(totalMarket))})</p>
+        <CardContent className="space-y-4">
+          {/* Total Net Worth */}
+          <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground mb-1">Total Net Worth</p>
+              <p className="text-xl font-bold">{formatValue(totalNetWorth).primary}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{formatValue(totalNetWorth).secondary}</p>
+            </div>
+            <div className="p-2 rounded-full bg-primary/10">
+              <Wallet className="h-5 w-5 text-primary" />
+            </div>
           </div>
-          <div className="flex flex-col gap-1 mt-2">
-            <p className={`text-sm ${totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>Unrealized PNL <span className="font-semibold">{totalPnL >= 0 ? '+' : ''}{formatUSD(Math.abs(totalPnL))}</span></p>
-            <p className="text-xs text-muted-foreground">({formatIDR(usdToIdr(Math.abs(totalPnL)))})</p>
+
+          {/* Digital Assets */}
+          <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground mb-1">Digital Assets</p>
+              <p className="text-xl font-semibold">{formatValue(digitalMarket).primary}</p>
+              <p className="text-xs text-muted-foreground">{formatValue(digitalMarket).secondary}</p>
+              <div className="mt-1.5 flex items-center gap-1">
+                <span className={`text-xs font-medium ${digitalPnL >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {digitalPnL >= 0 ? '+' : ''}{formatValue(digitalPnL).primary}
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  ({formatValue(digitalPnL).secondary})
+                </span>
+              </div>
+            </div>
+            <div className="p-2 rounded-full bg-blue-500/10">
+              <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
           </div>
-          <p className="text-xs text-muted-foreground mt-4">Prices refreshed on load and after changes. FX rate (IDR per USD): <span className="text-lime-500 font-medium">{idrPerUsd > 0 ? formatIDR(idrPerUsd) : 'loading...'}</span></p>
+
+          {/* Total Cash */}
+          <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+            <div className="flex-1">
+              <p className="text-sm text-muted-foreground mb-1">Total Cash</p>
+              <p className="text-xl font-semibold">{formatValue(totalCash).primary}</p>
+              <p className="text-xs text-muted-foreground">{formatValue(totalCash).secondary}</p>
+            </div>
+            <div className="p-2 rounded-full bg-emerald-500/10">
+              <Coins className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+          </div>
+
+          <p className="text-[10px] text-muted-foreground text-center pt-2">
+            FX Rate: {idrPerUsd > 0 ? formatIDR(idrPerUsd) : 'loading...'} per USD
+          </p>
         </CardContent>
       </Card>
 
       <Card className="p-4">
         <CardHeader>
-          <CardTitle>Assets</CardTitle>
+          <CardTitle className="text-lg font-semibold">Holdings</CardTitle>
         </CardHeader>
         <CardContent>
           {entries.length === 0 && (
-            <p className="text-xs text-muted-foreground">No assets yet. Click <span className="text-lime-500 font-medium cursor-pointer" onClick={openAdd}>Add Asset</span> to begin.</p>
+            <p className="text-sm text-muted-foreground text-center py-8">
+              No assets yet. Tap the <span className="text-primary font-medium">+</span> button below to add your first asset.
+            </p>
           )}
           {entries.length > 0 && (
-            <div className="divide-y border rounded-md overflow-hidden">
-              {entries.map((e, idx) => (
-                <div key={idx} className="flex items-start sm:items-center gap-3 sm:gap-4 p-3 hover:bg-accent/30">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="truncate font-medium text-sm sm:text-base">{e.symbol} <span className="text-muted-foreground text-xs">{e.name}</span></div>
+            <div className="space-y-2">
+              {entries.map((e, idx) => {
+                const isCash = e.type === 'cash';
+                const effectiveAmount = isCash ? e.amount : getEffectiveAmount(e.amount, e.unit);
+                const valueUSD = isCash ? e.avgPrice * e.amount : toUSD(e.symbol, e.avgPrice) * effectiveAmount;
+                const livePrice = priceMap[e.symbol];
+                const currentValueUSD = isCash ? valueUSD : (livePrice != null ? toUSD(e.symbol, livePrice) * effectiveAmount : valueUSD);
+                const pnl = currentValueUSD - valueUSD;
+                const formatted = formatValue(currentValueUSD);
+                
+                return (
+                  <div key={idx} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                          <div className="p-2 rounded-full bg-muted">
+                            {isCash ? (
+                              <DollarSign className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                            ) : (
+                              <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            )}
+                          </div>
+                          <p className="font-semibold text-sm truncate">
+                            {isCash ? e.category : e.symbol}
+                          </p>
+                        </div>
+                        {!isCash && e.name && (
+                          <span className="text-xs text-muted-foreground truncate">{e.name}</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        {isCash ? (
+                          <span>{e.amount} {e.cashCurrency} {e.cashCurrency === 'IDR' ? 'cash' : 'cash'}</span>
+                        ) : (
+                          <span>{e.amount} {e.unit}</span>
+                        )}
+                      </div>
+                      {!isCash && pnl !== 0 && (
+                        <div className="text-[10px] mt-0.5">
+                          <span className={pnl >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                            {pnl >= 0 ? '+' : ''}{formatValue(pnl).primary}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <p className="text-sm font-semibold">{formatted.primary}</p>
+                        <p className="text-[10px] text-muted-foreground">{formatted.secondary}</p>
+                      </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -408,20 +610,16 @@ export default function PortfolioTrackerPage() {
                             <Pencil className="mr-2 h-4 w-4" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => removeEntry(idx)} className="text-red-600">
+                          <DropdownMenuItem onClick={() => removeEntry(idx)} className="text-red-600 dark:text-red-400">
                             <Trash2 className="mr-2 h-4 w-4" />
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                    <div className="text-xs text-muted-foreground mt-1 flex flex-col gap-0.5">
-                      <span>{e.amount} {e.unit} @ {formatUSD(toUSD(e.symbol, e.avgPrice))}</span>
-                      <span className="text-[10px]">({formatIDR(usdToIdr(toUSD(e.symbol, e.avgPrice) * getEffectiveAmount(e.amount, e.unit)))})</span>
-                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
@@ -435,75 +633,168 @@ export default function PortfolioTrackerPage() {
           
           <div className="flex-1 overflow-auto">
             <div className="p-4">
-              <DialogDescription className="mb-4">Record your position details. Prices in your account&apos;s currency.</DialogDescription>
+              <DialogDescription className="mb-4">
+                Record your {assetType === 'cash' ? 'cash' : 'digital asset'} details. 
+                {assetType === 'digital' && ' Prices in the asset\'s native currency.'}
+              </DialogDescription>
+              
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="symbolSearch">Symbol</Label>
-              <input
-                id="symbolSearch"
-                value={symbolQuery}
-                onChange={(e) => { setSymbolQuery(e.target.value); setForm(f => ({ ...f, symbol: e.target.value })); }}
-                placeholder="Search ticker (e.g. AAPL)"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-              {loadingSearch && <p className="text-xs text-muted-foreground">Searching...</p>}
-              {!loadingSearch && symbolResults.length > 0 && (
-                <div className="max-h-40 overflow-auto rounded-md border border-border bg-background shadow-sm p-1 flex flex-col gap-1">
-                  {symbolResults.map(r => (
-                    <button
+                {/* Asset Type Selection */}
+                <div className="flex flex-col gap-1">
+                  <Label>Asset Type</Label>
+                  <div className="flex gap-2">
+                    <Button
                       type="button"
-                      key={r.symbol}
-                      onClick={() => handleSelectSymbol(r)}
-                      className="w-full text-left px-2 py-1 rounded hover:bg-accent text-xs"
+                      variant={assetType === 'digital' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setAssetType('digital')}
+                      className="flex-1"
                     >
-                      <span className="font-medium">{r.symbol}</span> <span className="text-muted-foreground">{r.name}</span>
-                    </button>
-                  ))}
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      Digital Assets
+                    </Button>
+                    <Button
+                      type="button"
+                      variant={assetType === 'cash' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setAssetType('cash')}
+                      className="flex-1"
+                    >
+                      <DollarSign className="h-4 w-4 mr-2" />
+                      Cash
+                    </Button>
+                  </div>
                 </div>
-              )}
-            </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="amount">Amount</Label>
-                <input
-                  id="amount"
-                  value={form.amount}
-                  onChange={(e) => setForm(f => ({ ...f, amount: e.target.value }))}
-                  placeholder="0"
-                  type="number"
-                  step="any"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <Label htmlFor="unit">Unit</Label>
-                <select
-                  id="unit"
-                  value={effectiveUnit}
-                  onChange={(e) => setForm(f => ({ ...f, unit: e.target.value }))}
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  <option value="share">Share</option>
-                  <option value="lot">Lot</option>
-                </select>
-              </div>
-            </div>
+                {assetType === 'digital' ? (
+                  <>
+                    {/* Digital Asset Fields */}
+                    <div className="flex flex-col gap-1">
+                      <Label htmlFor="symbolSearch">Symbol</Label>
+                      <input
+                        id="symbolSearch"
+                        value={symbolQuery}
+                        onChange={(e) => { setSymbolQuery(e.target.value); setForm(f => ({ ...f, symbol: e.target.value })); }}
+                        placeholder="Search ticker (e.g. AAPL, BBCA.JK)"
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                      {loadingSearch && <p className="text-xs text-muted-foreground">Searching...</p>}
+                      {!loadingSearch && symbolResults.length > 0 && (
+                        <div className="max-h-40 overflow-auto rounded-md border border-border bg-background shadow-sm p-1 flex flex-col gap-1">
+                          {symbolResults.map(r => (
+                            <button
+                              type="button"
+                              key={r.symbol}
+                              onClick={() => handleSelectSymbol(r)}
+                              className="w-full text-left px-2 py-1 rounded hover:bg-accent text-xs"
+                            >
+                              <span className="font-medium">{r.symbol}</span> <span className="text-muted-foreground">{r.name}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="avgPrice">Average Price</Label>
-              <input
-                id="avgPrice"
-                value={form.avgPrice}
-                onChange={(e) => setForm(f => ({ ...f, avgPrice: e.target.value }))}
-                placeholder="0"
-                type="number"
-                step="any"
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1">
+                        <Label htmlFor="amount">Amount</Label>
+                        <input
+                          id="amount"
+                          value={form.amount}
+                          onChange={(e) => setForm(f => ({ ...f, amount: e.target.value }))}
+                          placeholder="0"
+                          type="number"
+                          step="any"
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Label htmlFor="unit">Unit</Label>
+                        <select
+                          id="unit"
+                          value={effectiveUnit}
+                          onChange={(e) => setForm(f => ({ ...f, unit: e.target.value }))}
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        >
+                          <option value="share">Share</option>
+                          <option value="lot">Lot</option>
+                        </select>
+                      </div>
+                    </div>
 
-                <div className="flex justify-end gap-2">
+                    <div className="flex flex-col gap-1">
+                      <Label htmlFor="avgPrice">Average Price</Label>
+                      <input
+                        id="avgPrice"
+                        value={form.avgPrice}
+                        onChange={(e) => setForm(f => ({ ...f, avgPrice: e.target.value }))}
+                        placeholder="0"
+                        type="number"
+                        step="any"
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                      <p className="text-xs text-muted-foreground">Price per {effectiveUnit === 'lot' ? 'lot' : 'share'} in native currency</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Cash Asset Fields */}
+                    <div className="flex flex-col gap-1">
+                      <Label htmlFor="category">Category</Label>
+                      <input
+                        id="category"
+                        value={form.category}
+                        onChange={(e) => setForm(f => ({ ...f, category: e.target.value }))}
+                        placeholder="e.g., Bank BCA, PayPal, etc."
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="flex flex-col gap-1">
+                        <Label htmlFor="cashAmount">Amount</Label>
+                        <input
+                          id="cashAmount"
+                          value={form.amount}
+                          onChange={(e) => setForm(f => ({ ...f, amount: e.target.value }))}
+                          placeholder="1"
+                          type="number"
+                          step="any"
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        />
+                        <p className="text-xs text-muted-foreground">Usually 1 unit</p>
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <Label htmlFor="cashCurrency">Currency</Label>
+                        <select
+                          id="cashCurrency"
+                          value={form.cashCurrency}
+                          onChange={(e) => setForm(f => ({ ...f, cashCurrency: e.target.value }))}
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        >
+                          <option value="USD">USD</option>
+                          <option value="IDR">IDR</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <Label htmlFor="cashValue">Cash Value</Label>
+                      <input
+                        id="cashValue"
+                        value={form.avgPrice}
+                        onChange={(e) => setForm(f => ({ ...f, avgPrice: e.target.value }))}
+                        placeholder="0"
+                        type="number"
+                        step="any"
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                      <p className="text-xs text-muted-foreground">Total cash value in {form.cashCurrency}</p>
+                    </div>
+                  </>
+                )}
+
+                <div className="flex justify-end gap-2 pt-4">
                   <DialogClose asChild>
                     <Button type="button" variant="ghost">Cancel</Button>
                   </DialogClose>
@@ -517,10 +808,10 @@ export default function PortfolioTrackerPage() {
 
       <Button
         size="icon"
-        className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg z-40"
+        className="fixed bottom-20 right-4 h-14 w-14 rounded-full bg-lime-500 shadow-lg z-40"
         onClick={openAdd}
       >
-        <SquarePen size="h-6 w-6" />
+        <Plus className="size-6" />
       </Button>
     </div>
   );
