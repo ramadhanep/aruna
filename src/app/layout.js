@@ -72,7 +72,7 @@ export default function RootLayout({ children }) {
             <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
               <div className="mx-auto max-w-[768px] flex h-14 items-center justify-center px-4">
                 <div className="flex gap-2">
-                  <RefreshCcwDot className="size-6 fill-current text-lime-500" />
+                  <RefreshCcwDot className="size-6 fill-current text-emerald-600" />
                   <h1 className="text-lg font-bold">{process.env.NEXT_PUBLIC_APP_NAME || "Aruna"}</h1>
                 </div>
               </div>

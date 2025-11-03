@@ -311,7 +311,7 @@ export default function HomePage() {
 
       <button
         onClick={() => setManageDialogOpen(true)}
-        className="flex items-center gap-2 text-lime-500 hover:text-lime-600 transition-colors justify-center py-2"
+        className="flex items-center gap-2 text-emerald-600 hover:text-emerald-700 transition-colors justify-center py-2"
       >
         <Edit className="h-4 w-4" />
         <span className="text-sm font-medium">Manage Watchlist</span>
@@ -320,7 +320,7 @@ export default function HomePage() {
       {showInstallButton && deferredPrompt && (
         <Button 
           onClick={handleInstall}
-          className="w-full bg-lime-500 hover:bg-lime-600 flex items-center gap-2"
+          className="w-full bg-emerald-600 hover:bg-emerald-700 flex items-center gap-2"
         >
           <Download className="h-4 w-4" />
           Install App

@@ -527,8 +527,8 @@ export default function PortfolioTrackerPage() {
               <p className="text-xl font-semibold">{formatValue(totalCash).primary}</p>
               <p className="text-xs text-muted-foreground">{formatValue(totalCash).secondary}</p>
             </div>
-            <div className="p-2 rounded-full bg-emerald-500/10">
-              <Coins className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            <div className="p-2 rounded-full bg-emerald-600/10">
+              <Coins className="h-5 w-5 text-emerald-700 dark:text-emerald-400" />
             </div>
           </div>
 
@@ -566,7 +566,7 @@ export default function PortfolioTrackerPage() {
                         <div className="flex items-center gap-2">
                           <div className="p-2 rounded-full bg-muted">
                             {isCash ? (
-                              <DollarSign className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                              <DollarSign className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
                             ) : (
                               <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                             )}
@@ -808,7 +808,7 @@ export default function PortfolioTrackerPage() {
 
       <Button
         size="icon"
-        className="fixed bottom-20 right-4 h-14 w-14 rounded-full bg-lime-500 shadow-lg z-40"
+        className="fixed bottom-20 right-4 h-14 w-14 rounded-full bg-emerald-600 shadow-lg z-40"
         onClick={openAdd}
       >
         <Plus className="size-6" />

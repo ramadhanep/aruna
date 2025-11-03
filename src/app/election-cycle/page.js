@@ -33,11 +33,11 @@ import { AddAssetModal } from "@/components/add-asset-modal";
 
 const COLORS = {
   allYears: 'oklch(98.4% 0.014 180.72)',
-  preElection: 'oklch(79.5% 0.184 86.047)',
-  election: 'oklch(54.6% 0.245 262.881)',
-  midTerm: 'oklch(57.7% 0.245 27.325)',
-  postElection: 'oklch(75% 0.183 55.934)',
-  current: 'oklch(76.8% 0.233 130.85)',
+  preElection: 'oklch(98.4% 0.014 180.72)',
+  election: 'oklch(98.4% 0.014 180.72)',
+  midTerm: 'oklch(98.4% 0.014 180.72)',
+  postElection: 'oklch(98.4% 0.014 180.72)',
+  current: 'oklch(59.6% 0.145 163.225)',
 };
 
 const SEARCH_HISTORY_KEY = 'aruna_search_history';
@@ -48,7 +48,7 @@ function ElectionCyclePageContent() {
   const router = useRouter();
   const symbolParam = searchParams.get('symbol');
   
-  const [symbol, setSymbol] = useState(symbolParam || 'QQQ');
+  const [symbol, setSymbol] = useState(symbolParam || 'GOOGL');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -433,10 +433,13 @@ function ElectionCyclePageContent() {
           <p>🇮🇩 Hey antek-antek asing!</p>
         )}
         {symbol.endsWith('-USD') && (
-          <p>🚀 to the moon</p>
+          <p>🚀 To the moon (katanya)</p>
         )}
         {['QQQ', 'SPY'].some((s) => symbol.endsWith(s)) && (
-          <p>Beli {symbol.endsWith('QQQ') ? 'QQQ' : 'SPY'} = pengecut 👎</p>
+          <p>👴 Boomer Pension Fund</p>
+        )}
+        {['AAPL','MSFT','GOOGL','GOOG','AMZN','META','NVDA','TSLA'].some((s) => symbol.endsWith(s)) && (
+          <p>🧰 Magnificent 7</p>
         )}
       </div>
 
@@ -699,13 +702,13 @@ function ElectionCyclePageContent() {
               <SelectItem value="mid,current">Mid-Term + Current</SelectItem>
               <SelectItem value="post,current">Post-Election + Current</SelectItem>
               <SelectItem value="all,current">All Years + Current</SelectItem>
-              <SelectItem value="pre,election,mid,post,current">All Cycles + Current</SelectItem>
+              {/* <SelectItem value="pre,election,mid,post,current">All Cycles + Current</SelectItem> */}
             </SelectContent>
           </Select>
 
           <Button 
             onClick={() => setPortfolioDialogOpen(true)}
-            className="w-full bg-lime-500 hover:bg-lime-600 font-semibold"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 font-semibold"
           >
             Add to Your Portfolio
           </Button>
