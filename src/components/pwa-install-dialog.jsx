@@ -64,15 +64,15 @@ export function PWAInstallDialog() {
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
             <Download className="h-8 w-8 text-primary" />
           </div>
-          <DialogTitle className="text-xl font-bold">Install Aruna</DialogTitle>
+          <DialogTitle className="text-sm font-bold">Install Aruna</DialogTitle>
           <DialogDescription className="text-sm">
             Install Aruna on your device for quick access and a better experience. No app store needed!
           </DialogDescription>
           <div className="flex w-full gap-2">
-            <Button variant="outline" onClick={handleDismiss} className="flex-1">
+            <Button variant="outline" onClick={handleDismiss} className="flex-1 text-sm">
               Not Now
             </Button>
-            <Button onClick={handleInstall} className="flex-1 bg-emerald-600 hover:bg-emerald-700 font-semibold">
+            <Button onClick={handleInstall} className="flex-1 bg-emerald-600 hover:bg-emerald-700 font-semibold text-sm">
               Install
             </Button>
           </div>

@@ -447,29 +447,29 @@ function ElectionCyclePageContent() {
         <Button 
           onClick={() => setSearchDialogOpen(true)}
           variant="outline" 
-          className="w-auto h-10 justify-center text-center font-normal"
+          className="w-auto h-10 justify-center text-center font-normal text-sm"
         >
           <span className="truncate font-semibold">{symbol}</span>
           <Search className="h-4 w-4"/>
         </Button>
         {symbol.endsWith('.JK') && (
-          <p>🇮🇩 Hey antek-antek asing!</p>
+          <p className="text-xs">🇮🇩 Hey antek-antek asing!</p>
         )}
         {symbol.endsWith('-USD') && (
-          <p>🚀 To the moon (katanya)</p>
+          <p className="text-xs">🚀 To the moon (katanya)</p>
         )}
         {['QQQ', 'SPY'].some((s) => symbol.endsWith(s)) && (
-          <p>👴 Boomer Pension Fund</p>
+          <p className="text-xs">👴 Boomer Pension Fund</p>
         )}
         {['AAPL','MSFT','GOOGL','GOOG','AMZN','META','NVDA','TSLA'].some((s) => symbol.endsWith(s)) && (
-          <p>🧰 Magnificent 7</p>
+          <p className="text-xs">🧰 Magnificent 7</p>
         )}
       </div>
 
       <Dialog open={searchDialogOpen} onOpenChange={setSearchDialogOpen}>
         <DialogContent className="fixed max-w-none h-screen rounded-none p-0 flex flex-col" closeButtonPosition="right">
           <div className="flex items-center gap-2 p-4 border-b">
-            <DialogTitle className="text-lg">Search Symbol</DialogTitle>
+            <DialogTitle className="text-base">Search Symbol</DialogTitle>
           </div>
           
           <div className="flex-1 overflow-auto">
@@ -481,7 +481,7 @@ function ElectionCyclePageContent() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search ticker or company name..."
-                  className="w-full h-12 pl-10 pr-4 rounded-lg border border-input bg-background text-base shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full h-12 pl-10 pr-4 rounded-lg border border-input bg-background text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
 
@@ -502,8 +502,8 @@ function ElectionCyclePageContent() {
                         onClick={() => selectSymbol(r)}
                         className="w-full text-left p-4 rounded-lg hover:bg-accent active:bg-accent/80 transition-colors flex flex-col gap-1"
                       >
-                        <span className="font-semibold text-base">{r.symbol}</span>
-                        <span className="text-sm text-muted-foreground line-clamp-1">{r.name}</span>
+                        <span className="font-semibold text-sm">{r.symbol}</span>
+                        <span className="text-xs text-muted-foreground line-clamp-1">{r.name}</span>
                       </button>
                     ))}
                   </div>
@@ -511,7 +511,7 @@ function ElectionCyclePageContent() {
               )}
 
               {!searchLoading && searchQuery && searchResults.length === 0 && (
-                <p className="text-center text-muted-foreground py-8">No results found</p>
+                <p className="text-sm text-center text-muted-foreground py-8">No results found</p>
               )}
 
               {!searchQuery && searchHistory.length > 0 && (
@@ -612,8 +612,8 @@ function ElectionCyclePageContent() {
             <CardHeader>
               <div className="flex items-baseline justify-between">
                 <div className="flex-1">
-                  <CardDescription className="text-sm mb-1">{assetName}</CardDescription>
-                  <CardTitle className="text-3xl font-bold flex justify-between items-start">
+                  <CardDescription className="text-xs mb-1">{assetName}</CardDescription>
+                  <CardTitle className="mt-2 text-2xl font-bold flex justify-between items-start">
                     {symbolInfo?.currentPrice 
                       ? `${Math.round(symbolInfo.currentPrice).toLocaleString()}` 
                       : '-'}
@@ -622,7 +622,7 @@ function ElectionCyclePageContent() {
                         <RadioGroupItem value="linear" id="linear" className="peer sr-only" />
                         <Label
                           htmlFor="linear"
-                          className="flex items-center justify-center h-8 px-2 rounded-md border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground cursor-pointer transition-colors"
+                          className="flex items-center justify-center h-6 px-2 rounded-md border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground cursor-pointer transition-colors text-xs"
                         >
                           Linear
                         </Label>
@@ -631,7 +631,7 @@ function ElectionCyclePageContent() {
                         <RadioGroupItem value="log" id="log" className="peer sr-only" />
                         <Label
                           htmlFor="log"
-                          className="flex items-center justify-center h-8 px-2 rounded-md border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground cursor-pointer transition-colors"
+                          className="flex items-center justify-center h-6 px-2 rounded-md border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground cursor-pointer transition-colors text-xs"
                         >
                           Logarithmic
                         </Label>
@@ -716,7 +716,7 @@ function ElectionCyclePageContent() {
             value={selectedCycles.join(',')}
             onValueChange={(value) => setSelectedCycles(value.split(','))}
           >
-            <SelectTrigger className="h-11">
+            <SelectTrigger className="h-8">
               <SelectValue placeholder="Select cycles" />
             </SelectTrigger>
             <SelectContent>
@@ -731,7 +731,7 @@ function ElectionCyclePageContent() {
 
           <Button 
             onClick={() => setPortfolioDialogOpen(true)}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 font-semibold"
+            className="w-full bg-emerald-600 hover:bg-emerald-700 font-semibold text-sm"
           >
             Add to Your Portfolio
           </Button>
@@ -768,7 +768,7 @@ function ElectionCyclePageContent() {
                         </tr>
                       ))}
                       <tr className="border-t-2 font-semibold bg-muted/50">
-                        <td className="py-2 px-1 sticky left-0 bg-muted/50">Avg</td>
+                        <td className="py-2 px-1 sticky left-0 bg-muted/50">Avg.</td>
                         {[1, 2, 3, 4].map(quarter => {
                           const value = quarterlyHeatmap.average[`Q${quarter}`];
                           const bg = cellBgStyle(value);
@@ -816,7 +816,7 @@ function ElectionCyclePageContent() {
                         </tr>
                       ))}
                       <tr className="border-t-2 font-semibold bg-muted/50">
-                        <td className="py-2 px-1 sticky left-0 bg-muted/50">Avg</td>
+                        <td className="py-2 px-1 sticky left-0 bg-muted/50">Avg.</td>
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(month => {
                           const value = monthlyHeatmap.average[`M${month}`];
                           const bg = cellBgStyle(value);

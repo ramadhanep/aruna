@@ -27,7 +27,7 @@ export function PortfolioPie({ netWorthUSD, digitalUSD, cashUSD, currency = 'USD
   };
 
   return (
-    <ChartContainer config={config} className="aspect-[16/9] min-h-80 max-w-full">
+    <ChartContainer config={config} className="aspect-[16/9] w-full h-auto">
       <PieChart margin={{ top: 8, right: 16, bottom: 28, left: 16 }}>
         <Pie
           data={data}

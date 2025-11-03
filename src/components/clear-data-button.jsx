@@ -36,7 +36,7 @@ export function ClearDataButton() {
           <Cookie className="h-5 w-5" />
         </button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent closeButtonPosition="right">
         <DialogHeader>
           <DialogTitle>Reset local data?</DialogTitle>
           <DialogDescription>

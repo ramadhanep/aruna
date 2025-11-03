@@ -108,14 +108,14 @@ function StockItem({ quote }) {
   return (
     <Link href={`/election-cycle?symbol=${encodeURIComponent(quote.symbol)}`} className="flex items-center gap-3 py-3 px-4 hover:bg-accent/30 transition-colors">
       <div className="flex-1 min-w-0">
-        <div className="font-semibold text-base truncate">{quote.symbol}</div>
+        <div className="font-semibold text-sm truncate">{quote.symbol}</div>
         <div className="text-xs text-muted-foreground truncate">{quote.name}</div>
       </div>
       <div className={`flex items-center ${color}`}>
         <MiniChart data={quote.chartData} isPositive={isPositive} />
       </div>
       <div className="flex flex-col items-end">
-        <div className="font-semibold text-base">{quote.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        <div className="font-semibold text-sm">{quote.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         <div className={`text-xs font-medium flex items-center gap-1 ${color}`}>
           {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
           {isPositive ? '+' : ''}{quote.changePercent.toFixed(2)}%
@@ -370,7 +370,7 @@ export default function HomePage() {
       {showInstallButton && deferredPrompt && (
         <Button 
           onClick={handleInstall}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 flex items-center gap-2"
+          className="w-full bg-emerald-600 hover:bg-emerald-700 flex items-center gap-2 text-sm"
         >
           <Download className="h-4 w-4" />
           Install App

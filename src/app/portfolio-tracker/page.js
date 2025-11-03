@@ -480,7 +480,7 @@ export default function PortfolioTrackerPage() {
       )}
       <Card className="p-4">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-lg font-semibold">Overview</CardTitle>
+          <CardTitle className="text-base font-semibold text-sm">Overview</CardTitle>
           <Select value={currency} onValueChange={setCurrency}>
             <SelectTrigger className="w-[100px] h-8">
               <SelectValue />
@@ -495,7 +495,7 @@ export default function PortfolioTrackerPage() {
           {/* Top summary always visible */}
           <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
             <div className="flex-1">
-              <p className="text-sm text-muted-foreground mb-1">Total Net Worth</p>
+              <p className="text-xs text-muted-foreground mb-1">Total Net Worth</p>
               <p className="text-xl font-bold">{formatValue(totalNetWorth).primary}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{formatValue(totalNetWorth).secondary}</p>
             </div>
@@ -507,13 +507,13 @@ export default function PortfolioTrackerPage() {
           {/* Accordion for details */}
           <div className="rounded-md border">
             <details>
-              <summary className="list-none cursor-pointer select-none text-center text-sm text-emerald-600 py-1">
+              <summary className="text-xs list-none cursor-pointer select-none text-center text-sm text-emerald-600 py-1">
                 View Digital Assets and Total Cash
               </summary>
               <div className="space-y-2 p-3 pt-1">
                 <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
                   <div className="flex-1">
-                    <p className="text-sm text-muted-foreground mb-1">Digital Assets</p>
+                    <p className="text-xs text-muted-foreground mb-1">Digital Assets</p>
                     <p className="text-xl font-semibold">{formatValue(digitalMarket).primary}</p>
                     <p className="text-xs text-muted-foreground">{formatValue(digitalMarket).secondary}</p>
                     <div className="mt-1.5 flex items-center gap-1">
@@ -532,7 +532,7 @@ export default function PortfolioTrackerPage() {
 
                 <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
                   <div className="flex-1">
-                    <p className="text-sm text-muted-foreground mb-1">Total Cash</p>
+                    <p className="text-xs text-muted-foreground mb-1">Total Cash</p>
                     <p className="text-xl font-semibold">{formatValue(totalCash).primary}</p>
                     <p className="text-xs text-muted-foreground">{formatValue(totalCash).secondary}</p>
                   </div>
@@ -546,7 +546,7 @@ export default function PortfolioTrackerPage() {
 
           {/* Collapsible pie chart trigger and content (collapsed by default) */}
           <details>
-            <summary className="list-none cursor-pointer select-none text-center text-sm text-primary underline py-1">
+            <summary className="text-xs list-none cursor-pointer select-none text-center text-sm text-primary underline py-1">
               View distribution chart
             </summary>
             <div className="pt-2">
@@ -569,11 +569,11 @@ export default function PortfolioTrackerPage() {
 
       <Card className="p-4">
         <CardHeader>
-          <CardTitle className="text-lg font-semibold">Holdings</CardTitle>
+          <CardTitle className="text-base font-semibold">Holdings</CardTitle>
         </CardHeader>
         <CardContent>
           {entries.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-8">
+            <p className="text-xs text-muted-foreground text-center py-8">
               No assets yet. Tap the <span className="text-primary font-medium">+</span> button below to add your first asset.
             </p>
           )}
@@ -628,7 +628,7 @@ export default function PortfolioTrackerPage() {
                         <p className="text-sm font-semibold">{formatted.primary}</p>
                         <p className="text-[10px] text-muted-foreground">{formatted.secondary}</p>
                       </div>
-                      <DropdownMenu>
+                      <DropdownMenu className="text-xs">
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                             <MoreVertical className="h-4 w-4" />
@@ -657,12 +657,12 @@ export default function PortfolioTrackerPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="fixed max-w-none m-0 h-screen rounded-none p-0 flex flex-col" closeButtonPosition="right">
           <div className="flex items-center gap-2 p-4 border-b">
-            <DialogTitle className="text-lg">{editingIndex != null ? 'Edit Asset' : 'Add Asset'}</DialogTitle>
+            <DialogTitle className="text-sm">{editingIndex != null ? 'Edit Asset' : 'Add Asset'}</DialogTitle>
           </div>
           
           <div className="flex-1 overflow-auto">
             <div className="p-4">
-              <DialogDescription className="mb-4">
+              <DialogDescription className="mb-4 text-xs">
                 Record your {assetType === 'cash' ? 'cash' : 'digital asset'} details. 
                 {assetType === 'digital'}
               </DialogDescription>
