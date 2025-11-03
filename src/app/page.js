@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
-import { TrendingUp, TrendingDown, Loader2, Download, Edit } from "lucide-react";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { TrendingUp, TrendingDown, Loader2, Download, Edit, BarChart3 } from "lucide-react";
+import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ManageWatchlistDialog } from "@/components/manage-watchlist-dialog";
 
@@ -43,7 +43,7 @@ async function fetchQuote(symbol) {
   try {
     const endDate = Math.floor(Date.now() / 1000);
     const startDate = endDate - 60 * 60 * 24 * 5; // 5 days
-    const res = await fetch(`/api/yahoo-finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`);
+    const res = await fetch(`/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`);
     if (!res.ok) return null;
     const json = await res.json();
     const data = json.data || [];
@@ -152,9 +152,6 @@ function ShimmerItem() {
 export default function HomePage() {
   const [watchlist, setWatchlist] = useState(() => loadWatchlist());
   const [quotes, setQuotes] = useState([]);
-  const [m7Quotes, setM7Quotes] = useState([]);
-  const [indoQuotes, setIndoQuotes] = useState([]);
-  const [cryptoQuotes, setCryptoQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
@@ -163,6 +160,17 @@ export default function HomePage() {
   const [manageDialogOpen, setManageDialogOpen] = useState(false);
   const touchStartY = useRef(0);
   const containerRef = useRef(null);
+
+  const marketPulse = useMemo(() => {
+    if (!quotes.length) {
+      return null;
+    }
+    const sorted = [...quotes].sort((a, b) => b.changePercent - a.changePercent);
+    const topGainer = sorted[0];
+    const topLoser = sorted[sorted.length - 1];
+    const averageChange = sorted.reduce((sum, item) => sum + item.changePercent, 0) / sorted.length;
+    return { topGainer, topLoser, averageChange };
+  }, [quotes]);
 
   const loadQuotes = useCallback(async () => {
     const sorted = [...watchlist].sort((a, b) => a.order - b.order);
@@ -173,28 +181,14 @@ export default function HomePage() {
     setQuotes(quotesData.filter(q => q !== null));
   }, [watchlist]);
 
-  const loadMarketOverviews = useCallback(async () => {
-    const m7 = ['AAPL','MSFT','GOOGL','AMZN','NVDA','META','TSLA'];
-    const indo = ['BBCA.JK','BBRI.JK','ASII.JK'];
-    const crypto = ['BTC-USD','ETH-USD'];
-    const [m7Data, indoData, cryptoData] = await Promise.all([
-      Promise.all(m7.map(fetchQuote)),
-      Promise.all(indo.map(fetchQuote)),
-      Promise.all(crypto.map(fetchQuote)),
-    ]);
-    setM7Quotes(m7Data.filter(Boolean));
-    setIndoQuotes(indoData.filter(Boolean));
-    setCryptoQuotes(cryptoData.filter(Boolean));
-  }, []);
-
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      await Promise.all([loadQuotes(), loadMarketOverviews()]);
+      await loadQuotes();
       setLoading(false);
     };
     init();
-  }, [loadQuotes, loadMarketOverviews]);
+  }, [loadQuotes]);
 
   // Check if app is installable
   useEffect(() => {
@@ -338,34 +332,49 @@ export default function HomePage() {
         </div>
       </div>
 
-      <div className="border rounded-lg overflow-hidden bg-card">
-        <SectionHeader title="Magnificent 7" />
-        <div className="divide-y">
-          {m7Quotes.map(quote => (
-            <StockItem key={quote.symbol} quote={quote} />
-          ))}
-        </div>
-      </div>
-
-      <div className="border rounded-lg overflow-hidden bg-card">
-        <SectionHeader title="Indonesian Stocks" />
-        <div className="divide-y">
-          {indoQuotes.map(quote => (
-            <StockItem key={quote.symbol} quote={quote} />
-          ))}
-        </div>
-      </div>
-
-      <div className="border rounded-lg overflow-hidden bg-card">
-        <SectionHeader title="Crypto" />
-        <div className="divide-y">
-          {cryptoQuotes.map(quote => (
-            <StockItem key={quote.symbol} quote={quote} />
-          ))}
-        </div>
-      </div>
-
-      
+      {marketPulse && marketPulse.topGainer && marketPulse.topLoser && (
+        <Card className="p-4">
+          <CardHeader className="pb-0">
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-base">Market Pulse</CardTitle>
+            </div>
+            <CardDescription className="text-xs">How your watchlist is moving today</CardDescription>
+          </CardHeader>
+          <CardContent className="mt-4 grid gap-3">
+            <div className="flex items-center justify-between rounded-lg border bg-card px-3 py-2">
+              <div>
+                <p className="text-xs text-muted-foreground">Top Gainer</p>
+                <p className="text-sm font-semibold uppercase">{marketPulse.topGainer.symbol}</p>
+                <p className={`text-xs font-medium ${marketPulse.topGainer.change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {marketPulse.topGainer.change >= 0 ? '+' : ''}{marketPulse.topGainer.change.toFixed(2)} ({marketPulse.topGainer.changePercent.toFixed(2)}%)
+                </p>
+              </div>
+              <div className={`flex items-center ${marketPulse.topGainer.change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                <MiniChart data={marketPulse.topGainer.chartData} isPositive={marketPulse.topGainer.change >= 0} />
+              </div>
+            </div>
+            <div className="flex items-center justify-between rounded-lg border bg-card px-3 py-2">
+              <div>
+                <p className="text-xs text-muted-foreground">Top Loser</p>
+                <p className="text-sm font-semibold uppercase">{marketPulse.topLoser.symbol}</p>
+                <p className={`text-xs font-medium ${marketPulse.topLoser.change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {marketPulse.topLoser.change >= 0 ? '+' : ''}{marketPulse.topLoser.change.toFixed(2)} ({marketPulse.topLoser.changePercent.toFixed(2)}%)
+                </p>
+              </div>
+              <div className={`flex items-center ${marketPulse.topLoser.change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                <MiniChart data={marketPulse.topLoser.chartData} isPositive={marketPulse.topLoser.change >= 0} />
+              </div>
+            </div>
+            <div className="rounded-lg border bg-card px-3 py-2">
+              <p className="text-xs text-muted-foreground">Average Change</p>
+              <p className={`text-sm font-semibold ${marketPulse.averageChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {marketPulse.averageChange >= 0 ? '+' : ''}{marketPulse.averageChange.toFixed(2)}%
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {showInstallButton && deferredPrompt && (
         <Button 

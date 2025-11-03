@@ -89,7 +89,7 @@ export default function PortfolioTrackerPage() {
     try {
       const endDate = Math.floor(Date.now() / 1000);
       const startDate = endDate - 60 * 60 * 24 * 5; // last ~5 days window
-      const res = await fetch(`/api/yahoo-finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`);
+      const res = await fetch(`/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`);
       if (!res.ok) return null;
       const json = await res.json();
       const data = json.data || [];
@@ -125,7 +125,7 @@ export default function PortfolioTrackerPage() {
       // Fetch FX rate
       const endDate = Math.floor(Date.now() / 1000);
       const startDate = endDate - 60 * 60 * 24 * 5;
-      const res = await fetch(`/api/yahoo-finance?symbol=IDR=X&startDate=${startDate}&endDate=${endDate}`);
+      const res = await fetch(`/api/finance?symbol=IDR=X&startDate=${startDate}&endDate=${endDate}`);
       if (res.ok) {
         const json = await res.json();
         const data = json.data || [];
@@ -189,7 +189,7 @@ export default function PortfolioTrackerPage() {
         // Fetch IDR=X from Yahoo Finance to get USD per IDR
         const endDate = Math.floor(Date.now() / 1000);
         const startDate = endDate - 60 * 60 * 24 * 5;
-        const res = await fetch(`/api/yahoo-finance?symbol=IDR=X&startDate=${startDate}&endDate=${endDate}`);
+        const res = await fetch(`/api/finance?symbol=IDR=X&startDate=${startDate}&endDate=${endDate}`);
         if (res.ok) {
           const json = await res.json();
           const data = json.data || [];
@@ -280,12 +280,26 @@ export default function PortfolioTrackerPage() {
 
   function openEdit(idx) {
     const e = entries[idx];
+    const isCash = e.type === 'cash';
+    let cashAmountDisplay = '';
+    if (isCash) {
+      if (typeof e.nativeAmount === 'number') {
+        cashAmountDisplay = String(e.nativeAmount);
+      } else {
+        const usdValue = e.avgPrice * e.amount;
+        if (e.cashCurrency === 'IDR' && fxRate > 0) {
+          cashAmountDisplay = String(usdValue / fxRate);
+        } else {
+          cashAmountDisplay = String(usdValue);
+        }
+      }
+    }
     setForm({
       symbol: e.symbol || '',
       name: e.name || '',
-      amount: String(e.amount),
+      amount: String(isCash ? cashAmountDisplay : e.amount),
       unit: e.unit || 'share',
-      avgPrice: String(e.avgPrice),
+      avgPrice: isCash ? '' : String(e.avgPrice),
       type: e.type || 'digital',
       category: e.category || '',
       cashCurrency: e.cashCurrency || 'USD'
@@ -307,27 +321,33 @@ export default function PortfolioTrackerPage() {
         alert('Please enter a category for cash asset (e.g., Bank BCA)');
         return;
       }
-      const avgPriceNum = parseFloat(form.avgPrice);
-      if (isNaN(avgPriceNum) || avgPriceNum <= 0) {
-        alert('Please enter the cash amount per unit');
+
+      const nativeAmount = amountNum;
+      if (nativeAmount <= 0 || isNaN(nativeAmount)) {
+        alert('Please enter the cash amount');
         return;
       }
-      
+
       // Convert to USD for storage
-      let avgPriceUSD = avgPriceNum;
-      if (form.cashCurrency === 'IDR' && fxRate > 0) {
-        avgPriceUSD = avgPriceNum * fxRate; // IDR * (USD per IDR) = USD
+      let totalUSD = nativeAmount;
+      if (form.cashCurrency === 'IDR') {
+        if (fxRate <= 0) {
+          alert('FX rate unavailable. Please refresh to update rates.');
+          return;
+        }
+        totalUSD = nativeAmount * fxRate; // IDR * (USD per IDR) = USD
       }
-      
+
       const entry = {
         symbol: `CASH_${form.cashCurrency}`,
         name: form.category,
-        amount: amountNum,
+        amount: 1,
         unit: 'unit',
-        avgPrice: avgPriceUSD,
+        avgPrice: totalUSD,
         type: 'cash',
         category: form.category,
-        cashCurrency: form.cashCurrency
+        cashCurrency: form.cashCurrency,
+        nativeAmount,
       };
       let newEntries = [...entries];
       if (editingIndex != null) {
@@ -433,6 +453,7 @@ export default function PortfolioTrackerPage() {
 
   // Total Net Worth
   const totalNetWorth = digitalMarket + totalCash;
+  const totalPnL = digitalPnL;
 
   function formatUSD(v) {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
@@ -491,81 +512,91 @@ export default function PortfolioTrackerPage() {
             </SelectContent>
           </Select>
         </CardHeader>
-        <CardContent className="space-y-2">
+        <CardContent className="space-y-3">
           {/* Top summary always visible */}
           <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
             <div className="flex-1">
-              <p className="text-xs text-muted-foreground mb-1">Total Net Worth</p>
-              <p className="text-xl font-bold">{formatValue(totalNetWorth).primary}</p>
+              <p className="text-sm text-muted-foreground mb-1">Total Net Worth</p>
+              <p className="text-lg font-bold">{formatValue(totalNetWorth).primary}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{formatValue(totalNetWorth).secondary}</p>
+              <div className="mt-1 flex items-center gap-1">
+                <span className={`text-xs font-medium ${totalPnL >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                  {totalPnL >= 0 ? '+' : ''}{formatValue(totalPnL).primary}
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  ({formatValue(totalPnL).secondary})
+                </span>
+              </div>
             </div>
             <div className="p-2 rounded-full bg-primary/10">
               <Wallet className="h-5 w-5 text-primary" />
             </div>
           </div>
 
-          {/* Accordion for details */}
-          <div className="rounded-md border">
-            <details>
-              <summary className="text-xs list-none cursor-pointer select-none text-center text-sm text-emerald-600 py-1">
-                View Digital Assets and Total Cash
-              </summary>
-              <div className="space-y-2 p-3 pt-1">
-                <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground mb-1">Digital Assets</p>
-                    <p className="text-xl font-semibold">{formatValue(digitalMarket).primary}</p>
-                    <p className="text-xs text-muted-foreground">{formatValue(digitalMarket).secondary}</p>
-                    <div className="mt-1.5 flex items-center gap-1">
-                      <span className={`text-xs font-medium ${digitalPnL >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                        {digitalPnL >= 0 ? '+' : ''}{formatValue(digitalPnL).primary}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground">
-                        ({formatValue(digitalPnL).secondary})
-                      </span>
+          <div className="flex flex-col gap-2">
+            <div className="rounded-md border">
+              <details>
+                <summary className="list-none cursor-pointer select-none text-center text-sm text-emerald-600 py-1">
+                  View Detail
+                </summary>
+                <div className="space-y-3 p-3 pt-1">
+                  <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground mb-1">Digital Assets</p>
+                      <p className="text-lg font-semibold">{formatValue(digitalMarket).primary}</p>
+                      <p className="text-xs text-muted-foreground">{formatValue(digitalMarket).secondary}</p>
+                      <div className="mt-1 flex items-center gap-1">
+                        <span className={`text-xs font-medium ${digitalPnL >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                          {digitalPnL >= 0 ? '+' : ''}{formatValue(digitalPnL).primary}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground">
+                          ({formatValue(digitalPnL).secondary})
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-2 rounded-full bg-blue-500/10">
+                      <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     </div>
                   </div>
-                  <div className="p-2 rounded-full bg-blue-500/10">
-                    <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+
+                  <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                    <div className="flex-1">
+                      <p className="text-sm text-muted-foreground mb-1">Total Cash</p>
+                      <p className="text-lg font-semibold">{formatValue(totalCash).primary}</p>
+                      <p className="text-xs text-muted-foreground">{formatValue(totalCash).secondary}</p>
+                    </div>
+                    <div className="p-2 rounded-full bg-emerald-600/10">
+                      <Coins className="h-5 w-5 text-emerald-700 dark:text-emerald-400" />
+                    </div>
                   </div>
                 </div>
-
-                <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
-                  <div className="flex-1">
-                    <p className="text-xs text-muted-foreground mb-1">Total Cash</p>
-                    <p className="text-xl font-semibold">{formatValue(totalCash).primary}</p>
-                    <p className="text-xs text-muted-foreground">{formatValue(totalCash).secondary}</p>
-                  </div>
-                  <div className="p-2 rounded-full bg-emerald-600/10">
-                    <Coins className="h-5 w-5 text-emerald-700 dark:text-emerald-400" />
-                  </div>
-                </div>
-              </div>
-            </details>
-          </div>
-
-          {/* Collapsible pie chart trigger and content (collapsed by default) */}
-          <details>
-            <summary className="text-xs list-none cursor-pointer select-none text-center text-sm text-primary underline py-1">
-              View distribution chart
-            </summary>
-            <div className="pt-2">
-              {/* Lazy import to avoid SSR mismatch issues */}
-              <PortfolioPie
-                netWorthUSD={totalNetWorth}
-                digitalUSD={digitalMarket}
-                cashUSD={totalCash}
-                currency={currency}
-                idrPerUsd={idrPerUsd}
-              />
+              </details>
             </div>
-          </details>
 
-          <p className="text-[10px] text-center text-muted-foreground">
-            FX Rate: {idrPerUsd > 0 ? formatIDR(idrPerUsd) : 'loading...'} per USD
-          </p>
+            <div className="rounded-md border">
+              <details>
+                <summary className="list-none cursor-pointer select-none text-center text-sm text-emerald-600 py-1">
+                  View Distribution Chart
+                </summary>
+                <div className="space-y-3 p-3 pt-1">
+                  <div className="rounded-lg border bg-card p-3">
+                    <PortfolioPie
+                      digitalUSD={digitalMarket}
+                      cashUSD={totalCash}
+                      currency={currency}
+                      idrPerUsd={idrPerUsd}
+                    />
+                  </div>
+                </div>
+              </details>
+            </div>
+          </div>
         </CardContent>
       </Card>
+
+      <p className="text-[10px] text-muted-foreground text-center">
+        FX Rate: {idrPerUsd > 0 ? formatIDR(idrPerUsd) : 'loading...'} per USD
+      </p>
 
       <Card className="p-4">
         <CardHeader>
@@ -581,12 +612,19 @@ export default function PortfolioTrackerPage() {
             <div className="space-y-2">
               {entries.map((e, idx) => {
                 const isCash = e.type === 'cash';
-                const effectiveAmount = isCash ? e.amount : getEffectiveAmount(e.amount, e.unit);
+                const effectiveAmount = isCash ? 1 : getEffectiveAmount(e.amount, e.unit);
                 const valueUSD = isCash ? e.avgPrice * e.amount : toUSD(e.symbol, e.avgPrice) * effectiveAmount;
                 const livePrice = priceMap[e.symbol];
                 const currentValueUSD = isCash ? valueUSD : (livePrice != null ? toUSD(e.symbol, livePrice) * effectiveAmount : valueUSD);
                 const pnl = currentValueUSD - valueUSD;
                 const formatted = formatValue(currentValueUSD);
+                const cashDisplayAmount = isCash
+                  ? (typeof e.nativeAmount === 'number'
+                      ? e.nativeAmount
+                      : (e.cashCurrency === 'IDR' && fxRate > 0
+                          ? (valueUSD / fxRate)
+                          : valueUSD))
+                  : null;
                 
                 return (
                   <div key={idx} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
@@ -610,7 +648,7 @@ export default function PortfolioTrackerPage() {
                       </div>
                       <div className="text-xs text-muted-foreground mt-0.5">
                         {isCash ? (
-                          <span>{e.amount} {e.cashCurrency} {e.cashCurrency === 'IDR' ? 'cash' : 'cash'}</span>
+                          <span>{(cashDisplayAmount ?? 0).toLocaleString()} {e.cashCurrency}</span>
                         ) : (
                           <span>{e.amount} {e.unit}</span>
                         )}
@@ -786,12 +824,12 @@ export default function PortfolioTrackerPage() {
                           id="cashAmount"
                           value={form.amount}
                           onChange={(e) => setForm(f => ({ ...f, amount: e.target.value }))}
-                          placeholder="1"
+                          placeholder="0"
                           type="number"
                           step="any"
                           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                         />
-                        <p className="text-xs text-muted-foreground">Usually 1 unit</p>
+                        <p className="text-xs text-muted-foreground">Total cash in selected currency</p>
                       </div>
                       <div className="flex flex-col gap-2">
                         <Label htmlFor="cashCurrency">Currency</Label>
@@ -805,20 +843,6 @@ export default function PortfolioTrackerPage() {
                           <option value="IDR">IDR</option>
                         </select>
                       </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="cashValue">Cash Value</Label>
-                      <input
-                        id="cashValue"
-                        value={form.avgPrice}
-                        onChange={(e) => setForm(f => ({ ...f, avgPrice: e.target.value }))}
-                        placeholder="0"
-                        type="number"
-                        step="any"
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                      />
-                      <p className="text-xs text-muted-foreground">Total cash value in {form.cashCurrency}</p>
                     </div>
                   </>
                 )}

@@ -21,7 +21,7 @@ async function fetchPrice(symbol) {
   try {
     const endDate = Math.floor(Date.now() / 1000);
     const startDate = endDate - 60 * 60 * 24 * 5;
-    const res = await fetch(`/api/yahoo-finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`);
+    const res = await fetch(`/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`);
     if (!res.ok) return null;
     const json = await res.json();
     const data = json.data || [];
@@ -52,7 +52,7 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
           // Fetch name from Yahoo Finance
           const endDate = Math.floor(Date.now() / 1000);
           const startDate = endDate - 60 * 60 * 24 * 5;
-          const res = await fetch(`/api/yahoo-finance?symbol=${initialSymbol}&startDate=${startDate}&endDate=${endDate}`);
+          const res = await fetch(`/api/finance?symbol=${initialSymbol}&startDate=${startDate}&endDate=${endDate}`);
           if (res.ok) {
             const json = await res.json();
             const name = json.meta?.name || initialSymbol;

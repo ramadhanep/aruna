@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   removeIncompleteYears,
@@ -22,20 +22,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogTitle, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Loader2, SmilePlus, Search, X, Clock, TrendingUp, DollarSign, Star, SearchCode } from "lucide-react";
+import { Loader2, Sun, MoonStar, Clock3 } from "lucide-react";
 import { useTheme } from 'next-themes';
 import { AddAssetModal } from "@/components/add-asset-modal";
 
 const CURRENT_LINE_COLOR = 'oklch(59.6% 0.145 163.225)';
-
-const SEARCH_HISTORY_KEY = 'aruna_search_history';
-const MAX_HISTORY_ITEMS = 10;
 
 function ElectionCyclePageContent() {
   const searchParams = useSearchParams();
@@ -52,11 +48,6 @@ function ElectionCyclePageContent() {
     return 'GOOGL';
   };
   const [symbol, setSymbol] = useState(getInitialSymbol);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
-  const [searchDialogOpen, setSearchDialogOpen] = useState(false);
-  const [searchHistory, setSearchHistory] = useState([]);
   const [scaleChoice, setScaleChoice] = useState('linear');
   const [loading, setLoading] = useState(false);
   const [rawLinesData, setRawLinesData] = useState([]);
@@ -65,7 +56,11 @@ function ElectionCyclePageContent() {
   const [monthlyHeatmap, setMonthlyHeatmap] = useState({ rows: [], average: {} });
   const [quarterlyHeatmap, setQuarterlyHeatmap] = useState({ rows: [], average: {} });
   const [portfolioDialogOpen, setPortfolioDialogOpen] = useState(false);
-  
+  const [fundamentals, setFundamentals] = useState(null);
+  const [fundamentalsLoading, setFundamentalsLoading] = useState(false);
+  const [metricView, setMetricView] = useState('marketCap');
+  const [metricPeriod, setMetricPeriod] = useState('trailing');
+
   const deriveDefaultCycles = () => {
     const y = new Date().getFullYear();
     const label = getElectionCycleLabel(y);
@@ -108,59 +103,47 @@ function ElectionCyclePageContent() {
   }, [symbol]);
 
   useEffect(() => {
-    const history = localStorage.getItem(SEARCH_HISTORY_KEY);
-    if (history) {
-      setSearchHistory(JSON.parse(history));
-    }
-  }, []);
-
-  useEffect(() => {
     fetchDataAndBuildChart();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [symbol, selectedCycles]);
 
   useEffect(() => {
-    const handler = setTimeout(async () => {
-      if (!searchQuery) {
-        setSearchResults([]);
-        return;
-      }
-      setSearchLoading(true);
+    if (!symbol) {
+      return;
+    }
+
+    let cancelled = false;
+    setFundamentals(null);
+    setFundamentalsLoading(true);
+    setMetricView('marketCap');
+    setMetricPeriod('trailing');
+
+    (async () => {
       try {
-        const res = await fetch(`/api/symbol-search?q=${encodeURIComponent(searchQuery)}`);
-        const json = await res.json();
-        setSearchResults(json.symbols || []);
-      } catch (e) {
-        console.warn('Symbol search failed', e);
+        const res = await fetch(`/api/fundamentals?symbol=${encodeURIComponent(symbol)}`);
+        if (!res.ok) {
+          throw new Error('Failed to load fundamentals');
+        }
+        const data = await res.json();
+        if (!cancelled) {
+          setFundamentals(data);
+        }
+      } catch (error) {
+        console.warn('Failed to fetch fundamentals', error);
+        if (!cancelled) {
+          setFundamentals(null);
+        }
       } finally {
-        setSearchLoading(false);
+        if (!cancelled) {
+          setFundamentalsLoading(false);
+        }
       }
-    }, 300);
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
+    })();
 
-  const addToSearchHistory = (symbolData) => {
-    const newHistory = [
-      symbolData,
-      ...searchHistory.filter(item => item.symbol !== symbolData.symbol)
-    ].slice(0, MAX_HISTORY_ITEMS);
-    
-    setSearchHistory(newHistory);
-    localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(newHistory));
-  };
-
-  const clearSearchHistory = () => {
-    setSearchHistory([]);
-    localStorage.removeItem(SEARCH_HISTORY_KEY);
-  };
-
-  const selectSymbol = (symbolData) => {
-    setSymbol(symbolData.symbol);
-    addToSearchHistory(symbolData);
-    setSearchQuery('');
-    setSearchResults([]);
-    setSearchDialogOpen(false);
-  };
+    return () => {
+      cancelled = true;
+    };
+  }, [symbol]);
 
   async function fetchDataAndBuildChart() {
     setLoading(true);
@@ -169,7 +152,7 @@ function ElectionCyclePageContent() {
       const endDate = Math.floor(Date.now() / 1000);
 
       const response = await fetch(
-        `/api/yahoo-finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`
+        `/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`
       );
 
       if (!response.ok) {
@@ -280,9 +263,20 @@ function ElectionCyclePageContent() {
       let startPrice = null;
       let predictedPrice = null;
       let predictedPct = null;
+      let dailyChange = null;
+      let dailyChangePct = null;
 
       if (rawData.length > 0) {
         currentPrice = rawData[rawData.length - 1].adjclose;
+        if (rawData.length > 1) {
+          const previousPrice = rawData[rawData.length - 2].adjclose;
+          if (previousPrice != null) {
+            dailyChange = currentPrice - previousPrice;
+            if (previousPrice !== 0) {
+              dailyChangePct = (dailyChange / previousPrice) * 100;
+            }
+          }
+        }
       }
 
       if (currentRaw.length > 0) {
@@ -307,11 +301,18 @@ function ElectionCyclePageContent() {
         }
       }
 
+      const marketState = json.meta?.marketState ? String(json.meta.marketState).toUpperCase() : 'CLOSED';
+      const isMarketOpen = ['REGULAR', 'OPEN', 'TRADING'].some(state => marketState.includes(state));
+
       setSymbolInfo({
         name: symbolName,
         currentPrice,
         predictedPrice,
         predictedPct,
+        dailyChange,
+        dailyChangePct,
+        isMarketOpen,
+        currency: json.meta?.currency,
       });
 
       const monthlyReturns = calculateMonthlyReturns(rawData);
@@ -441,114 +442,204 @@ function ElectionCyclePageContent() {
     return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
   };
 
+  const currencyCode = fundamentals?.profile?.currency || symbolInfo?.currency || 'USD';
+
+  const compactNumberFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat('en-US', {
+        notation: 'compact',
+        maximumFractionDigits: 2,
+      }),
+    []
+  );
+
+  const formatPlainNumber = useCallback((value) => {
+    if (value == null || value === '') return '—';
+    if (typeof value === 'number') {
+      return value.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    }
+    const numeric = Number(value);
+    if (!Number.isNaN(numeric)) {
+      return numeric.toLocaleString('en-US', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+    }
+    return String(value);
+  }, []);
+
+  const formatMetricDisplay = useCallback(
+    (value, metric) => {
+      if (value == null || Number.isNaN(value)) return '—';
+      if (metric === 'marketCap' || metric === 'enterpriseValue') {
+        return `${compactNumberFormatter.format(value)} ${currencyCode}`;
+      }
+      if (
+        metric === 'peRatio' ||
+        metric === 'forwardPeRatio' ||
+        metric === 'pbRatio' ||
+        metric === 'psRatio' ||
+        metric === 'evToEbitda' ||
+        metric === 'evToRevenue' ||
+        metric === 'pegRatio'
+      ) {
+        return Number(value).toFixed(2);
+      }
+      return Number(value).toLocaleString();
+    },
+    [compactNumberFormatter, currencyCode]
+  );
+
+  const metricOptions = useMemo(
+    () => [
+      { value: 'marketCap', label: 'Market Cap' },
+      { value: 'peRatio', label: 'P/E' },
+      { value: 'pbRatio', label: 'P/B' },
+      { value: 'psRatio', label: 'P/S' },
+      { value: 'evToEbitda', label: 'EV/EBITDA' },
+    ],
+    []
+  );
+
+  const selectedMetric = metricOptions.find((option) => option.value === metricView) || metricOptions[0];
+
+  const metricSeriesData = useMemo(() => {
+    const series = fundamentals?.metrics?.[metricPeriod]?.[metricView];
+    if (!series || series.length === 0) return [];
+
+    return series.map((entry) => {
+      const dateObj =
+        entry.date && !Number.isNaN(Date.parse(entry.date))
+          ? new Date(entry.date)
+          : entry.timestamp
+            ? new Date(entry.timestamp)
+            : null;
+      const iso = dateObj ? dateObj.toISOString().slice(0, 10) : entry.date || '';
+      const label = dateObj
+        ? dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+        : entry.date || '—';
+      return {
+        label,
+        iso,
+        value: entry.value,
+      };
+    });
+  }, [fundamentals, metricPeriod, metricView]);
+
+  const metricLatest = fundamentals?.latest?.[metricPeriod]?.[metricView] || null;
+  const metricLatestDisplay = metricLatest ? formatMetricDisplay(metricLatest.value, metricView) : '—';
+  const metricLatestDate = metricLatest?.date
+    ? new Date(metricLatest.date).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : null;
+
+  const metricYAxisFormatter = useCallback(
+    (value) => {
+      if (value == null || Number.isNaN(value)) return '';
+      if (metricView === 'marketCap' || metricView === 'enterpriseValue') {
+        return compactNumberFormatter.format(value);
+      }
+      return Number(value).toFixed(1);
+    },
+    [compactNumberFormatter, metricView]
+  );
+
+  const metricTooltipFormatter = useCallback(
+    (value) => formatMetricDisplay(value, metricView),
+    [formatMetricDisplay, metricView]
+  );
+
+  const metricPeriodDescription =
+    metricPeriod === 'trailing' ? 'Trailing twelve months data' : 'Quarterly reported values';
+
+  const periodOptions = useMemo(
+    () => [
+      { value: 'trailing', label: 'Trailing' },
+      { value: 'quarterly', label: 'Quarterly' },
+    ],
+    []
+  );
+
+  const quickStats = useMemo(() => {
+    if (!fundamentals) return [];
+    const trailing = fundamentals.latest?.trailing || {};
+    const stats = [
+      { label: 'Market Cap', value: formatMetricDisplay(trailing.marketCap?.value, 'marketCap') },
+      { label: 'P/E (TTM)', value: formatMetricDisplay(trailing.peRatio?.value, 'peRatio') },
+      { label: 'Forward P/E', value: formatMetricDisplay(trailing.forwardPeRatio?.value, 'peRatio') },
+      { label: 'P/B', value: formatMetricDisplay(trailing.pbRatio?.value, 'pbRatio') },
+      { label: 'P/S', value: formatMetricDisplay(trailing.psRatio?.value, 'psRatio') },
+      { label: 'EV/EBITDA', value: formatMetricDisplay(trailing.evToEbitda?.value, 'evToEbitda') },
+      { label: 'PEG', value: formatMetricDisplay(trailing.pegRatio?.value, 'pegRatio') },
+      { label: '52W Range', value: formatPlainNumber(fundamentals.price?.fiftyTwoWeekRange) },
+      { label: 'Day Range', value: formatPlainNumber(fundamentals.price?.dayRange) },
+      { label: 'Volume', value: formatPlainNumber(fundamentals.price?.volume) },
+      { label: 'Previous Close', value: formatPlainNumber(fundamentals.price?.previousClose) },
+      { label: 'Open', value: formatPlainNumber(fundamentals.price?.open) },
+    ];
+    return stats.filter((item) => item.value && item.value !== '—');
+  }, [fundamentals, formatMetricDisplay, formatPlainNumber]);
+
+  const marketStateInfo = useMemo(() => {
+    const stateRaw = fundamentals?.profile?.marketState;
+    if (!stateRaw) {
+      if (symbolInfo?.isMarketOpen) {
+        return { label: 'Market Open', tone: 'text-emerald-600 dark:text-emerald-400', Icon: Sun };
+      }
+      return null;
+    }
+    const state = String(stateRaw).toUpperCase();
+    if (state.includes('REGULAR') || state === 'OPEN') {
+      return { label: 'Market Open', tone: 'text-emerald-600 dark:text-emerald-400', Icon: Sun };
+    }
+    if (state.includes('PRE')) {
+      return { label: 'Pre-Market', tone: 'text-amber-500', Icon: Clock3 };
+    }
+    if (state.includes('POST')) {
+      return { label: 'Post-Market', tone: 'text-blue-500', Icon: Clock3 };
+    }
+    return { label: 'Market Closed', tone: 'text-muted-foreground', Icon: MoonStar };
+  }, [fundamentals?.profile?.marketState, symbolInfo?.isMarketOpen]);
+
+  const logoUrl = fundamentals?.profile?.logoUrl || null;
+  const MarketStateIcon = marketStateInfo?.Icon;
+
   return (
     <div className="flex flex-col gap-4">
-      <div className="w-full flex items-center gap-4">
-        <Button 
-          onClick={() => setSearchDialogOpen(true)}
-          variant="outline" 
-          className="w-auto h-10 justify-center text-center font-normal text-sm"
-        >
-          <span className="truncate font-semibold">{symbol}</span>
-          <Search className="h-4 w-4"/>
-        </Button>
-        {symbol.endsWith('.JK') && (
-          <p className="text-xs">🇮🇩 Hey antek-antek asing!</p>
-        )}
-        {symbol.endsWith('-USD') && (
-          <p className="text-xs">🚀 To the moon (katanya)</p>
-        )}
-        {['QQQ', 'SPY'].some((s) => symbol.endsWith(s)) && (
-          <p className="text-xs">👴 Boomer Pension Fund</p>
-        )}
-        {['AAPL','MSFT','GOOGL','GOOG','AMZN','META','NVDA','TSLA'].some((s) => symbol.endsWith(s)) && (
-          <p className="text-xs">🧰 Magnificent 7</p>
-        )}
+      <div className="flex flex-col gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoUrl}
+              alt={`${assetName || symbol} logo`}
+              className="h-8 w-8 rounded-full border border-border bg-background object-contain p-1"
+              loading="lazy"
+            />
+          )}
+          <h1 className="text-base font-bold uppercase">
+            {symbol}
+          </h1>
+          {symbol.endsWith('.JK') && (
+            <span className="text-xs">🇮🇩 Hey antek-antek asing!</span>
+          )}
+          {symbol.endsWith('-USD') && (
+            <span className="text-xs">🚀 To the moon (katanya)</span>
+          )}
+          {['QQQ', 'SPY'].some((s) => symbol.endsWith(s)) && (
+            <span className="text-xs">👴 Boomer Pension Fund</span>
+          )}
+          {['AAPL','MSFT','GOOGL','GOOG','AMZN','META','NVDA','TSLA'].some((s) => symbol.endsWith(s)) && (
+            <span className="text-xs">🧰 Magnificent 7</span>
+          )}
+        </div>
       </div>
-
-      <Dialog open={searchDialogOpen} onOpenChange={setSearchDialogOpen}>
-        <DialogContent className="fixed max-w-none h-screen rounded-none p-0 flex flex-col" closeButtonPosition="right">
-          <div className="flex items-center gap-2 p-4 border-b">
-            <DialogTitle className="text-base">Search Symbol</DialogTitle>
-          </div>
-          
-          <div className="flex-1 overflow-auto">
-            <div className="p-4 space-y-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <input
-                  autoFocus
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search ticker or company name..."
-                  className="w-full h-12 pl-10 pr-4 rounded-lg border border-input bg-background text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                />
-              </div>
-
-              {searchLoading && (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              )}
-
-              {!searchLoading && searchResults.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-muted-foreground px-2">Search Results</p>
-                  <div className="space-y-1">
-                    {searchResults.map(r => (
-                      <button
-                        key={r.symbol}
-                        type="button"
-                        onClick={() => selectSymbol(r)}
-                        className="w-full text-left p-4 rounded-lg hover:bg-accent active:bg-accent/80 transition-colors flex flex-col gap-1"
-                      >
-                        <span className="font-semibold text-sm">{r.symbol}</span>
-                        <span className="text-xs text-muted-foreground line-clamp-1">{r.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {!searchLoading && searchQuery && searchResults.length === 0 && (
-                <p className="text-sm text-center text-muted-foreground py-8">No results found</p>
-              )}
-
-              {!searchQuery && searchHistory.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between px-2">
-                    <p className="text-sm font-medium text-muted-foreground flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      Recent Searches
-                    </p>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={clearSearchHistory}
-                      className="text-xs h-7"
-                    >
-                      Clear
-                    </Button>
-                  </div>
-                  <div className="space-y-1">
-                    {searchHistory.map(item => (
-                      <button
-                        key={item.symbol}
-                        type="button"
-                        onClick={() => selectSymbol(item)}
-                        className="w-full text-left p-4 rounded-lg hover:bg-accent active:bg-accent/80 transition-colors flex flex-col gap-1"
-                      >
-                        <span className="font-semibold text-base">{item.symbol}</span>
-                        <span className="text-sm text-muted-foreground line-clamp-1">{item.name}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {loading && (
         <>
@@ -610,35 +701,57 @@ function ElectionCyclePageContent() {
         <>
           <Card className="overflow-hidden bg-transparent border-none rounded-none">
             <CardHeader>
-              <div className="flex items-baseline justify-between">
-                <div className="flex-1">
-                  <CardDescription className="text-xs mb-1">{assetName}</CardDescription>
-                  <CardTitle className="mt-2 text-2xl font-bold flex justify-between items-start">
-                    {symbolInfo?.currentPrice 
-                      ? `${Math.round(symbolInfo.currentPrice).toLocaleString()}` 
-                      : '-'}
-                    <RadioGroup value={scaleChoice} onValueChange={setScaleChoice} className="flex gap-2">
-                      <div className="flex-1">
-                        <RadioGroupItem value="linear" id="linear" className="peer sr-only" />
-                        <Label
-                          htmlFor="linear"
-                          className="flex items-center justify-center h-6 px-2 rounded-md border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground cursor-pointer transition-colors text-xs"
-                        >
-                          Linear
-                        </Label>
-                      </div>
-                      <div className="flex-1">
-                        <RadioGroupItem value="log" id="log" className="peer sr-only" />
-                        <Label
-                          htmlFor="log"
-                          className="flex items-center justify-center h-6 px-2 rounded-md border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground cursor-pointer transition-colors text-xs"
-                        >
-                          Logarithmic
-                        </Label>
-                      </div>
-                    </RadioGroup>
-                  </CardTitle>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex flex-col gap-2">
+                  <CardDescription className="text-xs">{assetName}</CardDescription>
+                  {marketStateInfo ? (
+                    <span className={`flex items-center gap-1 text-xs font-medium ${marketStateInfo.tone}`}>
+                      {MarketStateIcon ? <MarketStateIcon className="h-3 w-3" /> : null}
+                      {marketStateInfo.label}
+                    </span>
+                  ) : null}
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-xl font-bold">
+                      {symbolInfo?.currentPrice != null
+                        ? symbolInfo.currentPrice.toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
+                        : '-'}
+                    </span>
+                    {symbolInfo?.currency && (
+                      <span className="text-xs text-muted-foreground">{symbolInfo.currency}</span>
+                    )}
+                  </div>
+                  {symbolInfo?.dailyChange != null && symbolInfo?.dailyChangePct != null && (
+                    <span
+                      className={`text-sm font-medium ${symbolInfo.dailyChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                    >
+                      {symbolInfo.dailyChange >= 0 ? '+' : ''}
+                      {symbolInfo.dailyChange.toFixed(2)} ({symbolInfo.dailyChangePct.toFixed(2)}%)
+                    </span>
+                  )}
                 </div>
+                <RadioGroup value={scaleChoice} onValueChange={setScaleChoice} className="flex gap-2">
+                  <div className="flex-1">
+                    <RadioGroupItem value="linear" id="linear" className="peer sr-only" />
+                    <Label
+                      htmlFor="linear"
+                      className="flex items-center justify-center h-6 px-2 rounded-md border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground cursor-pointer transition-colors text-xs"
+                    >
+                      Linear
+                    </Label>
+                  </div>
+                  <div className="flex-1">
+                    <RadioGroupItem value="log" id="log" className="peer sr-only" />
+                    <Label
+                      htmlFor="log"
+                      className="flex items-center justify-center h-6 px-2 rounded-md border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground cursor-pointer transition-colors text-xs"
+                    >
+                      Logarithmic
+                    </Label>
+                  </div>
+                </RadioGroup>
               </div>
             </CardHeader>
             <CardContent className="px-0 -mr-5 pb-0">
@@ -735,6 +848,145 @@ function ElectionCyclePageContent() {
           >
             Add to Your Portfolio
           </Button>
+
+          {(fundamentalsLoading || fundamentals) && (
+            <div className="space-y-3">
+              <Card className="p-4">
+                <CardHeader>
+                  <CardTitle className="text-base">Fundamental Snapshot</CardTitle>
+                  <CardDescription className="text-xs">
+                    Latest valuation ratios and price context
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {fundamentalsLoading ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      {[...Array(6)].map((_, idx) => (
+                        <div key={idx} className="space-y-1">
+                          <div className="h-3 w-24 rounded bg-muted animate-pulse"></div>
+                          <div className="h-4 w-20 rounded bg-muted animate-pulse"></div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : quickStats.length > 0 ? (
+                    <dl className="grid grid-cols-2 gap-3">
+                      {quickStats.map((item) => (
+                        <div key={item.label} className="space-y-1">
+                          <dt className="text-xs text-muted-foreground">{item.label}</dt>
+                          <dd className="text-sm font-medium">{item.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      Fundamentals unavailable for {symbol}.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="p-4">
+                <CardHeader>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <CardTitle className="text-base">Fundamental Trends</CardTitle>
+                      <CardDescription className="text-xs">{metricPeriodDescription}</CardDescription>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Select value={metricView} onValueChange={setMetricView}>
+                        <SelectTrigger className="h-8 w-[180px]">
+                          <SelectValue placeholder="Metric" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {metricOptions.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <div className="flex items-center gap-2">
+                        {periodOptions.map((option) => (
+                          <Button
+                            key={option.value}
+                            type="button"
+                            variant={metricPeriod === option.value ? 'default' : 'outline'}
+                            size="sm"
+                            className="h-8 px-3 text-xs"
+                            onClick={() => setMetricPeriod(option.value)}
+                          >
+                            {option.label}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {fundamentalsLoading ? (
+                    <div className="h-48 w-full rounded-lg bg-muted animate-pulse"></div>
+                  ) : metricSeriesData.length > 0 ? (
+                    <>
+                      <div className="flex flex-wrap items-baseline justify-between gap-2">
+                        <span className="text-sm font-semibold">{metricLatestDisplay}</span>
+                        {metricLatestDate && (
+                          <span className="text-xs text-muted-foreground">As of {metricLatestDate}</span>
+                        )}
+                      </div>
+                      <ResponsiveContainer width="100%" height={240}>
+                        <LineChart data={metricSeriesData} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
+                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                          <XAxis
+                            dataKey="label"
+                            tick={{ fontSize: 10 }}
+                            minTickGap={16}
+                          />
+                          <YAxis
+                            tickFormatter={metricYAxisFormatter}
+                            width={50}
+                            axisLine={false}
+                            tick={{ fontSize: 10 }}
+                          />
+                          <Tooltip
+                            formatter={(value) => metricTooltipFormatter(value)}
+                            labelFormatter={(_, payload) => {
+                              const iso = payload?.[0]?.payload?.iso;
+                              if (!iso) return '';
+                              const date = new Date(iso);
+                              if (Number.isNaN(date.getTime())) return iso;
+                              return date.toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric',
+                              });
+                            }}
+                            contentStyle={{
+                              backgroundColor: 'hsl(var(--background))',
+                              border: '1px solid hsl(var(--border))',
+                              borderRadius: '8px',
+                              fontSize: '12px',
+                            }}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="value"
+                            stroke={CURRENT_LINE_COLOR}
+                            name={selectedMetric?.label}
+                            strokeWidth={2}
+                            dot={false}
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    </>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">
+                      No {metricPeriod === 'trailing' ? 'trailing' : 'quarterly'} data for {selectedMetric?.label}.
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
 
           <Accordion type="single" collapsible defaultValue="quarterly" className="border rounded-lg">
             <AccordionItem value="quarterly" className="border-b-0">
@@ -833,9 +1085,10 @@ function ElectionCyclePageContent() {
               </AccordionContent>
             </AccordionItem>
           </Accordion>
+
         </>
       )}
-      
+
       <AddAssetModal 
         open={portfolioDialogOpen} 
         onOpenChange={setPortfolioDialogOpen}
