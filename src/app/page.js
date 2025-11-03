@@ -152,6 +152,9 @@ function ShimmerItem() {
 export default function HomePage() {
   const [watchlist, setWatchlist] = useState(() => loadWatchlist());
   const [quotes, setQuotes] = useState([]);
+  const [m7Quotes, setM7Quotes] = useState([]);
+  const [indoQuotes, setIndoQuotes] = useState([]);
+  const [cryptoQuotes, setCryptoQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
@@ -170,14 +173,28 @@ export default function HomePage() {
     setQuotes(quotesData.filter(q => q !== null));
   }, [watchlist]);
 
+  const loadMarketOverviews = useCallback(async () => {
+    const m7 = ['AAPL','MSFT','GOOGL','AMZN','NVDA','META','TSLA'];
+    const indo = ['BBCA.JK','BBRI.JK','ASII.JK'];
+    const crypto = ['BTC-USD','ETH-USD'];
+    const [m7Data, indoData, cryptoData] = await Promise.all([
+      Promise.all(m7.map(fetchQuote)),
+      Promise.all(indo.map(fetchQuote)),
+      Promise.all(crypto.map(fetchQuote)),
+    ]);
+    setM7Quotes(m7Data.filter(Boolean));
+    setIndoQuotes(indoData.filter(Boolean));
+    setCryptoQuotes(cryptoData.filter(Boolean));
+  }, []);
+
   useEffect(() => {
     const init = async () => {
       setLoading(true);
-      await loadQuotes();
+      await Promise.all([loadQuotes(), loadMarketOverviews()]);
       setLoading(false);
     };
     init();
-  }, [loadQuotes]);
+  }, [loadQuotes, loadMarketOverviews]);
 
   // Check if app is installable
   useEffect(() => {
@@ -294,11 +311,14 @@ export default function HomePage() {
 
       <Card className="p-4">
         <CardHeader>
-          <CardTitle>Welcome!</CardTitle>
+          <CardTitle>Aruna</CardTitle>
           <CardDescription>
-            Start analyzing seasonal patterns in seconds
+            A lightweight investing companion to track portfolios, watch markets, and explore seasonal patterns.
           </CardDescription>
         </CardHeader>
+        <div className="text-sm text-muted-foreground">
+          Read more in <Link href="/docs" className="text-primary underline">Docs</Link>.
+        </div>
       </Card>
       <div className="border rounded-lg overflow-hidden bg-card">
         <SectionHeader title="Watchlist" />
@@ -307,15 +327,45 @@ export default function HomePage() {
             <StockItem key={quote.symbol} quote={quote} />
           ))}
         </div>
+        <div className="border-t bg-muted/20 px-4 py-2">
+          <button
+            onClick={() => setManageDialogOpen(true)}
+            className="w-full flex items-center gap-2 justify-center text-emerald-600 hover:text-emerald-700 transition-colors"
+          >
+            <Edit className="h-4 w-4" />
+            <span className="text-sm font-medium">Manage Watchlist</span>
+          </button>
+        </div>
       </div>
 
-      <button
-        onClick={() => setManageDialogOpen(true)}
-        className="flex items-center gap-2 text-emerald-600 hover:text-emerald-700 transition-colors justify-center py-2"
-      >
-        <Edit className="h-4 w-4" />
-        <span className="text-sm font-medium">Manage Watchlist</span>
-      </button>
+      <div className="border rounded-lg overflow-hidden bg-card">
+        <SectionHeader title="Magnificent 7" />
+        <div className="divide-y">
+          {m7Quotes.map(quote => (
+            <StockItem key={quote.symbol} quote={quote} />
+          ))}
+        </div>
+      </div>
+
+      <div className="border rounded-lg overflow-hidden bg-card">
+        <SectionHeader title="Indonesian Stocks" />
+        <div className="divide-y">
+          {indoQuotes.map(quote => (
+            <StockItem key={quote.symbol} quote={quote} />
+          ))}
+        </div>
+      </div>
+
+      <div className="border rounded-lg overflow-hidden bg-card">
+        <SectionHeader title="Crypto" />
+        <div className="divide-y">
+          {cryptoQuotes.map(quote => (
+            <StockItem key={quote.symbol} quote={quote} />
+          ))}
+        </div>
+      </div>
+
+      
 
       {showInstallButton && deferredPrompt && (
         <Button 

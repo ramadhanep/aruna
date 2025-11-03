@@ -1,9 +1,11 @@
 // Service Worker for Aruna PWA
-const CACHE_NAME = 'aruna-v1';
+const CACHE_VERSION = 'v2';
+const CACHE_NAME = `aruna-${CACHE_VERSION}`;
 const urlsToCache = [
   '/',
   '/election-cycle',
   '/portfolio-tracker',
+  '/docs',
   '/offline',
   '/aruna.webp'
 ];
@@ -68,4 +70,10 @@ self.addEventListener('activate', (event) => {
       );
     }).then(() => self.clients.claim())
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

@@ -29,16 +29,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Loader2, SmilePlus, Search, X, Clock, TrendingUp, DollarSign, Star, SearchCode } from "lucide-react";
+import { useTheme } from 'next-themes';
 import { AddAssetModal } from "@/components/add-asset-modal";
 
-const COLORS = {
-  allYears: 'oklch(98.4% 0.014 180.72)',
-  preElection: 'oklch(98.4% 0.014 180.72)',
-  election: 'oklch(98.4% 0.014 180.72)',
-  midTerm: 'oklch(98.4% 0.014 180.72)',
-  postElection: 'oklch(98.4% 0.014 180.72)',
-  current: 'oklch(59.6% 0.145 163.225)',
-};
+const CURRENT_LINE_COLOR = 'oklch(59.6% 0.145 163.225)';
 
 const SEARCH_HISTORY_KEY = 'aruna_search_history';
 const MAX_HISTORY_ITEMS = 10;
@@ -46,9 +40,18 @@ const MAX_HISTORY_ITEMS = 10;
 function ElectionCyclePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { resolvedTheme } = useTheme();
   const symbolParam = searchParams.get('symbol');
-  
-  const [symbol, setSymbol] = useState(symbolParam || 'GOOGL');
+  const LAST_SYMBOL_KEY = 'aruna_last_election_symbol';
+  const getInitialSymbol = () => {
+    if (symbolParam) return symbolParam;
+    if (typeof window !== 'undefined') {
+      const last = localStorage.getItem(LAST_SYMBOL_KEY);
+      if (last) return last;
+    }
+    return 'GOOGL';
+  };
+  const [symbol, setSymbol] = useState(getInitialSymbol);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
@@ -77,12 +80,32 @@ function ElectionCyclePageContent() {
   };
   const [selectedCycles, setSelectedCycles] = useState(deriveDefaultCycles());
 
+  const colors = useMemo(() => {
+    const isDark = resolvedTheme === 'dark';
+    const base = isDark ? '#F9F9F9F9' : '#333333';
+    return {
+      allYears: base,
+      preElection: base,
+      election: base,
+      midTerm: base,
+      postElection: base,
+      current: CURRENT_LINE_COLOR,
+    };
+  }, [resolvedTheme]);
+
   // Update symbol when URL param changes
   useEffect(() => {
     if (symbolParam) {
       setSymbol(symbolParam);
     }
   }, [symbolParam]);
+
+  // Persist last viewed symbol
+  useEffect(() => {
+    try {
+      localStorage.setItem(LAST_SYMBOL_KEY, symbol);
+    } catch {}
+  }, [symbol]);
 
   useEffect(() => {
     const history = localStorage.getItem(SEARCH_HISTORY_KEY);
@@ -182,7 +205,7 @@ function ElectionCyclePageContent() {
           name: `All Years (${firstYear}-${currentYear - 1})`,
           key: 'allYears',
           data: pattern,
-          color: COLORS.allYears,
+          color: colors.allYears,
         });
       }
 
@@ -193,7 +216,7 @@ function ElectionCyclePageContent() {
             name: 'Pre-Election Year',
             key: 'preElection',
             data: hirschStyleSeasonalPattern(preData),
-            color: COLORS.preElection,
+            color: colors.preElection,
           });
         }
       }
@@ -205,7 +228,7 @@ function ElectionCyclePageContent() {
             name: 'Election Year',
             key: 'election',
             data: hirschStyleSeasonalPattern(elecData),
-            color: COLORS.election,
+            color: colors.election,
           });
         }
       }
@@ -217,7 +240,7 @@ function ElectionCyclePageContent() {
             name: 'Mid-Term Year',
             key: 'midTerm',
             data: hirschStyleSeasonalPattern(midData),
-            color: COLORS.midTerm,
+            color: colors.midTerm,
           });
         }
       }
@@ -229,7 +252,7 @@ function ElectionCyclePageContent() {
             name: 'Post-Election Year',
             key: 'postElection',
             data: hirschStyleSeasonalPattern(postData),
-            color: COLORS.postElection,
+            color: colors.postElection,
           });
         }
       }
@@ -242,7 +265,7 @@ function ElectionCyclePageContent() {
             name: `Current Year (${currentYear} YTD)`,
             key: 'current',
             data: pattern,
-            color: COLORS.current,
+            color: colors.current,
           });
         }
       }

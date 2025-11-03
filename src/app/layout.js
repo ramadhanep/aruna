@@ -4,7 +4,9 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { PWARegister } from "@/components/pwa-register";
 import { PWAInstallDialog } from "@/components/pwa-install-dialog";
-import { RefreshCcwDot } from "lucide-react";
+import { ClearDataButton } from "@/components/clear-data-button";
+import Link from "next/link";
+import { RefreshCcwDot, BookOpen } from "lucide-react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -69,12 +71,16 @@ export default function RootLayout({ children }) {
           <PWARegister />
           <PWAInstallDialog />
           <div className="flex flex-col min-h-screen">
-            <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
-              <div className="mx-auto max-w-[768px] flex h-14 items-center justify-center px-4">
-                <div className="flex gap-2">
+            <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between px-4">
+                <Link href="/docs" className="text-muted-foreground hover:text-foreground" aria-label="Open docs">
+                  <BookOpen className="h-5 w-5" />
+                </Link>
+                <div className="flex gap-2 items-center">
                   <RefreshCcwDot className="size-6 fill-current text-emerald-600" />
                   <h1 className="text-lg font-bold">{process.env.NEXT_PUBLIC_APP_NAME || "Aruna"}</h1>
                 </div>
+                <ClearDataButton />
               </div>
             </header>
             <main className="flex-1 pb-20">

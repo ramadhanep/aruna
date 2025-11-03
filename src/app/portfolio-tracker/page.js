@@ -8,6 +8,10 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } fr
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, MoreVertical, Pencil, Trash2, Loader2, Wallet, Coins, TrendingUp, DollarSign } from 'lucide-react';
+import dynamic from 'next/dynamic';
+
+// Dynamic chart component to keep page light and avoid SSR issues
+const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { ssr: false });
 
 // LocalStorage key for currency preference
 const PORTFOLIO_CURRENCY_KEY = 'portfolio_currency';
@@ -487,8 +491,8 @@ export default function PortfolioTrackerPage() {
             </SelectContent>
           </Select>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Total Net Worth */}
+        <CardContent className="space-y-2">
+          {/* Top summary always visible */}
           <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
             <div className="flex-1">
               <p className="text-sm text-muted-foreground mb-1">Total Net Worth</p>
@@ -500,39 +504,64 @@ export default function PortfolioTrackerPage() {
             </div>
           </div>
 
-          {/* Digital Assets */}
-          <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
-            <div className="flex-1">
-              <p className="text-sm text-muted-foreground mb-1">Digital Assets</p>
-              <p className="text-xl font-semibold">{formatValue(digitalMarket).primary}</p>
-              <p className="text-xs text-muted-foreground">{formatValue(digitalMarket).secondary}</p>
-              <div className="mt-1.5 flex items-center gap-1">
-                <span className={`text-xs font-medium ${digitalPnL >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                  {digitalPnL >= 0 ? '+' : ''}{formatValue(digitalPnL).primary}
-                </span>
-                <span className="text-[10px] text-muted-foreground">
-                  ({formatValue(digitalPnL).secondary})
-                </span>
+          {/* Accordion for details */}
+          <div className="rounded-md border">
+            <details>
+              <summary className="list-none cursor-pointer select-none text-center text-sm text-emerald-600 py-1">
+                View Digital Assets and Total Cash
+              </summary>
+              <div className="space-y-2 p-3 pt-1">
+                <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground mb-1">Digital Assets</p>
+                    <p className="text-xl font-semibold">{formatValue(digitalMarket).primary}</p>
+                    <p className="text-xs text-muted-foreground">{formatValue(digitalMarket).secondary}</p>
+                    <div className="mt-1.5 flex items-center gap-1">
+                      <span className={`text-xs font-medium ${digitalPnL >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                        {digitalPnL >= 0 ? '+' : ''}{formatValue(digitalPnL).primary}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        ({formatValue(digitalPnL).secondary})
+                      </span>
+                    </div>
+                  </div>
+                  <div className="p-2 rounded-full bg-blue-500/10">
+                    <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                  <div className="flex-1">
+                    <p className="text-sm text-muted-foreground mb-1">Total Cash</p>
+                    <p className="text-xl font-semibold">{formatValue(totalCash).primary}</p>
+                    <p className="text-xs text-muted-foreground">{formatValue(totalCash).secondary}</p>
+                  </div>
+                  <div className="p-2 rounded-full bg-emerald-600/10">
+                    <Coins className="h-5 w-5 text-emerald-700 dark:text-emerald-400" />
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="p-2 rounded-full bg-blue-500/10">
-              <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            </div>
+            </details>
           </div>
 
-          {/* Total Cash */}
-          <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
-            <div className="flex-1">
-              <p className="text-sm text-muted-foreground mb-1">Total Cash</p>
-              <p className="text-xl font-semibold">{formatValue(totalCash).primary}</p>
-              <p className="text-xs text-muted-foreground">{formatValue(totalCash).secondary}</p>
+          {/* Collapsible pie chart trigger and content (collapsed by default) */}
+          <details>
+            <summary className="list-none cursor-pointer select-none text-center text-sm text-primary underline py-1">
+              View distribution chart
+            </summary>
+            <div className="pt-2">
+              {/* Lazy import to avoid SSR mismatch issues */}
+              <PortfolioPie
+                netWorthUSD={totalNetWorth}
+                digitalUSD={digitalMarket}
+                cashUSD={totalCash}
+                currency={currency}
+                idrPerUsd={idrPerUsd}
+              />
             </div>
-            <div className="p-2 rounded-full bg-emerald-600/10">
-              <Coins className="h-5 w-5 text-emerald-700 dark:text-emerald-400" />
-            </div>
-          </div>
+          </details>
 
-          <p className="text-[10px] text-muted-foreground text-center pt-2">
+          <p className="text-[10px] text-center text-muted-foreground">
             FX Rate: {idrPerUsd > 0 ? formatIDR(idrPerUsd) : 'loading...'} per USD
           </p>
         </CardContent>
@@ -635,12 +664,12 @@ export default function PortfolioTrackerPage() {
             <div className="p-4">
               <DialogDescription className="mb-4">
                 Record your {assetType === 'cash' ? 'cash' : 'digital asset'} details. 
-                {assetType === 'digital' && ' Prices in the asset\'s native currency.'}
+                {assetType === 'digital'}
               </DialogDescription>
               
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 {/* Asset Type Selection */}
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-2">
                   <Label>Asset Type</Label>
                   <div className="flex gap-2">
                     <Button
@@ -669,7 +698,7 @@ export default function PortfolioTrackerPage() {
                 {assetType === 'digital' ? (
                   <>
                     {/* Digital Asset Fields */}
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-2">
                       <Label htmlFor="symbolSearch">Symbol</Label>
                       <input
                         id="symbolSearch"
@@ -680,7 +709,7 @@ export default function PortfolioTrackerPage() {
                       />
                       {loadingSearch && <p className="text-xs text-muted-foreground">Searching...</p>}
                       {!loadingSearch && symbolResults.length > 0 && (
-                        <div className="max-h-40 overflow-auto rounded-md border border-border bg-background shadow-sm p-1 flex flex-col gap-1">
+                        <div className="max-h-40 overflow-auto rounded-md border border-border bg-background shadow-sm p-1 flex flex-col gap-2">
                           {symbolResults.map(r => (
                             <button
                               type="button"
@@ -696,7 +725,7 @@ export default function PortfolioTrackerPage() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-2">
                         <Label htmlFor="amount">Amount</Label>
                         <input
                           id="amount"
@@ -708,7 +737,7 @@ export default function PortfolioTrackerPage() {
                           className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                         />
                       </div>
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-2">
                         <Label htmlFor="unit">Unit</Label>
                         <select
                           id="unit"
@@ -722,7 +751,7 @@ export default function PortfolioTrackerPage() {
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-2">
                       <Label htmlFor="avgPrice">Average Price</Label>
                       <input
                         id="avgPrice"
@@ -739,19 +768,19 @@ export default function PortfolioTrackerPage() {
                 ) : (
                   <>
                     {/* Cash Asset Fields */}
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-2">
                       <Label htmlFor="category">Category</Label>
                       <input
                         id="category"
                         value={form.category}
                         onChange={(e) => setForm(f => ({ ...f, category: e.target.value }))}
-                        placeholder="e.g., Bank BCA, PayPal, etc."
+                        placeholder="e.g., Bank BCA, Gopay, etc."
                         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-2">
                         <Label htmlFor="cashAmount">Amount</Label>
                         <input
                           id="cashAmount"
@@ -764,7 +793,7 @@ export default function PortfolioTrackerPage() {
                         />
                         <p className="text-xs text-muted-foreground">Usually 1 unit</p>
                       </div>
-                      <div className="flex flex-col gap-1">
+                      <div className="flex flex-col gap-2">
                         <Label htmlFor="cashCurrency">Currency</Label>
                         <select
                           id="cashCurrency"
@@ -778,7 +807,7 @@ export default function PortfolioTrackerPage() {
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-1">
+                    <div className="flex flex-col gap-2">
                       <Label htmlFor="cashValue">Cash Value</Label>
                       <input
                         id="cashValue"
