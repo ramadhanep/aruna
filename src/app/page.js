@@ -278,7 +278,7 @@ export default function HomePage() {
         <div className="overflow-hidden">
           <SectionHeader title="Watchlist" />
           <div className="divide-y">
-            {[...Array(6)].map((_, i) => <ShimmerItem key={i} />)}
+            {[...Array(8)].map((_, i) => <ShimmerItem key={i} />)}
           </div>
           <div className="border-t py-3 flex justify-center">
             <div className="h-8 w-40 rounded-full bg-muted animate-pulse"></div>

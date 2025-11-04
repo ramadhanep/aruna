@@ -831,7 +831,7 @@ function ElectionCyclePageContent() {
 
           <div className="h-10 bg-muted rounded-md animate-pulse"></div>
 
-          <div className="mt-2 flex flex-col gap-4">
+          <div className="mt-4 flex flex-col gap-8">
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm">Summary</CardTitle>
@@ -1023,7 +1023,7 @@ function ElectionCyclePageContent() {
           </Button>
 
           {(fundamentalsLoading || fundamentals) && (
-            <div className="mt-2 flex flex-col gap-4">
+            <div className="mt-4 flex flex-col gap-8">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-sm">Summary</CardTitle>

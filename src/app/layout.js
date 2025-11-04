@@ -71,8 +71,8 @@ export default function RootLayout({ children }) {
           <PWARegister />
           <PWAInstallDialog />
           <div className="flex flex-col min-h-screen">
-            <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
-              <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3">
+            <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+              <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3 px-2">
                 <ClearDataButton />
                 <div className="flex gap-2 items-center">
                   <ChartScatter className="size-5 text-white" />
