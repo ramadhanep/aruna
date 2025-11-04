@@ -21,17 +21,57 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar } from 'recharts';
 import { Loader2, Sun, MoonStar, Clock3, Star } from "lucide-react";
 import { useTheme } from 'next-themes';
 import { AddAssetModal } from "@/components/add-asset-modal";
+import { SymbolSearchDialog } from "@/components/header-symbol-search";
 
 const CURRENT_LINE_COLOR = 'oklch(59.6% 0.145 163.225)';
+const WATCHLIST_STORAGE_KEY = 'aruna_watchlist';
+const DEFAULT_WATCHLIST = [
+  { symbol: 'NVDA', order: 1 },
+  { symbol: 'MSFT', order: 2 },
+  { symbol: 'AMZN', order: 3 },
+  { symbol: 'GOOG', order: 4 },
+  { symbol: 'AVGO', order: 5 },
+  { symbol: 'BBCA.JK', order: 6 },
+  { symbol: 'BBRI.JK', order: 7 },
+  { symbol: 'BTC-USD', order: 8 },
+];
+
+function readWatchlist() {
+  if (typeof window === 'undefined') return DEFAULT_WATCHLIST;
+  try {
+    const raw = window.localStorage.getItem(WATCHLIST_STORAGE_KEY);
+    if (!raw) {
+      window.localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(DEFAULT_WATCHLIST));
+      return DEFAULT_WATCHLIST;
+    }
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) {
+      return parsed.filter(
+        (item) => item && typeof item.symbol === 'string' && typeof item.order === 'number'
+      );
+    }
+    return DEFAULT_WATCHLIST;
+  } catch (error) {
+    console.warn('Failed to read watchlist', error);
+    return DEFAULT_WATCHLIST;
+  }
+}
+
+function writeWatchlist(data) {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(data));
+  } catch (error) {
+    console.warn('Failed to write watchlist', error);
+  }
+}
 
 function ElectionCyclePageContent() {
   const searchParams = useSearchParams();
@@ -45,7 +85,7 @@ function ElectionCyclePageContent() {
       const last = localStorage.getItem(LAST_SYMBOL_KEY);
       if (last) return last;
     }
-    return 'GOOGL';
+    return 'MSFT';
   };
   const [symbol, setSymbol] = useState(getInitialSymbol);
   const [scaleChoice, setScaleChoice] = useState('linear');
@@ -58,8 +98,9 @@ function ElectionCyclePageContent() {
   const [portfolioDialogOpen, setPortfolioDialogOpen] = useState(false);
   const [fundamentals, setFundamentals] = useState(null);
   const [fundamentalsLoading, setFundamentalsLoading] = useState(false);
-  const [metricView, setMetricView] = useState('marketCap');
-  const [metricPeriod, setMetricPeriod] = useState('trailing');
+  const [revenuePeriod, setRevenuePeriod] = useState('quarterly');
+  const [searchDialogOpen, setSearchDialogOpen] = useState(false);
+  const [watchlist, setWatchlist] = useState([]);
 
   const deriveDefaultCycles = () => {
     const y = new Date().getFullYear();
@@ -88,6 +129,11 @@ function ElectionCyclePageContent() {
     };
   }, [resolvedTheme]);
 
+  const primaryChartColor = CURRENT_LINE_COLOR;
+  const secondaryChartColor = colors.allYears;
+  const beatColor = 'rgb(22, 163, 74)'; // tailwind green-600
+  const missColor = 'rgb(220, 38, 38)'; // tailwind red-600
+
   // Update symbol when URL param changes
   useEffect(() => {
     if (symbolParam) {
@@ -103,6 +149,11 @@ function ElectionCyclePageContent() {
   }, [symbol]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setWatchlist(readWatchlist());
+  }, []);
+
+  useEffect(() => {
     fetchDataAndBuildChart();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [symbol, selectedCycles]);
@@ -115,8 +166,7 @@ function ElectionCyclePageContent() {
     let cancelled = false;
     setFundamentals(null);
     setFundamentalsLoading(true);
-    setMetricView('marketCap');
-    setMetricPeriod('trailing');
+    setRevenuePeriod('quarterly');
 
     (async () => {
       try {
@@ -144,6 +194,14 @@ function ElectionCyclePageContent() {
       cancelled = true;
     };
   }, [symbol]);
+
+  useEffect(() => {
+    if (!fundamentals) return;
+    const annual = fundamentals.analysis?.revenue?.annual;
+    if (revenuePeriod === 'annual' && (!annual || annual.length === 0)) {
+      setRevenuePeriod('quarterly');
+    }
+  }, [fundamentals, revenuePeriod]);
 
   async function fetchDataAndBuildChart() {
     setLoading(true);
@@ -359,31 +417,11 @@ function ElectionCyclePageContent() {
     return `${value.toFixed(0)}%`;
   };
 
-  function hexToRgb(hex) {
-    const clean = hex.replace('#', '');
-    const bigint = parseInt(clean, 16);
-    if (clean.length === 6) {
-      const r = (bigint >> 16) & 255;
-      const g = (bigint >> 8) & 255;
-      const b = bigint & 255;
-      return [r, g, b];
-    }
-    return [0, 0, 0];
-  }
-
-  function rgbaFromHex(hex, alpha) {
-    const [r, g, b] = hexToRgb(hex);
-    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-  }
-
-  function cellBgStyle(value) {
-    if (value == null || isNaN(value)) return null;
-    const posHex = '#16A34A';
-    const negHex = '#DC2626';
-    const magnitude = Math.min(Math.abs(value), 30);
-    const intensity = 0.15 + (magnitude / 30) * 0.75;
-    const color = value >= 0 ? rgbaFromHex(posHex, intensity) : rgbaFromHex(negHex, intensity);
-    return color;
+  function getReturnCellClass(value) {
+    if (value == null || isNaN(value)) return '';
+    if (value > 0) return 'bg-green-900';
+    if (value < 0) return 'bg-red-900';
+    return 'bg-muted text-foreground';
   }
 
   const [quarterFilter, setQuarterFilter] = useState('all');
@@ -471,120 +509,206 @@ function ElectionCyclePageContent() {
     return String(value);
   }, []);
 
-  const formatMetricDisplay = useCallback(
-    (value, metric) => {
-      if (value == null || Number.isNaN(value)) return '—';
-      if (metric === 'marketCap' || metric === 'enterpriseValue') {
-        return `${compactNumberFormatter.format(value)} ${currencyCode}`;
-      }
-      if (
-        metric === 'peRatio' ||
-        metric === 'forwardPeRatio' ||
-        metric === 'pbRatio' ||
-        metric === 'psRatio' ||
-        metric === 'evToEbitda' ||
-        metric === 'evToRevenue' ||
-        metric === 'pegRatio'
-      ) {
-        return Number(value).toFixed(2);
-      }
-      return Number(value).toLocaleString();
+  const formatCompactCurrency = useCallback(
+    (value) => {
+      if (value == null || Number.isNaN(Number(value))) return '—';
+      const numeric = Number(value);
+      return `${compactNumberFormatter.format(numeric)} ${currencyCode}`;
     },
     [compactNumberFormatter, currencyCode]
   );
 
-  const metricOptions = useMemo(
-    () => [
-      { value: 'marketCap', label: 'Market Cap' },
-      { value: 'peRatio', label: 'P/E' },
-      { value: 'pbRatio', label: 'P/B' },
-      { value: 'psRatio', label: 'P/S' },
-      { value: 'evToEbitda', label: 'EV/EBITDA' },
-    ],
-    []
-  );
+  const formatRatio = useCallback((value) => {
+    if (value == null || Number.isNaN(Number(value))) return '—';
+    return Number(value).toFixed(2);
+  }, []);
 
-  const selectedMetric = metricOptions.find((option) => option.value === metricView) || metricOptions[0];
-
-  const metricSeriesData = useMemo(() => {
-    const series = fundamentals?.metrics?.[metricPeriod]?.[metricView];
-    if (!series || series.length === 0) return [];
-
-    return series.map((entry) => {
-      const dateObj =
-        entry.date && !Number.isNaN(Date.parse(entry.date))
-          ? new Date(entry.date)
-          : entry.timestamp
-            ? new Date(entry.timestamp)
-            : null;
-      const iso = dateObj ? dateObj.toISOString().slice(0, 10) : entry.date || '';
-      const label = dateObj
-        ? dateObj.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-        : entry.date || '—';
-      return {
-        label,
-        iso,
-        value: entry.value,
-      };
-    });
-  }, [fundamentals, metricPeriod, metricView]);
-
-  const metricLatest = fundamentals?.latest?.[metricPeriod]?.[metricView] || null;
-  const metricLatestDisplay = metricLatest ? formatMetricDisplay(metricLatest.value, metricView) : '—';
-  const metricLatestDate = metricLatest?.date
-    ? new Date(metricLatest.date).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      })
-    : null;
-
-  const metricYAxisFormatter = useCallback(
-    (value) => {
-      if (value == null || Number.isNaN(value)) return '';
-      if (metricView === 'marketCap' || metricView === 'enterpriseValue') {
-        return compactNumberFormatter.format(value);
-      }
-      return Number(value).toFixed(1);
-    },
-    [compactNumberFormatter, metricView]
-  );
-
-  const metricTooltipFormatter = useCallback(
-    (value) => formatMetricDisplay(value, metricView),
-    [formatMetricDisplay, metricView]
-  );
-
-  const metricPeriodDescription =
-    metricPeriod === 'trailing' ? 'Trailing twelve months data' : 'Quarterly reported values';
-
-  const periodOptions = useMemo(
-    () => [
-      { value: 'trailing', label: 'Trailing' },
-      { value: 'quarterly', label: 'Quarterly' },
-    ],
-    []
-  );
+  const formatPercentage = useCallback((value) => {
+    if (value == null || Number.isNaN(Number(value))) return '—';
+    const numeric = Number(value);
+    return `${numeric >= 0 ? '+' : ''}${numeric.toFixed(1)}%`;
+  }, []);
 
   const quickStats = useMemo(() => {
     if (!fundamentals) return [];
-    const trailing = fundamentals.latest?.trailing || {};
+    const valuations = fundamentals.valuations || {};
+    const priceInfo = fundamentals.price || {};
     const stats = [
-      { label: 'Market Cap', value: formatMetricDisplay(trailing.marketCap?.value, 'marketCap') },
-      { label: 'P/E (TTM)', value: formatMetricDisplay(trailing.peRatio?.value, 'peRatio') },
-      { label: 'Forward P/E', value: formatMetricDisplay(trailing.forwardPeRatio?.value, 'peRatio') },
-      { label: 'P/B', value: formatMetricDisplay(trailing.pbRatio?.value, 'pbRatio') },
-      { label: 'P/S', value: formatMetricDisplay(trailing.psRatio?.value, 'psRatio') },
-      { label: 'EV/EBITDA', value: formatMetricDisplay(trailing.evToEbitda?.value, 'evToEbitda') },
-      { label: 'PEG', value: formatMetricDisplay(trailing.pegRatio?.value, 'pegRatio') },
-      { label: '52W Range', value: formatPlainNumber(fundamentals.price?.fiftyTwoWeekRange) },
-      { label: 'Day Range', value: formatPlainNumber(fundamentals.price?.dayRange) },
-      { label: 'Volume', value: formatPlainNumber(fundamentals.price?.volume) },
-      { label: 'Previous Close', value: formatPlainNumber(fundamentals.price?.previousClose) },
-      { label: 'Open', value: formatPlainNumber(fundamentals.price?.open) },
+      { label: 'Market Cap', value: formatCompactCurrency(valuations.marketCap) },
+      { label: 'Enterprise Value', value: formatCompactCurrency(valuations.enterpriseValue) },
+      { label: 'P/E (TTM)', value: formatRatio(valuations.trailingPe) },
+      { label: 'Forward P/E', value: formatRatio(valuations.forwardPe) },
+      { label: 'P/B', value: formatRatio(valuations.priceToBook) },
+      { label: 'P/S', value: formatRatio(valuations.priceToSales) },
+      { label: 'EV/EBITDA', value: formatRatio(valuations.evToEbitda) },
+      { label: 'EV/Revenue', value: formatRatio(valuations.evToRevenue) },
+      { label: 'PEG', value: formatRatio(valuations.pegRatio) },
+      { label: '52W Range', value: formatPlainNumber(priceInfo.fiftyTwoWeekRange) },
+      { label: 'Day Range', value: formatPlainNumber(priceInfo.dayRange) },
+      { label: 'Volume', value: formatPlainNumber(priceInfo.volume) },
+      { label: 'Previous Close', value: formatPlainNumber(priceInfo.previousClose) },
+      { label: 'Open', value: formatPlainNumber(priceInfo.open) },
     ];
     return stats.filter((item) => item.value && item.value !== '—');
-  }, [fundamentals, formatMetricDisplay, formatPlainNumber]);
+  }, [fundamentals, formatCompactCurrency, formatRatio, formatPlainNumber]);
+
+  const analysisCurrency = fundamentals?.analysis?.currency || currencyCode;
+
+  const formatPeriodLabel = useCallback((period) => {
+    if (!period) return '';
+    const upper = String(period).toUpperCase();
+    if (/FY\d{2,4}/.test(upper)) return upper.replace(/ /g, ' ');
+    if (/Q\d/.test(upper) && /FY/.test(upper)) return upper;
+    if (/^\d{4}$/.test(upper)) return `FY ${upper.slice(-2)}`;
+    return upper.replace(/(\d{4})/g, ' FY$1').replace(/\s+/g, ' ').trim();
+  }, []);
+
+  const earningsChartData = useMemo(() => {
+    const series = fundamentals?.analysis?.earnings?.quarterly;
+    if (!series || series.length === 0) return [];
+    return series.slice(-8).map((entry) => {
+      const actual = entry.actual != null ? Number(entry.actual) : null;
+      const estimate = entry.estimate != null ? Number(entry.estimate) : null;
+      const surprise = actual != null && estimate != null ? actual - estimate : null;
+      return {
+        period: entry.period,
+        periodLabel: formatPeriodLabel(entry.period),
+        actual,
+        estimate,
+        surprise,
+        surprisePercent:
+          entry.surprisePercent != null ? Number(entry.surprisePercent) : null,
+        outcome: surprise == null ? null : surprise >= 0 ? 'beat' : 'miss',
+        outcomeValue: surprise == null ? null : Math.abs(surprise),
+        range:
+          actual != null && estimate != null
+            ? [Math.min(actual, estimate), Math.max(actual, estimate)]
+            : null,
+      };
+    });
+  }, [fundamentals, formatPeriodLabel]);
+
+  const revenueChartData = useMemo(() => {
+    const series =
+      fundamentals?.analysis?.revenue?.[revenuePeriod] ||
+      fundamentals?.analysis?.revenue?.quarterly ||
+      [];
+    if (!series || series.length === 0) return [];
+    return series.slice(-8).map((entry) => ({
+      period: entry.period,
+      periodLabel: formatPeriodLabel(entry.period),
+      revenue: entry.revenue != null ? Number(entry.revenue) : null,
+      earnings: entry.earnings != null ? Number(entry.earnings) : null,
+    }));
+  }, [fundamentals, revenuePeriod, formatPeriodLabel]);
+
+  const hasEarningsAnalysis = earningsChartData.length > 0;
+  const hasRevenueAnalysis = revenueChartData.length > 0;
+  const latestEarningsPoint = hasEarningsAnalysis ? earningsChartData[earningsChartData.length - 1] : null;
+  const latestRevenuePoint = hasRevenueAnalysis ? revenueChartData[revenueChartData.length - 1] : null;
+
+  const formatEarningsValue = useCallback((value) => {
+    if (value == null || Number.isNaN(Number(value))) return '—';
+    return Number(value).toFixed(2);
+  }, []);
+
+  const formatSignedEarnings = useCallback((value) => {
+    if (value == null || Number.isNaN(Number(value))) return '—';
+    const numeric = Number(value);
+    const sign = numeric >= 0 ? '+' : '-';
+    return `${sign}${Math.abs(numeric).toFixed(2)}`;
+  }, []);
+
+  const formatRevenueValue = useCallback((value) => {
+    if (value == null || Number.isNaN(Number(value))) return '—';
+    const numeric = Number(value);
+    const suffix = analysisCurrency ? ` ${analysisCurrency}` : '';
+    return `${compactNumberFormatter.format(numeric)}${suffix}`;
+  }, [analysisCurrency, compactNumberFormatter]);
+
+  const formatOutcomeLabel = useCallback(
+    (surprise) => {
+      if (surprise == null || Number.isNaN(Number(surprise))) return null;
+      const numeric = Number(surprise);
+      const tone = numeric >= 0 ? 'beat' : 'miss';
+      return {
+        tone,
+        label: `${tone === 'beat' ? 'Beat' : 'Miss'} ${formatSignedEarnings(numeric)}`,
+      };
+    },
+    [formatSignedEarnings]
+  );
+
+  const hasAnnualRevenue = (fundamentals?.analysis?.revenue?.annual || []).length > 0;
+  const latestEarningsOutcome = useMemo(
+    () => formatOutcomeLabel(latestEarningsPoint?.surprise ?? null),
+    [latestEarningsPoint, formatOutcomeLabel]
+  );
+
+  const renderEarningsTick = useCallback(
+    ({ x, y, payload }) => {
+      const point = earningsChartData[payload.index];
+      if (!point) return null;
+      const outcomeInfo = formatOutcomeLabel(point.surprise);
+      return (
+        <g transform={`translate(${x},${y})`}>
+          <text textAnchor="middle" className="fill-muted-foreground text-[10px]">
+            <tspan x={0} dy="0">
+              {point.periodLabel}
+            </tspan>
+            {outcomeInfo && outcomeInfo.label ? (
+              <tspan
+                x={0}
+                dy="1.4em"
+                fill={outcomeInfo.tone === 'beat' ? beatColor : missColor}
+                fontWeight="600"
+              >
+                {outcomeInfo.label}
+              </tspan>
+            ) : null}
+          </text>
+        </g>
+      );
+    },
+    [earningsChartData, formatOutcomeLabel, beatColor, missColor]
+  );
+
+  const renderEstimateDot = useCallback(({ cx, cy }) => {
+    if (cx == null || cy == null) return null;
+    return (
+      <circle
+        cx={cx}
+        cy={cy}
+        r={6}
+        fill="hsl(var(--background))"
+        stroke={secondaryChartColor}
+        strokeWidth={2}
+      />
+    );
+  }, [secondaryChartColor]);
+
+  const renderActualDot = useCallback(({ cx, cy }) => {
+    if (cx == null || cy == null) return null;
+    return <circle cx={cx} cy={cy} r={7} fill={primaryChartColor} />;
+  }, [primaryChartColor]);
+
+  const earningsTooltipFormatter = useCallback(
+    (value, name) => {
+      if (value == null || Number.isNaN(Number(value))) return ['—', name];
+      const label = name === 'actual' ? 'Actual' : 'Estimate';
+      return [formatSignedEarnings(value), label];
+    },
+    [formatSignedEarnings]
+  );
+
+  const revenueTooltipFormatter = useCallback(
+    (value, name) => {
+      if (value == null || Number.isNaN(Number(value))) return ['—', name];
+      const label = name === 'revenue' ? 'Revenue' : 'Earnings';
+      return [formatRevenueValue(value), label];
+    },
+    [formatRevenueValue]
+  );
 
   const marketStateInfo = useMemo(() => {
     const stateRaw = fundamentals?.profile?.marketState;
@@ -607,14 +731,44 @@ function ElectionCyclePageContent() {
     return { label: 'Market Closed', tone: 'text-muted-foreground', Icon: MoonStar };
   }, [fundamentals?.profile?.marketState, symbolInfo?.isMarketOpen]);
 
-  const logoUrl = fundamentals?.profile?.logoUrl || null;
   const MarketStateIcon = marketStateInfo?.Icon;
+  const isFavorite = useMemo(
+    () => watchlist.some((item) => item.symbol === symbol),
+    [watchlist, symbol]
+  );
+
+  const toggleFavorite = useCallback(() => {
+    setWatchlist((prev) => {
+      const exists = prev.some((item) => item.symbol === symbol);
+      if (exists) {
+        const next = prev.filter((item) => item.symbol !== symbol);
+        writeWatchlist(next);
+        return next;
+      }
+      const nextOrder =
+        prev.length > 0 ? Math.max(...prev.map((item) => Number(item.order) || 0)) + 1 : 1;
+      const next = [...prev, { symbol, order: nextOrder }];
+      writeWatchlist(next);
+      return next;
+    });
+  }, [symbol]);
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          <h1 className="text-base font-bold uppercase">
+          <h1
+            className="text-base font-bold uppercase cursor-pointer transition-colors hover:text-primary"
+            onClick={() => setSearchDialogOpen(true)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                setSearchDialogOpen(true);
+              }
+            }}
+          >
             {symbol}
           </h1>
           <span className="text-muted">|</span>
@@ -625,30 +779,42 @@ function ElectionCyclePageContent() {
             <span className="text-white/70 text-xs">🚀 To the moon (katanya)</span>
           )}
           {['QQQ', 'SPY'].some((s) => symbol.endsWith(s)) && (
-            <span className="text-white/70 text-xs">👴 Boomer Pension Fund</span>
+            <span className="text-white/70 text-xs">🇺🇸 Dana Pensiun PNS Amerika</span>
           )}
           {['AAPL','MSFT','GOOGL','GOOG','AMZN','META','NVDA','TSLA'].some((s) => symbol.endsWith(s)) && (
             <span className="text-white/70 text-xs">🧰 Magnificent 7</span>
           )}
         </div>
         {/* star add to favorites di sini */}
-        <Star className="size-5"/>
+        <button
+          type="button"
+          onClick={toggleFavorite}
+          aria-pressed={isFavorite}
+          aria-label={isFavorite ? `Remove ${symbol} from favorites` : `Add ${symbol} to favorites`}
+          className={`rounded-full p-1 transition-colors ${isFavorite ? 'text-amber-500 hover:text-amber-400' : 'text-muted-foreground hover:text-foreground'}`}
+        >
+          <Star
+            className="size-5"
+            strokeWidth={isFavorite ? 1.5 : 2}
+            fill={isFavorite ? 'currentColor' : 'none'}
+          />
+        </button>
       </div>
 
       {loading && (
         <>
           <Card className="overflow-hidden bg-transparent border-none rounded-none">
             <CardHeader>
-              <div className="flex items-baseline justify-between">
-                <div className="flex-1">
-                  <div className="h-3 bg-muted rounded w-32 mb-2 animate-pulse"></div>
-                  <div className="flex justify-between items-start">
-                    <div className="h-9 bg-muted rounded w-24 animate-pulse"></div>
-                    <div className="flex gap-2">
-                      <div className="h-8 w-16 bg-muted rounded-md animate-pulse"></div>
-                      <div className="h-8 w-24 bg-muted rounded-md animate-pulse"></div>
-                    </div>
-                  </div>
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-28 rounded bg-muted animate-pulse"></div>
+                  <div className="h-8 w-32 rounded bg-muted animate-pulse"></div>
+                  <div className="h-4 w-24 rounded bg-muted animate-pulse"></div>
+                  <div className="h-4 w-20 rounded bg-muted animate-pulse"></div>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <div className="h-6 w-40 rounded bg-muted animate-pulse"></div>
+                  <div className="h-6 w-32 rounded bg-muted animate-pulse"></div>
                 </div>
               </div>
             </CardHeader>
@@ -658,36 +824,51 @@ function ElectionCyclePageContent() {
           </Card>
 
           <div className="flex gap-2">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="flex-1 h-6 bg-muted rounded-md animate-pulse"></div>
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="flex-1 h-7 bg-muted rounded-md animate-pulse"></div>
             ))}
           </div>
 
-          <div className="h-11 bg-muted rounded-md animate-pulse"></div>
-
           <div className="h-10 bg-muted rounded-md animate-pulse"></div>
 
-          <div className="border rounded-lg overflow-hidden">
-            <div className="px-4 py-3 border-b">
-              <div className="h-5 bg-muted rounded w-32 animate-pulse"></div>
-            </div>
-            <div className="p-4 space-y-2">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-8 bg-muted rounded animate-pulse"></div>
-              ))}
+          <div className="mt-2 flex flex-col gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  {[...Array(6)].map((_, idx) => (
+                    <div key={idx} className="space-y-1">
+                      <div className="h-3 w-24 rounded bg-muted animate-pulse"></div>
+                      <div className="h-4 w-20 rounded bg-muted animate-pulse"></div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            <div className="grid gap-2 md:grid-cols-2">
+              <Card>
+                <CardHeader className="gap-1">
+                  <CardTitle className="text-sm">Earnings Per Share</CardTitle>
+                  <CardDescription className="text-xs">Tracking actual results against estimates</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[240px] rounded-lg bg-muted animate-pulse"></div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader className="gap-1">
+                  <CardTitle className="text-sm">Revenue vs Earnings</CardTitle>
+                  <CardDescription className="text-xs">Comparing topline and bottom line performance</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[240px] rounded-lg bg-muted animate-pulse"></div>
+                </CardContent>
+              </Card>
             </div>
           </div>
 
-          <div className="border rounded-lg overflow-hidden">
-            <div className="px-4 py-3 border-b">
-              <div className="h-5 bg-muted rounded w-32 animate-pulse"></div>
-            </div>
-            <div className="p-4 space-y-2">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-8 bg-muted rounded animate-pulse"></div>
-              ))}
-            </div>
-          </div>
         </>
       )}
 
@@ -726,7 +907,7 @@ function ElectionCyclePageContent() {
                     </span>
                   )}
                 </div>
-                <div className="flex flex-col gap-4">
+                <div className="flex flex-col items-end gap-3">
                   <Select
                     className="w-full"
                     value={selectedCycles.join(',')}
@@ -744,26 +925,23 @@ function ElectionCyclePageContent() {
                       {/* <SelectItem value="pre,election,mid,post,current">All Cycles + Current</SelectItem> */}
                     </SelectContent>
                   </Select>
-                  <RadioGroup value={scaleChoice} onValueChange={setScaleChoice} className="flex gap-2">
-                    <div className="flex-1">
-                      <RadioGroupItem value="linear" id="linear" className="peer sr-only" />
-                      <Label
-                        htmlFor="linear"
-                        className="flex items-center justify-center h-6 px-2 rounded-full border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground cursor-pointer transition-colors text-xs"
+                  <div className="inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5">
+                    {[
+                      { value: 'linear', label: 'Linear' },
+                      { value: 'log', label: 'Logarithmic' },
+                    ].map((option) => (
+                      <Button
+                        key={option.value}
+                        type="button"
+                        size="xs"
+                        variant={scaleChoice === option.value ? 'default' : 'ghost'}
+                        className={`px-2 text-[11px] ${scaleChoice === option.value ? 'shadow-sm' : ''}`}
+                        onClick={() => setScaleChoice(option.value)}
                       >
-                        Linear
-                      </Label>
-                    </div>
-                    <div className="flex-1">
-                      <RadioGroupItem value="log" id="log" className="peer sr-only" />
-                      <Label
-                        htmlFor="log"
-                        className="flex items-center justify-center h-6 px-2 rounded-full border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground cursor-pointer transition-colors text-xs"
-                      >
-                        Logarithmic
-                      </Label>
-                    </div>
-                  </RadioGroup>
+                        {option.label}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -845,7 +1023,7 @@ function ElectionCyclePageContent() {
           </Button>
 
           {(fundamentalsLoading || fundamentals) && (
-            <div className="mt-2 space-y-3">
+            <div className="mt-2 flex flex-col gap-4">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-sm">Summary</CardTitle>
@@ -877,112 +1055,216 @@ function ElectionCyclePageContent() {
                 </CardContent>
               </Card>
 
-              <Card className="mt-5">
-                <CardHeader>
-                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <CardTitle className="text-sm">Fundamental Trends</CardTitle>
-                      <CardDescription className="text-xs">{metricPeriodDescription}</CardDescription>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Select value={metricView} onValueChange={setMetricView} className="text-xs">
-                        <SelectTrigger className="h-6 w-[180px] text-xs">
-                          <SelectValue placeholder="Metric" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {metricOptions.map((option) => (
-                            <SelectItem key={option.value} value={option.value}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <div className="flex items-center gap-2">
-                        {periodOptions.map((option) => (
-                          <Button
-                            key={option.value}
-                            type="button"
-                            variant={metricPeriod === option.value ? 'default' : 'outline'}
-                            size="xs"
-                            className="h-6 px-2 text-xs"
-                            onClick={() => setMetricPeriod(option.value)}
-                          >
-                            {option.label}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
+              {fundamentalsLoading ? (
+                <div className="grid gap-2 md:grid-cols-2">
+                  <Card className="h-full">
+                    <CardHeader>
+                      <div className="h-4 w-32 rounded bg-muted animate-pulse"></div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-[220px] rounded-lg bg-muted animate-pulse"></div>
+                    </CardContent>
+                  </Card>
+                  <Card className="h-full">
+                    <CardHeader>
+                      <div className="h-4 w-32 rounded bg-muted animate-pulse"></div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-[220px] rounded-lg bg-muted animate-pulse"></div>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                (hasEarningsAnalysis || hasRevenueAnalysis) && (
+                  <div className="grid gap-2 md:grid-cols-2">
+                    {hasEarningsAnalysis && latestEarningsPoint && (
+                      <Card className="h-full">
+                        <CardHeader className="gap-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="space-y-1">
+                              <CardTitle className="text-sm">Earnings Per Share</CardTitle>
+                              <p className="text-xs text-muted-foreground">
+                                <span className="font-semibold text-foreground">
+                                  {latestEarningsPoint.periodLabel}
+                                </span>{' '}
+                                • Estimate{' '}
+                                <span className="font-medium text-muted-foreground">
+                                  {formatSignedEarnings(latestEarningsPoint.estimate)}
+                                </span>{' '}
+                                • Actual{' '}
+                                <span className="font-medium text-emerald-600">
+                                  {formatSignedEarnings(latestEarningsPoint.actual)}
+                                </span>
+                              </p>
+                              {latestEarningsOutcome ? (
+                                <p
+                                  className={`text-xs font-semibold ${
+                                    latestEarningsOutcome.tone === 'beat'
+                                      ? 'text-emerald-600'
+                                      : 'text-red-600'
+                                  }`}
+                                >
+                                  {latestEarningsOutcome.label}
+                                </p>
+                              ) : null}
+                            </div>
+                            <span className="rounded-full border bg-muted/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                              Normalized
+                            </span>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="h-[260px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart
+                              data={earningsChartData}
+                              margin={{ top: 20, right: 48, bottom: 32, left: -10 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                              <XAxis
+                                dataKey="periodLabel"
+                                interval={0}
+                                height={48}
+                                tick={renderEarningsTick}
+                              />
+                              <YAxis
+                                tickFormatter={(value) =>
+                                  value == null ? '' : formatEarningsValue(value)
+                                }
+                                width={50}
+                                axisLine={false}
+                                tick={{ fontSize: 10 }}
+                              />
+                              <Tooltip
+                                formatter={earningsTooltipFormatter}
+                                labelFormatter={(_, payload) => payload?.[0]?.payload?.periodLabel || ''}
+                                contentStyle={{
+                                  backgroundColor: 'hsl(var(--background))',
+                                  border: '1px solid hsl(var(--border))',
+                                  borderRadius: '8px',
+                                  fontSize: '12px',
+                                }}
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey="estimate"
+                                stroke="transparent"
+                                dot={renderEstimateDot}
+                                activeDot={false}
+                              />
+                              <Line
+                                type="monotone"
+                                dataKey="actual"
+                                stroke="transparent"
+                                dot={renderActualDot}
+                                activeDot={false}
+                              >
+                                <ErrorBar
+                                  dataKey="range"
+                                  direction="y"
+                                  stroke={secondaryChartColor}
+                                  strokeDasharray="3 3"
+                                  width={0}
+                                />
+                              </Line>
+                            </ComposedChart>
+                          </ResponsiveContainer>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {hasRevenueAnalysis && latestRevenuePoint && (
+                      <Card className="h-full">
+                        <CardHeader className="gap-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="space-y-1">
+                              <CardTitle className="text-sm">Revenue vs Earnings</CardTitle>
+                              <p className="text-xs text-muted-foreground">
+                                <span className="font-semibold text-foreground">
+                                  {formatPeriodLabel(latestRevenuePoint.period)}
+                                </span>{' '}
+                                •{' '}
+                                <span style={{ color: primaryChartColor }}>
+                                  Revenue {formatRevenueValue(latestRevenuePoint.revenue)}
+                                </span>{' '}
+                                •{' '}
+                                <span style={{ color: secondaryChartColor }}>
+                                  Earnings {formatRevenueValue(latestRevenuePoint.earnings)}
+                                </span>
+                              </p>
+                            </div>
+                            <div className="inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5">
+                              {[
+                                { value: 'annual', label: 'Annual', disabled: !hasAnnualRevenue },
+                                { value: 'quarterly', label: 'Quarterly', disabled: false },
+                              ].map((option) => (
+                                <Button
+                                  key={option.value}
+                                  type="button"
+                                  size="xs"
+                                  variant={revenuePeriod === option.value ? 'default' : 'ghost'}
+                                  className={`px-1 text-xs ${revenuePeriod === option.value ? 'shadow-sm' : ''}`}
+                                  onClick={() => setRevenuePeriod(option.value)}
+                                  disabled={option.disabled}
+                                >
+                                  {option.label}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="h-[260px]">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                              data={revenueChartData}
+                              margin={{ top: 16, right: 32, bottom: 12, left: -12 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                              <XAxis dataKey="periodLabel" tick={{ fontSize: 10 }} />
+                              <YAxis
+                                tickFormatter={(value) =>
+                                  value == null ? '' : compactNumberFormatter.format(value)
+                                }
+                                width={60}
+                                axisLine={false}
+                                tick={{ fontSize: 10 }}
+                              />
+                              <Tooltip
+                                formatter={revenueTooltipFormatter}
+                                labelFormatter={(_, payload) => payload?.[0]?.payload?.periodLabel || ''}
+                                contentStyle={{
+                                  backgroundColor: 'hsl(var(--background))',
+                                  border: '1px solid hsl(var(--border))',
+                                  borderRadius: '8px',
+                                  fontSize: '12px',
+                                }}
+                              />
+                              <Legend wrapperStyle={{ fontSize: '11px' }} />
+                              <Bar
+                                dataKey="revenue"
+                                name={`Revenue${analysisCurrency ? ` (${analysisCurrency})` : ''}`}
+                                fill={primaryChartColor}
+                                radius={[6, 6, 2, 2]}
+                              />
+                              <Bar
+                                dataKey="earnings"
+                                name={`Earnings${analysisCurrency ? ` (${analysisCurrency})` : ''}`}
+                                fill={secondaryChartColor}
+                                radius={[6, 6, 2, 2]}
+                              />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </CardContent>
+                      </Card>
+                    )}
                   </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {fundamentalsLoading ? (
-                    <div className="h-48 w-full rounded-lg bg-muted animate-pulse"></div>
-                  ) : metricSeriesData.length > 0 ? (
-                    <>
-                      <div className="flex flex-wrap items-baseline justify-between gap-2">
-                        <span className="text-sm font-semibold">{metricLatestDisplay}</span>
-                        {metricLatestDate && (
-                          <span className="text-xs text-muted-foreground">As of {metricLatestDate}</span>
-                        )}
-                      </div>
-                      <ResponsiveContainer width="100%" height={240}>
-                        <LineChart data={metricSeriesData} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
-                          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                          <XAxis
-                            dataKey="label"
-                            tick={{ fontSize: 10 }}
-                            minTickGap={16}
-                          />
-                          <YAxis
-                            tickFormatter={metricYAxisFormatter}
-                            width={50}
-                            axisLine={false}
-                            tick={{ fontSize: 10 }}
-                          />
-                          <Tooltip
-                            formatter={(value) => metricTooltipFormatter(value)}
-                            labelFormatter={(_, payload) => {
-                              const iso = payload?.[0]?.payload?.iso;
-                              if (!iso) return '';
-                              const date = new Date(iso);
-                              if (Number.isNaN(date.getTime())) return iso;
-                              return date.toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                year: 'numeric',
-                              });
-                            }}
-                            contentStyle={{
-                              backgroundColor: 'hsl(var(--background))',
-                              border: '1px solid hsl(var(--border))',
-                              borderRadius: '8px',
-                              fontSize: '12px',
-                            }}
-                          />
-                          <Line
-                            type="monotone"
-                            dataKey="value"
-                            stroke={CURRENT_LINE_COLOR}
-                            name={selectedMetric?.label}
-                            strokeWidth={2}
-                            dot={false}
-                          />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      No {metricPeriod === 'trailing' ? 'trailing' : 'quarterly'} data for {selectedMetric?.label}.
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
+                )
+              )}
             </div>
           )}
 
-          <Accordion type="single" collapsible defaultValue="quarterly">
+          <Accordion type="multiple" defaultValue={['quarterly', 'monthly']}>
             <AccordionItem value="quarterly" className="border-b-0">
-              <AccordionTrigger className="py-3 text-xs font-semibold hover:no-underline">
+              <AccordionTrigger className="py-3 text-sm font-semibold hover:no-underline">
                 Quarterly Returns
               </AccordionTrigger>
               <AccordionContent className="pb-4">
@@ -998,13 +1280,16 @@ function ElectionCyclePageContent() {
                     </thead>
                     <tbody>
                       {quarterlyHeatmap.rows.map((row, idx) => (
-                        <tr key={idx} className="border-b">
+                        <tr key={idx}>
                           <td className="py-2 px-1 font-medium sticky left-0 bg-background">{row.year}</td>
                           {[1, 2, 3, 4].map(quarter => {
                             const value = row[`Q${quarter}`];
-                            const bg = cellBgStyle(value);
+                            const cellClass = getReturnCellClass(value);
                             return (
-                              <td key={quarter} className="text-center py-2 px-2" style={{ backgroundColor: bg }}>
+                              <td
+                                key={quarter}
+                                className={`text-center py-2 px-2 ${cellClass}`}
+                              >
                                 {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
                               </td>
                             );
@@ -1015,9 +1300,12 @@ function ElectionCyclePageContent() {
                         <td className="py-2 px-1 sticky left-0 bg-muted/50">Avg.</td>
                         {[1, 2, 3, 4].map(quarter => {
                           const value = quarterlyHeatmap.average[`Q${quarter}`];
-                          const bg = cellBgStyle(value);
+                          const cellClass = getReturnCellClass(value);
                           return (
-                            <td key={quarter} className="text-center py-2 px-2" style={{ backgroundColor: bg }}>
+                            <td
+                              key={quarter}
+                              className={`text-center py-2 px-2 ${cellClass}`}
+                            >
                               {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
                             </td>
                           );
@@ -1030,7 +1318,7 @@ function ElectionCyclePageContent() {
             </AccordionItem>
 
             <AccordionItem value="monthly" className="border-b-0">
-              <AccordionTrigger className="py-3 text-xs font-semibold hover:no-underline">
+              <AccordionTrigger className="py-3 text-sm font-semibold hover:no-underline">
                 Monthly Returns
               </AccordionTrigger>
               <AccordionContent className="pb-4">
@@ -1046,13 +1334,16 @@ function ElectionCyclePageContent() {
                     </thead>
                     <tbody>
                       {monthlyHeatmap.rows.map((row, idx) => (
-                        <tr key={idx} className="border-b">
+                        <tr key={idx}>
                           <td className="py-2 px-1 font-medium sticky left-0 bg-background">{row.year}</td>
                           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(month => {
                             const value = row[`M${month}`];
-                            const bg = cellBgStyle(value);
+                            const cellClass = getReturnCellClass(value);
                             return (
-                              <td key={month} className="text-center py-2 px-1" style={{ backgroundColor: bg }}>
+                              <td
+                                key={month}
+                                className={`text-center py-2 px-1 ${cellClass}`}
+                              >
                                 {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
                               </td>
                             );
@@ -1063,9 +1354,12 @@ function ElectionCyclePageContent() {
                         <td className="py-2 px-1 sticky left-0 bg-muted/50">Avg.</td>
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(month => {
                           const value = monthlyHeatmap.average[`M${month}`];
-                          const bg = cellBgStyle(value);
+                          const cellClass = getReturnCellClass(value);
                           return (
-                            <td key={month} className="text-center py-2 px-1" style={{ backgroundColor: bg }}>
+                            <td
+                              key={month}
+                              className={`text-center py-2 px-1 ${cellClass}`}
+                            >
                               {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
                             </td>
                           );
@@ -1106,6 +1400,17 @@ function ElectionCyclePageContent() {
           } catch (e) {
             console.warn('Failed to save portfolio', e);
           }
+        }}
+      />
+      <SymbolSearchDialog
+        open={searchDialogOpen}
+        onOpenChange={setSearchDialogOpen}
+        onSelect={(nextSymbol) => {
+          if (!nextSymbol || nextSymbol === symbol) {
+            return;
+          }
+          setSymbol(nextSymbol);
+          router.push(`/election-cycle?symbol=${encodeURIComponent(nextSymbol)}`);
         }}
       />
     </div>

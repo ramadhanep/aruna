@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 async function searchSymbols(query) {
   if (!query) return [];
@@ -122,6 +123,7 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
     if (form.symbol.endsWith('.JK')) return 'lot';
     return form.unit;
   }, [form.symbol, form.unit]);
+  const unitLocked = form.symbol.endsWith('.JK');
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -215,15 +217,19 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
                 </div>
                 <div className="flex flex-col gap-1">
                   <Label htmlFor="unit">Unit</Label>
-                  <select
-                    id="unit"
+                  <Select
                     value={effectiveUnit}
-                    onChange={(e) => setForm(f => ({ ...f, unit: e.target.value }))}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    onValueChange={(value) => setForm(f => ({ ...f, unit: value }))}
+                    disabled={unitLocked}
                   >
-                    <option value="share">Share</option>
-                    <option value="lot">Lot</option>
-                  </select>
+                    <SelectTrigger id="unit" className="w-full h-9 px-3 text-sm">
+                      <SelectValue placeholder="Select unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="share">Share</SelectItem>
+                      <SelectItem value="lot">Lot</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 

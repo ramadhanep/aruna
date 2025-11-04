@@ -76,6 +76,7 @@ export default function PortfolioTrackerPage() {
   const [assetType, setAssetType] = useState('digital'); // 'digital' or 'cash'
   const [form, setForm] = useState({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '', type: 'digital', category: '', cashCurrency: 'USD' });
   const [priceMap, setPriceMap] = useState({}); // { symbol: currentPrice }
+  const [initialLoading, setInitialLoading] = useState(true);
   const [fxRate, setFxRate] = useState(0); // USD per IDR (e.g., 1/16500 = 0.0000606)
   const [idrPerUsd, setIdrPerUsd] = useState(0); // IDR per USD (e.g., 16500)
   const justSelectedRef = React.useRef(false);
@@ -213,12 +214,23 @@ export default function PortfolioTrackerPage() {
   useEffect(() => {
     savePortfolio(entries);
     const digitalEntries = entries.filter(e => e.type !== 'cash');
-    if (digitalEntries.length > 0) {
-      const id = setTimeout(() => {
-        refreshPrices(digitalEntries);
-      }, 0);
-      return () => clearTimeout(id);
-    }
+    let cancelled = false;
+
+    (async () => {
+      try {
+        if (digitalEntries.length > 0) {
+          await refreshPrices(digitalEntries);
+        }
+      } finally {
+        if (!cancelled) {
+          setInitialLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [entries, refreshPrices]);
 
   // Persist currency preference
@@ -405,6 +417,7 @@ export default function PortfolioTrackerPage() {
     if (form.symbol.endsWith('.JK')) return 'lot';
     return form.unit;
   }, [form.symbol, form.unit]);
+  const unitLocked = form.symbol.endsWith('.JK');
 
   // Fetch latest prices (simple batch sequential)
   // (Removed duplicated non-hoisted implementations)
@@ -479,8 +492,46 @@ export default function PortfolioTrackerPage() {
     }
   }
 
+  if (initialLoading) {
+    return (
+      <div className="flex flex-col gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <div className="h-4 w-24 rounded bg-muted animate-pulse"></div>
+            <div className="h-8 w-24 rounded bg-muted animate-pulse"></div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <div className="h-3 w-28 rounded bg-muted animate-pulse"></div>
+              <div className="h-8 w-36 rounded bg-muted animate-pulse"></div>
+              <div className="h-3 w-32 rounded bg-muted/80 animate-pulse"></div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[...Array(2)].map((_, idx) => (
+                <div key={idx} className="h-20 rounded-lg bg-muted animate-pulse"></div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="h-4 w-24 rounded bg-muted animate-pulse"></div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {[...Array(3)].map((_, idx) => (
+              <div key={idx} className="h-16 rounded-lg bg-muted animate-pulse"></div>
+            ))}
+          </CardContent>
+        </Card>
+
+        <div className="fixed bottom-20 right-4 h-14 w-14 rounded-full bg-muted animate-pulse"></div>
+      </div>
+    );
+  }
+
   return (
-  <div 
+    <div 
       ref={containerRef}
       className="flex flex-col gap-4"
       onTouchStart={handleTouchStart}
@@ -774,15 +825,19 @@ export default function PortfolioTrackerPage() {
                       </div>
                       <div className="flex flex-col gap-2">
                         <Label htmlFor="unit">Unit</Label>
-                        <select
-                          id="unit"
+                        <Select
                           value={effectiveUnit}
-                          onChange={(e) => setForm(f => ({ ...f, unit: e.target.value }))}
-                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                          onValueChange={(value) => setForm(f => ({ ...f, unit: value }))}
+                          disabled={unitLocked}
                         >
-                          <option value="share">Share</option>
-                          <option value="lot">Lot</option>
-                        </select>
+                          <SelectTrigger id="unit" className="w-full h-9 px-3 text-sm">
+                            <SelectValue placeholder="Select unit" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="share">Share</SelectItem>
+                            <SelectItem value="lot">Lot</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
 

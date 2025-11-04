@@ -1,21 +1,20 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Loader2, Clock, X } from "lucide-react";
 
 const SEARCH_HISTORY_KEY = "aruna_header_symbol_history";
 
-export function HeaderSymbolSearch() {
-  const [open, setOpen] = useState(false);
+export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState([]);
   const [history, setHistory] = useState([]);
-  const router = useRouter();
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -63,31 +62,46 @@ export function HeaderSymbolSearch() {
     };
   }, [query]);
 
-  const handleSelect = (symbol) => {
-    if (!symbol) return;
+  const handleSelect = useCallback(
+    (symbol) => {
+      if (!symbol) return;
 
+      setHistory((prev) => {
+        const nextHistory = [symbol, ...prev.filter((item) => item !== symbol)].slice(0, 8);
+        try {
+          if (typeof window !== "undefined") {
+            window.localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(nextHistory));
+          }
+        } catch (error) {
+          console.warn("Failed to persist symbol history", error);
+        }
+        return nextHistory;
+      });
+
+      if (onSelect) {
+        onSelect(symbol);
+      } else {
+        router.push(`/election-cycle?symbol=${encodeURIComponent(symbol)}`);
+      }
+
+      onOpenChange?.(false);
+      setQuery("");
+      setResults([]);
+      setLoading(false);
+    },
+    [onSelect, onOpenChange, router]
+  );
+
+  const clearHistory = useCallback(() => {
     try {
-      const nextHistory = [symbol, ...history.filter((item) => item !== symbol)].slice(0, 8);
-      setHistory(nextHistory);
-      window.localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(nextHistory));
-    } catch (error) {
-      console.warn("Failed to persist symbol history", error);
-    }
-
-    setOpen(false);
-    setQuery("");
-    setResults([]);
-    router.push(`/election-cycle?symbol=${encodeURIComponent(symbol)}`);
-  };
-
-  const clearHistory = () => {
-    try {
-      window.localStorage.removeItem(SEARCH_HISTORY_KEY);
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(SEARCH_HISTORY_KEY);
+      }
     } catch (error) {
       console.warn("Failed to clear symbol history", error);
     }
     setHistory([]);
-  };
+  }, []);
 
   const emptyState = useMemo(() => {
     if (loading) return null;
@@ -95,27 +109,26 @@ export function HeaderSymbolSearch() {
     if (results.length) return null;
     return (
       <p className="text-xs text-center text-muted-foreground py-8">
-        No matches for "{query.trim()}"
+        No matches for &ldquo;{query.trim()}&rdquo;
       </p>
     );
   }, [loading, query, results]);
 
-  const handleOpenChange = (nextOpen) => {
-    setOpen(nextOpen);
-    if (!nextOpen) {
-      setQuery("");
-      setResults([]);
-      setLoading(false);
-    }
-  };
+  const handleOpenChange = useCallback(
+    (nextOpen) => {
+      onOpenChange?.(nextOpen);
+      if (!nextOpen) {
+        setQuery("");
+        setResults([]);
+        setLoading(false);
+      }
+    },
+    [onOpenChange]
+  );
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="rounded-full p-2 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2" aria-label="Search symbol">
-          <Search className="size-5" />
-        </Button>
-      </DialogTrigger>
+      {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
       <DialogContent className="fixed max-w-none h-screen rounded-none p-0 flex flex-col p-4" closeButtonPosition="right">
         <DialogHeader className="space-y-1">
           <DialogTitle className="text-base font-semibold">Search Symbol</DialogTitle>
@@ -191,9 +204,47 @@ export function HeaderSymbolSearch() {
         </div>
 
         <DialogClose asChild>
-          <Button variant="outline" className="w-full text-sm mt-2">Cancel</Button>
+          <Button variant="outline" className="w-full text-sm mt-2" onClick={() => handleOpenChange(false)}>
+            Cancel
+          </Button>
         </DialogClose>
       </DialogContent>
     </Dialog>
+  );
+}
+
+export function HeaderSymbolSearch() {
+  const [open, setOpen] = useState(false);
+  const router = useRouter();
+
+  const trigger = (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="rounded-full p-2 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      aria-label="Search symbol"
+    >
+      <Search className="size-5" />
+    </Button>
+  );
+
+  const handleSelect = useCallback(
+    (symbol) => {
+      if (!symbol) return;
+      router.push(`/election-cycle?symbol=${encodeURIComponent(symbol)}`);
+    },
+    [router]
+  );
+
+  return (
+    <SymbolSearchDialog
+      open={open}
+      onOpenChange={setOpen}
+      onSelect={(symbol) => {
+        handleSelect(symbol);
+        setOpen(false);
+      }}
+      trigger={trigger}
+    />
   );
 }

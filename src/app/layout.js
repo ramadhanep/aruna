@@ -6,7 +6,7 @@ import { PWARegister } from "@/components/pwa-register";
 import { PWAInstallDialog } from "@/components/pwa-install-dialog";
 import { ClearDataButton } from "@/components/clear-data-button";
 import { HeaderSymbolSearch } from "@/components/header-symbol-search";
-import { Gem } from "lucide-react";
+import { ChartScatter } from "lucide-react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -71,11 +71,12 @@ export default function RootLayout({ children }) {
           <PWARegister />
           <PWAInstallDialog />
           <div className="flex flex-col min-h-screen">
-            <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between px-4 gap-3">
+            <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
+              <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3">
                 <ClearDataButton />
                 <div className="flex gap-2 items-center">
-                  <h1 className="text-lg font-bold">{process.env.NEXT_PUBLIC_APP_NAME || "aruna"}.</h1>
+                  <ChartScatter className="size-5 text-white" />
+                  <h1 className="text-base font-bold">{"aruna"}</h1>
                 </div>
                 <HeaderSymbolSearch />
               </div>

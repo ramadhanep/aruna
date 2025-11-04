@@ -9,11 +9,14 @@ import { ManageWatchlistDialog } from "@/components/manage-watchlist-dialog";
 
 const WATCHLIST_KEY = 'aruna_watchlist';
 const DEFAULT_WATCHLIST = [
-  { symbol: 'BBCA.JK', order: 1 },
-  { symbol: 'BTC-USD', order: 2 },
-  { symbol: 'QQQ', order: 3 },
-  { symbol: 'SPY', order: 4 },
-  { symbol: 'NVDA', order: 5 },
+  { symbol: 'NVDA', order: 1 },
+  { symbol: 'MSFT', order: 2 },
+  { symbol: 'AMZN', order: 3 },
+  { symbol: 'GOOG', order: 4 },
+  { symbol: 'AVGO', order: 5 },
+  { symbol: 'BBCA.JK', order: 6 },
+  { symbol: 'BBRI.JK', order: 7 },
+  { symbol: 'BTC-USD', order: 8 },
 ];
 
 function loadWatchlist() {
@@ -135,15 +138,15 @@ function SectionHeader({ title }) {
 
 function ShimmerItem() {
   return (
-    <div className="flex items-center gap-3 py-3 px-4 animate-pulse">
-      <div className="flex-1 min-w-0">
-        <div className="h-4 bg-muted rounded w-16 mb-1"></div>
-        <div className="h-3 bg-muted rounded w-32"></div>
+    <div className="flex items-center gap-3 py-3">
+      <div className="flex-1 min-w-0 space-y-1.5">
+        <div className="h-4 w-16 rounded bg-muted animate-pulse"></div>
+        <div className="h-3 w-32 rounded bg-muted/80 animate-pulse"></div>
       </div>
-      <div className="w-[60px] h-[30px] bg-muted rounded"></div>
+      <div className="w-[60px] h-[30px] rounded bg-muted animate-pulse"></div>
       <div className="flex flex-col items-end gap-1">
-        <div className="h-4 bg-muted rounded w-20"></div>
-        <div className="h-3 bg-muted rounded w-16"></div>
+        <div className="h-4 w-20 rounded bg-muted animate-pulse"></div>
+        <div className="h-3 w-16 rounded bg-muted/80 animate-pulse"></div>
       </div>
     </div>
   );
@@ -271,13 +274,36 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col">
-        <div className="border rounded-lg overflow-hidden">
+      <div className="flex flex-col gap-4">
+        <div className="overflow-hidden">
           <SectionHeader title="Watchlist" />
           <div className="divide-y">
             {[...Array(6)].map((_, i) => <ShimmerItem key={i} />)}
           </div>
+          <div className="border-t py-3 flex justify-center">
+            <div className="h-8 w-40 rounded-full bg-muted animate-pulse"></div>
+          </div>
         </div>
+
+        <Card>
+          <CardHeader className="pb-0">
+            <div className="flex items-center gap-2">
+              <div className="h-5 w-5 rounded-full bg-muted animate-pulse"></div>
+              <div className="h-4 w-24 rounded bg-muted animate-pulse"></div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4 pt-4">
+            {[...Array(2)].map((_, idx) => (
+              <div key={idx} className="flex items-center justify-between gap-3">
+                <div className="space-y-1">
+                  <div className="h-3 w-16 rounded bg-muted animate-pulse"></div>
+                  <div className="h-3 w-24 rounded bg-muted/80 animate-pulse"></div>
+                </div>
+                <div className="h-6 w-20 rounded bg-muted animate-pulse"></div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       </div>
     );
   }

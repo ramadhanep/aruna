@@ -8,7 +8,7 @@ export default function DocsPage() {
     <div className="flex flex-col gap-4">
       <Card>
         <CardHeader>
-          <CardTitle>aruna Docs</CardTitle>
+          <CardTitle>Aruna Docs</CardTitle>
           <CardDescription>Learn what you can do in this app.</CardDescription>
         </CardHeader>
         <div className="grid gap-3 text-sm">
