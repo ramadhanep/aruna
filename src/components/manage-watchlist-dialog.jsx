@@ -117,7 +117,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
           <DialogTitle className="text-base font-semibold">Manage Watchlist</DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-y-auto px-6">
+        <div className="flex-1 overflow-y-auto px-4">
           {/* Search and Add */}
           <div className="mb-4">
             <div className="relative">

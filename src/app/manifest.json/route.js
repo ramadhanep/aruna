@@ -1,5 +1,5 @@
 export async function GET() {
-  const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Aruna';
+  const appName = process.env.NEXT_PUBLIC_APP_NAME || 'aruna';
   
   const manifest = {
     name: `${appName}`,

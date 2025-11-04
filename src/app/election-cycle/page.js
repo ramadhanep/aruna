@@ -27,7 +27,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Loader2, Sun, MoonStar, Clock3 } from "lucide-react";
+import { Loader2, Sun, MoonStar, Clock3, Star } from "lucide-react";
 import { useTheme } from 'next-themes';
 import { AddAssetModal } from "@/components/add-asset-modal";
 
@@ -612,17 +612,8 @@ function ElectionCyclePageContent() {
 
   return (
     <div className="flex flex-col gap-2">
-      <div className="flex flex-col gap-2">
+      <div className="flex justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
-          {logoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={logoUrl}
-              alt={`${assetName || symbol} logo`}
-              className="h-8 w-8 rounded-full border border-border bg-background object-contain p-1"
-              loading="lazy"
-            />
-          )}
           <h1 className="text-base font-bold uppercase">
             {symbol}
           </h1>
@@ -640,6 +631,8 @@ function ElectionCyclePageContent() {
             <span className="text-white/70 text-xs">🧰 Magnificent 7</span>
           )}
         </div>
+        {/* star add to favorites di sini */}
+        <Star className="size-5"/>
       </div>
 
       {loading && (

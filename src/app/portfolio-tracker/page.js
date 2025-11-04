@@ -605,7 +605,7 @@ export default function PortfolioTrackerPage() {
         <CardContent>
           {entries.length === 0 && (
             <p className="text-xs text-muted-foreground text-center py-8">
-              No assets yet. Tap the <span className="text-primary font-medium">+</span> button below to add your first asset.
+              Tap the plus button below to add your first asset.
             </p>
           )}
           {entries.length > 0 && (

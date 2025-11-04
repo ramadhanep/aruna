@@ -6,7 +6,7 @@ import { PWARegister } from "@/components/pwa-register";
 import { PWAInstallDialog } from "@/components/pwa-install-dialog";
 import { ClearDataButton } from "@/components/clear-data-button";
 import { HeaderSymbolSearch } from "@/components/header-symbol-search";
-import { RefreshCcwDot } from "lucide-react";
+import { Gem } from "lucide-react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,7 +30,7 @@ export const viewport = {
 };
 
 export const metadata = {
-  title: process.env.NEXT_PUBLIC_APP_NAME || "Aruna",
+  title: process.env.NEXT_PUBLIC_APP_NAME || "aruna",
   description: "Hirsch-style seasonal profile with election-cycle overlays",
   manifest: '/manifest.json',
   icons: {
@@ -48,9 +48,9 @@ export const metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: process.env.NEXT_PUBLIC_APP_NAME || "Aruna",
+    title: process.env.NEXT_PUBLIC_APP_NAME || "aruna",
   },
-  applicationName: process.env.NEXT_PUBLIC_APP_NAME || "Aruna",
+  applicationName: process.env.NEXT_PUBLIC_APP_NAME || "aruna",
   formatDetection: {
     telephone: false,
   },
@@ -75,8 +75,7 @@ export default function RootLayout({ children }) {
               <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between px-4 gap-3">
                 <ClearDataButton />
                 <div className="flex gap-2 items-center">
-                  <RefreshCcwDot className="size-6 fill-current text-emerald-600" />
-                  <h1 className="text-lg font-bold">{process.env.NEXT_PUBLIC_APP_NAME || "Aruna"}</h1>
+                  <h1 className="text-lg font-bold">{process.env.NEXT_PUBLIC_APP_NAME || "aruna"}.</h1>
                 </div>
                 <HeaderSymbolSearch />
               </div>

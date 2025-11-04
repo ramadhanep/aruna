@@ -127,7 +127,7 @@ function StockItem({ quote }) {
 
 function SectionHeader({ title }) {
   return (
-    <div className="py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30">
+    <div className="py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
       {title}
     </div>
   );
@@ -310,13 +310,13 @@ export default function HomePage() {
             <StockItem key={quote.symbol} quote={quote} />
           ))}
         </div>
-        <div className="border-t bg-muted/20 py-2">
+        <div className="border-t py-2">
           <button
             onClick={() => setManageDialogOpen(true)}
             className="w-full flex items-center gap-2 justify-center text-emerald-600 hover:text-emerald-700 transition-colors"
           >
             <Edit className="h-4 w-4" />
-            <span className="text-sm font-medium">Manage Watchlist</span>
+            <span className="text-sm font-medium">Add Watchlist</span>
           </button>
         </div>
       </div>
@@ -326,7 +326,7 @@ export default function HomePage() {
           <CardHeader className="pb-0">
             <div className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-muted-foreground" />
-              <CardTitle className="text-sm">Market Pulse</CardTitle>
+              <CardTitle className="text-sm">Highlights</CardTitle>
             </div>
             <CardDescription className="text-xs">How your watchlist is moving today</CardDescription>
           </CardHeader>

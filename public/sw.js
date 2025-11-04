@@ -1,4 +1,4 @@
-// Service Worker for Aruna PWA
+// Service Worker for aruna PWA
 const CACHE_VERSION = 'v2';
 const CACHE_NAME = `aruna-${CACHE_VERSION}`;
 const urlsToCache = [

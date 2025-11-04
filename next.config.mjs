@@ -2,8 +2,8 @@
 const nextConfig = {
   /* config options here */
   env: {
-    NEXT_PUBLIC_APP_NAME: 'Aruna',
-    NEXT_PUBLIC_APP_VERSION: '1.4.9',
+    NEXT_PUBLIC_APP_NAME: 'aruna',
+    NEXT_PUBLIC_APP_VERSION: '1.5.10',
   },
 };
 
