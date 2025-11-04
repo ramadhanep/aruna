@@ -3,6 +3,7 @@
 import React from 'react';
 import { Pie, PieChart, Cell } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { useTheme } from 'next-themes';
 
 export function PortfolioPie({ digitalUSD, cashUSD, currency = 'USD', idrPerUsd = 0 }) {
   const toDisplay = (usd) => {
@@ -18,9 +19,11 @@ export function PortfolioPie({ digitalUSD, cashUSD, currency = 'USD', idrPerUsd 
   ];
   const sumDisplay = data.reduce((s, d) => s + d.value, 0) || 1;
 
+  const { resolvedTheme } = useTheme();
+
   const config = {
-    digital: { label: 'Digital Assets', color: 'oklch(48.8% 0.243 264.376)' },
-    cash: { label: 'Total Cash', color: 'oklch(66.6% 0.179 58.318)' },
+    digital: { label: 'Digital Assets', color: 'oklch(59.6% 0.145 163.225)' },
+    cash: { label: 'Total Cash', color: (resolvedTheme === 'dark') ? '#F9F9F9F9' : '#333333' },
   };
 
   return (

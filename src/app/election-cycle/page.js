@@ -851,9 +851,9 @@ function ElectionCyclePageContent() {
 
           {(fundamentalsLoading || fundamentals) && (
             <div className="space-y-3">
-              <Card className="p-4">
+              <Card>
                 <CardHeader>
-                  <CardTitle className="text-base">Fundamental Snapshot</CardTitle>
+                  <CardTitle className="text-sm">Summary</CardTitle>
                   <CardDescription className="text-xs">
                     Latest valuation ratios and price context
                   </CardDescription>
@@ -885,16 +885,16 @@ function ElectionCyclePageContent() {
                 </CardContent>
               </Card>
 
-              <Card className="p-4">
+              <Card className="mt-5">
                 <CardHeader>
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                      <CardTitle className="text-base">Fundamental Trends</CardTitle>
+                      <CardTitle className="text-sm">Fundamental Trends</CardTitle>
                       <CardDescription className="text-xs">{metricPeriodDescription}</CardDescription>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
-                      <Select value={metricView} onValueChange={setMetricView}>
-                        <SelectTrigger className="h-8 w-[180px]">
+                      <Select value={metricView} onValueChange={setMetricView} className="text-xs">
+                        <SelectTrigger className="h-6 w-[180px] text-xs">
                           <SelectValue placeholder="Metric" />
                         </SelectTrigger>
                         <SelectContent>
@@ -911,8 +911,8 @@ function ElectionCyclePageContent() {
                             key={option.value}
                             type="button"
                             variant={metricPeriod === option.value ? 'default' : 'outline'}
-                            size="sm"
-                            className="h-8 px-3 text-xs"
+                            size="xs"
+                            className="h-6 px-2 text-xs"
                             onClick={() => setMetricPeriod(option.value)}
                           >
                             {option.label}

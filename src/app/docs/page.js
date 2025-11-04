@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/ca
 export default function DocsPage() {
   return (
     <div className="flex flex-col gap-4">
-      <Card className="p-4">
+      <Card>
         <CardHeader>
           <CardTitle>Aruna Docs</CardTitle>
           <CardDescription>Learn what you can do in this app.</CardDescription>

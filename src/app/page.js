@@ -106,7 +106,7 @@ function StockItem({ quote }) {
   const color = isPositive ? 'text-green-600' : 'text-red-600';
   
   return (
-    <Link href={`/election-cycle?symbol=${encodeURIComponent(quote.symbol)}`} className="flex items-center gap-3 py-3 px-4 hover:bg-accent/30 transition-colors">
+    <Link href={`/election-cycle?symbol=${encodeURIComponent(quote.symbol)}`} className="flex items-center gap-3 py-3 hover:bg-accent/30 transition-colors">
       <div className="flex-1 min-w-0">
         <div className="font-semibold text-sm truncate">{quote.symbol}</div>
         <div className="text-xs text-muted-foreground truncate">{quote.name}</div>
@@ -127,7 +127,7 @@ function StockItem({ quote }) {
 
 function SectionHeader({ title }) {
   return (
-    <div className="px-4 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30">
+    <div className="py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-muted/30">
       {title}
     </div>
   );
@@ -303,7 +303,7 @@ export default function HomePage() {
         </div>
       )}
 
-      <Card className="p-4">
+      <Card>
         <CardHeader>
           <CardTitle>Aruna</CardTitle>
           <CardDescription>
@@ -314,14 +314,14 @@ export default function HomePage() {
           Read more in <Link href="/docs" className="text-primary underline">Docs</Link>.
         </div>
       </Card>
-      <div className="border rounded-lg overflow-hidden bg-card">
+      <div className="overflow-hidden">
         <SectionHeader title="Watchlist" />
         <div className="divide-y">
           {quotes.map(quote => (
             <StockItem key={quote.symbol} quote={quote} />
           ))}
         </div>
-        <div className="border-t bg-muted/20 px-4 py-2">
+        <div className="border-t bg-muted/20 py-2">
           <button
             onClick={() => setManageDialogOpen(true)}
             className="w-full flex items-center gap-2 justify-center text-emerald-600 hover:text-emerald-700 transition-colors"
@@ -333,7 +333,7 @@ export default function HomePage() {
       </div>
 
       {marketPulse && marketPulse.topGainer && marketPulse.topLoser && (
-        <Card className="p-4">
+        <Card>
           <CardHeader className="pb-0">
             <div className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-muted-foreground" />

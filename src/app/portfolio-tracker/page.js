@@ -499,9 +499,9 @@ export default function PortfolioTrackerPage() {
           <Loader2 className={`h-6 w-6 text-muted-foreground ${pullDistance > 80 || isRefreshing ? 'animate-spin' : ''}`} />
         </div>
       )}
-      <Card className="p-4">
+      <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-base font-semibold text-sm">Overview</CardTitle>
+          <CardTitle className="font-semibold text-sm">Overview</CardTitle>
           <Select value={currency} onValueChange={setCurrency}>
             <SelectTrigger className="w-[100px] h-8">
               <SelectValue />
@@ -514,7 +514,7 @@ export default function PortfolioTrackerPage() {
         </CardHeader>
         <CardContent className="space-y-3">
           {/* Top summary always visible */}
-          <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+          <div className="flex items-start gap-3">
             <div className="flex-1">
               <p className="text-sm text-muted-foreground mb-1">Total Net Worth</p>
               <p className="text-lg font-bold">{formatValue(totalNetWorth).primary}</p>
@@ -536,11 +536,11 @@ export default function PortfolioTrackerPage() {
           <div className="flex flex-col gap-2">
             <div className="rounded-md border">
               <details>
-                <summary className="list-none cursor-pointer select-none text-center text-sm text-emerald-600 py-1">
+                <summary className="list-none cursor-pointer select-none text-center text-sm text-emerald-600 py-2">
                   View Detail
                 </summary>
                 <div className="space-y-3 p-3 pt-1">
-                  <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                  <div className="flex items-start gap-3 p-3 rounded-lg border">
                     <div className="flex-1">
                       <p className="text-sm text-muted-foreground mb-1">Digital Assets</p>
                       <p className="text-lg font-semibold">{formatValue(digitalMarket).primary}</p>
@@ -559,7 +559,7 @@ export default function PortfolioTrackerPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3 p-3 rounded-lg border bg-card">
+                  <div className="flex items-start gap-3 p-3 rounded-lg border">
                     <div className="flex-1">
                       <p className="text-sm text-muted-foreground mb-1">Total Cash</p>
                       <p className="text-lg font-semibold">{formatValue(totalCash).primary}</p>
@@ -575,11 +575,11 @@ export default function PortfolioTrackerPage() {
 
             <div className="rounded-md border">
               <details>
-                <summary className="list-none cursor-pointer select-none text-center text-sm text-emerald-600 py-1">
+                <summary className="list-none cursor-pointer select-none text-center text-sm text-emerald-600 underline py-2">
                   View Distribution Chart
                 </summary>
                 <div className="space-y-3 p-3 pt-1">
-                  <div className="rounded-lg border bg-card p-3">
+                  <div className="rounded-lg border p-3">
                     <PortfolioPie
                       digitalUSD={digitalMarket}
                       cashUSD={totalCash}
@@ -598,9 +598,9 @@ export default function PortfolioTrackerPage() {
         FX Rate: {idrPerUsd > 0 ? formatIDR(idrPerUsd) : 'loading...'} per USD
       </p>
 
-      <Card className="p-4">
+      <Card>
         <CardHeader>
-          <CardTitle className="text-base font-semibold">Holdings</CardTitle>
+          <CardTitle className="text-sm font-semibold">Holdings</CardTitle>
         </CardHeader>
         <CardContent>
           {entries.length === 0 && (
@@ -629,29 +629,28 @@ export default function PortfolioTrackerPage() {
                 return (
                   <div key={idx} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
                     <div className="flex-1 min-w-0">
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-2">
-                          <div className="p-2 rounded-full bg-muted">
-                            {isCash ? (
-                              <DollarSign className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
-                            ) : (
-                              <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      <div className="flex gap-2">
+                        <div className="p-2 rounded-full bg-muted">
+                          {isCash ? (
+                            <DollarSign className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
+                          ) : (
+                            <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                          )}
+                        </div>
+                        <div className="flex flex-col justify-start">
+                          <p className="font-semibold text-xs truncate">
+                            {isCash ? e.category : e.symbol} {!isCash && e.name && (
+                              <span className="text-xs text-muted-foreground truncate">({e.name})</span>
                             )}
-                          </div>
-                          <p className="font-semibold text-sm truncate">
-                            {isCash ? e.category : e.symbol}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {isCash ? (
+                              <span>{(cashDisplayAmount ?? 0).toLocaleString()} {e.cashCurrency}</span>
+                            ) : (
+                              <span>{e.amount} {e.unit}</span>
+                            )}
                           </p>
                         </div>
-                        {!isCash && e.name && (
-                          <span className="text-xs text-muted-foreground truncate">{e.name}</span>
-                        )}
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-0.5">
-                        {isCash ? (
-                          <span>{(cashDisplayAmount ?? 0).toLocaleString()} {e.cashCurrency}</span>
-                        ) : (
-                          <span>{e.amount} {e.unit}</span>
-                        )}
                       </div>
                       {!isCash && pnl !== 0 && (
                         <div className="text-[10px] mt-0.5">
