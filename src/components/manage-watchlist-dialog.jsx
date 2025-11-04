@@ -114,7 +114,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="fixed max-w-none m-0 h-screen rounded-none p-0 flex flex-col" closeButtonPosition="right">
         <DialogHeader className="p-6 pb-4">
-          <DialogTitle>Manage Watchlist</DialogTitle>
+          <DialogTitle className="text-base font-semibold">Manage Watchlist</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-6">
@@ -170,7 +170,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
                 className="flex items-center gap-3 p-3 border rounded-md bg-card"
               >
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold">{item.symbol}</div>
+                  <div className="font-semibold text-sm">{item.symbol}</div>
                 </div>
 
                 {/* Up/Down controls (replace drag handle) */}

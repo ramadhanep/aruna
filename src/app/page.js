@@ -272,7 +272,7 @@ export default function HomePage() {
   if (loading) {
     return (
       <div className="flex flex-col">
-        <div className="border rounded-lg overflow-hidden bg-card">
+        <div className="border rounded-lg overflow-hidden">
           <SectionHeader title="Watchlist" />
           <div className="divide-y">
             {[...Array(6)].map((_, i) => <ShimmerItem key={i} />)}
@@ -303,17 +303,6 @@ export default function HomePage() {
         </div>
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Aruna</CardTitle>
-          <CardDescription>
-            A lightweight investing companion to track portfolios, watch markets, and explore seasonal patterns.
-          </CardDescription>
-        </CardHeader>
-        <div className="text-sm text-muted-foreground">
-          Read more in <Link href="/docs" className="text-primary underline">Docs</Link>.
-        </div>
-      </Card>
       <div className="overflow-hidden">
         <SectionHeader title="Watchlist" />
         <div className="divide-y">
@@ -337,38 +326,38 @@ export default function HomePage() {
           <CardHeader className="pb-0">
             <div className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-muted-foreground" />
-              <CardTitle className="text-base">Market Pulse</CardTitle>
+              <CardTitle className="text-sm">Market Pulse</CardTitle>
             </div>
             <CardDescription className="text-xs">How your watchlist is moving today</CardDescription>
           </CardHeader>
           <CardContent className="mt-4 grid gap-3">
-            <div className="flex items-center justify-between rounded-lg border bg-card px-3 py-2">
+            <div className="flex items-center justify-between rounded-lg">
               <div>
                 <p className="text-xs text-muted-foreground">Top Gainer</p>
                 <p className="text-sm font-semibold uppercase">{marketPulse.topGainer.symbol}</p>
-                <p className={`text-xs font-medium ${marketPulse.topGainer.change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                <p className={`text-xs font-medium ${marketPulse.topGainer.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {marketPulse.topGainer.change >= 0 ? '+' : ''}{marketPulse.topGainer.change.toFixed(2)} ({marketPulse.topGainer.changePercent.toFixed(2)}%)
                 </p>
               </div>
-              <div className={`flex items-center ${marketPulse.topGainer.change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              <div className={`flex items-center ${marketPulse.topGainer.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 <MiniChart data={marketPulse.topGainer.chartData} isPositive={marketPulse.topGainer.change >= 0} />
               </div>
             </div>
-            <div className="flex items-center justify-between rounded-lg border bg-card px-3 py-2">
+            <div className="flex items-center justify-between rounded-lg">
               <div>
                 <p className="text-xs text-muted-foreground">Top Loser</p>
                 <p className="text-sm font-semibold uppercase">{marketPulse.topLoser.symbol}</p>
-                <p className={`text-xs font-medium ${marketPulse.topLoser.change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                <p className={`text-xs font-medium ${marketPulse.topLoser.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {marketPulse.topLoser.change >= 0 ? '+' : ''}{marketPulse.topLoser.change.toFixed(2)} ({marketPulse.topLoser.changePercent.toFixed(2)}%)
                 </p>
               </div>
-              <div className={`flex items-center ${marketPulse.topLoser.change >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              <div className={`flex items-center ${marketPulse.topLoser.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 <MiniChart data={marketPulse.topLoser.chartData} isPositive={marketPulse.topLoser.change >= 0} />
               </div>
             </div>
-            <div className="rounded-lg border bg-card px-3 py-2">
+            <div className="rounded-lg">
               <p className="text-xs text-muted-foreground">Average Change</p>
-              <p className={`text-sm font-semibold ${marketPulse.averageChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              <p className={`text-sm font-semibold ${marketPulse.averageChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {marketPulse.averageChange >= 0 ? '+' : ''}{marketPulse.averageChange.toFixed(2)}%
               </p>
             </div>

@@ -520,7 +520,7 @@ export default function PortfolioTrackerPage() {
               <p className="text-lg font-bold">{formatValue(totalNetWorth).primary}</p>
               <p className="text-xs text-muted-foreground mt-0.5">{formatValue(totalNetWorth).secondary}</p>
               <div className="mt-1 flex items-center gap-1">
-                <span className={`text-xs font-medium ${totalPnL >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                <span className={`text-xs font-medium ${totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {totalPnL >= 0 ? '+' : ''}{formatValue(totalPnL).primary}
                 </span>
                 <span className="text-[10px] text-muted-foreground">
@@ -546,7 +546,7 @@ export default function PortfolioTrackerPage() {
                       <p className="text-lg font-semibold">{formatValue(digitalMarket).primary}</p>
                       <p className="text-xs text-muted-foreground">{formatValue(digitalMarket).secondary}</p>
                       <div className="mt-1 flex items-center gap-1">
-                        <span className={`text-xs font-medium ${digitalPnL >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                        <span className={`text-xs font-medium ${digitalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {digitalPnL >= 0 ? '+' : ''}{formatValue(digitalPnL).primary}
                         </span>
                         <span className="text-[10px] text-muted-foreground">
@@ -627,7 +627,7 @@ export default function PortfolioTrackerPage() {
                   : null;
                 
                 return (
-                  <div key={idx} className="flex items-center gap-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                  <div key={idx} className="flex items-center gap-3 border-b rounded-lg hover:bg-accent/50 transition-colors min-h-16">
                     <div className="flex-1 min-w-0">
                       <div className="flex gap-2">
                         <div className="p-2 rounded-full bg-muted">
@@ -639,9 +639,7 @@ export default function PortfolioTrackerPage() {
                         </div>
                         <div className="flex flex-col justify-start">
                           <p className="font-semibold text-xs truncate">
-                            {isCash ? e.category : e.symbol} {!isCash && e.name && (
-                              <span className="text-xs text-muted-foreground truncate">({e.name})</span>
-                            )}
+                            {isCash ? e.category : e.symbol}
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {isCash ? (
@@ -652,32 +650,32 @@ export default function PortfolioTrackerPage() {
                           </p>
                         </div>
                       </div>
-                      {!isCash && pnl !== 0 && (
-                        <div className="text-[10px] mt-0.5">
-                          <span className={pnl >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
-                            {pnl >= 0 ? '+' : ''}{formatValue(pnl).primary}
-                          </span>
-                        </div>
-                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="text-right">
                         <p className="text-sm font-semibold">{formatted.primary}</p>
                         <p className="text-[10px] text-muted-foreground">{formatted.secondary}</p>
+                        {!isCash && pnl !== 0 && (
+                          <p className="text-[10px]">
+                            <span className={pnl >= 0 ? 'text-green-600' : 'text-red-600'}>
+                              {pnl >= 0 ? '+' : '-'}{formatValue(pnl).primary}
+                            </span>
+                          </p>
+                        )}
                       </div>
-                      <DropdownMenu className="text-xs">
+                      <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEdit(idx)}>
-                            <Pencil className="mr-2 h-4 w-4" />
+                          <DropdownMenuItem onClick={() => openEdit(idx)} className="text-xs">
+                            <Pencil className="mr-1 size-3" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => removeEntry(idx)} className="text-red-600 dark:text-red-400">
-                            <Trash2 className="mr-2 h-4 w-4" />
+                          <DropdownMenuItem onClick={() => removeEntry(idx)} className="text-xs text-red-600">
+                            <Trash2 className="mr-1 size-3" />
                             Delete
                           </DropdownMenuItem>
                         </DropdownMenuContent>
@@ -694,11 +692,11 @@ export default function PortfolioTrackerPage() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="fixed max-w-none m-0 h-screen rounded-none p-0 flex flex-col" closeButtonPosition="right">
           <div className="flex items-center gap-2 p-4 border-b">
-            <DialogTitle className="text-sm">{editingIndex != null ? 'Edit Asset' : 'Add Asset'}</DialogTitle>
+            <DialogTitle className="text-base">{editingIndex != null ? 'Edit Asset' : 'Add Asset'}</DialogTitle>
           </div>
           
           <div className="flex-1 overflow-auto">
-            <div className="p-4">
+            <div className="px-4">
               <DialogDescription className="mb-4 text-xs">
                 Record your {assetType === 'cash' ? 'cash' : 'digital asset'} details. 
                 {assetType === 'digital'}

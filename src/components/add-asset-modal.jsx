@@ -161,7 +161,7 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="fixed max-w-none m-0 h-screen rounded-none p-0 flex flex-col" closeButtonPosition="right">
         <div className="flex items-center gap-2 p-4 border-b">
-          <DialogTitle className="text-sm">Add Asset</DialogTitle>
+          <DialogTitle className="text-base">Add Asset</DialogTitle>
         </div>
         
         <div className="flex-1 overflow-auto">

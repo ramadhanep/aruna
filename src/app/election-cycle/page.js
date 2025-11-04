@@ -611,7 +611,7 @@ function ElectionCyclePageContent() {
   const MarketStateIcon = marketStateInfo?.Icon;
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-2">
       <div className="flex flex-col gap-2">
         <div className="flex flex-wrap items-center gap-2">
           {logoUrl && (
@@ -626,17 +626,18 @@ function ElectionCyclePageContent() {
           <h1 className="text-base font-bold uppercase">
             {symbol}
           </h1>
+          <span className="text-muted">|</span>
           {symbol.endsWith('.JK') && (
-            <span className="text-xs">🇮🇩 Hey antek-antek asing!</span>
+            <span className="text-white/70 text-xs">🇮🇩 Hey antek-antek asing!</span>
           )}
           {symbol.endsWith('-USD') && (
-            <span className="text-xs">🚀 To the moon (katanya)</span>
+            <span className="text-white/70 text-xs">🚀 To the moon (katanya)</span>
           )}
           {['QQQ', 'SPY'].some((s) => symbol.endsWith(s)) && (
-            <span className="text-xs">👴 Boomer Pension Fund</span>
+            <span className="text-white/70 text-xs">👴 Boomer Pension Fund</span>
           )}
           {['AAPL','MSFT','GOOGL','GOOG','AMZN','META','NVDA','TSLA'].some((s) => symbol.endsWith(s)) && (
-            <span className="text-xs">🧰 Magnificent 7</span>
+            <span className="text-white/70 text-xs">🧰 Magnificent 7</span>
           )}
         </div>
       </div>
@@ -725,33 +726,52 @@ function ElectionCyclePageContent() {
                   </div>
                   {symbolInfo?.dailyChange != null && symbolInfo?.dailyChangePct != null && (
                     <span
-                      className={`text-sm font-medium ${symbolInfo.dailyChange >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                      className={`text-sm font-medium ${symbolInfo.dailyChange >= 0 ? 'text-green-600' : 'text-red-600'}`}
                     >
                       {symbolInfo.dailyChange >= 0 ? '+' : ''}
                       {symbolInfo.dailyChange.toFixed(2)} ({symbolInfo.dailyChangePct.toFixed(2)}%)
                     </span>
                   )}
                 </div>
-                <RadioGroup value={scaleChoice} onValueChange={setScaleChoice} className="flex gap-2">
-                  <div className="flex-1">
-                    <RadioGroupItem value="linear" id="linear" className="peer sr-only" />
-                    <Label
-                      htmlFor="linear"
-                      className="flex items-center justify-center h-6 px-2 rounded-md border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground cursor-pointer transition-colors text-xs"
-                    >
-                      Linear
-                    </Label>
-                  </div>
-                  <div className="flex-1">
-                    <RadioGroupItem value="log" id="log" className="peer sr-only" />
-                    <Label
-                      htmlFor="log"
-                      className="flex items-center justify-center h-6 px-2 rounded-md border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground cursor-pointer transition-colors text-xs"
-                    >
-                      Logarithmic
-                    </Label>
-                  </div>
-                </RadioGroup>
+                <div className="flex flex-col gap-4">
+                  <Select
+                    className="w-full"
+                    value={selectedCycles.join(',')}
+                    onValueChange={(value) => setSelectedCycles(value.split(','))}
+                  >
+                    <SelectTrigger className="h-6 text-xs">
+                      <SelectValue placeholder="Select cycles" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem className="text-xs" value="pre,current">Pre-Election + Current</SelectItem>
+                      <SelectItem className="text-xs" value="election,current">Election + Current</SelectItem>
+                      <SelectItem className="text-xs" value="mid,current">Mid-Term + Current</SelectItem>
+                      <SelectItem className="text-xs" value="post,current">Post-Election + Current</SelectItem>
+                      <SelectItem className="text-xs" value="all,current">All Years + Current</SelectItem>
+                      {/* <SelectItem value="pre,election,mid,post,current">All Cycles + Current</SelectItem> */}
+                    </SelectContent>
+                  </Select>
+                  <RadioGroup value={scaleChoice} onValueChange={setScaleChoice} className="flex gap-2">
+                    <div className="flex-1">
+                      <RadioGroupItem value="linear" id="linear" className="peer sr-only" />
+                      <Label
+                        htmlFor="linear"
+                        className="flex items-center justify-center h-6 px-2 rounded-full border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground cursor-pointer transition-colors text-xs"
+                      >
+                        Linear
+                      </Label>
+                    </div>
+                    <div className="flex-1">
+                      <RadioGroupItem value="log" id="log" className="peer sr-only" />
+                      <Label
+                        htmlFor="log"
+                        className="flex items-center justify-center h-6 px-2 rounded-full border-2 border-muted bg-popover hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary peer-data-[state=checked]:text-primary-foreground cursor-pointer transition-colors text-xs"
+                      >
+                        Logarithmic
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="px-0 -mr-5 pb-0">
@@ -824,39 +844,18 @@ function ElectionCyclePageContent() {
             ))}
           </div>
 
-          <Select
-            className="w-full"
-            value={selectedCycles.join(',')}
-            onValueChange={(value) => setSelectedCycles(value.split(','))}
-          >
-            <SelectTrigger className="h-8">
-              <SelectValue placeholder="Select cycles" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pre,current">Pre-Election + Current</SelectItem>
-              <SelectItem value="election,current">Election + Current</SelectItem>
-              <SelectItem value="mid,current">Mid-Term + Current</SelectItem>
-              <SelectItem value="post,current">Post-Election + Current</SelectItem>
-              <SelectItem value="all,current">All Years + Current</SelectItem>
-              {/* <SelectItem value="pre,election,mid,post,current">All Cycles + Current</SelectItem> */}
-            </SelectContent>
-          </Select>
-
           <Button 
             onClick={() => setPortfolioDialogOpen(true)}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 font-semibold text-sm"
+            className="mt-2 w-full bg-emerald-600 hover:bg-emerald-700 font-semibold text-sm"
           >
             Add to Your Portfolio
           </Button>
 
           {(fundamentalsLoading || fundamentals) && (
-            <div className="space-y-3">
+            <div className="mt-2 space-y-3">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-sm">Summary</CardTitle>
-                  <CardDescription className="text-xs">
-                    Latest valuation ratios and price context
-                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {fundamentalsLoading ? (
@@ -873,7 +872,7 @@ function ElectionCyclePageContent() {
                       {quickStats.map((item) => (
                         <div key={item.label} className="space-y-1">
                           <dt className="text-xs text-muted-foreground">{item.label}</dt>
-                          <dd className="text-sm font-medium">{item.value}</dd>
+                          <dd className="text-xs font-medium">{item.value}</dd>
                         </div>
                       ))}
                     </dl>
@@ -988,12 +987,12 @@ function ElectionCyclePageContent() {
             </div>
           )}
 
-          <Accordion type="single" collapsible defaultValue="quarterly" className="border rounded-lg">
+          <Accordion type="single" collapsible defaultValue="quarterly">
             <AccordionItem value="quarterly" className="border-b-0">
-              <AccordionTrigger className="px-4 py-3 text-sm font-semibold hover:no-underline hover:bg-accent">
+              <AccordionTrigger className="py-3 text-xs font-semibold hover:no-underline">
                 Quarterly Returns
               </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4">
+              <AccordionContent className="pb-4">
                 <div className="overflow-x-auto -mx-4 px-4">
                   <table className="w-full text-[10px]">
                     <thead>
@@ -1038,10 +1037,10 @@ function ElectionCyclePageContent() {
             </AccordionItem>
 
             <AccordionItem value="monthly" className="border-b-0">
-              <AccordionTrigger className="px-4 py-3 text-sm font-semibold hover:no-underline hover:bg-accent">
+              <AccordionTrigger className="py-3 text-xs font-semibold hover:no-underline">
                 Monthly Returns
               </AccordionTrigger>
-              <AccordionContent className="px-4 pb-4">
+              <AccordionContent className="pb-4">
                 <div className="relative overflow-x-auto">
                   <table className="w-full text-[9px]">
                     <thead>
