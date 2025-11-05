@@ -850,7 +850,7 @@ function ElectionCyclePageContent() {
             <div className="grid gap-2 md:grid-cols-2">
               <Card>
                 <CardHeader className="gap-1">
-                  <CardTitle className="text-sm">Earnings Per Share</CardTitle>
+                  <CardTitle className="text-sm">Earnings Results</CardTitle>
                   <CardDescription className="text-xs">Tracking actual results against estimates</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -885,27 +885,29 @@ function ElectionCyclePageContent() {
                       {marketStateInfo.label}
                     </span>
                   ) : null}
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-xl font-bold">
-                      {symbolInfo?.currentPrice != null
-                        ? symbolInfo.currentPrice.toLocaleString('en-US', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })
-                        : '-'}
-                    </span>
-                    {symbolInfo?.currency && (
-                      <span className="text-xs text-muted-foreground">{symbolInfo.currency}</span>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xl font-bold">
+                        {symbolInfo?.currentPrice != null
+                          ? symbolInfo.currentPrice.toLocaleString('en-US', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })
+                          : '-'}
+                      </span>
+                      {symbolInfo?.currency && (
+                        <span className="text-xs text-muted-foreground">{symbolInfo.currency}</span>
+                      )}
+                    </div>
+                    {symbolInfo?.dailyChange != null && symbolInfo?.dailyChangePct != null && (
+                      <span
+                        className={`text-xs font-medium ${symbolInfo.dailyChange >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                      >
+                        {symbolInfo.dailyChange >= 0 ? '+' : ''}
+                        {symbolInfo.dailyChange.toFixed(2)} ({symbolInfo.dailyChangePct.toFixed(2)}%)
+                      </span>
                     )}
                   </div>
-                  {symbolInfo?.dailyChange != null && symbolInfo?.dailyChangePct != null && (
-                    <span
-                      className={`text-sm font-medium ${symbolInfo.dailyChange >= 0 ? 'text-green-600' : 'text-red-600'}`}
-                    >
-                      {symbolInfo.dailyChange >= 0 ? '+' : ''}
-                      {symbolInfo.dailyChange.toFixed(2)} ({symbolInfo.dailyChangePct.toFixed(2)}%)
-                    </span>
-                  )}
                 </div>
                 <div className="flex flex-col items-end gap-3">
                   <Select
@@ -935,7 +937,7 @@ function ElectionCyclePageContent() {
                         type="button"
                         size="xs"
                         variant={scaleChoice === option.value ? 'default' : 'ghost'}
-                        className={`px-2 text-[11px] ${scaleChoice === option.value ? 'shadow-sm' : ''}`}
+                        className={`px-2 py-1 text-xs ${scaleChoice === option.value ? 'shadow-sm' : ''}`}
                         onClick={() => setScaleChoice(option.value)}
                       >
                         {option.label}
@@ -1082,7 +1084,7 @@ function ElectionCyclePageContent() {
                         <CardHeader className="gap-3">
                           <div className="flex items-start justify-between gap-2">
                             <div className="space-y-1">
-                              <CardTitle className="text-sm">Earnings Per Share</CardTitle>
+                              <CardTitle className="text-sm">Earnings Results</CardTitle>
                               <p className="text-xs text-muted-foreground">
                                 <span className="font-semibold text-foreground">
                                   {latestEarningsPoint.periodLabel}
@@ -1202,7 +1204,7 @@ function ElectionCyclePageContent() {
                                   type="button"
                                   size="xs"
                                   variant={revenuePeriod === option.value ? 'default' : 'ghost'}
-                                  className={`px-1 text-xs ${revenuePeriod === option.value ? 'shadow-sm' : ''}`}
+                                  className={`px-2 py-1 text-xs ${revenuePeriod === option.value ? 'shadow-sm' : ''}`}
                                   onClick={() => setRevenuePeriod(option.value)}
                                   disabled={option.disabled}
                                 >

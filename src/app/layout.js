@@ -6,7 +6,7 @@ import { PWARegister } from "@/components/pwa-register";
 import { PWAInstallDialog } from "@/components/pwa-install-dialog";
 import { ClearDataButton } from "@/components/clear-data-button";
 import { HeaderSymbolSearch } from "@/components/header-symbol-search";
-import { ChartScatter } from "lucide-react";
+import { AlignEndHorizontal } from "lucide-react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -74,9 +74,9 @@ export default function RootLayout({ children }) {
             <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
               <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3 px-2">
                 <ClearDataButton />
-                <div className="flex gap-2 items-center">
-                  <ChartScatter className="size-5 text-white" />
-                  <h1 className="text-base font-bold">{"aruna"}</h1>
+                <div className="flex gap-1 items-center">
+                  <AlignEndHorizontal className="size-5" />
+                  <h1 className="text-lg font-bold">{"aruna"}...</h1>
                 </div>
                 <HeaderSymbolSearch />
               </div>
