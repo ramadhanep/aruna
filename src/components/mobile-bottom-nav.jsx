@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, RefreshCcwDot, BriefcaseBusiness, Settings } from "lucide-react";
+import { Home, RefreshCcwDot, BriefcaseBusiness, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -23,9 +23,9 @@ const navItems = [
     icon: BriefcaseBusiness,
   },
   {
-    title: "Settings",
-    url: "/settings",
-    icon: Settings,
+    title: "Account",
+    url: "/account",
+    icon: UserRound,
   },
 ];
 

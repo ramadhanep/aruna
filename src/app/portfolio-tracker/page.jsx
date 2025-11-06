@@ -9,11 +9,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, MoreVertical, Pencil, Trash2, Loader2, Wallet, Coins, TrendingUp, DollarSign, ArrowUpDown, Check } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import { useAuth } from '@/components/auth-provider';
 
 // Dynamic chart component to keep page light and avoid SSR issues
 const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { ssr: false });
 
 // LocalStorage key for currency preference
+const PORTFOLIO_STORAGE_KEY = 'aruna_portfolio';
+const PORTFOLIO_UPDATED_AT_KEY = 'aruna_portfolio_updated_at';
 const PORTFOLIO_CURRENCY_KEY = 'portfolio_currency';
 const DEFAULT_PORTFOLIO_ENTRIES = [
   { symbol: 'BTC-USD', name: 'Bitcoin', amount: 1, unit: 'share', avgPrice: 65000, type: 'digital' },
@@ -41,21 +44,37 @@ async function searchSymbols(query) {
 function loadPortfolio() {
   if (typeof window === 'undefined') return getDefaultPortfolio();
   try {
-    const raw = localStorage.getItem('aruna_portfolio');
+    const raw = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
     if (!raw) {
-      return getDefaultPortfolio();
+      const defaults = getDefaultPortfolio();
+      localStorage.setItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(defaults));
+      localStorage.setItem(PORTFOLIO_UPDATED_AT_KEY, new Date().toISOString());
+      return defaults;
     }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : getDefaultPortfolio();
+    if (Array.isArray(parsed)) {
+      return parsed;
+    }
+    const defaults = getDefaultPortfolio();
+    localStorage.setItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(defaults));
+    return defaults;
   } catch (e) {
     console.warn('Failed to parse portfolio', e);
     return getDefaultPortfolio();
   }
 }
 
-function savePortfolio(data) {
+function loadPortfolioUpdatedAt() {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(PORTFOLIO_UPDATED_AT_KEY);
+}
+
+function savePortfolio(data, updatedAt) {
   try {
-    localStorage.setItem('aruna_portfolio', JSON.stringify(data));
+    localStorage.setItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(data));
+    const timestamp =
+      typeof updatedAt === 'string' ? updatedAt : new Date().toISOString();
+    localStorage.setItem(PORTFOLIO_UPDATED_AT_KEY, timestamp);
   } catch (e) {
     console.warn('Failed to save portfolio', e);
   }
@@ -84,6 +103,7 @@ function saveCurrencyPreference(currency) {
 
 export default function PortfolioTrackerPage() {
   const [entries, setEntries] = useState(() => loadPortfolio());
+  const [portfolioUpdatedAt, setPortfolioUpdatedAt] = useState(() => loadPortfolioUpdatedAt());
   const [holdingsSort, setHoldingsSort] = useState('alpha');
   const [currency, setCurrency] = useState(() => loadCurrencyPreference());
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -101,6 +121,15 @@ export default function PortfolioTrackerPage() {
   const [pullDistance, setPullDistance] = useState(0);
   const touchStartY = React.useRef(0);
   const containerRef = React.useRef(null);
+  const remotePortfolioSeedRef = React.useRef(false);
+  const skipPortfolioSyncRef = React.useRef(false);
+  const {
+    user,
+    remotePortfolio,
+    remotePortfolioUpdatedAt,
+    portfolioLoaded,
+    syncPortfolio,
+  } = useAuth();
   
   // Fetch latest prices (simple batch sequential)
   const fetchPrice = useCallback(async (symbol) => {
@@ -227,9 +256,78 @@ export default function PortfolioTrackerPage() {
     })();
   }, []);
 
+  useEffect(() => {
+    if (!user) {
+      remotePortfolioSeedRef.current = false;
+      skipPortfolioSyncRef.current = true;
+      const local = loadPortfolio();
+      setEntries(local);
+      setPortfolioUpdatedAt(loadPortfolioUpdatedAt());
+      return;
+    }
+
+    if (!portfolioLoaded) {
+      return;
+    }
+
+    if (Array.isArray(remotePortfolio) && remotePortfolio.length > 0) {
+      remotePortfolioSeedRef.current = false;
+      const timestamp = remotePortfolioUpdatedAt || new Date().toISOString();
+      skipPortfolioSyncRef.current = true;
+      setEntries(remotePortfolio);
+      savePortfolio(remotePortfolio, timestamp);
+      setPortfolioUpdatedAt(timestamp);
+      return;
+    }
+
+    if (!remotePortfolioSeedRef.current) {
+      remotePortfolioSeedRef.current = true;
+      const defaults = getDefaultPortfolio();
+      const timestamp = new Date().toISOString();
+      skipPortfolioSyncRef.current = true;
+      setEntries(defaults);
+      savePortfolio(defaults, timestamp);
+      setPortfolioUpdatedAt(timestamp);
+      syncPortfolio(defaults)
+        .then((remoteTimestamp) => {
+          remotePortfolioSeedRef.current = false;
+          if (remoteTimestamp) {
+            setPortfolioUpdatedAt(remoteTimestamp);
+            savePortfolio(defaults, remoteTimestamp);
+          }
+        })
+        .catch(() => {
+          remotePortfolioSeedRef.current = false;
+        });
+    }
+  }, [
+    user,
+    portfolioLoaded,
+    remotePortfolio,
+    remotePortfolioUpdatedAt,
+    syncPortfolio,
+  ]);
+
   // Persist changes and refresh prices when entries mutate
   useEffect(() => {
-    savePortfolio(entries);
+    const shouldSkipSync = skipPortfolioSyncRef.current;
+    if (shouldSkipSync) {
+      skipPortfolioSyncRef.current = false;
+    } else {
+      const timestamp = new Date().toISOString();
+      savePortfolio(entries, timestamp);
+      setPortfolioUpdatedAt(timestamp);
+      if (user) {
+        syncPortfolio(entries)
+          .then((remoteTimestamp) => {
+            if (remoteTimestamp) {
+              setPortfolioUpdatedAt(remoteTimestamp);
+              savePortfolio(entries, remoteTimestamp);
+            }
+          })
+          .catch(() => {});
+      }
+    }
     const digitalEntries = entries.filter(e => e.type !== 'cash');
     let cancelled = false;
 
@@ -248,7 +346,7 @@ export default function PortfolioTrackerPage() {
     return () => {
       cancelled = true;
     };
-  }, [entries, refreshPrices]);
+  }, [entries, refreshPrices, user, syncPortfolio]);
 
   // Persist currency preference
   useEffect(() => {

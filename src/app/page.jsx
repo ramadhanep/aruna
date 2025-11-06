@@ -6,8 +6,10 @@ import { TrendingUp, TrendingDown, Loader2, Download, Edit, BarChart3 } from "lu
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ManageWatchlistDialog } from "@/components/manage-watchlist-dialog";
+import { useAuth } from "@/components/auth-provider";
 
 const WATCHLIST_KEY = 'aruna_watchlist';
+const WATCHLIST_UPDATED_AT_KEY = 'aruna_watchlist_updated_at';
 const DEFAULT_WATCHLIST = [
   { symbol: 'NVDA', order: 1 },
   { symbol: 'MSFT', order: 2 },
@@ -25,6 +27,7 @@ function loadWatchlist() {
     const raw = localStorage.getItem(WATCHLIST_KEY);
     if (!raw) {
       localStorage.setItem(WATCHLIST_KEY, JSON.stringify(DEFAULT_WATCHLIST));
+      localStorage.setItem(WATCHLIST_UPDATED_AT_KEY, new Date().toISOString());
       return DEFAULT_WATCHLIST;
     }
     return JSON.parse(raw);
@@ -34,9 +37,17 @@ function loadWatchlist() {
   }
 }
 
-function saveWatchlist(data) {
+function loadWatchlistUpdatedAt() {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(WATCHLIST_UPDATED_AT_KEY);
+}
+
+function saveWatchlist(data, updatedAt) {
   try {
     localStorage.setItem(WATCHLIST_KEY, JSON.stringify(data));
+    const timestamp =
+      typeof updatedAt === 'string' ? updatedAt : new Date().toISOString();
+    localStorage.setItem(WATCHLIST_UPDATED_AT_KEY, timestamp);
   } catch (e) {
     console.warn('Failed to save watchlist', e);
   }
@@ -154,6 +165,7 @@ function ShimmerItem() {
 
 export default function HomePage() {
   const [watchlist, setWatchlist] = useState(() => loadWatchlist());
+  const [watchlistUpdatedAt, setWatchlistUpdatedAt] = useState(() => loadWatchlistUpdatedAt());
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -163,6 +175,14 @@ export default function HomePage() {
   const [manageDialogOpen, setManageDialogOpen] = useState(false);
   const touchStartY = useRef(0);
   const containerRef = useRef(null);
+  const remoteDefaultSeedRef = useRef(false);
+  const {
+    user,
+    remoteWatchlist,
+    remoteWatchlistUpdatedAt,
+    watchlistLoaded,
+    syncWatchlist,
+  } = useAuth();
 
   const marketPulse = useMemo(() => {
     if (!quotes.length) {
@@ -192,6 +212,60 @@ export default function HomePage() {
     };
     init();
   }, [loadQuotes]);
+
+  useEffect(() => {
+    if (!user) {
+      remoteDefaultSeedRef.current = false;
+      const local = loadWatchlist();
+      setWatchlist(local);
+      setWatchlistUpdatedAt(loadWatchlistUpdatedAt());
+      return;
+    }
+
+    if (!watchlistLoaded) {
+      return;
+    }
+
+    if (Array.isArray(remoteWatchlist) && remoteWatchlist.length > 0) {
+      remoteDefaultSeedRef.current = false;
+      const timestamp = remoteWatchlistUpdatedAt || new Date().toISOString();
+      const localSerialized = JSON.stringify(watchlist);
+      const remoteSerialized = JSON.stringify(remoteWatchlist);
+      if (localSerialized !== remoteSerialized) {
+        setWatchlist(remoteWatchlist);
+      }
+      saveWatchlist(remoteWatchlist, timestamp);
+      setWatchlistUpdatedAt(timestamp);
+      return;
+    }
+
+    if (!remoteDefaultSeedRef.current) {
+      remoteDefaultSeedRef.current = true;
+      const defaults = DEFAULT_WATCHLIST;
+      const timestamp = new Date().toISOString();
+      setWatchlist(defaults);
+      setWatchlistUpdatedAt(timestamp);
+      saveWatchlist(defaults, timestamp);
+      syncWatchlist(defaults)
+        .then((remoteTimestamp) => {
+          remoteDefaultSeedRef.current = false;
+          if (remoteTimestamp) {
+            setWatchlistUpdatedAt(remoteTimestamp);
+            saveWatchlist(defaults, remoteTimestamp);
+          }
+        })
+        .catch(() => {
+          remoteDefaultSeedRef.current = false;
+        });
+    }
+  }, [
+    user,
+    watchlistLoaded,
+    remoteWatchlist,
+    remoteWatchlistUpdatedAt,
+    watchlist,
+    syncWatchlist,
+  ]);
 
   // Check if app is installable
   useEffect(() => {
@@ -342,7 +416,7 @@ export default function HomePage() {
             className="w-full flex items-center gap-2 justify-center text-emerald-600 hover:text-emerald-700 transition-colors"
           >
             <Edit className="h-4 w-4" />
-            <span className="text-sm font-medium">Add Watchlist</span>
+            <span className="text-sm font-medium">Edit Watchlist</span>
           </button>
         </div>
       </div>
@@ -406,9 +480,21 @@ export default function HomePage() {
         onOpenChange={setManageDialogOpen}
         watchlist={watchlist}
         onSave={(newWatchlist) => {
-          saveWatchlist(newWatchlist);
+          const timestamp = new Date().toISOString();
+          saveWatchlist(newWatchlist, timestamp);
+          setWatchlistUpdatedAt(timestamp);
           setWatchlist(newWatchlist);
           loadQuotes();
+          if (user) {
+            syncWatchlist(newWatchlist)
+              .then((remoteTimestamp) => {
+                if (remoteTimestamp) {
+                  setWatchlistUpdatedAt(remoteTimestamp);
+                  saveWatchlist(newWatchlist, remoteTimestamp);
+                }
+              })
+              .catch(() => {});
+          }
         }}
       />
     </div>

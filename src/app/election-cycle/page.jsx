@@ -25,13 +25,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar } from 'recharts';
-import { Loader2, Sun, MoonStar, Clock3, Star } from "lucide-react";
+import { Loader2, Sun, MoonStar, Clock3, Star, Lock } from "lucide-react";
 import { useTheme } from 'next-themes';
 import { AddAssetModal } from "@/components/add-asset-modal";
 import { SymbolSearchDialog } from "@/components/header-symbol-search";
+import { useAuth } from "@/components/auth-provider";
 
 const CURRENT_LINE_COLOR = 'oklch(59.6% 0.145 163.225)';
 const WATCHLIST_STORAGE_KEY = 'aruna_watchlist';
+const WATCHLIST_UPDATED_AT_KEY = 'aruna_watchlist_updated_at';
 const DEFAULT_WATCHLIST = [
   { symbol: 'NVDA', order: 1 },
   { symbol: 'MSFT', order: 2 },
@@ -49,6 +51,7 @@ function readWatchlist() {
     const raw = window.localStorage.getItem(WATCHLIST_STORAGE_KEY);
     if (!raw) {
       window.localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(DEFAULT_WATCHLIST));
+      window.localStorage.setItem(WATCHLIST_UPDATED_AT_KEY, new Date().toISOString());
       return DEFAULT_WATCHLIST;
     }
     const parsed = JSON.parse(raw);
@@ -57,6 +60,8 @@ function readWatchlist() {
         (item) => item && typeof item.symbol === 'string' && typeof item.order === 'number'
       );
     }
+    window.localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(DEFAULT_WATCHLIST));
+    window.localStorage.setItem(WATCHLIST_UPDATED_AT_KEY, new Date().toISOString());
     return DEFAULT_WATCHLIST;
   } catch (error) {
     console.warn('Failed to read watchlist', error);
@@ -64,19 +69,36 @@ function readWatchlist() {
   }
 }
 
-function writeWatchlist(data) {
+function writeWatchlist(data, updatedAt) {
   if (typeof window === 'undefined') return;
   try {
     window.localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(data));
+    window.localStorage.setItem(
+      WATCHLIST_UPDATED_AT_KEY,
+      typeof updatedAt === 'string' ? updatedAt : new Date().toISOString()
+    );
   } catch (error) {
     console.warn('Failed to write watchlist', error);
   }
+}
+
+function readWatchlistUpdatedAt() {
+  if (typeof window === 'undefined') return null;
+  return window.localStorage.getItem(WATCHLIST_UPDATED_AT_KEY);
 }
 
 function ElectionCyclePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { resolvedTheme } = useTheme();
+  const {
+    user,
+    remoteWatchlist,
+    remoteWatchlistUpdatedAt,
+    watchlistLoaded,
+    syncWatchlist,
+  } = useAuth();
+  const isAuthenticated = Boolean(user);
   const symbolParam = searchParams.get('symbol');
   const LAST_SYMBOL_KEY = 'aruna_last_election_symbol';
   const getInitialSymbol = () => {
@@ -101,6 +123,8 @@ function ElectionCyclePageContent() {
   const [revenuePeriod, setRevenuePeriod] = useState('quarterly');
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
   const [watchlist, setWatchlist] = useState([]);
+  const [watchlistUpdatedAt, setWatchlistUpdatedAt] = useState(() => readWatchlistUpdatedAt());
+  const remoteWatchlistSeedRef = React.useRef(false);
 
   const deriveDefaultCycles = () => {
     const y = new Date().getFullYear();
@@ -151,7 +175,56 @@ function ElectionCyclePageContent() {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     setWatchlist(readWatchlist());
+    setWatchlistUpdatedAt(readWatchlistUpdatedAt());
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      remoteWatchlistSeedRef.current = false;
+      setWatchlist(readWatchlist());
+      setWatchlistUpdatedAt(readWatchlistUpdatedAt());
+      return;
+    }
+
+    if (!watchlistLoaded) {
+      return;
+    }
+
+    if (Array.isArray(remoteWatchlist) && remoteWatchlist.length > 0) {
+      remoteWatchlistSeedRef.current = false;
+      const timestamp = remoteWatchlistUpdatedAt || new Date().toISOString();
+      setWatchlist(remoteWatchlist);
+      writeWatchlist(remoteWatchlist, timestamp);
+      setWatchlistUpdatedAt(timestamp);
+      return;
+    }
+
+    if (!remoteWatchlistSeedRef.current) {
+      remoteWatchlistSeedRef.current = true;
+      const defaults = DEFAULT_WATCHLIST;
+      const timestamp = new Date().toISOString();
+      setWatchlist(defaults);
+      writeWatchlist(defaults, timestamp);
+      setWatchlistUpdatedAt(timestamp);
+      syncWatchlist(defaults)
+        .then((remoteTimestamp) => {
+          remoteWatchlistSeedRef.current = false;
+          if (remoteTimestamp) {
+            setWatchlistUpdatedAt(remoteTimestamp);
+            writeWatchlist(defaults, remoteTimestamp);
+          }
+        })
+        .catch(() => {
+          remoteWatchlistSeedRef.current = false;
+        });
+    }
+  }, [
+    user,
+    watchlistLoaded,
+    remoteWatchlist,
+    remoteWatchlistUpdatedAt,
+    syncWatchlist,
+  ]);
 
   useEffect(() => {
     fetchDataAndBuildChart();
@@ -419,8 +492,8 @@ function ElectionCyclePageContent() {
 
   function getReturnCellClass(value) {
     if (value == null || isNaN(value)) return '';
-    if (value > 0) return 'bg-green-900';
-    if (value < 0) return 'bg-red-900';
+    if (value > 0) return 'text-white bg-green-900';
+    if (value < 0) return 'text-white bg-red-900';
     return 'bg-muted text-foreground';
   }
 
@@ -710,6 +783,26 @@ function ElectionCyclePageContent() {
     [formatRevenueValue]
   );
 
+  const persistWatchlist = useCallback(
+    (nextList, timestampOverride) => {
+      const timestamp = timestampOverride ?? new Date().toISOString();
+      writeWatchlist(nextList, timestamp);
+      setWatchlistUpdatedAt(timestamp);
+
+      if (user) {
+        syncWatchlist(nextList)
+          .then((remoteTimestamp) => {
+            if (remoteTimestamp) {
+              setWatchlistUpdatedAt(remoteTimestamp);
+              writeWatchlist(nextList, remoteTimestamp);
+            }
+          })
+          .catch(() => {});
+      }
+    },
+    [user, syncWatchlist]
+  );
+
   const marketStateInfo = useMemo(() => {
     const stateRaw = fundamentals?.profile?.marketState;
     if (!stateRaw) {
@@ -740,18 +833,18 @@ function ElectionCyclePageContent() {
   const toggleFavorite = useCallback(() => {
     setWatchlist((prev) => {
       const exists = prev.some((item) => item.symbol === symbol);
+      let next;
       if (exists) {
-        const next = prev.filter((item) => item.symbol !== symbol);
-        writeWatchlist(next);
-        return next;
+        next = prev.filter((item) => item.symbol !== symbol);
+      } else {
+        const nextOrder =
+          prev.length > 0 ? Math.max(...prev.map((item) => Number(item.order) || 0)) + 1 : 1;
+        next = [...prev, { symbol, order: nextOrder }];
       }
-      const nextOrder =
-        prev.length > 0 ? Math.max(...prev.map((item) => Number(item.order) || 0)) + 1 : 1;
-      const next = [...prev, { symbol, order: nextOrder }];
-      writeWatchlist(next);
+      persistWatchlist(next);
       return next;
     });
-  }, [symbol]);
+  }, [symbol, persistWatchlist]);
 
   return (
     <div className="flex flex-col gap-2">
@@ -851,7 +944,6 @@ function ElectionCyclePageContent() {
               <Card>
                 <CardHeader className="gap-1">
                   <CardTitle className="text-sm">Earnings Results</CardTitle>
-                  <CardDescription className="text-xs">Tracking actual results against estimates</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="h-[240px] rounded-lg bg-muted animate-pulse"></div>
@@ -860,7 +952,6 @@ function ElectionCyclePageContent() {
               <Card>
                 <CardHeader className="gap-1">
                   <CardTitle className="text-sm">Revenue vs Earnings</CardTitle>
-                  <CardDescription className="text-xs">Comparing topline and bottom line performance</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="h-[240px] rounded-lg bg-muted animate-pulse"></div>
@@ -1093,184 +1184,222 @@ function ElectionCyclePageContent() {
                 (hasEarningsAnalysis || hasRevenueAnalysis) && (
                   <div className="grid gap-2 md:grid-cols-2">
                     {hasEarningsAnalysis && latestEarningsPoint && (
-                      <Card className="h-full">
-                        <CardHeader className="gap-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="space-y-1">
-                              <CardTitle className="text-sm">Earnings Results</CardTitle>
-                              <p className="text-xs text-muted-foreground">
-                                <span className="font-semibold text-foreground">
-                                  {latestEarningsPoint.periodLabel}
-                                </span>{' '}
-                                • Estimate{' '}
-                                <span className="font-medium text-muted-foreground">
-                                  {formatSignedEarnings(latestEarningsPoint.estimate)}
-                                </span>{' '}
-                                • Actual{' '}
-                                <span className="font-medium text-emerald-600">
-                                  {formatSignedEarnings(latestEarningsPoint.actual)}
-                                </span>
-                              </p>
-                              {latestEarningsOutcome ? (
-                                <p
-                                  className={`text-xs font-semibold ${
-                                    latestEarningsOutcome.tone === 'beat'
-                                      ? 'text-emerald-600'
-                                      : 'text-red-600'
-                                  }`}
-                                >
-                                  {latestEarningsOutcome.label}
+                      <div className="relative">
+                        <Card
+                          className={`h-full ${
+                            !isAuthenticated
+                              ? 'pointer-events-none select-none opacity-60 blur-[1.5px]'
+                              : ''
+                          }`}
+                        >
+                          <CardHeader className="gap-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="space-y-1">
+                                <CardTitle className="text-sm">Earnings Results</CardTitle>
+                                <p className="text-xs text-muted-foreground">
+                                  <span className="font-semibold text-foreground">
+                                    {latestEarningsPoint.periodLabel}
+                                  </span>{' '}
+                                  • Estimate{' '}
+                                  <span className="font-medium text-muted-foreground">
+                                    {formatSignedEarnings(latestEarningsPoint.estimate)}
+                                  </span>{' '}
+                                  • Actual{' '}
+                                  <span className="font-medium text-emerald-600">
+                                    {formatSignedEarnings(latestEarningsPoint.actual)}
+                                  </span>
                                 </p>
-                              ) : null}
+                                {latestEarningsOutcome ? (
+                                  <p
+                                    className={`text-xs font-semibold ${
+                                      latestEarningsOutcome.tone === 'beat'
+                                        ? 'text-emerald-600'
+                                        : 'text-red-600'
+                                    }`}
+                                  >
+                                    {latestEarningsOutcome.label}
+                                  </p>
+                                ) : null}
+                              </div>
+                              <span className="rounded-full border bg-muted/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                Normalized
+                              </span>
                             </div>
-                            <span className="rounded-full border bg-muted/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                              Normalized
-                            </span>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="h-[260px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <ComposedChart
-                              data={earningsChartData}
-                              margin={{ top: 20, right: 48, bottom: 32, left: -10 }}
-                            >
-                              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                              <XAxis
-                                dataKey="periodLabel"
-                                interval={0}
-                                height={48}
-                                tick={renderEarningsTick}
-                              />
-                              <YAxis
-                                tickFormatter={(value) =>
-                                  value == null ? '' : formatEarningsValue(value)
-                                }
-                                width={50}
-                                axisLine={false}
-                                tick={{ fontSize: 10 }}
-                              />
-                              <Tooltip
-                                formatter={earningsTooltipFormatter}
-                                labelFormatter={(_, payload) => payload?.[0]?.payload?.periodLabel || ''}
-                                contentStyle={{
-                                  backgroundColor: 'hsl(var(--background))',
-                                  border: '1px solid hsl(var(--border))',
-                                  borderRadius: '8px',
-                                  fontSize: '12px',
-                                }}
-                              />
-                              <Line
-                                type="monotone"
-                                dataKey="estimate"
-                                stroke="transparent"
-                                dot={renderEstimateDot}
-                                activeDot={false}
-                              />
-                              <Line
-                                type="monotone"
-                                dataKey="actual"
-                                stroke="transparent"
-                                dot={renderActualDot}
-                                activeDot={false}
+                          </CardHeader>
+                          <CardContent className="h-[260px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <ComposedChart
+                                data={earningsChartData}
+                                margin={{ top: 20, right: 48, bottom: 32, left: -10 }}
                               >
-                                <ErrorBar
-                                  dataKey="range"
-                                  direction="y"
-                                  stroke={secondaryChartColor}
-                                  strokeDasharray="3 3"
-                                  width={0}
+                                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                                <XAxis
+                                  dataKey="periodLabel"
+                                  interval={0}
+                                  height={48}
+                                  tick={renderEarningsTick}
                                 />
-                              </Line>
-                            </ComposedChart>
-                          </ResponsiveContainer>
-                        </CardContent>
-                      </Card>
+                                <YAxis
+                                  tickFormatter={(value) =>
+                                    value == null ? '' : formatEarningsValue(value)
+                                  }
+                                  width={50}
+                                  axisLine={false}
+                                  tick={{ fontSize: 10 }}
+                                />
+                                <Tooltip
+                                  formatter={earningsTooltipFormatter}
+                                  labelFormatter={(_, payload) =>
+                                    payload?.[0]?.payload?.periodLabel || ''
+                                  }
+                                  contentStyle={{
+                                    backgroundColor: 'hsl(var(--background))',
+                                    border: '1px solid hsl(var(--border))',
+                                    borderRadius: '8px',
+                                    fontSize: '12px',
+                                  }}
+                                />
+                                <Line
+                                  type="monotone"
+                                  dataKey="estimate"
+                                  stroke="transparent"
+                                  dot={renderEstimateDot}
+                                  activeDot={false}
+                                />
+                                <Line
+                                  type="monotone"
+                                  dataKey="actual"
+                                  stroke="transparent"
+                                  dot={renderActualDot}
+                                  activeDot={false}
+                                >
+                                  <ErrorBar
+                                    dataKey="range"
+                                    direction="y"
+                                    stroke={secondaryChartColor}
+                                    strokeDasharray="3 3"
+                                    width={0}
+                                  />
+                                </Line>
+                              </ComposedChart>
+                            </ResponsiveContainer>
+                          </CardContent>
+                        </Card>
+                        {!isAuthenticated && (
+                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm px-6 text-center">
+                            <Lock className="h-6 w-6 text-muted-foreground" />
+                            <p className="text-xs font-semibold text-muted-foreground">
+                              Sign in to view detailed earnings results
+                            </p>
+                          </div>
+                        )}
+                      </div>
                     )}
 
                     {hasRevenueAnalysis && latestRevenuePoint && (
-                      <Card className="h-full">
-                        <CardHeader className="gap-3">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="space-y-1">
-                              <CardTitle className="text-sm">Revenue vs Earnings</CardTitle>
-                              <p className="text-xs text-muted-foreground">
-                                <span className="font-semibold text-foreground">
-                                  {formatPeriodLabel(latestRevenuePoint.period)}
-                                </span>{' '}
-                                •{' '}
-                                <span style={{ color: primaryChartColor }}>
-                                  Revenue {formatRevenueValue(latestRevenuePoint.revenue)}
-                                </span>{' '}
-                                •{' '}
-                                <span style={{ color: secondaryChartColor }}>
-                                  Earnings {formatRevenueValue(latestRevenuePoint.earnings)}
-                                </span>
-                              </p>
+                      <div className="relative">
+                        <Card
+                          className={`h-full ${
+                            !isAuthenticated
+                              ? 'pointer-events-none select-none opacity-60 blur-[1.5px]'
+                              : ''
+                          }`}
+                        >
+                          <CardHeader className="gap-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="space-y-1">
+                                <CardTitle className="text-sm">Revenue vs Earnings</CardTitle>
+                                <p className="text-xs text-muted-foreground">
+                                  <span className="font-semibold text-foreground">
+                                    {formatPeriodLabel(latestRevenuePoint.period)}
+                                  </span>{' '}
+                                  •{' '}
+                                  <span style={{ color: primaryChartColor }}>
+                                    Revenue {formatRevenueValue(latestRevenuePoint.revenue)}
+                                  </span>{' '}
+                                  •{' '}
+                                  <span style={{ color: secondaryChartColor }}>
+                                    Earnings {formatRevenueValue(latestRevenuePoint.earnings)}
+                                  </span>
+                                </p>
+                              </div>
+                              <div className="inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5">
+                                {[
+                                  { value: 'annual', label: 'Annual', disabled: !hasAnnualRevenue },
+                                  { value: 'quarterly', label: 'Quarterly', disabled: false },
+                                ].map((option) => (
+                                  <Button
+                                    key={option.value}
+                                    type="button"
+                                    size="xs"
+                                    variant={revenuePeriod === option.value ? 'default' : 'ghost'}
+                                    className={`px-2 py-1 text-xs ${
+                                      revenuePeriod === option.value ? 'shadow-sm' : ''
+                                    }`}
+                                    onClick={() => setRevenuePeriod(option.value)}
+                                    disabled={option.disabled}
+                                  >
+                                    {option.label}
+                                  </Button>
+                                ))}
+                              </div>
                             </div>
-                            <div className="inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5">
-                              {[
-                                { value: 'annual', label: 'Annual', disabled: !hasAnnualRevenue },
-                                { value: 'quarterly', label: 'Quarterly', disabled: false },
-                              ].map((option) => (
-                                <Button
-                                  key={option.value}
-                                  type="button"
-                                  size="xs"
-                                  variant={revenuePeriod === option.value ? 'default' : 'ghost'}
-                                  className={`px-2 py-1 text-xs ${revenuePeriod === option.value ? 'shadow-sm' : ''}`}
-                                  onClick={() => setRevenuePeriod(option.value)}
-                                  disabled={option.disabled}
-                                >
-                                  {option.label}
-                                </Button>
-                              ))}
-                            </div>
+                          </CardHeader>
+                          <CardContent className="h-[260px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                              <BarChart
+                                data={revenueChartData}
+                                margin={{ top: 16, right: 32, bottom: 12, left: -12 }}
+                              >
+                                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                                <XAxis dataKey="periodLabel" tick={{ fontSize: 10 }} />
+                                <YAxis
+                                  tickFormatter={(value) =>
+                                    value == null ? '' : compactNumberFormatter.format(value)
+                                  }
+                                  width={60}
+                                  axisLine={false}
+                                  tick={{ fontSize: 10 }}
+                                />
+                                <Tooltip
+                                  formatter={revenueTooltipFormatter}
+                                  labelFormatter={(_, payload) =>
+                                    payload?.[0]?.payload?.periodLabel || ''
+                                  }
+                                  cursor={{ fill: 'transparent' }}
+                                  contentStyle={{
+                                    backgroundColor: 'hsl(var(--background))',
+                                    border: '1px solid hsl(var(--border))',
+                                    borderRadius: '8px',
+                                    fontSize: '12px',
+                                  }}
+                                />
+                                <Legend wrapperStyle={{ fontSize: '11px' }} />
+                                <Bar
+                                  dataKey="revenue"
+                                  name={`Revenue${analysisCurrency ? ` (${analysisCurrency})` : ''}`}
+                                  fill={primaryChartColor}
+                                  radius={[6, 6, 2, 2]}
+                                />
+                                <Bar
+                                  dataKey="earnings"
+                                  name={`Earnings${analysisCurrency ? ` (${analysisCurrency})` : ''}`}
+                                  fill={secondaryChartColor}
+                                  radius={[6, 6, 2, 2]}
+                                />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </CardContent>
+                        </Card>
+                        {!isAuthenticated && (
+                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm px-6 text-center">
+                            <Lock className="h-6 w-6 text-muted-foreground" />
+                            <p className="text-xs font-semibold text-muted-foreground">
+                              Sign in to compare revenue and earnings
+                            </p>
                           </div>
-                        </CardHeader>
-                        <CardContent className="h-[260px]">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
-                              data={revenueChartData}
-                              margin={{ top: 16, right: 32, bottom: 12, left: -12 }}
-                            >
-                              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                              <XAxis dataKey="periodLabel" tick={{ fontSize: 10 }} />
-                              <YAxis
-                                tickFormatter={(value) =>
-                                  value == null ? '' : compactNumberFormatter.format(value)
-                                }
-                                width={60}
-                                axisLine={false}
-                                tick={{ fontSize: 10 }}
-                              />
-                              <Tooltip
-                                formatter={revenueTooltipFormatter}
-                                labelFormatter={(_, payload) => payload?.[0]?.payload?.periodLabel || ''}
-                                cursor={{ fill: 'transparent' }}
-                                contentStyle={{
-                                  backgroundColor: 'hsl(var(--background))',
-                                  border: '1px solid hsl(var(--border))',
-                                  borderRadius: '8px',
-                                  fontSize: '12px',
-                                }}
-                              />
-                              <Legend wrapperStyle={{ fontSize: '11px' }} />
-                              <Bar
-                                dataKey="revenue"
-                                name={`Revenue${analysisCurrency ? ` (${analysisCurrency})` : ''}`}
-                                fill={primaryChartColor}
-                                radius={[6, 6, 2, 2]}
-                              />
-                              <Bar
-                                dataKey="earnings"
-                                name={`Earnings${analysisCurrency ? ` (${analysisCurrency})` : ''}`}
-                                fill={secondaryChartColor}
-                                radius={[6, 6, 2, 2]}
-                              />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </CardContent>
-                      </Card>
+                        )}
+                      </div>
                     )}
                   </div>
                 )
@@ -1284,22 +1413,43 @@ function ElectionCyclePageContent() {
                 Quarterly Returns
               </AccordionTrigger>
               <AccordionContent className="pb-4">
-                <div className="overflow-x-auto -mx-4 px-4">
-                  <table className="w-full text-[10px]">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-2 px-1 font-medium sticky left-0 bg-background">Year</th>
-                        {['Q1', 'Q2', 'Q3', 'Q4'].map((quarter, idx) => (
-                          <th key={idx} className="text-center py-2 px-2 font-medium">{quarter}</th>
+                <div className="relative">
+                  <div
+                    className={`overflow-x-auto -mx-4 px-4 ${
+                      !isAuthenticated ? 'pointer-events-none select-none blur-[1.5px] opacity-60' : ''
+                    }`}
+                  >
+                    <table className="w-full text-[10px]">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2 px-1 font-medium sticky left-0 bg-background">Year</th>
+                          {['Q1', 'Q2', 'Q3', 'Q4'].map((quarter, idx) => (
+                            <th key={idx} className="text-center py-2 px-2 font-medium">{quarter}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {quarterlyHeatmap.rows.map((row, idx) => (
+                          <tr key={idx}>
+                            <td className="py-2 px-1 font-medium sticky left-0 bg-background">{row.year}</td>
+                            {[1, 2, 3, 4].map(quarter => {
+                              const value = row[`Q${quarter}`];
+                              const cellClass = getReturnCellClass(value);
+                              return (
+                                <td
+                                  key={quarter}
+                                  className={`text-center py-2 px-2 ${cellClass}`}
+                                >
+                                  {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
+                                </td>
+                              );
+                            })}
+                          </tr>
                         ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {quarterlyHeatmap.rows.map((row, idx) => (
-                        <tr key={idx}>
-                          <td className="py-2 px-1 font-medium sticky left-0 bg-background">{row.year}</td>
+                        <tr className="border-t-2 font-semibold bg-muted/50">
+                          <td className="py-2 px-1 sticky left-0 bg-muted/50">Avg.</td>
                           {[1, 2, 3, 4].map(quarter => {
-                            const value = row[`Q${quarter}`];
+                            const value = quarterlyHeatmap.average[`Q${quarter}`];
                             const cellClass = getReturnCellClass(value);
                             return (
                               <td
@@ -1311,24 +1461,17 @@ function ElectionCyclePageContent() {
                             );
                           })}
                         </tr>
-                      ))}
-                      <tr className="border-t-2 font-semibold bg-muted/50">
-                        <td className="py-2 px-1 sticky left-0 bg-muted/50">Avg.</td>
-                        {[1, 2, 3, 4].map(quarter => {
-                          const value = quarterlyHeatmap.average[`Q${quarter}`];
-                          const cellClass = getReturnCellClass(value);
-                          return (
-                            <td
-                              key={quarter}
-                              className={`text-center py-2 px-2 ${cellClass}`}
-                            >
-                              {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    </tbody>
-                  </table>
+                      </tbody>
+                    </table>
+                  </div>
+                  {!isAuthenticated && (
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm px-6 text-center">
+                      <Lock className="h-6 w-6 text-muted-foreground" />
+                      <p className="text-xs font-semibold text-muted-foreground">
+                        Sign in to explore quarterly returns
+                      </p>
+                    </div>
+                  )}
                 </div>
               </AccordionContent>
             </AccordionItem>
@@ -1338,22 +1481,43 @@ function ElectionCyclePageContent() {
                 Monthly Returns
               </AccordionTrigger>
               <AccordionContent className="pb-4">
-                <div className="relative overflow-x-auto">
-                  <table className="w-full text-[9px]">
-                    <thead>
-                      <tr className="border-b">
-                        <th className="text-left py-2 px-1 font-medium sticky left-0 bg-background">Year</th>
-                        {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, idx) => (
-                          <th key={idx} className="text-center py-2 px-1 font-medium">{month}</th>
+                <div className="relative">
+                  <div
+                    className={`overflow-x-auto ${
+                      !isAuthenticated ? 'pointer-events-none select-none blur-[1.5px] opacity-60' : ''
+                    }`}
+                  >
+                    <table className="w-full text-[9px]">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left py-2 px-1 font-medium sticky left-0 bg-background">Year</th>
+                          {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, idx) => (
+                            <th key={idx} className="text-center py-2 px-1 font-medium">{month}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {monthlyHeatmap.rows.map((row, idx) => (
+                          <tr key={idx}>
+                            <td className="py-2 px-1 font-medium sticky left-0 bg-background">{row.year}</td>
+                            {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(month => {
+                              const value = row[`M${month}`];
+                              const cellClass = getReturnCellClass(value);
+                              return (
+                                <td
+                                  key={month}
+                                  className={`text-center py-2 px-1 ${cellClass}`}
+                                >
+                                  {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
+                                </td>
+                              );
+                            })}
+                          </tr>
                         ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {monthlyHeatmap.rows.map((row, idx) => (
-                        <tr key={idx}>
-                          <td className="py-2 px-1 font-medium sticky left-0 bg-background">{row.year}</td>
+                        <tr className="border-t-2 font-semibold bg-muted/50">
+                          <td className="py-2 px-1 sticky left-0 bg-muted/50">Avg.</td>
                           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(month => {
-                            const value = row[`M${month}`];
+                            const value = monthlyHeatmap.average[`M${month}`];
                             const cellClass = getReturnCellClass(value);
                             return (
                               <td
@@ -1365,24 +1529,17 @@ function ElectionCyclePageContent() {
                             );
                           })}
                         </tr>
-                      ))}
-                      <tr className="border-t-2 font-semibold bg-muted/50">
-                        <td className="py-2 px-1 sticky left-0 bg-muted/50">Avg.</td>
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map(month => {
-                          const value = monthlyHeatmap.average[`M${month}`];
-                          const cellClass = getReturnCellClass(value);
-                          return (
-                            <td
-                              key={month}
-                              className={`text-center py-2 px-1 ${cellClass}`}
-                            >
-                              {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    </tbody>
-                  </table>
+                      </tbody>
+                    </table>
+                  </div>
+                  {!isAuthenticated && (
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm px-6 text-center">
+                      <Lock className="h-6 w-6 text-muted-foreground" />
+                      <p className="text-xs font-semibold text-muted-foreground">
+                        Sign in to view monthly returns
+                      </p>
+                    </div>
+                  )}
                 </div>
               </AccordionContent>
             </AccordionItem>

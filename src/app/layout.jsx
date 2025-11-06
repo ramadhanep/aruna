@@ -1,10 +1,10 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/components/auth-provider";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { PWARegister } from "@/components/pwa-register";
 import { PWAInstallDialog } from "@/components/pwa-install-dialog";
-import { ClearDataButton } from "@/components/clear-data-button";
 import { HeaderSymbolSearch } from "@/components/header-symbol-search";
 import { AlignEndHorizontal } from "lucide-react";
 
@@ -68,26 +68,28 @@ export default function RootLayout({ children }) {
           enableSystem
           disableTransitionOnChange
         >
-          <PWARegister />
-          <PWAInstallDialog />
-          <div className="flex flex-col min-h-screen">
-            <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-              <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3 px-2">
-                <ClearDataButton />
-                <div className="flex gap-1 items-center">
-                  <AlignEndHorizontal className="size-5" />
-                  <h1 className="text-lg font-bold">{"aruna"}...</h1>
+          <AuthProvider>
+            <PWARegister />
+            <PWAInstallDialog />
+            <div className="flex flex-col min-h-screen">
+              <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3 px-2">
+                  <div className="w-9 h-9" />
+                  <div className="flex gap-1 items-center">
+                    <AlignEndHorizontal className="size-5" />
+                    <h1 className="text-lg font-bold">{"aruna"}...</h1>
+                  </div>
+                  <HeaderSymbolSearch />
                 </div>
-                <HeaderSymbolSearch />
-              </div>
-            </header>
-            <main className="flex-1 pb-20">
-              <div className="mx-auto max-w-[768px] p-4">
-                {children}
-              </div>
-            </main>
-            <MobileBottomNav />
-          </div>
+              </header>
+              <main className="flex-1 pb-20">
+                <div className="mx-auto max-w-[768px] p-4">
+                  {children}
+                </div>
+              </main>
+              <MobileBottomNav />
+            </div>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
