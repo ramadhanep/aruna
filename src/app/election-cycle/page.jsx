@@ -24,7 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar } from 'recharts';
+import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar } from 'recharts';
 import { Loader2, Sun, MoonStar, Clock3, Star } from "lucide-react";
 import { useTheme } from 'next-themes';
 import { AddAssetModal } from "@/components/add-asset-modal";
@@ -949,10 +949,21 @@ function ElectionCyclePageContent() {
             </CardHeader>
             <CardContent className="px-0 -mr-5 pb-0">
               <ResponsiveContainer width="100%" height={280}>
-                <LineChart 
+                <AreaChart 
                   data={filteredChartData}
                   margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
                 >
+                  <defs>
+                    {chartData.linesData.map((line) => {
+                      const gradientId = `gradient-${line.key}`;
+                      return (
+                        <linearGradient key={gradientId} id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={line.color} stopOpacity={0.3} />
+                          <stop offset="100%" stopColor={line.color} stopOpacity={0} />
+                        </linearGradient>
+                      );
+                    })}
+                  </defs>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis
                     dataKey="dayOfYear"
@@ -986,17 +997,19 @@ function ElectionCyclePageContent() {
                     wrapperStyle={{ paddingTop: '10px', fontSize: '11px' }}
                   />
                   {chartData.linesData.map(line => (
-                    <Line
+                    <Area
                       key={line.key}
                       type="monotone"
                       dataKey={line.key}
                       stroke={line.color}
+                      fill={`url(#gradient-${line.key})`}
+                      fillOpacity={1}
                       name={line.name}
                       dot={false}
                       strokeWidth={2}
                     />
                   ))}
-                </LineChart>
+                </AreaChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
@@ -1233,6 +1246,7 @@ function ElectionCyclePageContent() {
                               <Tooltip
                                 formatter={revenueTooltipFormatter}
                                 labelFormatter={(_, payload) => payload?.[0]?.payload?.periodLabel || ''}
+                                cursor={{ fill: 'transparent' }}
                                 contentStyle={{
                                   backgroundColor: 'hsl(var(--background))',
                                   border: '1px solid hsl(var(--border))',

@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, MoreVertical, Pencil, Trash2, Loader2, Wallet, Coins, TrendingUp, DollarSign } from 'lucide-react';
+import { Plus, MoreVertical, Pencil, Trash2, Loader2, Wallet, Coins, TrendingUp, DollarSign, ArrowUpDown, Check } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 // Dynamic chart component to keep page light and avoid SSR issues
@@ -15,6 +15,15 @@ const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { 
 
 // LocalStorage key for currency preference
 const PORTFOLIO_CURRENCY_KEY = 'portfolio_currency';
+const DEFAULT_PORTFOLIO_ENTRIES = [
+  { symbol: 'BTC-USD', name: 'Bitcoin', amount: 1, unit: 'share', avgPrice: 65000, type: 'digital' },
+  { symbol: 'NVDA', name: 'NVIDIA Corporation', amount: 100, unit: 'share', avgPrice: 900, type: 'digital' },
+  { symbol: 'BBCA.JK', name: 'Bank Central Asia Tbk', amount: 1000, unit: 'lot', avgPrice: 9000, type: 'digital' },
+];
+
+function getDefaultPortfolio() {
+  return DEFAULT_PORTFOLIO_ENTRIES.map((entry) => ({ ...entry }));
+}
 
 // Minimal asset search (reuses existing API route if present)
 async function searchSymbols(query) {
@@ -30,13 +39,17 @@ async function searchSymbols(query) {
 }
 
 function loadPortfolio() {
-  if (typeof window === 'undefined') return [];
+  if (typeof window === 'undefined') return getDefaultPortfolio();
   try {
     const raw = localStorage.getItem('aruna_portfolio');
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) {
+      return getDefaultPortfolio();
+    }
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : getDefaultPortfolio();
   } catch (e) {
     console.warn('Failed to parse portfolio', e);
-    return [];
+    return getDefaultPortfolio();
   }
 }
 
@@ -49,12 +62,15 @@ function savePortfolio(data) {
 }
 
 function loadCurrencyPreference() {
-  if (typeof window === 'undefined') return 'USD';
+  if (typeof window === 'undefined') return 'IDR';
   try {
     const raw = localStorage.getItem(PORTFOLIO_CURRENCY_KEY);
-    return raw === 'IDR' ? 'IDR' : 'USD';
+    if (raw === 'USD' || raw === 'IDR') {
+      return raw;
+    }
+    return 'IDR';
   } catch (e) {
-    return 'USD';
+    return 'IDR';
   }
 }
 
@@ -68,13 +84,14 @@ function saveCurrencyPreference(currency) {
 
 export default function PortfolioTrackerPage() {
   const [entries, setEntries] = useState(() => loadPortfolio());
+  const [holdingsSort, setHoldingsSort] = useState('alpha');
   const [currency, setCurrency] = useState(() => loadCurrencyPreference());
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
   const [symbolQuery, setSymbolQuery] = useState('');
   const [symbolResults, setSymbolResults] = useState([]);
   const [assetType, setAssetType] = useState('digital'); // 'digital' or 'cash'
-  const [form, setForm] = useState({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '', type: 'digital', category: '', cashCurrency: 'USD' });
+  const [form, setForm] = useState({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '', type: 'digital', category: '', cashCurrency: 'IDR' });
   const [priceMap, setPriceMap] = useState({}); // { symbol: currentPrice }
   const [initialLoading, setInitialLoading] = useState(true);
   const [fxRate, setFxRate] = useState(0); // USD per IDR (e.g., 1/16500 = 0.0000606)
@@ -256,7 +273,7 @@ export default function PortfolioTrackerPage() {
   }, [symbolQuery]);
 
   function resetForm() {
-    setForm({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '', type: 'digital', category: '', cashCurrency: 'USD' });
+    setForm({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '', type: 'digital', category: '', cashCurrency: 'IDR' });
     setSymbolQuery('');
     setSymbolResults([]);
     setEditingIndex(null);
@@ -314,7 +331,7 @@ export default function PortfolioTrackerPage() {
       avgPrice: isCash ? '' : String(e.avgPrice),
       type: e.type || 'digital',
       category: e.category || '',
-      cashCurrency: e.cashCurrency || 'USD'
+      cashCurrency: e.cashCurrency || 'IDR'
     });
     setSymbolQuery(e.symbol || '');
     setAssetType(e.type || 'digital');
@@ -423,26 +440,110 @@ export default function PortfolioTrackerPage() {
   // (Removed duplicated non-hoisted implementations)
 
   // Compute portfolio metrics
-  function isIDR(symbol) { return symbol.endsWith('.JK'); }
-  function isLot(unit) { return unit === 'lot'; }
+  const isIDR = useCallback((symbol) => symbol.endsWith('.JK'), []);
+  const isLot = useCallback((unit) => unit === 'lot', []);
 
   // Convert a value expressed in its native currency to USD
-  function toUSD(symbol, pricePerUnit) {
+  const toUSD = useCallback((symbol, pricePerUnit) => {
     if (pricePerUnit == null) return 0;
     if (!isIDR(symbol)) return pricePerUnit; // already USD
     if (fxRate <= 0) return pricePerUnit; // fallback treat as USD if rate missing
     return pricePerUnit * fxRate; // IDR price * (USD per IDR) = USD
-  }
+  }, [fxRate, isIDR]);
 
   // Get effective amount: if unit is 'lot', convert to shares by multiplying by 100
   // (effective shares = amount * 100)
-  function getEffectiveAmount(amount, unit) {
+  const getEffectiveAmount = useCallback((amount, unit) => {
     return isLot(unit) ? amount * 100 : amount;
-  }
+  }, [isLot]);
 
   // Separate digital and cash assets
   const digitalAssets = entries.filter(e => e.type !== 'cash');
   const cashAssets = entries.filter(e => e.type === 'cash');
+
+  const holdingsWithMetrics = useMemo(() => {
+    return entries.map((entry, index) => {
+      const isCash = entry.type === 'cash';
+      const effectiveAmount = isCash ? 1 : getEffectiveAmount(entry.amount, entry.unit);
+      const baseValueUSD = isCash
+        ? entry.avgPrice * entry.amount
+        : toUSD(entry.symbol, entry.avgPrice) * effectiveAmount;
+      const livePrice = priceMap[entry.symbol];
+      const currentValueUSD = isCash
+        ? baseValueUSD
+        : (livePrice != null
+            ? toUSD(entry.symbol, livePrice) * effectiveAmount
+            : baseValueUSD);
+      const pnl = currentValueUSD - baseValueUSD;
+      const cashDisplayAmount = isCash
+        ? (typeof entry.nativeAmount === 'number'
+            ? entry.nativeAmount
+            : (entry.cashCurrency === 'IDR' && fxRate > 0
+                ? baseValueUSD / fxRate
+                : baseValueUSD))
+        : null;
+
+      return {
+        entry,
+        index,
+        isCash,
+        effectiveAmount,
+        baseValueUSD,
+        currentValueUSD,
+        pnl,
+        cashDisplayAmount,
+      };
+    });
+  }, [entries, priceMap, fxRate, getEffectiveAmount, toUSD]);
+
+  const sortedHoldings = useMemo(() => {
+    const digital = holdingsWithMetrics.filter((item) => !item.isCash);
+    const cash = holdingsWithMetrics.filter((item) => item.isCash);
+
+    const compareAlphaDigital = (a, b) =>
+      (a.entry.symbol || '').localeCompare(b.entry.symbol || '');
+    const compareAlphaCash = (a, b) =>
+      (a.entry.category || a.entry.symbol || '').localeCompare(
+        b.entry.category || b.entry.symbol || ''
+      );
+
+    const sortWithFallback = (arr, comparator, fallback) => {
+      arr.sort((a, b) => {
+        const result = comparator(a, b);
+        if (result !== 0) return result;
+        return fallback(a, b);
+      });
+    };
+
+    if (holdingsSort === 'market') {
+      sortWithFallback(
+        digital,
+        (a, b) => b.currentValueUSD - a.currentValueUSD,
+        compareAlphaDigital
+      );
+      sortWithFallback(
+        cash,
+        (a, b) => b.currentValueUSD - a.currentValueUSD,
+        compareAlphaCash
+      );
+    } else if (holdingsSort === 'pnl') {
+      sortWithFallback(
+        digital,
+        (a, b) => (b.pnl ?? 0) - (a.pnl ?? 0),
+        compareAlphaDigital
+      );
+      sortWithFallback(
+        cash,
+        (a, b) => (b.pnl ?? 0) - (a.pnl ?? 0),
+        compareAlphaCash
+      );
+    } else {
+      sortWithFallback(digital, compareAlphaDigital, compareAlphaDigital);
+      sortWithFallback(cash, compareAlphaCash, compareAlphaCash);
+    }
+
+    return [...digital, ...cash];
+  }, [holdingsWithMetrics, holdingsSort]);
 
   // Calculate digital assets metrics (in USD)
   const digitalCost = digitalAssets.reduce((sum, e) => {
@@ -558,8 +659,8 @@ export default function PortfolioTrackerPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="USD">USD</SelectItem>
               <SelectItem value="IDR">IDR</SelectItem>
+              <SelectItem value="USD">USD</SelectItem>
             </SelectContent>
           </Select>
         </CardHeader>
@@ -650,8 +751,51 @@ export default function PortfolioTrackerPage() {
       </p>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex items-center justify-between">
           <CardTitle className="text-sm font-semibold">Holdings</CardTitle>
+          {entries.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 p-0"
+                  aria-label="Sort holdings"
+                >
+                  <ArrowUpDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-44">
+                <DropdownMenuItem
+                  onClick={() => setHoldingsSort('alpha')}
+                  className="text-xs flex items-center gap-2"
+                >
+                  <Check
+                    className={`h-3 w-3 ${holdingsSort === 'alpha' ? 'opacity-100' : 'opacity-0'}`}
+                  />
+                  A to Z
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setHoldingsSort('market')}
+                  className="text-xs flex items-center gap-2"
+                >
+                  <Check
+                    className={`h-3 w-3 ${holdingsSort === 'market' ? 'opacity-100' : 'opacity-0'}`}
+                  />
+                  Market Value
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setHoldingsSort('pnl')}
+                  className="text-xs flex items-center gap-2"
+                >
+                  <Check
+                    className={`h-3 w-3 ${holdingsSort === 'pnl' ? 'opacity-100' : 'opacity-0'}`}
+                  />
+                  P&L
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </CardHeader>
         <CardContent>
           {entries.length === 0 && (
@@ -661,24 +805,11 @@ export default function PortfolioTrackerPage() {
           )}
           {entries.length > 0 && (
             <div className="space-y-2">
-              {entries.map((e, idx) => {
-                const isCash = e.type === 'cash';
-                const effectiveAmount = isCash ? 1 : getEffectiveAmount(e.amount, e.unit);
-                const valueUSD = isCash ? e.avgPrice * e.amount : toUSD(e.symbol, e.avgPrice) * effectiveAmount;
-                const livePrice = priceMap[e.symbol];
-                const currentValueUSD = isCash ? valueUSD : (livePrice != null ? toUSD(e.symbol, livePrice) * effectiveAmount : valueUSD);
-                const pnl = currentValueUSD - valueUSD;
+              {sortedHoldings.map(({ entry, index: originalIndex, isCash, currentValueUSD, pnl, cashDisplayAmount }) => {
                 const formatted = formatValue(currentValueUSD);
-                const cashDisplayAmount = isCash
-                  ? (typeof e.nativeAmount === 'number'
-                      ? e.nativeAmount
-                      : (e.cashCurrency === 'IDR' && fxRate > 0
-                          ? (valueUSD / fxRate)
-                          : valueUSD))
-                  : null;
-                
+                const livePnl = isCash ? 0 : pnl;
                 return (
-                  <div key={idx} className="flex items-center gap-3 border-b rounded-lg hover:bg-accent/50 transition-colors min-h-16">
+                  <div key={originalIndex} className="flex items-center gap-3 border-b rounded-lg hover:bg-accent/50 transition-colors min-h-16">
                     <div className="flex-1 min-w-0">
                       <div className="flex gap-2">
                         <div className="p-2 rounded-full bg-muted">
@@ -690,13 +821,13 @@ export default function PortfolioTrackerPage() {
                         </div>
                         <div className="flex flex-col justify-start">
                           <p className="font-semibold text-xs truncate">
-                            {isCash ? e.category : e.symbol}
+                            {isCash ? entry.category : entry.symbol}
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {isCash ? (
-                              <span>{(cashDisplayAmount ?? 0).toLocaleString()} {e.cashCurrency}</span>
+                              <span>{(cashDisplayAmount ?? 0).toLocaleString()} {entry.cashCurrency}</span>
                             ) : (
-                              <span>{e.amount} {e.unit}</span>
+                              <span>{entry.amount} {entry.unit}</span>
                             )}
                           </p>
                         </div>
@@ -706,10 +837,10 @@ export default function PortfolioTrackerPage() {
                       <div className="text-right">
                         <p className="text-sm font-semibold">{formatted.primary}</p>
                         <p className="text-[10px] text-muted-foreground">{formatted.secondary}</p>
-                        {!isCash && pnl !== 0 && (
+                        {!isCash && livePnl !== 0 && (
                           <p className="text-[10px]">
-                            <span className={pnl >= 0 ? 'text-green-600' : 'text-red-600'}>
-                              {pnl >= 0 ? '+' : '-'}{formatValue(pnl).primary}
+                            <span className={livePnl >= 0 ? 'text-green-600' : 'text-red-600'}>
+                              {livePnl >= 0 ? '+' : '-'}{formatValue(Math.abs(livePnl)).primary}
                             </span>
                           </p>
                         )}
@@ -721,11 +852,11 @@ export default function PortfolioTrackerPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEdit(idx)} className="text-xs">
+                          <DropdownMenuItem onClick={() => openEdit(originalIndex)} className="text-xs">
                             <Pencil className="mr-1 size-3" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => removeEntry(idx)} className="text-xs text-red-600">
+                          <DropdownMenuItem onClick={() => removeEntry(originalIndex)} className="text-xs text-red-600">
                             <Trash2 className="mr-1 size-3" />
                             Delete
                           </DropdownMenuItem>
@@ -885,15 +1016,18 @@ export default function PortfolioTrackerPage() {
                       </div>
                       <div className="flex flex-col gap-2">
                         <Label htmlFor="cashCurrency">Currency</Label>
-                        <select
-                          id="cashCurrency"
+                        <Select
                           value={form.cashCurrency}
-                          onChange={(e) => setForm(f => ({ ...f, cashCurrency: e.target.value }))}
-                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                          onValueChange={(value) => setForm(f => ({ ...f, cashCurrency: value }))}
                         >
-                          <option value="USD">USD</option>
-                          <option value="IDR">IDR</option>
-                        </select>
+                          <SelectTrigger id="cashCurrency" className="w-full h-9 px-3 text-sm">
+                            <SelectValue placeholder="Select currency" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="IDR">IDR</SelectItem>
+                            <SelectItem value="USD">USD</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
                   </>

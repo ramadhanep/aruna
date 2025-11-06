@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ChartScatter } from "lucide-react";
+import { AlignEndHorizontal } from "lucide-react";
 
 const INSTALL_PROMPT_KEY = 'aruna_install_prompt_shown';
 
@@ -62,7 +62,7 @@ export function PWAInstallDialog() {
       <DialogContent className="max-w-sm">
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <ChartScatter className="h-8 w-8 text-primary" />
+            <AlignEndHorizontal className="h-8 w-8 text-primary" />
           </div>
           <DialogTitle className="text-sm font-bold">Install Aruna</DialogTitle>
           <DialogDescription className="text-sm">
