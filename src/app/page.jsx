@@ -217,8 +217,15 @@ export default function HomePage() {
     if (!user) {
       remoteDefaultSeedRef.current = false;
       const local = loadWatchlist();
-      setWatchlist(local);
-      setWatchlistUpdatedAt(loadWatchlistUpdatedAt());
+      const localSerialized = JSON.stringify(local);
+      const currentSerialized = JSON.stringify(watchlist);
+      if (currentSerialized !== localSerialized) {
+        setWatchlist(local);
+      }
+      const localUpdatedAt = loadWatchlistUpdatedAt();
+      if (localUpdatedAt !== watchlistUpdatedAt) {
+        setWatchlistUpdatedAt(localUpdatedAt);
+      }
       return;
     }
 
@@ -233,9 +240,16 @@ export default function HomePage() {
       const remoteSerialized = JSON.stringify(remoteWatchlist);
       if (localSerialized !== remoteSerialized) {
         setWatchlist(remoteWatchlist);
+        saveWatchlist(remoteWatchlist, timestamp);
+      } else {
+        const storedUpdatedAt = loadWatchlistUpdatedAt();
+        if (storedUpdatedAt !== timestamp) {
+          saveWatchlist(remoteWatchlist, timestamp);
+        }
       }
-      saveWatchlist(remoteWatchlist, timestamp);
-      setWatchlistUpdatedAt(timestamp);
+      if (watchlistUpdatedAt !== timestamp) {
+        setWatchlistUpdatedAt(timestamp);
+      }
       return;
     }
 
@@ -243,14 +257,22 @@ export default function HomePage() {
       remoteDefaultSeedRef.current = true;
       const defaults = DEFAULT_WATCHLIST;
       const timestamp = new Date().toISOString();
-      setWatchlist(defaults);
-      setWatchlistUpdatedAt(timestamp);
+      const currentSerialized = JSON.stringify(watchlist);
+      const defaultsSerialized = JSON.stringify(defaults);
+      if (currentSerialized !== defaultsSerialized) {
+        setWatchlist(defaults);
+      }
+      if (watchlistUpdatedAt !== timestamp) {
+        setWatchlistUpdatedAt(timestamp);
+      }
       saveWatchlist(defaults, timestamp);
       syncWatchlist(defaults)
         .then((remoteTimestamp) => {
           remoteDefaultSeedRef.current = false;
           if (remoteTimestamp) {
-            setWatchlistUpdatedAt(remoteTimestamp);
+            if (watchlistUpdatedAt !== remoteTimestamp) {
+              setWatchlistUpdatedAt(remoteTimestamp);
+            }
             saveWatchlist(defaults, remoteTimestamp);
           }
         })
@@ -264,6 +286,7 @@ export default function HomePage() {
     remoteWatchlist,
     remoteWatchlistUpdatedAt,
     watchlist,
+    watchlistUpdatedAt,
     syncWatchlist,
   ]);
 

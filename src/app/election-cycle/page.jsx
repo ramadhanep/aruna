@@ -181,8 +181,16 @@ function ElectionCyclePageContent() {
   useEffect(() => {
     if (!user) {
       remoteWatchlistSeedRef.current = false;
-      setWatchlist(readWatchlist());
-      setWatchlistUpdatedAt(readWatchlistUpdatedAt());
+      const local = readWatchlist();
+      const localSerialized = JSON.stringify(local);
+      const currentSerialized = JSON.stringify(watchlist);
+      if (currentSerialized !== localSerialized) {
+        setWatchlist(local);
+      }
+      const localUpdatedAt = readWatchlistUpdatedAt();
+      if (localUpdatedAt !== watchlistUpdatedAt) {
+        setWatchlistUpdatedAt(localUpdatedAt);
+      }
       return;
     }
 
@@ -193,9 +201,20 @@ function ElectionCyclePageContent() {
     if (Array.isArray(remoteWatchlist) && remoteWatchlist.length > 0) {
       remoteWatchlistSeedRef.current = false;
       const timestamp = remoteWatchlistUpdatedAt || new Date().toISOString();
-      setWatchlist(remoteWatchlist);
-      writeWatchlist(remoteWatchlist, timestamp);
-      setWatchlistUpdatedAt(timestamp);
+      const currentSerialized = JSON.stringify(watchlist);
+      const remoteSerialized = JSON.stringify(remoteWatchlist);
+      if (currentSerialized !== remoteSerialized) {
+        setWatchlist(remoteWatchlist);
+        writeWatchlist(remoteWatchlist, timestamp);
+      } else {
+        const storedUpdatedAt = readWatchlistUpdatedAt();
+        if (storedUpdatedAt !== timestamp) {
+          writeWatchlist(remoteWatchlist, timestamp);
+        }
+      }
+      if (watchlistUpdatedAt !== timestamp) {
+        setWatchlistUpdatedAt(timestamp);
+      }
       return;
     }
 
@@ -203,14 +222,27 @@ function ElectionCyclePageContent() {
       remoteWatchlistSeedRef.current = true;
       const defaults = DEFAULT_WATCHLIST;
       const timestamp = new Date().toISOString();
-      setWatchlist(defaults);
-      writeWatchlist(defaults, timestamp);
-      setWatchlistUpdatedAt(timestamp);
+      const currentSerialized = JSON.stringify(watchlist);
+      const defaultsSerialized = JSON.stringify(defaults);
+      if (currentSerialized !== defaultsSerialized) {
+        setWatchlist(defaults);
+        writeWatchlist(defaults, timestamp);
+      } else {
+        const storedUpdatedAt = readWatchlistUpdatedAt();
+        if (storedUpdatedAt !== timestamp) {
+          writeWatchlist(defaults, timestamp);
+        }
+      }
+      if (watchlistUpdatedAt !== timestamp) {
+        setWatchlistUpdatedAt(timestamp);
+      }
       syncWatchlist(defaults)
         .then((remoteTimestamp) => {
           remoteWatchlistSeedRef.current = false;
           if (remoteTimestamp) {
-            setWatchlistUpdatedAt(remoteTimestamp);
+            if (watchlistUpdatedAt !== remoteTimestamp) {
+              setWatchlistUpdatedAt(remoteTimestamp);
+            }
             writeWatchlist(defaults, remoteTimestamp);
           }
         })
@@ -223,6 +255,8 @@ function ElectionCyclePageContent() {
     watchlistLoaded,
     remoteWatchlist,
     remoteWatchlistUpdatedAt,
+    watchlist,
+    watchlistUpdatedAt,
     syncWatchlist,
   ]);
 

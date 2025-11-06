@@ -261,8 +261,15 @@ export default function PortfolioTrackerPage() {
       remotePortfolioSeedRef.current = false;
       skipPortfolioSyncRef.current = true;
       const local = loadPortfolio();
-      setEntries(local);
-      setPortfolioUpdatedAt(loadPortfolioUpdatedAt());
+      const localSerialized = JSON.stringify(local);
+      const currentSerialized = JSON.stringify(entries);
+      if (currentSerialized !== localSerialized) {
+        setEntries(local);
+      }
+      const localUpdatedAt = loadPortfolioUpdatedAt();
+      if (localUpdatedAt !== portfolioUpdatedAt) {
+        setPortfolioUpdatedAt(localUpdatedAt);
+      }
       return;
     }
 
@@ -274,9 +281,20 @@ export default function PortfolioTrackerPage() {
       remotePortfolioSeedRef.current = false;
       const timestamp = remotePortfolioUpdatedAt || new Date().toISOString();
       skipPortfolioSyncRef.current = true;
-      setEntries(remotePortfolio);
-      savePortfolio(remotePortfolio, timestamp);
-      setPortfolioUpdatedAt(timestamp);
+      const currentSerialized = JSON.stringify(entries);
+      const remoteSerialized = JSON.stringify(remotePortfolio);
+      if (currentSerialized !== remoteSerialized) {
+        setEntries(remotePortfolio);
+        savePortfolio(remotePortfolio, timestamp);
+      } else {
+        const storedUpdatedAt = loadPortfolioUpdatedAt();
+        if (storedUpdatedAt !== timestamp) {
+          savePortfolio(remotePortfolio, timestamp);
+        }
+      }
+      if (portfolioUpdatedAt !== timestamp) {
+        setPortfolioUpdatedAt(timestamp);
+      }
       return;
     }
 
@@ -285,14 +303,27 @@ export default function PortfolioTrackerPage() {
       const defaults = getDefaultPortfolio();
       const timestamp = new Date().toISOString();
       skipPortfolioSyncRef.current = true;
-      setEntries(defaults);
-      savePortfolio(defaults, timestamp);
-      setPortfolioUpdatedAt(timestamp);
+      const currentSerialized = JSON.stringify(entries);
+      const defaultsSerialized = JSON.stringify(defaults);
+      if (currentSerialized !== defaultsSerialized) {
+        setEntries(defaults);
+        savePortfolio(defaults, timestamp);
+      } else {
+        const storedUpdatedAt = loadPortfolioUpdatedAt();
+        if (storedUpdatedAt !== timestamp) {
+          savePortfolio(defaults, timestamp);
+        }
+      }
+      if (portfolioUpdatedAt !== timestamp) {
+        setPortfolioUpdatedAt(timestamp);
+      }
       syncPortfolio(defaults)
         .then((remoteTimestamp) => {
           remotePortfolioSeedRef.current = false;
           if (remoteTimestamp) {
-            setPortfolioUpdatedAt(remoteTimestamp);
+            if (portfolioUpdatedAt !== remoteTimestamp) {
+              setPortfolioUpdatedAt(remoteTimestamp);
+            }
             savePortfolio(defaults, remoteTimestamp);
           }
         })
@@ -305,6 +336,8 @@ export default function PortfolioTrackerPage() {
     portfolioLoaded,
     remotePortfolio,
     remotePortfolioUpdatedAt,
+    entries,
+    portfolioUpdatedAt,
     syncPortfolio,
   ]);
 
