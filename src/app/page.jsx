@@ -426,15 +426,12 @@ export default function HomePage() {
         </div>
       )}
 
-      <Card className="border-none bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] text-white shadow-lg">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-sm font-semibold">Daily Inspiration</CardTitle>
-          <CardDescription className="text-xs text-white/70">Jim Simons</CardDescription>
-        </CardHeader>
+      <Card className="border-none bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] text-white shadow-lg p-4">
         <CardContent className="pt-0">
           <p className="text-sm leading-relaxed text-white/90">
             &ldquo;We search through historical data looking for anomalous patterns that we would not expect to occur at random.&rdquo;
           </p>
+          <p className="text-xs text-white/70">~ Jim Simons</p>
         </CardContent>
       </Card>
 
