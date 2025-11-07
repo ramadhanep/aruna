@@ -69,15 +69,35 @@ function MiniChart({ data, isPositive }) {
   );
 }
 
-function PickItem({ pick }) {
-  const change = pick?.change ?? 0;
-  const changePercent = pick?.changePercent ?? 0;
+function PickItem({ pick, quote }) {
+  const change =
+    typeof quote?.change === "number"
+      ? quote.change
+      : typeof pick?.change === "number"
+        ? pick.change
+        : 0;
+  const changePercent =
+    typeof quote?.changePercent === "number"
+      ? quote.changePercent
+      : typeof pick?.changePercent === "number"
+        ? pick.changePercent
+        : 0;
+  const price =
+    typeof quote?.price === "number"
+      ? quote.price
+      : typeof pick?.lastClose === "number"
+        ? pick.lastClose
+        : null;
   const isPositive = change >= 0;
   const color = isPositive ? "text-green-600" : "text-red-600";
-  const price = pick?.lastClose ?? 0;
   const formattedPrice = typeof price === "number"
     ? price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : "-";
+  const displayName = quote?.name || pick?.name;
+  const chartData =
+    Array.isArray(quote?.chartData) && quote.chartData.length > 0
+      ? quote.chartData
+      : pick?.sparkline;
 
   return (
     <Link
@@ -86,10 +106,10 @@ function PickItem({ pick }) {
     >
       <div className="flex-1 min-w-0">
         <div className="font-semibold text-sm truncate">{pick.symbol}</div>
-        <div className="text-xs text-muted-foreground truncate">{pick.name}</div>
+        <div className="text-xs text-muted-foreground truncate">{displayName}</div>
       </div>
-      <div className={`flex items-center ${Array.isArray(pick.sparkline) ? color : "text-muted-foreground"}`}>
-        <MiniChart data={pick.sparkline} isPositive={isPositive} />
+      <div className={`flex items-center ${Array.isArray(chartData) ? color : "text-muted-foreground"}`}>
+        <MiniChart data={chartData} isPositive={isPositive} />
       </div>
       <div className="flex flex-col items-end">
         <div className="font-semibold text-sm">{formattedPrice}</div>
@@ -106,6 +126,7 @@ function PickItem({ pick }) {
 export default function SearchPage() {
   const { supabase } = useAuth();
   const [snapshots, setSnapshots] = useState({});
+  const [quotes, setQuotes] = useState({});
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
@@ -113,29 +134,147 @@ export default function SearchPage() {
   const containerRef = useRef(null);
   const [manualStatus, setManualStatus] = useState({ idx: null, us: null, crypto: null });
   const [manualLoading, setManualLoading] = useState({ idx: false, us: false, crypto: false });
+  const quoteRequestRef = useRef(0);
+
+  const loadQuotesForSnapshots = useCallback(async (snapshotMap) => {
+    const requestId = ++quoteRequestRef.current;
+
+    const symbolSet = new Set();
+    CATEGORY_ORDER.forEach((category) => {
+      const picks = Array.isArray(snapshotMap?.[category]?.results)
+        ? snapshotMap[category].results.slice(0, 8)
+        : [];
+      picks.forEach((pick) => {
+        if (pick?.symbol) {
+          symbolSet.add(pick.symbol);
+        }
+      });
+    });
+
+    if (symbolSet.size === 0) {
+      if (quoteRequestRef.current === requestId) {
+        setQuotes({});
+      }
+      return;
+    }
+
+    const endDate = Math.floor(Date.now() / 1000);
+    const startDate = endDate - 60 * 60 * 24 * 5;
+
+    const symbolsArray = Array.from(symbolSet);
+
+    const quoteResults = await Promise.all(
+      symbolsArray.map(async (symbol) => {
+        try {
+          const url = `/api/finance?symbol=${encodeURIComponent(
+            symbol
+          )}&startDate=${startDate}&endDate=${endDate}`;
+          const res = await fetch(url);
+          if (!res.ok) return null;
+          const json = await res.json();
+          const data = Array.isArray(json?.data) ? json.data : [];
+          if (data.length < 2) return null;
+
+          const current = data[data.length - 1];
+          const previous = data[data.length - 2];
+          const currentRaw =
+            typeof current?.adjclose === "number"
+              ? current.adjclose
+              : typeof current?.close === "number"
+                ? current.close
+                : null;
+          const previousRaw =
+            typeof previous?.adjclose === "number"
+              ? previous.adjclose
+              : typeof previous?.close === "number"
+                ? previous.close
+                : null;
+
+          if (currentRaw == null || previousRaw == null) {
+            return null;
+          }
+
+          const change = currentRaw - previousRaw;
+          const changePercent = previousRaw === 0 ? 0 : (change / previousRaw) * 100;
+          const chartData = data
+            .slice(-30)
+            .map((row) =>
+              typeof row?.adjclose === "number"
+                ? row.adjclose
+                : typeof row?.close === "number"
+                  ? row.close
+                  : null
+            )
+            .filter((value) => typeof value === "number");
+
+          return {
+            symbol,
+            name: json?.meta?.name || symbol,
+            price: currentRaw,
+            change,
+            changePercent,
+            chartData,
+          };
+        } catch (error) {
+          console.warn(`Failed to fetch real-time quote for ${symbol}`, error);
+          return null;
+        }
+      })
+    );
+
+    if (quoteRequestRef.current !== requestId) {
+      return;
+    }
+
+    const mappedQuotes = {};
+    quoteResults.forEach((quote) => {
+      if (quote) {
+        mappedQuotes[quote.symbol] = quote;
+      }
+    });
+
+    setQuotes((prev) => {
+      const next = {};
+      symbolsArray.forEach((symbol) => {
+        if (mappedQuotes[symbol]) {
+          next[symbol] = mappedQuotes[symbol];
+        } else if (prev[symbol]) {
+          next[symbol] = prev[symbol];
+        }
+      });
+      return next;
+    });
+  }, []);
 
   const loadSnapshots = useCallback(async () => {
     if (!supabase) {
+      setSnapshots({});
+      setQuotes({});
       setLoading(false);
       return;
     }
     setLoading(true);
-    const { data, error } = await supabase
-      .from("screening_snapshots")
-      .select("*")
-      .in("category", CATEGORY_ORDER);
-    if (error) {
-      console.warn("Failed to load screening snapshots", error);
+    try {
+      const { data, error } = await supabase
+        .from("screening_snapshots")
+        .select("*")
+        .in("category", CATEGORY_ORDER);
+      if (error) {
+        console.warn("Failed to load screening snapshots", error);
+        setSnapshots({});
+        setQuotes({});
+        return;
+      }
+      const mapped = {};
+      data?.forEach((item) => {
+        mapped[item.category] = item;
+      });
+      setSnapshots(mapped);
+      await loadQuotesForSnapshots(mapped);
+    } finally {
       setLoading(false);
-      return;
     }
-    const mapped = {};
-    data?.forEach((item) => {
-      mapped[item.category] = item;
-    });
-    setSnapshots(mapped);
-    setLoading(false);
-  }, [supabase]);
+  }, [supabase, loadQuotesForSnapshots]);
 
   useEffect(() => {
     loadSnapshots();
@@ -149,10 +288,15 @@ export default function SearchPage() {
         "postgres_changes",
         { event: "*", schema: "public", table: "screening_snapshots" },
         (payload) => {
-          setSnapshots((prev) => ({
-            ...prev,
-            [payload.new.category]: payload.new,
-          }));
+          const record = payload?.new;
+          if (!record?.category) {
+            return;
+          }
+          setSnapshots((prev) => {
+            const next = { ...prev, [record.category]: record };
+            loadQuotesForSnapshots(next);
+            return next;
+          });
         }
       )
       .subscribe();
@@ -160,7 +304,7 @@ export default function SearchPage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase]);
+  }, [supabase, loadQuotesForSnapshots]);
 
   const handleRefresh = useCallback(async () => {
     if (isRefreshing) return;
@@ -308,7 +452,7 @@ export default function SearchPage() {
             ) : (
               <div className="divide-y">
                 {picks.map((pick) => (
-                  <PickItem key={pick.symbol} pick={pick} />
+                  <PickItem key={pick.symbol} pick={pick} quote={quotes[pick.symbol]} />
                 ))}
               </div>
             )}
