@@ -6,6 +6,7 @@ import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { PWARegister } from "@/components/pwa-register";
 import { PWAInstallDialog } from "@/components/pwa-install-dialog";
 import { HeaderSymbolSearch } from "@/components/header-symbol-search";
+import { HeaderAccountMenu } from "@/components/header-account-menu";
 import { AlignEndHorizontal } from "lucide-react";
 
 const geistSans = Geist({
@@ -74,8 +75,8 @@ export default function RootLayout({ children }) {
             <div className="flex flex-col min-h-screen">
               <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3 px-2">
-                  <div className="w-9 h-9" />
-                  <div className="flex gap-1 items-center">
+                  <HeaderAccountMenu />
+                  <div className="flex flex-1 items-center justify-center gap-1">
                     <AlignEndHorizontal className="size-5" />
                     <h1 className="text-lg font-bold">{"aruna"}...</h1>
                   </div>

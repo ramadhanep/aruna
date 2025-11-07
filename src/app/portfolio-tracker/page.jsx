@@ -123,6 +123,7 @@ export default function PortfolioTrackerPage() {
   const containerRef = React.useRef(null);
   const remotePortfolioSeedRef = React.useRef(false);
   const skipPortfolioSyncRef = React.useRef(false);
+  const entriesRef = React.useRef(entries);
   const {
     user,
     remotePortfolio,
@@ -257,23 +258,26 @@ export default function PortfolioTrackerPage() {
   }, []);
 
   useEffect(() => {
+    entriesRef.current = entries;
+  }, [entries]);
+
+  useEffect(() => {
     if (!user) {
       remotePortfolioSeedRef.current = false;
       skipPortfolioSyncRef.current = true;
       const local = loadPortfolio();
       const localSerialized = JSON.stringify(local);
-      const currentSerialized = JSON.stringify(entries);
+      const currentSerialized = JSON.stringify(entriesRef.current);
       if (currentSerialized !== localSerialized) {
         setEntries(local);
       }
       const localUpdatedAt = loadPortfolioUpdatedAt();
-      if (localUpdatedAt !== portfolioUpdatedAt) {
-        setPortfolioUpdatedAt(localUpdatedAt);
-      }
-      return;
+      setPortfolioUpdatedAt(localUpdatedAt);
     }
+  }, [user]);
 
-    if (!portfolioLoaded) {
+  useEffect(() => {
+    if (!user || !portfolioLoaded) {
       return;
     }
 
@@ -281,7 +285,7 @@ export default function PortfolioTrackerPage() {
       remotePortfolioSeedRef.current = false;
       const timestamp = remotePortfolioUpdatedAt || new Date().toISOString();
       skipPortfolioSyncRef.current = true;
-      const currentSerialized = JSON.stringify(entries);
+      const currentSerialized = JSON.stringify(entriesRef.current);
       const remoteSerialized = JSON.stringify(remotePortfolio);
       if (currentSerialized !== remoteSerialized) {
         setEntries(remotePortfolio);
@@ -303,7 +307,7 @@ export default function PortfolioTrackerPage() {
       const defaults = getDefaultPortfolio();
       const timestamp = new Date().toISOString();
       skipPortfolioSyncRef.current = true;
-      const currentSerialized = JSON.stringify(entries);
+      const currentSerialized = JSON.stringify(entriesRef.current);
       const defaultsSerialized = JSON.stringify(defaults);
       if (currentSerialized !== defaultsSerialized) {
         setEntries(defaults);
@@ -336,7 +340,6 @@ export default function PortfolioTrackerPage() {
     portfolioLoaded,
     remotePortfolio,
     remotePortfolioUpdatedAt,
-    entries,
     portfolioUpdatedAt,
     syncPortfolio,
   ]);

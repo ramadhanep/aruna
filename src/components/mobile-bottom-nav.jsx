@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, RefreshCcwDot, BriefcaseBusiness, UserRound } from "lucide-react";
+import { Home, RefreshCcwDot, Wallet, UserRound, Search as SearchIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -18,9 +18,14 @@ const navItems = [
     icon: RefreshCcwDot,
   },
   {
+    title: "Search",
+    url: "/search",
+    icon: SearchIcon,
+  },
+  {
     title: "Portfolio",
     url: "/portfolio-tracker",
-    icon: BriefcaseBusiness,
+    icon: Wallet,
   },
   {
     title: "Account",
@@ -38,7 +43,7 @@ export function MobileBottomNav() {
         {navItems.map((item) => {
           const isActive = pathname === item.url;
           const Icon = item.icon;
-          
+
           return (
             <Link
               key={item.url}

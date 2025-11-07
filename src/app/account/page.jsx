@@ -4,7 +4,6 @@ import { useState, useMemo } from "react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { ClearDataButton } from "@/components/clear-data-button";
 import { useAuth } from "@/components/auth-provider";
 import {
@@ -22,8 +21,23 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 
 function GoogleGlyph() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="#EA4335" d="M12 10.2v3.9h5.4c-.2 1.3-.6 2.2-1.3 2.9-.8.8-1.8 1.4-3.1 1.4-1.9 0-3.5-1.3-4.1-3-.2-.4-.3-1-.3-1.5 0-.5.1-1.1.3-1.5.6-1.7 2.2-3 4.1-3 1.1 0 1.9.4 2.6.9l2.6-2.6C17.3 6 15.1 5 12.9 5 9.6 5 6.6 6.9 5.4 9.8c-.4.9-.7 1.9-.7 3s.2 2.1.7 3c1.2 2.9 4.2 4.8 7.5 4.8 2.2 0 4.2-.7 5.6-2.2 1.5-1.4 2.4-3.5 2.4-6.4 0-.6-.1-1.3-.2-1.9H12z" />
+    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+      <path
+        fill="#EA4335"
+        d="M24 9.5c3.54 0 6 1.54 7.38 2.83L35.9 8.8C32.86 6 28.82 4.5 24 4.5 15.54 4.5 7.9 9.54 4.8 17l6.86 5.33C12.8 15.56 17.93 9.5 24 9.5z"
+      />
+      <path
+        fill="#4285F4"
+        d="M46.5 24.5c0-1.6-.15-3.1-.45-4.5H24v8.55h12.65c-.55 3.07-2.23 5.68-4.81 7.43l7.32 5.67c4.3-3.96 7.34-9.88 7.34-17.15z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M11.66 28.18A14.47 14.47 0 0 1 11 24c0-1.46.24-2.87.65-4.18l-6.85-5.32A23.4 23.4 0 0 0 1 24c0 3.76.9 7.3 2.47 10.47l8.19-6.29z"
+      />
+      <path
+        fill="#34A853"
+        d="M24 46c6.48 0 11.91-2.1 15.85-5.75l-7.32-5.67c-2.02 1.39-4.62 2.22-8.53 2.22-6.54 0-12.09-4.32-14.07-10.35l-8.19 6.3C5.94 40.82 14.27 46 24 46z"
+      />
     </svg>
   );
 }
@@ -53,7 +67,7 @@ function DeleteAccountAction({ onConfirm, disabled }) {
           type="button"
           variant="outline"
           disabled={disabled}
-          className="w-full justify-between items-center border-red-500/40 text-red-600 hover:bg-red-500/10 h-14"
+          className="w-full items-start justify-between gap-3 rounded-xl border-red-500/40 bg-red-500/5 px-4 py-3 text-left text-red-600 hover:bg-red-500/10"
         >
           <div className="flex flex-col items-start gap-1">
             <span className="text-sm font-semibold">Delete your account</span>
@@ -61,7 +75,7 @@ function DeleteAccountAction({ onConfirm, disabled }) {
               Remove synced data and your account
             </span>
           </div>
-          <Trash2 className="h-4 w-4" />
+          <Trash2 className="h-4 w-4 flex-shrink-0" />
         </Button>
       </DialogTrigger>
       <DialogContent closeButtonPosition="right">
@@ -162,19 +176,54 @@ export default function AccountPage() {
   };
 
   return (
-    <div className="flex flex-col gap-6 pb-10">
-      <section className="space-y-3">
-        <h1 className="text-sm font-semibold">Account</h1>
+    <div className="space-y-6 pb-24">
+      <section className="space-y-2">
+        <p className="text-sm font-semibold text-muted-foreground">Profile overview</p>
+        <Card className="border-none bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] text-white shadow-lg">
+          <CardContent className="space-y-5 p-5">
+            <div className="flex items-center gap-3">
+              <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/15 text-sm font-semibold uppercase">
+                {user ? initials : <UserRound className="h-6 w-6 text-white" />}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">
+                  {user ? fullName : "You're browsing in guest mode"}
+                </p>
+                <p className="text-xs text-white/80 truncate">
+                  {user
+                    ? primaryEmail
+                    : "Sign in to sync your watchlist and portfolio"}
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 text-white">
+              <div className="rounded-xl bg-white/10 p-3">
+                <p className="text-xs uppercase tracking-wide text-white/70">Mode</p>
+                <p className="text-sm font-semibold">{user ? "Synced" : "Guest"}</p>
+              </div>
+              <div className="rounded-xl bg-white/10 p-3">
+                <p className="text-xs uppercase tracking-wide text-white/70">Server</p>
+                <p className="text-sm font-semibold">
+                  {supabaseConfigured ? "Connected" : "Offline"}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="space-y-2">
+        <p className="text-sm font-semibold">Session controls</p>
         <Card>
-          <CardContent className="pt-4">
+          <CardContent className="space-y-4 py-4">
             {loading ? (
-              <div className="flex items-center justify-center py-12">
+              <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
             ) : user ? (
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold uppercase text-primary">
+              <>
+                <div className="flex items-center gap-3 rounded-xl border border-border/80 p-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold uppercase text-primary">
                     {initials}
                   </div>
                   <div className="min-w-0">
@@ -184,117 +233,112 @@ export default function AccountPage() {
                     ) : null}
                   </div>
                 </div>
-                <div className="flex flex-col gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="w-full justify-center gap-2 text-xs"
-                    onClick={handleSignOut}
-                  >
-                    <LogOut className="h-4 w-4" />
-                    Sign out
-                  </Button>
-                  {!supabaseConfigured ? (
-                    <div className="flex items-center gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-600">
-                      <ShieldAlert className="h-4 w-4 flex-shrink-0" />
-                      Provider credentials are not configured. Remote sync will be disabled until
-                      you add them.
-                    </div>
-                  ) : null}
-                </div>
-              </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full justify-center gap-2 text-xs rounded-xl"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="h-4 w-4" />
+                  Sign out
+                </Button>
+                {!supabaseConfigured ? (
+                  <div className="flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700">
+                    <ShieldAlert className="h-4 w-4 flex-shrink-0" />
+                    Provider credentials are not configured. Remote sync will be disabled until
+                    you add them.
+                  </div>
+                ) : null}
+              </>
             ) : (
-              <div className="flex flex-col gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                    <UserRound className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold">You&apos;re in guest mode</p>
-                    <p className="text-xs text-muted-foreground">
-                      Sign in to sync your watchlist and portfolio across devices.
-                    </p>
-                  </div>
+              <>
+                <div className="rounded-xl border border-dashed border-border p-4">
+                  <p className="text-sm font-semibold">Guest mode</p>
+                  <p className="text-xs text-muted-foreground">
+                    Tap the button below to sign in with Google. Your data stays private to you.
+                  </p>
                 </div>
                 <Button
                   type="button"
                   onClick={handleGoogleSignIn}
-                  className="w-full justify-center gap-2 bg-white text-black hover:bg-white/90 text-xs"
+                  className="w-full justify-center gap-3 rounded-full border border-border bg-white text-[13px] font-semibold text-[#3c4043] shadow-sm hover:bg-white/90"
                 >
                   <GoogleGlyph />
-                  Sign in with Google
+                  <span>Sign in with Google</span>
                 </Button>
                 {authError ? (
-                  <div className="rounded-md border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-600">
+                  <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-600">
                     {authError}
                   </div>
                 ) : null}
-              </div>
+              </>
             )}
           </CardContent>
         </Card>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold">Appearance</h2>
+      <section className="space-y-2">
+        <p className="text-sm font-semibold">Appearance</p>
         <Card>
-          <CardContent className="flex flex-col items-center gap-6 py-6">
-            <div className="text-center">
-              <Label className="text-sm font-semibold">Theme</Label>
-            </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Sun className="h-5 w-5" />
-                <span className="text-sm font-medium">Light</span>
-              </div>
-              <button
+          <CardContent className="space-y-4 py-4">
+            <p className="text-xs text-muted-foreground">
+              Pick the look that feels best on your device. Light stays bright, dark saves battery.
+            </p>
+            <div className="flex gap-2">
+              <Button
                 type="button"
-                onClick={() => setTheme(isDark ? "light" : "dark")}
-                className={`relative inline-flex h-8 w-14 items-center rounded-full transition-colors ${
-                  isDark ? "bg-emerald-600" : "bg-gray-200"
+                variant={isDark ? "outline" : "default"}
+                className={`flex-1 justify-center gap-2 rounded-xl text-xs ${
+                  !isDark ? "bg-primary text-primary-foreground" : ""
                 }`}
+                onClick={() => setTheme("light")}
               >
-                <span
-                  className={`inline-block h-6 w-6 transform rounded-full transition-transform ${
-                    isDark ? "translate-x-7 bg-white" : "translate-x-1 bg-black"
-                  }`}
-                />
-              </button>
-              <div className="flex items-center gap-2">
-                <Moon className="h-5 w-5" />
-                <span className="text-sm font-medium">Dark</span>
-              </div>
+                <Sun className="h-4 w-4" />
+                Light
+              </Button>
+              <Button
+                type="button"
+                variant={isDark ? "default" : "outline"}
+                className={`flex-1 justify-center gap-2 rounded-xl text-xs ${
+                  isDark ? "bg-primary text-primary-foreground" : ""
+                }`}
+                onClick={() => setTheme("dark")}
+              >
+                <Moon className="h-4 w-4" />
+                Dark
+              </Button>
             </div>
           </CardContent>
         </Card>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-sm font-semibold">Data & Privacy</h2>
+      <section className="space-y-2">
+        <p className="text-sm font-semibold">Data & privacy</p>
         <Card>
-          <CardContent className="space-y-3 pt-4">
+          <CardContent className="space-y-4 py-4">
             <ClearDataButton
               onCleared={user ? clearRemoteData : undefined}
               trigger={
-                <Button
+                <button
                   type="button"
-                  variant="outline"
-                  className="w-full items-center justify-between gap-3 text-left h-14"
+                  className="flex w-full items-center justify-between rounded-xl border border-border px-3 py-3 text-left"
                 >
-                  <div className="flex flex-col items-start gap-1">
-                    <span className="text-sm font-semibold">Reset data</span>
-                    <span className="text-xs text-muted-foreground">
-                      Clear watchlist and portfolio on this device
-                    </span>
+                  <div>
+                    <p className="text-sm font-semibold">Reset local data</p>
+                    <p className="text-xs text-muted-foreground">
+                      Clears watchlist & portfolio on this device only.
+                    </p>
                   </div>
                   <Cookie className="h-4 w-4 text-muted-foreground" />
-                </Button>
+                </button>
               }
             />
-            <DeleteAccountAction
-              onConfirm={deleteAccount}
-              disabled={!user || !supabaseConfigured}
-            />
+            {user ? (
+              <DeleteAccountAction
+                onConfirm={deleteAccount}
+                disabled={!supabaseConfigured}
+              />
+            ) : null}
           </CardContent>
         </Card>
       </section>
