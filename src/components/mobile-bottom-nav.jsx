@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, RefreshCcwDot, Wallet, UserRound, Search as SearchIcon } from "lucide-react";
+import { Home, RefreshCcwDot, BriefcaseBusiness, UserRound, Search as SearchIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -25,7 +25,7 @@ const navItems = [
   {
     title: "Portfolio",
     url: "/portfolio-tracker",
-    icon: Wallet,
+    icon: BriefcaseBusiness,
   },
   {
     title: "Account",

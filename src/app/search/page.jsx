@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Loader2, TrendingUp, TrendingDown } from "lucide-react";
 
 const CATEGORY_LABELS = {
-  idx: "Daily Recommendations for 🇮🇩",
-  us: "Daily Recommendations for 🇺🇸",
-  crypto: "Daily Recommendations for 🪙",
+  idx: "BREAKOUT IN IDX 🇮🇩",
+  us: "BREAKOUT IN US 🇺🇸",
+  crypto: "BREAKOUT IN CRYPTO 🪙",
 };
 
 const CATEGORY_ORDER = ["idx", "us", "crypto"];
@@ -146,7 +146,7 @@ export default function SearchPage() {
     const symbolSet = new Set();
     CATEGORY_ORDER.forEach((category) => {
       const picks = Array.isArray(snapshotMap?.[category]?.results)
-        ? snapshotMap[category].results.slice(0, 8)
+        ? snapshotMap[category].results
         : [];
       picks.forEach((pick) => {
         const symbol = typeof pick === "string" ? pick : pick?.symbol;
@@ -407,8 +407,7 @@ export default function SearchPage() {
           style={{ height: `${Math.min(pullDistance, 120)}px` }}
         >
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Loader2 className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-            <span>{pullDistance > 80 ? "Release to refresh" : "Pull to refresh"}</span>
+            <Loader2 className={`h-6 w-6 text-muted-foreground ${pullDistance > 80 || isRefreshing ? 'animate-spin' : ''}`} />
           </div>
         </div>
       )}
@@ -445,8 +444,7 @@ export default function SearchPage() {
                 ? item
                 : null
           )
-          .filter(Boolean)
-          .slice(0, 8);
+          .filter(Boolean);
         return (
           <div key={category}>
             <SectionHeader title={CATEGORY_LABELS[category]} />

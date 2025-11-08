@@ -428,10 +428,9 @@ export default function HomePage() {
 
       <Card className="border-none bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] text-white shadow-lg p-4">
         <CardContent className="pt-0">
-          <p className="text-sm leading-relaxed text-white/90">
-            &ldquo;We search through historical data looking for anomalous patterns that we would not expect to occur at random.&rdquo;
+          <p className="text-xs leading-relaxed text-white/90">
+            We search through historical data looking for anomalous patterns that we would not expect to occur at random.
           </p>
-          <p className="text-xs text-white/70">~ Jim Simons</p>
         </CardContent>
       </Card>
 
@@ -445,7 +444,7 @@ export default function HomePage() {
         <div className="border-t py-2">
           <button
             onClick={() => setManageDialogOpen(true)}
-            className="w-full flex items-center gap-2 justify-center text-emerald-600 hover:text-emerald-700 transition-colors"
+            className="w-full flex items-center gap-2 justify-center text-emerald-700 hover:text-emerald-800 transition-colors"
           >
             <Edit className="h-4 w-4" />
             <span className="text-sm font-medium">Edit Watchlist</span>
@@ -500,7 +499,7 @@ export default function HomePage() {
       {showInstallButton && deferredPrompt && (
         <Button 
           onClick={handleInstall}
-          className="w-full bg-emerald-600 hover:bg-emerald-700 flex items-center gap-2 text-sm"
+          className="w-full bg-emerald-700 hover:bg-emerald-800 flex items-center gap-2 text-xs text-white/80"
         >
           <Download className="h-4 w-4" />
           Install App

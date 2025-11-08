@@ -215,7 +215,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
         </div>
 
         <DialogFooter className="p-6 pt-4 border-t">
-          <Button onClick={handleSave} className="bg-emerald-600 hover:bg-emerald-700">
+          <Button onClick={handleSave} className="bg-emerald-700 hover:bg-emerald-800">
             Done
           </Button>
         </DialogFooter>

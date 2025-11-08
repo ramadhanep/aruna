@@ -50,8 +50,6 @@ export function HeaderAccountMenu() {
         >
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
-          ) : user ? (
-            <span className="text-[11px] font-semibold uppercase">{initials}</span>
           ) : (
             <UserRound className="h-4 w-4" />
           )}

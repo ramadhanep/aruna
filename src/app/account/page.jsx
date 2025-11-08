@@ -65,25 +65,23 @@ function DeleteAccountAction({ onConfirm, disabled }) {
       <DialogTrigger asChild>
         <Button
           type="button"
-          variant="outline"
+          variant="ghost"
           disabled={disabled}
-          className="w-full items-start justify-between gap-3 rounded-xl border-red-500/40 bg-red-500/5 px-4 py-3 text-left text-red-600 hover:bg-red-500/10"
+          className="p-0"
         >
-          <div className="flex flex-col items-start gap-1">
-            <span className="text-sm font-semibold">Delete your account</span>
-            <span className="text-xs text-red-500">
-              Remove synced data and your account
-            </span>
+          <div className="flex flex-1 flex-col items-start gap-0.5 text-xs text-red-600">
+            Delete your Account
           </div>
-          <Trash2 className="h-4 w-4 flex-shrink-0" />
         </Button>
       </DialogTrigger>
       <DialogContent closeButtonPosition="right">
         <DialogHeader>
-          <DialogTitle className="text-sm font-semibold">Delete account?</DialogTitle>
-          <DialogDescription className="text-xs">
-            This removes your profile, cloud watchlist, and portfolio. You will be signed
-            out and this action cannot be undone.
+          <DialogTitle className="text-sm font-semibold">
+            Delete account?
+          </DialogTitle>
+          <DialogDescription className="text-xs leading-relaxed text-muted-foreground">
+            We&apos;ll permanently remove every trace of your account from our databases.
+            Don&apos;t worry—your data stays private; even our developers won&apos;t know you were ever here.
           </DialogDescription>
         </DialogHeader>
         {error ? (
@@ -144,15 +142,6 @@ export default function AccountPage() {
 
   const primaryEmail = user?.email ?? user?.user_metadata?.email;
 
-  const initials = useMemo(() => {
-    if (!fullName) return "U";
-    const segments = fullName.trim().split(/\s+/);
-    if (segments.length === 1) {
-      return segments[0].slice(0, 2).toUpperCase();
-    }
-    return `${segments[0][0]}${segments[segments.length - 1][0]}`.toUpperCase();
-  }, [fullName]);
-
   const handleGoogleSignIn = async () => {
     setAuthError(null);
     try {
@@ -183,7 +172,7 @@ export default function AccountPage() {
           <CardContent className="space-y-5 p-5">
             <div className="flex items-center gap-3">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white/15 text-sm font-semibold uppercase">
-                {user ? initials : <UserRound className="h-6 w-6 text-white" />}
+                <UserRound className="h-6 w-6 text-white" />
               </div>
               <div className="min-w-0">
                 <p className="text-sm font-semibold">
@@ -208,75 +197,33 @@ export default function AccountPage() {
                 </p>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </section>
-
-      <section className="space-y-2">
-        <p className="text-sm font-semibold">Session controls</p>
-        <Card>
-          <CardContent className="space-y-4 py-4">
             {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <div className="flex items-center justify-center py-2">
+                <Loader2 className="h-5 w-5 animate-spin text-white/70" />
               </div>
-            ) : user ? (
-              <>
-                <div className="flex items-center gap-3 rounded-xl border border-border/80 p-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-xs font-semibold uppercase text-primary">
-                    {initials}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold">{fullName}</p>
-                    {primaryEmail ? (
-                      <p className="text-xs text-muted-foreground truncate">{primaryEmail}</p>
-                    ) : null}
-                  </div>
-                </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full justify-center gap-2 text-xs rounded-xl"
-                  onClick={handleSignOut}
-                >
-                  <LogOut className="h-4 w-4" />
-                  Sign out
-                </Button>
-                {!supabaseConfigured ? (
-                  <div className="flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700">
-                    <ShieldAlert className="h-4 w-4 flex-shrink-0" />
-                    Provider credentials are not configured. Remote sync will be disabled until
-                    you add them.
-                  </div>
-                ) : null}
-              </>
-            ) : (
-              <>
-                <div className="rounded-xl border border-dashed border-border p-4">
-                  <p className="text-sm font-semibold">Guest mode</p>
-                  <p className="text-xs text-muted-foreground">
-                    Tap the button below to sign in with Google. Your data stays private to you.
-                  </p>
-                </div>
+            ) : user ? null : (
+              <div className="space-y-3 rounded-xl border border-white/15 bg-white/5 p-4">
+                <p className="text-xs text-white/80">
+                  Sign in with Google to sync your watchlist and portfolio securely.
+                </p>
                 <Button
                   type="button"
                   onClick={handleGoogleSignIn}
-                  className="w-full justify-center gap-3 rounded-full border border-border bg-white text-[13px] font-semibold text-[#3c4043] shadow-sm hover:bg-white/90"
+                  className="w-full justify-center gap-3 rounded-full border border-white/40 bg-white text-[13px] font-semibold text-[#3c4043] shadow-sm hover:bg-white/90"
                 >
                   <GoogleGlyph />
                   <span>Sign in with Google</span>
                 </Button>
                 {authError ? (
-                  <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-600">
+                  <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-200">
                     {authError}
                   </div>
                 ) : null}
-              </>
+              </div>
             )}
           </CardContent>
         </Card>
       </section>
-
       <section className="space-y-2">
         <p className="text-sm font-semibold">Appearance</p>
         <Card>
@@ -324,20 +271,39 @@ export default function AccountPage() {
                   className="flex w-full items-center justify-between rounded-xl border border-border px-3 py-3 text-left"
                 >
                   <div>
-                    <p className="text-sm font-semibold">Reset local data</p>
+                    <p className="text-sm font-semibold">Reset data</p>
                     <p className="text-xs text-muted-foreground">
-                      Clears watchlist & portfolio on this device only.
+                      Resest watchlist & portfolio to default.
                     </p>
                   </div>
                   <Cookie className="h-4 w-4 text-muted-foreground" />
                 </button>
               }
             />
-            {user ? (
+            <div className="flex justify-center">
+              {user ? (
               <DeleteAccountAction
                 onConfirm={deleteAccount}
                 disabled={!supabaseConfigured}
               />
+            ) : null}
+            </div>
+            {user ? (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full justify-center gap-2 rounded-xl text-xs"
+                onClick={handleSignOut}
+              >
+                <LogOut className="h-4 w-4" />
+                Sign out
+              </Button>
+            ) : null}
+            {user && !supabaseConfigured ? (
+              <div className="flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700">
+                <ShieldAlert className="h-4 w-4 flex-shrink-0" />
+                Provider credentials are not configured. Remote sync will be disabled until you add them.
+              </div>
             ) : null}
           </CardContent>
         </Card>

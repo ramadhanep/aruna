@@ -841,13 +841,13 @@ function ElectionCyclePageContent() {
     const stateRaw = fundamentals?.profile?.marketState;
     if (!stateRaw) {
       if (symbolInfo?.isMarketOpen) {
-        return { label: 'Market Open', tone: 'text-emerald-600 dark:text-emerald-400', Icon: Sun };
+        return { label: 'Market Open', tone: 'text-emerald-700 dark:text-emerald-500', Icon: Sun };
       }
       return null;
     }
     const state = String(stateRaw).toUpperCase();
     if (state.includes('REGULAR') || state === 'OPEN') {
-      return { label: 'Market Open', tone: 'text-emerald-600 dark:text-emerald-400', Icon: Sun };
+      return { label: 'Market Open', tone: 'text-emerald-700 dark:text-emerald-500', Icon: Sun };
     }
     if (state.includes('PRE')) {
       return { label: 'Pre-Market', tone: 'text-amber-500', Icon: Clock3 };
@@ -912,7 +912,6 @@ function ElectionCyclePageContent() {
             <span className="text-white/70 text-xs">🧰 Magnificent 7</span>
           )}
         </div>
-        {/* star add to favorites di sini */}
         <button
           type="button"
           onClick={toggleFavorite}
@@ -1157,7 +1156,7 @@ function ElectionCyclePageContent() {
 
           <Button 
             onClick={() => setPortfolioDialogOpen(true)}
-            className="mt-2 w-full bg-emerald-600 hover:bg-emerald-700 font-semibold text-sm"
+            className="mt-2 w-full bg-emerald-700 hover:bg-emerald-800 font-semibold text-xs text-white/80"
           >
             Add to Your Portfolio
           </Button>
@@ -1239,7 +1238,7 @@ function ElectionCyclePageContent() {
                                     {formatSignedEarnings(latestEarningsPoint.estimate)}
                                   </span>{' '}
                                   • Actual{' '}
-                                  <span className="font-medium text-emerald-600">
+                                  <span className="font-medium text-emerald-700">
                                     {formatSignedEarnings(latestEarningsPoint.actual)}
                                   </span>
                                 </p>
@@ -1247,7 +1246,7 @@ function ElectionCyclePageContent() {
                                   <p
                                     className={`text-xs font-semibold ${
                                       latestEarningsOutcome.tone === 'beat'
-                                        ? 'text-emerald-600'
+                                        ? 'text-emerald-700'
                                         : 'text-red-600'
                                     }`}
                                   >

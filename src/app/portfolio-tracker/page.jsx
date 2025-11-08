@@ -822,7 +822,7 @@ export default function PortfolioTrackerPage() {
           <div className="flex flex-col gap-2">
             <div className="rounded-md border">
               <details>
-                <summary className="list-none cursor-pointer select-none text-center text-sm text-emerald-600 py-2">
+                <summary className="list-none cursor-pointer select-none text-center text-sm text-emerald-700 py-2">
                   View Detail
                 </summary>
                 <div className="space-y-3 p-3 pt-1">
@@ -851,8 +851,8 @@ export default function PortfolioTrackerPage() {
                       <p className="text-lg font-semibold">{formatValue(totalCash).primary}</p>
                       <p className="text-xs text-muted-foreground">{formatValue(totalCash).secondary}</p>
                     </div>
-                    <div className="p-2 rounded-full bg-emerald-600/10">
-                      <Coins className="h-5 w-5 text-emerald-700 dark:text-emerald-400" />
+                    <div className="p-2 rounded-full bg-emerald-700/10">
+                      <Coins className="h-5 w-5 text-emerald-800 dark:text-emerald-500" />
                     </div>
                   </div>
                 </div>
@@ -861,7 +861,7 @@ export default function PortfolioTrackerPage() {
 
             <div className="rounded-md border">
               <details>
-                <summary className="list-none cursor-pointer select-none text-center text-sm text-emerald-600 underline py-2">
+                <summary className="list-none cursor-pointer select-none text-center text-sm text-emerald-700 underline py-2">
                   View Distribution Chart
                 </summary>
                 <div className="space-y-3 p-3 pt-1">
@@ -948,7 +948,7 @@ export default function PortfolioTrackerPage() {
                       <div className="flex gap-2">
                         <div className="p-2 rounded-full bg-muted">
                           {isCash ? (
-                            <DollarSign className="h-4 w-4 text-emerald-700 dark:text-emerald-400" />
+                            <DollarSign className="h-4 w-4 text-emerald-800 dark:text-emerald-500" />
                           ) : (
                             <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                           )}
@@ -1181,7 +1181,7 @@ export default function PortfolioTrackerPage() {
 
       <Button
         size="icon"
-        className="fixed bottom-20 right-4 h-14 w-14 rounded-full bg-emerald-600 shadow-lg z-40"
+        className="fixed bottom-20 right-4 h-14 w-14 rounded-full bg-emerald-700 shadow-lg z-40"
         onClick={openAdd}
       >
         <Plus className="size-6" />
