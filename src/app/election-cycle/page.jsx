@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import {
   removeIncompleteYears,
   computeDailyReturns,
@@ -24,8 +24,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar } from 'recharts';
-import { Loader2, Sun, MoonStar, Clock3, Star, Lock } from "lucide-react";
+import { AreaChart, Area, Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar } from 'recharts';
+import { Loader2, Sun, MoonStar, Clock3, Star, Lock, Rocket, WandSparkles, LucideWandSparkles } from "lucide-react";
 import { useTheme } from 'next-themes';
 import { AddAssetModal } from "@/components/add-asset-modal";
 import { SymbolSearchDialog } from "@/components/header-symbol-search";
@@ -35,14 +35,15 @@ const CURRENT_LINE_COLOR = 'oklch(59.6% 0.145 163.225)';
 const WATCHLIST_STORAGE_KEY = 'aruna_watchlist';
 const WATCHLIST_UPDATED_AT_KEY = 'aruna_watchlist_updated_at';
 const DEFAULT_WATCHLIST = [
-  { symbol: 'NVDA', order: 1 },
-  { symbol: 'MSFT', order: 2 },
-  { symbol: 'AMZN', order: 3 },
-  { symbol: 'GOOG', order: 4 },
-  { symbol: 'AVGO', order: 5 },
-  { symbol: 'BBCA.JK', order: 6 },
-  { symbol: 'BBRI.JK', order: 7 },
-  { symbol: 'BTC-USD', order: 8 },
+  { symbol: 'BBCA.JK', order: 1 },
+  { symbol: 'BTC-USD', order: 2 },
+  { symbol: 'QQQ', order: 3 },
+  { symbol: 'SPY', order: 4 },
+  { symbol: 'NVDA', order: 5 },
+  { symbol: 'MSFT', order: 6 },
+  { symbol: 'AMZN', order: 7 },
+  { symbol: 'GOOG', order: 8 },
+  { symbol: 'AVGO', order: 9 },
 ];
 
 function readWatchlist() {
@@ -87,8 +88,57 @@ function readWatchlistUpdatedAt() {
   return window.localStorage.getItem(WATCHLIST_UPDATED_AT_KEY);
 }
 
+const cycleMetaMap = {
+  all: { label: 'All Years', lineKey: 'allYears' },
+  pre: { label: 'Pre-Election Year', lineKey: 'preElection' },
+  election: { label: 'Election Year', lineKey: 'election' },
+  mid: { label: 'Mid-Term Year', lineKey: 'midTerm' },
+  post: { label: 'Post-Election Year', lineKey: 'postElection' },
+};
+
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+const NORMAL_RANGE_OPTIONS = [
+  { value: '1D', label: '1D', days: 1 },
+  { value: '1W', label: '1W', days: 7 },
+  { value: '1M', label: '1M', days: 30 },
+  { value: '3M', label: '3M', days: 90 },
+  { value: 'YTD', label: 'YTD', type: 'ytd' },
+  { value: '1Y', label: '1Y', days: 365 },
+  { value: '3Y', label: '3Y', days: 365 * 3 },
+  { value: '5Y', label: '5Y', days: 365 * 5 },
+];
+
+function isCryptoTicker(symbol = '') {
+  const upper = symbol.toUpperCase();
+  return upper.includes('-USD') || upper.startsWith('CRYPTO:');
+}
+
+function getDefaultCyclesForSymbol(symbol) {
+  if (isCryptoTicker(symbol)) {
+    return ['all', 'current'];
+  }
+  const year = new Date().getFullYear();
+  const label = getElectionCycleLabel(year);
+  const mapping = {
+    'Pre-Election Year': 'pre',
+    'Election Year': 'election',
+    'Mid-Term Year': 'mid',
+    'Post-Election Year': 'post',
+  };
+  const key = mapping[label] || 'all';
+  return [key, 'current'];
+}
+
+function getDayOfYear(date) {
+  const start = new Date(date.getFullYear(), 0, 0);
+  const diff = date - start + (start.getTimezoneOffset() - date.getTimezoneOffset()) * 60000;
+  return Math.floor(diff / DAY_IN_MS);
+}
+
 function ElectionCyclePageContent() {
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const {
@@ -100,6 +150,8 @@ function ElectionCyclePageContent() {
   } = useAuth();
   const isAuthenticated = Boolean(user);
   const symbolParam = searchParams.get('symbol');
+  const cycleParam = searchParams.get('cycle');
+  const searchParamsString = searchParams.toString();
   const LAST_SYMBOL_KEY = 'aruna_last_election_symbol';
   const getInitialSymbol = () => {
     if (symbolParam) return symbolParam;
@@ -109,10 +161,15 @@ function ElectionCyclePageContent() {
     }
     return 'MSFT';
   };
-  const [symbol, setSymbol] = useState(getInitialSymbol);
+  const initialSymbol = getInitialSymbol();
+  const [symbol, setSymbol] = useState(initialSymbol);
   const [scaleChoice, setScaleChoice] = useState('linear');
   const [loading, setLoading] = useState(false);
   const [rawLinesData, setRawLinesData] = useState([]);
+  const [normalRange, setNormalRange] = useState('YTD');
+  const [normalSeries, setNormalSeries] = useState([]);
+  const [normalSeriesLoading, setNormalSeriesLoading] = useState(false);
+  const [normalSeriesError, setNormalSeriesError] = useState(null);
   const [symbolInfo, setSymbolInfo] = useState(null);
   const [assetName, setAssetName] = useState('');
   const [monthlyHeatmap, setMonthlyHeatmap] = useState({ rows: [], average: {} });
@@ -126,19 +183,16 @@ function ElectionCyclePageContent() {
   const [watchlistUpdatedAt, setWatchlistUpdatedAt] = useState(() => readWatchlistUpdatedAt());
   const remoteWatchlistSeedRef = React.useRef(false);
 
-  const deriveDefaultCycles = () => {
-    const y = new Date().getFullYear();
-    const label = getElectionCycleLabel(y);
-    const mapping = {
-      'Pre-Election Year': 'pre',
-      'Election Year': 'election',
-      'Mid-Term Year': 'mid',
-      'Post-Election Year': 'post',
-    };
-    const key = mapping[label];
-    return [key, 'current'];
-  };
-  const [selectedCycles, setSelectedCycles] = useState(deriveDefaultCycles());
+  const [selectedCycles, setSelectedCycles] = useState(() => {
+    if (cycleParam) {
+      const parsed = cycleParam.split(',').map((item) => item.trim()).filter(Boolean);
+      if (parsed.length > 0) {
+        return parsed;
+      }
+    }
+    return getDefaultCyclesForSymbol(initialSymbol);
+  });
+  const isNormalView = selectedCycles.length === 1 && selectedCycles[0] === 'normal';
 
   const colors = useMemo(() => {
     const isDark = resolvedTheme === 'dark';
@@ -160,10 +214,42 @@ function ElectionCyclePageContent() {
 
   // Update symbol when URL param changes
   useEffect(() => {
-    if (symbolParam) {
+    if (symbolParam && symbolParam !== symbol) {
       setSymbol(symbolParam);
+      if (cycleParam) {
+        const parsed = cycleParam.split(',').map((item) => item.trim()).filter(Boolean);
+        if (parsed.length > 0) {
+          setSelectedCycles(parsed);
+        } else {
+          setSelectedCycles(getDefaultCyclesForSymbol(symbolParam));
+        }
+      } else {
+        setSelectedCycles(getDefaultCyclesForSymbol(symbolParam));
+      }
+    } else if (cycleParam) {
+      const parsed = cycleParam.split(',').map((item) => item.trim()).filter(Boolean);
+      if (parsed.length > 0) {
+        setSelectedCycles(parsed);
+      }
     }
-  }, [symbolParam]);
+  }, [symbolParam, symbol, cycleParam]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !pathname) return;
+    const normalized = selectedCycles.join(',');
+    const params = new URLSearchParams(searchParamsString);
+    const current = params.get('cycle') ?? '';
+    if (normalized) {
+      if (current === normalized) return;
+      params.set('cycle', normalized);
+    } else {
+      if (!current) return;
+      params.delete('cycle');
+    }
+    const query = params.toString();
+    const nextUrl = query ? `${pathname}?${query}` : pathname;
+    router.replace(nextUrl, { scroll: false });
+  }, [selectedCycles, searchParamsString, pathname, router]);
 
   // Persist last viewed symbol
   useEffect(() => {
@@ -574,18 +660,188 @@ function ElectionCyclePageContent() {
     return { chartArray, linesData: rawLinesData };
   }, [rawLinesData, scaleChoice]);
 
-  const filteredChartData = quarterFilter === 'all' 
-    ? chartData.chartArray 
-    : chartData.chartArray.filter(item => {
-        const [start, end] = getQuarterDateRange(quarterFilter);
-        return item.dayOfYear >= start && item.dayOfYear <= end;
+  const filteredChartData = useMemo(() => {
+    if (!chartData.chartArray || chartData.chartArray.length === 0) {
+      return [];
+    }
+    if (quarterFilter === 'all') {
+      return chartData.chartArray;
+    }
+    const [start, end] = getQuarterDateRange(quarterFilter);
+    const subset = chartData.chartArray.filter(
+      (item) => item.dayOfYear >= start && item.dayOfYear <= end
+    );
+    if (subset.length === 0) {
+      return subset;
+    }
+    const baselines = {};
+    return subset.map((point) => {
+      const nextPoint = { dayOfYear: point.dayOfYear };
+      Object.entries(point).forEach(([key, value]) => {
+        if (key === 'dayOfYear') return;
+        if (typeof value !== 'number') {
+          nextPoint[key] = value;
+          return;
+        }
+        if (!(key in baselines) || baselines[key] == null) {
+          baselines[key] = value;
+        }
+        const baseline = baselines[key];
+        if (scaleChoice === 'log') {
+          nextPoint[key] = baseline ? value / baseline : value;
+        } else {
+          nextPoint[key] = value - baseline;
+        }
       });
+      return nextPoint;
+    });
+  }, [chartData.chartArray, quarterFilter, scaleChoice]);
+
+  useEffect(() => {
+    if (!symbol || !isNormalView) {
+      setNormalSeriesLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    let cancelled = false;
+
+    async function loadSeries() {
+      setNormalSeriesLoading(true);
+      setNormalSeriesError(null);
+      setNormalSeries([]);
+      try {
+        const res = await fetch(
+          `/api/price-series?symbol=${encodeURIComponent(symbol)}&range=${normalRange}`,
+          { signal: controller.signal }
+        );
+        const payload = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          throw new Error(payload?.error || 'Failed to load price data');
+        }
+        if (!cancelled) {
+          setNormalSeries(Array.isArray(payload?.data) ? payload.data : []);
+        }
+      } catch (error) {
+        if (error.name === 'AbortError') return;
+        if (!cancelled) {
+          setNormalSeries([]);
+          setNormalSeriesError(error.message || 'Failed to load price data');
+        }
+      } finally {
+        if (!cancelled) {
+          setNormalSeriesLoading(false);
+        }
+      }
+    }
+
+    loadSeries();
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [symbol, normalRange, isNormalView]);
+
+  const filteredNormalChartData = useMemo(() => {
+    if (!isNormalView || !Array.isArray(normalSeries) || normalSeries.length === 0) {
+      return [];
+    }
+    const sorted = [...normalSeries]
+      .filter(
+        (point) =>
+          point &&
+          typeof point.timestamp === 'number' &&
+          Number.isFinite(point.timestamp) &&
+          typeof point.price === 'number' &&
+          Number.isFinite(point.price)
+      )
+      .sort((a, b) => a.timestamp - b.timestamp);
+    if (sorted.length === 0) return [];
+    const basePrice = sorted[0].price;
+    const baseTimestamp = sorted[0].timestamp;
+    if (!basePrice || !Number.isFinite(basePrice)) return [];
+    return sorted.map((point) => ({
+      timestamp: point.timestamp,
+      elapsed: point.timestamp - baseTimestamp,
+      price: point.price,
+      changePct: ((point.price - basePrice) / basePrice) * 100,
+    }));
+  }, [isNormalView, normalSeries]);
+
+  const normalChartBaseTimestamp =
+    filteredNormalChartData.length > 0 ? filteredNormalChartData[0].timestamp : null;
+  const normalChartMaxElapsed =
+    filteredNormalChartData.length > 0
+      ? filteredNormalChartData[filteredNormalChartData.length - 1].elapsed
+      : null;
+
+  const hasCycleChartData = chartData.chartArray && chartData.chartArray.length > 0;
+  const showChartSection =
+    !loading &&
+    (isNormalView
+      ? filteredNormalChartData.length > 0 || normalSeriesLoading || normalSeriesError
+      : hasCycleChartData);
 
   const formatTooltipDate = (dayOfYear) => {
     const date = new Date(2000, 0, 1);
     date.setDate(date.getDate() + dayOfYear - 1);
     return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
   };
+
+  const formatNormalTick = useCallback(
+    (elapsed) => {
+      const timestamp = (normalChartBaseTimestamp ?? 0) + Number(elapsed ?? 0);
+      const date = new Date(Number(timestamp));
+      if (Number.isNaN(date.getTime())) return '';
+      if (normalRange === '1D') {
+        return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      }
+      if (normalRange === '1W') {
+        return date.toLocaleDateString('en-US', { weekday: 'short' });
+      }
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    },
+    [normalChartBaseTimestamp, normalRange]
+  );
+
+  const formatNormalTooltipLabel = useCallback((timestamp) => {
+    const date = new Date(Number(timestamp));
+    if (Number.isNaN(date.getTime())) return '';
+    if (normalRange === '1D') {
+      return date.toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+    }
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  }, [normalRange]);
+
+  const formatPriceValue = useCallback((value) => {
+    if (value == null || Number.isNaN(Number(value))) return '-';
+    return Number(value).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }, []);
+
+  const formatPriceAxis = useCallback((value) => {
+    if (value == null || Number.isNaN(Number(value))) return '';
+    return Number(value).toLocaleString('en-US', {
+      maximumFractionDigits: 2,
+    });
+  }, []);
+
+  const formatNormalChange = useCallback((value) => {
+    if (value == null || Number.isNaN(Number(value))) return '';
+    const numeric = Number(value);
+    return `${numeric >= 0 ? '+' : ''}${numeric.toFixed(2)}%`;
+  }, []);
 
   const currencyCode = fundamentals?.profile?.currency || symbolInfo?.currency || 'USD';
 
@@ -658,6 +914,57 @@ function ElectionCyclePageContent() {
     ];
     return stats.filter((item) => item.value && item.value !== '—');
   }, [fundamentals, formatCompactCurrency, formatRatio, formatPlainNumber]);
+
+  const currentYtdReturn = useMemo(() => {
+    const currentLine = rawLinesData.find((entry) => entry.key === 'current');
+    if (!currentLine?.data || currentLine.data.length === 0) return null;
+    const sorted = [...currentLine.data].sort((a, b) => a.dayOfYear - b.dayOfYear);
+    const todayIndex = getDayOfYear(new Date());
+    const uptoToday = sorted.filter((point) => point.dayOfYear <= todayIndex);
+    const latestPoint =
+      uptoToday.length > 0 ? uptoToday[uptoToday.length - 1] : sorted[sorted.length - 1];
+    return latestPoint?.pctChangeYtd ?? null;
+  }, [rawLinesData]);
+
+  const cycleSummary = useMemo(() => {
+    if (isNormalView || !rawLinesData || rawLinesData.length === 0) return null;
+    const primaryCycleKey = selectedCycles.find((key) => key !== 'current') ?? 'all';
+    const meta = cycleMetaMap[primaryCycleKey];
+    if (!meta) return null;
+    const line = rawLinesData.find((entry) => entry.key === meta.lineKey);
+    if (!line || !line.data || line.data.length === 0) return null;
+    const sorted = [...line.data].sort((a, b) => a.dayOfYear - b.dayOfYear);
+    const lastPoint = sorted[sorted.length - 1];
+    return {
+      label: meta.label,
+      cagr: lastPoint?.pctChangeYtd ?? null,
+    };
+  }, [isNormalView, rawLinesData, selectedCycles]);
+
+  const cycleSummaryStats = useMemo(() => {
+    if (isNormalView) return [];
+    const entries = [];
+    if (cycleSummary?.cagr != null) {
+      entries.push({
+        label: `${cycleSummary.label} CAGR`,
+        value: formatPercentage(cycleSummary.cagr),
+      });
+    }
+    if (currentYtdReturn != null) {
+      entries.push({
+        label: 'YTD Return',
+        value: formatPercentage(currentYtdReturn),
+      });
+    }
+    return entries;
+  }, [cycleSummary, currentYtdReturn, formatPercentage, isNormalView]);
+
+  const summaryStats = useMemo(() => {
+    if (!cycleSummaryStats.length && !quickStats.length) {
+      return [];
+    }
+    return [...cycleSummaryStats, ...quickStats];
+  }, [cycleSummaryStats, quickStats]);
 
   const analysisCurrency = fundamentals?.analysis?.currency || currencyCode;
 
@@ -841,13 +1148,13 @@ function ElectionCyclePageContent() {
     const stateRaw = fundamentals?.profile?.marketState;
     if (!stateRaw) {
       if (symbolInfo?.isMarketOpen) {
-        return { label: 'Market Open', tone: 'text-emerald-600 dark:text-emerald-400', Icon: Sun };
+        return { label: 'Market Open', tone: 'text-emerald-700 dark:text-emerald-500', Icon: Sun };
       }
       return null;
     }
     const state = String(stateRaw).toUpperCase();
     if (state.includes('REGULAR') || state === 'OPEN') {
-      return { label: 'Market Open', tone: 'text-emerald-600 dark:text-emerald-400', Icon: Sun };
+      return { label: 'Market Open', tone: 'text-emerald-700 dark:text-emerald-500', Icon: Sun };
     }
     if (state.includes('PRE')) {
       return { label: 'Pre-Market', tone: 'text-amber-500', Icon: Clock3 };
@@ -900,19 +1207,18 @@ function ElectionCyclePageContent() {
           </h1>
           <span className="text-muted">|</span>
           {symbol.endsWith('.JK') && (
-            <span className="text-white/70 text-xs">🇮🇩 Hey antek-antek asing!</span>
+            <span className="dark:text-white/70 text-xs">🇮🇩 Hidup Jokowi!</span>
           )}
           {symbol.endsWith('-USD') && (
-            <span className="text-white/70 text-xs">🚀 To the moon (katanya)</span>
+            <span className="dark:text-white/70 text-xs flex gap-1"><Rocket className="size-4"/> to the moon (katanya)</span>
           )}
           {['QQQ', 'SPY'].some((s) => symbol.endsWith(s)) && (
-            <span className="text-white/70 text-xs">🇺🇸 Dana Pensiun PNS Amerika</span>
+            <span className="dark:text-white/70 text-xs">🇺🇸 Pension Fund</span>
           )}
-          {['AAPL','MSFT','GOOGL','GOOG','AMZN','META','NVDA','TSLA'].some((s) => symbol.endsWith(s)) && (
-            <span className="text-white/70 text-xs">🧰 Magnificent 7</span>
+          {['AAPL','MSFT','GOOGL','GOOG','AMZN','META','NVDA','AVGO'].some((s) => symbol.endsWith(s)) && (
+            <span className="dark:text-white/70 text-xs flex gap-1"><LucideWandSparkles className="size-4"/> Magnificent 7</span>
           )}
         </div>
-        {/* star add to favorites di sini */}
         <button
           type="button"
           onClick={toggleFavorite}
@@ -997,7 +1303,7 @@ function ElectionCyclePageContent() {
         </>
       )}
 
-      {!loading && chartData.chartArray && chartData.chartArray.length > 0 && (
+      {showChartSection && (
         <>
           <Card className="overflow-hidden bg-transparent border-none rounded-none">
             <CardHeader>
@@ -1005,7 +1311,7 @@ function ElectionCyclePageContent() {
                 <div className="flex flex-col gap-2">
                   <CardDescription className="text-xs">{assetName}</CardDescription>
                   {marketStateInfo ? (
-                    <span className={`flex items-center gap-1 text-xs font-medium ${marketStateInfo.tone}`}>
+                    <span className={`flex items-center gap-1 text-[10px] font-medium ${marketStateInfo.tone}`}>
                       {MarketStateIcon ? <MarketStateIcon className="h-3 w-3" /> : null}
                       {marketStateInfo.label}
                     </span>
@@ -1044,6 +1350,9 @@ function ElectionCyclePageContent() {
                       <SelectValue placeholder="Select cycles" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem className="text-xs" value="normal">
+                        Normal (Price)
+                      </SelectItem>
                       <SelectItem className="text-xs" value="pre,current">Pre-Election + Current</SelectItem>
                       <SelectItem className="text-xs" value="election,current">Election + Current</SelectItem>
                       <SelectItem className="text-xs" value="mid,current">Mid-Term + Current</SelectItem>
@@ -1052,117 +1361,205 @@ function ElectionCyclePageContent() {
                       {/* <SelectItem value="pre,election,mid,post,current">All Cycles + Current</SelectItem> */}
                     </SelectContent>
                   </Select>
-                  <div className="inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5">
-                    {[
-                      { value: 'linear', label: 'Linear' },
-                      { value: 'log', label: 'Logarithmic' },
-                    ].map((option) => (
-                      <Button
-                        key={option.value}
-                        type="button"
-                        size="xs"
-                        variant={scaleChoice === option.value ? 'default' : 'ghost'}
-                        className={`px-2 py-1 text-xs ${scaleChoice === option.value ? 'shadow-sm' : ''}`}
-                        onClick={() => setScaleChoice(option.value)}
-                      >
-                        {option.label}
-                      </Button>
-                    ))}
-                  </div>
+                  {!isNormalView && (
+                    <div className="inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5">
+                      {[
+                        { value: 'linear', label: 'Linear' },
+                        { value: 'log', label: 'Logarithmic' },
+                      ].map((option) => (
+                        <Button
+                          key={option.value}
+                          type="button"
+                          size="xs"
+                          variant={scaleChoice === option.value ? 'default' : 'ghost'}
+                          className={`px-2 py-1 text-xs ${scaleChoice === option.value ? 'shadow-sm' : ''}`}
+                          onClick={() => setScaleChoice(option.value)}
+                        >
+                          {option.label}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </CardHeader>
             <CardContent className="px-0 -mr-5 pb-0">
-              <ResponsiveContainer width="100%" height={280}>
-                <AreaChart 
-                  data={filteredChartData}
-                  margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
-                >
-                  <defs>
-                    {chartData.linesData.map((line) => {
-                      const gradientId = `gradient-${line.key}`;
-                      return (
-                        <linearGradient key={gradientId} id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={line.color} stopOpacity={0.3} />
-                          <stop offset="100%" stopColor={line.color} stopOpacity={0} />
-                        </linearGradient>
-                      );
-                    })}
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis
-                    dataKey="dayOfYear"
-                    tickFormatter={formatTick}
-                    ticks={quarterFilter === 'all' ? [1, 91, 182, 274] : undefined}
-                    className="text-[10px]"
-                    height={30}
-                  />
-                  <YAxis
-                    orientation="right"
-                    scale={scaleChoice === 'log' ? 'log' : 'linear'}
-                    domain={scaleChoice === 'log' ? ['auto', 'auto'] : ['auto', 'auto']}
-                    tickFormatter={formatYAxis}
-                    className="text-[10px]"
-                    width={45}
-                    allowDataOverflow={false}
-                  />
-                  <Tooltip
-                    formatter={formatTooltip}
-                    labelFormatter={formatTooltipDate}
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--background))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      fontSize: '12px'
-                    }}
-                  />
-                  <Legend 
-                    align="left"
-                    verticalAlign="bottom"
-                    wrapperStyle={{ paddingTop: '10px', fontSize: '11px' }}
-                  />
-                  {chartData.linesData.map(line => (
-                    <Area
-                      key={line.key}
-                      type="monotone"
-                      dataKey={line.key}
-                      stroke={line.color}
-                      fill={`url(#gradient-${line.key})`}
-                      fillOpacity={1}
-                      name={line.name}
-                      dot={false}
-                      strokeWidth={2}
+              {isNormalView ? (
+                normalSeriesLoading ? (
+                  <div className="flex h-[280px] items-center justify-center gap-2 text-xs text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Loading {normalRange} prices…
+                  </div>
+                ) : filteredNormalChartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <LineChart
+                      data={filteredNormalChartData}
+                      margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis
+                        dataKey="elapsed"
+                        type="number"
+                        domain={
+                          normalChartMaxElapsed != null
+                            ? [0, normalChartMaxElapsed]
+                            : ['dataMin', 'dataMax']
+                        }
+                        tickFormatter={formatNormalTick}
+                        className="text-[10px]"
+                        minTickGap={12}
+                      />
+                      <YAxis
+                        orientation="right"
+                        tickFormatter={formatPriceAxis}
+                        className="text-[10px]"
+                        width={60}
+                        domain={['auto', 'auto']}
+                        allowDataOverflow={false}
+                      />
+                      <Tooltip
+                        formatter={(value, _, payload) => {
+                          const pct = formatNormalChange(payload?.payload?.changePct);
+                          return [formatPriceValue(value), pct ? `Price (${pct})` : 'Price'];
+                        }}
+                        labelFormatter={(_, payload) =>
+                          formatNormalTooltipLabel(payload?.[0]?.payload?.timestamp)
+                        }
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--background))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                        }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="price"
+                        stroke={CURRENT_LINE_COLOR}
+                        strokeWidth={2}
+                        dot={false}
+                        name="Price"
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex h-[280px] items-center justify-center text-xs text-muted-foreground">
+                    {normalSeriesError || 'Intraday price data unavailable for this range.'}
+                  </div>
+                )
+              ) : (
+                <ResponsiveContainer width="100%" height={280}>
+                  <AreaChart
+                    data={filteredChartData}
+                    margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                  >
+                    <defs>
+                      {chartData.linesData.map((line) => {
+                        const gradientId = `gradient-${line.key}`;
+                        return (
+                          <linearGradient key={gradientId} id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor={line.color} stopOpacity={0.3} />
+                            <stop offset="100%" stopColor={line.color} stopOpacity={0} />
+                          </linearGradient>
+                        );
+                      })}
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis
+                      dataKey="dayOfYear"
+                      tickFormatter={formatTick}
+                      ticks={quarterFilter === 'all' ? [1, 91, 182, 274] : undefined}
+                      className="text-[10px]"
+                      height={30}
                     />
-                  ))}
-                </AreaChart>
-              </ResponsiveContainer>
+                    <YAxis
+                      orientation="right"
+                      scale={scaleChoice === 'log' ? 'log' : 'linear'}
+                      domain={scaleChoice === 'log' ? ['auto', 'auto'] : ['auto', 'auto']}
+                      tickFormatter={formatYAxis}
+                      className="text-[10px]"
+                      width={45}
+                      allowDataOverflow={false}
+                    />
+                    <Tooltip
+                      formatter={formatTooltip}
+                      labelFormatter={formatTooltipDate}
+                      contentStyle={{
+                        backgroundColor: 'hsl(var(--background))',
+                        border: '1px solid hsl(var(--border))',
+                        borderRadius: '8px',
+                        fontSize: '12px',
+                      }}
+                    />
+                    {chartData.linesData.length > 0 ? (
+                      <Legend
+                        align="left"
+                        verticalAlign="bottom"
+                        wrapperStyle={{ paddingTop: '10px', fontSize: '11px' }}
+                      />
+                    ) : null}
+                    {chartData.linesData.map((line) => (
+                      <Area
+                        key={line.key}
+                        type="monotone"
+                        dataKey={line.key}
+                        stroke={line.color}
+                        fill={`url(#gradient-${line.key})`}
+                        fillOpacity={1}
+                        name={line.name}
+                        dot={false}
+                        strokeWidth={2}
+                      />
+                    ))}
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
 
-          <div className="flex gap-2">
-            {['all', 'Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
-              <button
-                key={q}
-                className={`flex-1 h-6 text-xs rounded-md border-2 transition-colors ${
-                  quarterFilter === q
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'
-                }`}
-                onClick={() => setQuarterFilter(q)}
-              >
-                {q === 'all' ? 'All' : q}
-              </button>
-            ))}
-          </div>
+          {isNormalView ? (
+            <div className="flex flex-nowrap justify-center gap-2">
+              {NORMAL_RANGE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setNormalRange(option.value)}
+                  className={`text-xs px-2 uppercase tracking-wide transition-colors pb-0.5 font-bold ${
+                    normalRange === option.value
+                      ? 'font-bold text-emerald-700 border-b border-emerald-700'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              {['all', 'Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
+                <button
+                  key={q}
+                  className={`flex-1 h-6 text-xs rounded-md border-2 transition-colors ${
+                    quarterFilter === q
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'
+                  }`}
+                  onClick={() => setQuarterFilter(q)}
+                >
+                  {q === 'all' ? 'All' : q}
+                </button>
+              ))}
+            </div>
+          )}
 
           <Button 
             onClick={() => setPortfolioDialogOpen(true)}
-            className="mt-2 w-full bg-emerald-600 hover:bg-emerald-700 font-semibold text-sm"
+            className="mt-2 w-full bg-emerald-700 hover:bg-emerald-800 font-semibold text-xs text-white/80"
           >
             Add to Your Portfolio
           </Button>
 
-          {(fundamentalsLoading || fundamentals) && (
+          {(fundamentalsLoading || fundamentals || cycleSummary) && (
             <div className="mt-4 flex flex-col gap-8">
               <Card>
                 <CardHeader>
@@ -1178,9 +1575,9 @@ function ElectionCyclePageContent() {
                         </div>
                       ))}
                     </div>
-                  ) : quickStats.length > 0 ? (
+                  ) : summaryStats.length > 0 ? (
                     <dl className="grid grid-cols-2 gap-3">
-                      {quickStats.map((item) => (
+                      {summaryStats.map((item) => (
                         <div key={item.label} className="space-y-1">
                           <dt className="text-xs text-muted-foreground">{item.label}</dt>
                           <dd className="text-xs font-medium">{item.value}</dd>
@@ -1189,7 +1586,7 @@ function ElectionCyclePageContent() {
                     </dl>
                   ) : (
                     <p className="text-xs text-muted-foreground">
-                      Fundamentals unavailable for {symbol}.
+                      Summary data unavailable for {symbol}.
                     </p>
                   )}
                 </CardContent>
@@ -1239,7 +1636,7 @@ function ElectionCyclePageContent() {
                                     {formatSignedEarnings(latestEarningsPoint.estimate)}
                                   </span>{' '}
                                   • Actual{' '}
-                                  <span className="font-medium text-emerald-600">
+                                  <span className="font-medium text-emerald-700">
                                     {formatSignedEarnings(latestEarningsPoint.actual)}
                                   </span>
                                 </p>
@@ -1247,7 +1644,7 @@ function ElectionCyclePageContent() {
                                   <p
                                     className={`text-xs font-semibold ${
                                       latestEarningsOutcome.tone === 'beat'
-                                        ? 'text-emerald-600'
+                                        ? 'text-emerald-700'
                                         : 'text-red-600'
                                     }`}
                                   >
@@ -1617,6 +2014,7 @@ function ElectionCyclePageContent() {
             return;
           }
           setSymbol(nextSymbol);
+          setSelectedCycles(getDefaultCyclesForSymbol(nextSymbol));
           router.push(`/election-cycle?symbol=${encodeURIComponent(nextSymbol)}`);
         }}
       />

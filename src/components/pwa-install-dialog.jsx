@@ -72,7 +72,7 @@ export function PWAInstallDialog() {
             <Button variant="outline" onClick={handleDismiss} className="flex-1 text-sm">
               Not Now
             </Button>
-            <Button onClick={handleInstall} className="flex-1 bg-emerald-600 hover:bg-emerald-700 font-semibold text-sm">
+            <Button onClick={handleInstall} className="flex-1 bg-emerald-700 hover:bg-emerald-800 font-semibold text-sm">
               Install
             </Button>
           </div>
