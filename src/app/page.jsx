@@ -11,14 +11,15 @@ import { useAuth } from "@/components/auth-provider";
 const WATCHLIST_KEY = 'aruna_watchlist';
 const WATCHLIST_UPDATED_AT_KEY = 'aruna_watchlist_updated_at';
 const DEFAULT_WATCHLIST = [
-  { symbol: 'NVDA', order: 1 },
-  { symbol: 'MSFT', order: 2 },
-  { symbol: 'AMZN', order: 3 },
-  { symbol: 'GOOG', order: 4 },
-  { symbol: 'AVGO', order: 5 },
-  { symbol: 'BBCA.JK', order: 6 },
-  { symbol: 'BBRI.JK', order: 7 },
-  { symbol: 'BTC-USD', order: 8 },
+  { symbol: 'BBCA.JK', order: 1 },
+  { symbol: 'BTC-USD', order: 2 },
+  { symbol: 'QQQ', order: 3 },
+  { symbol: 'SPY', order: 4 },
+  { symbol: 'NVDA', order: 5 },
+  { symbol: 'MSFT', order: 6 },
+  { symbol: 'AMZN', order: 7 },
+  { symbol: 'GOOG', order: 8 },
+  { symbol: 'AVGO', order: 9 },
 ];
 
 function loadWatchlist() {

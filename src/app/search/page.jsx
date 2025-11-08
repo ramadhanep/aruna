@@ -9,7 +9,7 @@ import { Loader2, TrendingUp, TrendingDown } from "lucide-react";
 const CATEGORY_LABELS = {
   idx: "BREAKOUT IN IDX 🇮🇩",
   us: "BREAKOUT IN US 🇺🇸",
-  crypto: "BREAKOUT IN CRYPTO 🪙",
+  crypto: "BREAKOUT IN CRYPTOD",
 };
 
 const CATEGORY_ORDER = ["idx", "us", "crypto"];
@@ -106,7 +106,7 @@ function PickItem({ pick, quote }) {
 
   return (
     <Link
-      href={`/election-cycle?symbol=${encodeURIComponent(symbol)}`}
+      href={`/election-cycle?symbol=${encodeURIComponent(symbol)}&cycle=normal`}
       className="flex items-center gap-3 py-3 hover:bg-accent/30 transition-colors"
     >
       <div className="flex-1 min-w-0">
