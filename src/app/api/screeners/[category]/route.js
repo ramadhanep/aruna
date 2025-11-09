@@ -29,8 +29,7 @@ const VOLUME_MA_PERIOD = 32;
 const EMA_SLOPE_PERIOD = 5;
 const CANDLE_LOOKBACK = 5;
 const MIN_DAILY_VALUE = 10_000_000_000;
-const BATCH_TIME_LIMIT_MS = 9000;
-const SPARKLINE_POINTS = 30;
+const BATCH_TIME_LIMIT_MS = 50000;
 
 const STOCK_UNIVERSE_COLUMNS = {
   idx: "idx_stocks",
@@ -85,12 +84,41 @@ function computeSMA(values, period) {
   return result;
 }
 
-function mergeResults(existing = [], incoming = []) {
-  const map = new Map(existing.map((item) => [item.symbol, item]));
-  for (const item of incoming) {
-    map.set(item.symbol, item);
+function normalizeSymbolList(results) {
+  if (!Array.isArray(results)) return [];
+  const symbols = [];
+  const seen = new Set();
+  for (const entry of results) {
+    const symbol =
+      typeof entry === "string"
+        ? entry
+        : entry && typeof entry.symbol === "string"
+          ? entry.symbol
+          : null;
+    if (symbol && !seen.has(symbol)) {
+      seen.add(symbol);
+      symbols.push(symbol);
+    }
   }
-  return Array.from(map.values());
+  return symbols;
+}
+
+function mergeSymbolLists(existing = [], incoming = []) {
+  const merged = [];
+  const seen = new Set();
+  for (const symbol of incoming) {
+    if (symbol && !seen.has(symbol)) {
+      seen.add(symbol);
+      merged.push(symbol);
+    }
+  }
+  for (const symbol of existing) {
+    if (symbol && !seen.has(symbol)) {
+      seen.add(symbol);
+      merged.push(symbol);
+    }
+  }
+  return merged;
 }
 
 async function fetchUniverseSymbols(supabase, category) {
@@ -136,9 +164,9 @@ async function fetchDailySeries(symbol) {
   }
 }
 
-function evaluateSymbol(symbol, meta, quotes) {
+function evaluateSymbol(quotes) {
   if (!Array.isArray(quotes) || quotes.length < 50) {
-    return null;
+    return false;
   }
 
   const cleaned = quotes
@@ -149,16 +177,19 @@ function evaluateSymbol(symbol, meta, quotes) {
       const volume =
         typeof volumeRaw === "number" ? volumeRaw : volumeRaw != null ? Number(volumeRaw) : null;
       if (close == null || volume == null) return null;
-      return {
-        date: row.date,
-        close,
-        volume,
-      };
+      const dateValue = row.date ? new Date(row.date) : null;
+      return dateValue && !Number.isNaN(dateValue.valueOf())
+        ? {
+            date: dateValue,
+            close,
+            volume,
+          }
+        : null;
     })
     .filter(Boolean);
 
   if (cleaned.length < 50) {
-    return null;
+    return false;
   }
 
   const closes = cleaned.map((row) => row.close);
@@ -166,8 +197,10 @@ function evaluateSymbol(symbol, meta, quotes) {
   const ema32 = computeEMA(closes, EMA_PERIOD);
   const volumeMA20 = computeSMA(volumes, VOLUME_MA_PERIOD);
 
-  const candidates = [];
-  for (let i = 1; i < cleaned.length; i++) {
+  const startIndex = Math.max(1, cleaned.length - CANDLE_LOOKBACK);
+  let hasValidBreakout = false;
+
+  for (let i = startIndex; i < cleaned.length; i++) {
     const price = cleaned[i].close;
     const prevPrice = cleaned[i - 1].close;
     const emaValue = ema32[i];
@@ -192,64 +225,20 @@ function evaluateSymbol(symbol, meta, quotes) {
       emaSlope = (emaValue - ema32[slopeSourceIndex]) / EMA_SLOPE_PERIOD;
     }
 
-    const dailyValue = Math.abs(price * volume);
+    const dailyValue = price * volume;
 
     if (
       touchBreak &&
-      (emaSlope ?? 0) > 0 &&
+      emaSlope != null &&
+      emaSlope > 0 &&
       volume > volumeAvg &&
       dailyValue >= MIN_DAILY_VALUE
     ) {
-      candidates.push({
-        index: i,
-        emaValue,
-        emaSlope,
-        volume,
-        volumeAvg,
-        dailyValue,
-      });
+      hasValidBreakout = true;
     }
   }
 
-  if (candidates.length === 0) {
-    return null;
-  }
-
-  const recentWindow = candidates.filter(
-    (entry) => entry.index >= cleaned.length - CANDLE_LOOKBACK
-  );
-  const selected = (recentWindow.length ? recentWindow : candidates).at(-1);
-
-  if (!selected) return null;
-
-  const row = cleaned[selected.index];
-  const prevRow = cleaned[selected.index - 1] ?? cleaned[selected.index];
-  const prevClose = prevRow?.close ?? row.close ?? 0;
-  const change = row.close != null && prevClose != null ? row.close - prevClose : 0;
-  const changePercent =
-    prevClose && prevClose !== 0 ? (change / prevClose) * 100 : 0;
-  const sparkline = cleaned.slice(-SPARKLINE_POINTS).map((entry) => entry.close);
-  const signalDate = row.date?.toISOString
-    ? row.date.toISOString()
-    : new Date(row.date).toISOString();
-
-  return {
-    symbol,
-    name: meta?.longName || meta?.shortName || symbol,
-    currency: meta?.currency || null,
-    lastClose: row.close,
-    previousClose: prevClose,
-    change,
-    changePercent,
-    ema32: selected.emaValue,
-    ema32Slope: selected.emaSlope,
-    volume: selected.volume,
-    volumeMA20: selected.volumeAvg,
-    dailyValue: selected.dailyValue,
-    signalDate,
-    exchange: meta?.exchangeName || meta?.fullExchangeName || meta?.exchange,
-    sparkline,
-  };
+  return hasValidBreakout;
 }
 
 export async function GET(request, context) {
@@ -295,7 +284,7 @@ export async function GET(request, context) {
   let existingResults = [];
 
   if (snapshot && !shouldReset) {
-    existingResults = Array.isArray(snapshot.results) ? snapshot.results : [];
+    existingResults = normalizeSymbolList(snapshot.results);
     if (overrideCursor != null && !Number.isNaN(overrideCursor)) {
       cursor = Math.max(0, Math.min(totalCount - 1, overrideCursor));
     } else {
@@ -325,11 +314,11 @@ export async function GET(request, context) {
     }
 
     const symbol = universe[index];
-    const { quotes, meta } = await fetchDailySeries(symbol);
+    const { quotes } = await fetchDailySeries(symbol);
     if (quotes) {
-      const signal = evaluateSymbol(symbol, meta, quotes);
-      if (signal) {
-        batchResults.push({ ...signal, category: SCREENER_CONFIG[category].label });
+      const isBreakout = evaluateSymbol(quotes);
+      if (isBreakout) {
+        batchResults.push(symbol);
       }
     }
     processedCount += 1;
@@ -337,9 +326,7 @@ export async function GET(request, context) {
   }
 
   const finished = index >= totalCount;
-  const merged = mergeResults(existingResults, batchResults).sort(
-    (a, b) => (b.dailyValue ?? 0) - (a.dailyValue ?? 0)
-  );
+  const merged = mergeSymbolLists(existingResults, batchResults);
 
   const payload = {
     category,

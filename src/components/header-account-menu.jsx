@@ -80,9 +80,9 @@ export function HeaderAccountMenu() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="text-xs">
-              <Link href="/search" className="flex w-full items-center gap-2">
+              <Link href="/explore" className="flex w-full items-center gap-2">
                 <Sparkles className="h-3.5 w-3.5" />
-                Screening hub
+                Explore hub
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />

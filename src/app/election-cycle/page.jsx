@@ -45,6 +45,19 @@ const DEFAULT_WATCHLIST = [
   { symbol: 'BTC-USD', order: 8 },
 ];
 
+const PRICE_TIMEFRAMES = ['1D', '1W', '1M', '3M', 'YTD', '1Y', '3Y', '5Y'];
+
+const PRICE_TIMEFRAME_CONFIG = {
+  '1D': { days: 2, interval: '15m' },
+  '1W': { days: 8, interval: '1h' },
+  '1M': { days: 35, interval: '1h' },
+  '3M': { days: 110, interval: '1d' },
+  YTD: { startOfYear: true, interval: '1d' },
+  '1Y': { days: 370, interval: '1d' },
+  '3Y': { days: 365 * 3 + 30, interval: '1wk' },
+  '5Y': { days: 365 * 5 + 60, interval: '1wk' },
+};
+
 function readWatchlist() {
   if (typeof window === 'undefined') return DEFAULT_WATCHLIST;
   try {
@@ -87,6 +100,25 @@ function readWatchlistUpdatedAt() {
   return window.localStorage.getItem(WATCHLIST_UPDATED_AT_KEY);
 }
 
+function resolvePriceRange(timeframe) {
+  const now = new Date();
+  const config = PRICE_TIMEFRAME_CONFIG[timeframe] ?? PRICE_TIMEFRAME_CONFIG['3M'];
+  let start;
+  if (config.startOfYear) {
+    start = new Date(now.getFullYear(), 0, 1);
+  } else if (config.days) {
+    start = new Date(now.getTime() - config.days * 24 * 60 * 60 * 1000);
+  } else {
+    start = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+  }
+
+  return {
+    start,
+    end: now,
+    interval: config.interval,
+  };
+}
+
 function ElectionCyclePageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -117,6 +149,10 @@ function ElectionCyclePageContent() {
   const [assetName, setAssetName] = useState('');
   const [monthlyHeatmap, setMonthlyHeatmap] = useState({ rows: [], average: {} });
   const [quarterlyHeatmap, setQuarterlyHeatmap] = useState({ rows: [], average: {} });
+  const [priceTimeframe, setPriceTimeframe] = useState('3M');
+  const [priceSeries, setPriceSeries] = useState([]);
+  const [priceSeriesLoading, setPriceSeriesLoading] = useState(false);
+  const [priceError, setPriceError] = useState(null);
   const [portfolioDialogOpen, setPortfolioDialogOpen] = useState(false);
   const [fundamentals, setFundamentals] = useState(null);
   const [fundamentalsLoading, setFundamentalsLoading] = useState(false);
@@ -125,6 +161,7 @@ function ElectionCyclePageContent() {
   const [watchlist, setWatchlist] = useState([]);
   const [watchlistUpdatedAt, setWatchlistUpdatedAt] = useState(() => readWatchlistUpdatedAt());
   const remoteWatchlistSeedRef = React.useRef(false);
+  const priceRequestRef = React.useRef(0);
 
   const deriveDefaultCycles = () => {
     const y = new Date().getFullYear();
@@ -309,6 +346,72 @@ function ElectionCyclePageContent() {
       setRevenuePeriod('quarterly');
     }
   }, [fundamentals, revenuePeriod]);
+
+  const loadPriceSeries = useCallback(
+    async (timeframe) => {
+      const requestId = ++priceRequestRef.current;
+      setPriceSeriesLoading(true);
+      setPriceError(null);
+      try {
+        const { start, end, interval } = resolvePriceRange(timeframe);
+        const startDate = Math.floor(start.getTime() / 1000);
+        const endDate = Math.floor(end.getTime() / 1000);
+        const params = new URLSearchParams({
+          symbol,
+          startDate: String(startDate),
+          endDate: String(endDate),
+          interval,
+        });
+
+        const response = await fetch(`/api/finance?${params.toString()}`);
+        if (!response.ok) {
+          throw new Error('Failed to load price history');
+        }
+
+        const json = await response.json();
+        const data = Array.isArray(json?.data) ? json.data : [];
+
+        const cleaned = data
+          .map((row) => {
+            const timestamp = new Date(row.date);
+            const priceRaw =
+              typeof row?.adjclose === 'number'
+                ? row.adjclose
+                : typeof row?.close === 'number'
+                  ? row.close
+                  : null;
+            if (!timestamp || Number.isNaN(timestamp.valueOf()) || priceRaw == null) {
+              return null;
+            }
+            return { timestamp: timestamp.getTime(), price: priceRaw };
+          })
+          .filter(Boolean)
+          .sort((a, b) => a.timestamp - b.timestamp);
+
+        if (priceRequestRef.current !== requestId) {
+          return;
+        }
+
+        setPriceSeries(cleaned);
+      } catch (error) {
+        if (priceRequestRef.current !== requestId) {
+          return;
+        }
+        console.warn('Failed to load price series', error);
+        setPriceSeries([]);
+        setPriceError(error.message || 'Failed to load price history');
+      } finally {
+        if (priceRequestRef.current === requestId) {
+          setPriceSeriesLoading(false);
+        }
+      }
+    },
+    [symbol]
+  );
+
+  useEffect(() => {
+    loadPriceSeries(priceTimeframe);
+  }, [loadPriceSeries, priceTimeframe]);
 
   async function fetchDataAndBuildChart() {
     setLoading(true);
@@ -574,8 +677,8 @@ function ElectionCyclePageContent() {
     return { chartArray, linesData: rawLinesData };
   }, [rawLinesData, scaleChoice]);
 
-  const filteredChartData = quarterFilter === 'all' 
-    ? chartData.chartArray 
+  const filteredChartData = quarterFilter === 'all'
+    ? chartData.chartArray
     : chartData.chartArray.filter(item => {
         const [start, end] = getQuarterDateRange(quarterFilter);
         return item.dayOfYear >= start && item.dayOfYear <= end;
@@ -586,6 +689,80 @@ function ElectionCyclePageContent() {
     date.setDate(date.getDate() + dayOfYear - 1);
     return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
   };
+
+  const priceStats = useMemo(() => {
+    if (!priceSeries || priceSeries.length === 0) return null;
+    const first = priceSeries[0];
+    const last = priceSeries[priceSeries.length - 1];
+    if (!first || !last) return null;
+    const change = last.price - first.price;
+    const changePct = first.price ? (change / first.price) * 100 : 0;
+    return { first, last, change, changePct };
+  }, [priceSeries]);
+
+  const priceLineColor = priceStats && priceStats.change < 0 ? 'rgb(220, 38, 38)' : 'rgb(22, 163, 74)';
+
+  const priceTickFormatter = useCallback(
+    (value) => {
+      if (value == null) return '';
+      const date = new Date(value);
+      if (Number.isNaN(date.valueOf())) return '';
+      if (priceTimeframe === '1D') {
+        return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+      }
+      if (priceTimeframe === '1W') {
+        return date.toLocaleDateString('en-US', { weekday: 'short' });
+      }
+      if (priceTimeframe === '1M' || priceTimeframe === '3M') {
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
+      if (priceTimeframe === 'YTD' || priceTimeframe === '1Y') {
+        return date.toLocaleDateString('en-US', { month: 'short' });
+      }
+      return date.toLocaleDateString('en-US', { year: 'numeric' });
+    },
+    [priceTimeframe]
+  );
+
+  const priceTooltipLabelFormatter = useCallback(
+    (value) => {
+      if (value == null) return '';
+      const date = new Date(value);
+      if (Number.isNaN(date.valueOf())) return '';
+      if (priceTimeframe === '1D') {
+        return date.toLocaleString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+        });
+      }
+      if (priceTimeframe === '1W') {
+        return date.toLocaleString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+        });
+      }
+      if (priceTimeframe === '1M' || priceTimeframe === '3M') {
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      }
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      });
+    },
+    [priceTimeframe]
+  );
+
+  const priceYAxisFormatter = useCallback((value) => {
+    if (value == null || Number.isNaN(Number(value))) return '';
+    return Number(value).toLocaleString('en-US', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
+  }, []);
 
   const currencyCode = fundamentals?.profile?.currency || symbolInfo?.currency || 'USD';
 
@@ -997,451 +1174,574 @@ function ElectionCyclePageContent() {
         </>
       )}
 
-      {!loading && chartData.chartArray && chartData.chartArray.length > 0 && (
+      {!loading && (
         <>
           <Card className="overflow-hidden bg-transparent border-none rounded-none">
-            <CardHeader>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex flex-col gap-2">
-                  <CardDescription className="text-xs">{assetName}</CardDescription>
-                  {marketStateInfo ? (
-                    <span className={`flex items-center gap-1 text-xs font-medium ${marketStateInfo.tone}`}>
-                      {MarketStateIcon ? <MarketStateIcon className="h-3 w-3" /> : null}
-                      {marketStateInfo.label}
-                    </span>
-                  ) : null}
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-baseline gap-2">
+            <CardHeader className="gap-3">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <CardTitle className="text-sm">Normal (Price)</CardTitle>
+                  {priceStats ? (
+                    <div className="flex flex-wrap items-baseline gap-2">
                       <span className="text-xl font-bold">
-                        {symbolInfo?.currentPrice != null
-                          ? symbolInfo.currentPrice.toLocaleString('en-US', {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })
-                          : '-'}
+                        {priceStats.last.price.toLocaleString('en-US', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
                       </span>
-                      {symbolInfo?.currency && (
-                        <span className="text-xs text-muted-foreground">{symbolInfo.currency}</span>
-                      )}
-                    </div>
-                    {symbolInfo?.dailyChange != null && symbolInfo?.dailyChangePct != null && (
+                      <span className="text-xs text-muted-foreground">{currencyCode}</span>
                       <span
-                        className={`text-xs font-medium ${symbolInfo.dailyChange >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                        className={`text-xs font-medium ${
+                          priceStats.change >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`}
                       >
-                        {symbolInfo.dailyChange >= 0 ? '+' : ''}
-                        {symbolInfo.dailyChange.toFixed(2)} ({symbolInfo.dailyChangePct.toFixed(2)}%)
+                        {priceStats.change >= 0 ? '+' : ''}
+                        {priceStats.change.toFixed(2)} ({formatPercentage(priceStats.changePct)})
                       </span>
-                    )}
-                  </div>
+                    </div>
+                  ) : priceSeriesLoading ? (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading price data…
+                    </div>
+                  ) : priceError ? (
+                    <div className="text-xs text-red-500">{priceError}</div>
+                  ) : (
+                    <div className="text-xs text-muted-foreground">
+                      Price data will appear once loaded.
+                    </div>
+                  )}
                 </div>
-                <div className="flex flex-col items-end gap-3">
-                  <Select
-                    className="w-full"
-                    value={selectedCycles.join(',')}
-                    onValueChange={(value) => setSelectedCycles(value.split(','))}
-                  >
-                    <SelectTrigger className="h-6 text-xs">
-                      <SelectValue placeholder="Select cycles" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem className="text-xs" value="pre,current">Pre-Election + Current</SelectItem>
-                      <SelectItem className="text-xs" value="election,current">Election + Current</SelectItem>
-                      <SelectItem className="text-xs" value="mid,current">Mid-Term + Current</SelectItem>
-                      <SelectItem className="text-xs" value="post,current">Post-Election + Current</SelectItem>
-                      <SelectItem className="text-xs" value="all,current">All Years + Current</SelectItem>
-                      {/* <SelectItem value="pre,election,mid,post,current">All Cycles + Current</SelectItem> */}
-                    </SelectContent>
-                  </Select>
-                  <div className="inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5">
-                    {[
-                      { value: 'linear', label: 'Linear' },
-                      { value: 'log', label: 'Logarithmic' },
-                    ].map((option) => (
-                      <Button
-                        key={option.value}
-                        type="button"
-                        size="xs"
-                        variant={scaleChoice === option.value ? 'default' : 'ghost'}
-                        className={`px-2 py-1 text-xs ${scaleChoice === option.value ? 'shadow-sm' : ''}`}
-                        onClick={() => setScaleChoice(option.value)}
-                      >
-                        {option.label}
-                      </Button>
-                    ))}
-                  </div>
+                <div className="inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5">
+                  {PRICE_TIMEFRAMES.map((tf) => (
+                    <Button
+                      key={tf}
+                      type="button"
+                      size="xs"
+                      variant={priceTimeframe === tf ? 'default' : 'ghost'}
+                      className={`px-2 py-1 text-xs ${priceTimeframe === tf ? 'shadow-sm' : ''}`}
+                      onClick={() => setPriceTimeframe(tf)}
+                      disabled={priceSeriesLoading && priceTimeframe === tf}
+                    >
+                      {tf}
+                    </Button>
+                  ))}
                 </div>
               </div>
             </CardHeader>
             <CardContent className="px-0 -mr-5 pb-0">
-              <ResponsiveContainer width="100%" height={280}>
-                <AreaChart 
-                  data={filteredChartData}
-                  margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
-                >
-                  <defs>
-                    {chartData.linesData.map((line) => {
-                      const gradientId = `gradient-${line.key}`;
-                      return (
-                        <linearGradient key={gradientId} id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={line.color} stopOpacity={0.3} />
-                          <stop offset="100%" stopColor={line.color} stopOpacity={0} />
+              <div className="relative h-[260px]">
+                {priceSeriesLoading ? (
+                  <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                  </div>
+                ) : priceSeries.length === 0 ? (
+                  <div className="flex h-full items-center justify-center text-xs text-muted-foreground">
+                    {priceError ? priceError : 'No price data available for this range.'}
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={priceSeries} margin={{ top: 10, right: 5, left: 0, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={priceLineColor} stopOpacity={0.3} />
+                          <stop offset="100%" stopColor={priceLineColor} stopOpacity={0} />
                         </linearGradient>
-                      );
-                    })}
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis
-                    dataKey="dayOfYear"
-                    tickFormatter={formatTick}
-                    ticks={quarterFilter === 'all' ? [1, 91, 182, 274] : undefined}
-                    className="text-[10px]"
-                    height={30}
-                  />
-                  <YAxis
-                    orientation="right"
-                    scale={scaleChoice === 'log' ? 'log' : 'linear'}
-                    domain={scaleChoice === 'log' ? ['auto', 'auto'] : ['auto', 'auto']}
-                    tickFormatter={formatYAxis}
-                    className="text-[10px]"
-                    width={45}
-                    allowDataOverflow={false}
-                  />
-                  <Tooltip
-                    formatter={formatTooltip}
-                    labelFormatter={formatTooltipDate}
-                    contentStyle={{ 
-                      backgroundColor: 'hsl(var(--background))', 
-                      border: '1px solid hsl(var(--border))',
-                      borderRadius: '8px',
-                      fontSize: '12px'
-                    }}
-                  />
-                  <Legend 
-                    align="left"
-                    verticalAlign="bottom"
-                    wrapperStyle={{ paddingTop: '10px', fontSize: '11px' }}
-                  />
-                  {chartData.linesData.map(line => (
-                    <Area
-                      key={line.key}
-                      type="monotone"
-                      dataKey={line.key}
-                      stroke={line.color}
-                      fill={`url(#gradient-${line.key})`}
-                      fillOpacity={1}
-                      name={line.name}
-                      dot={false}
-                      strokeWidth={2}
-                    />
-                  ))}
-                </AreaChart>
-              </ResponsiveContainer>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis
+                        dataKey="timestamp"
+                        type="number"
+                        domain={['dataMin', 'dataMax']}
+                        tickFormatter={priceTickFormatter}
+                        tick={{ fontSize: 10 }}
+                      />
+                      <YAxis
+                        orientation="right"
+                        tickFormatter={priceYAxisFormatter}
+                        width={60}
+                        tick={{ fontSize: 10 }}
+                        domain={['auto', 'auto']}
+                      />
+                      <Tooltip
+                        labelFormatter={priceTooltipLabelFormatter}
+                        formatter={(value) => [
+                          value != null
+                            ? Number(value).toLocaleString('en-US', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })
+                            : '—',
+                          'Price',
+                        ]}
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--background))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="price"
+                        stroke={priceLineColor}
+                        fill="url(#priceGradient)"
+                        fillOpacity={1}
+                        strokeWidth={2}
+                        dot={false}
+                        isAnimationActive={false}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
             </CardContent>
           </Card>
 
-          <div className="flex gap-2">
-            {['all', 'Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
-              <button
-                key={q}
-                className={`flex-1 h-6 text-xs rounded-md border-2 transition-colors ${
-                  quarterFilter === q
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'
-                }`}
-                onClick={() => setQuarterFilter(q)}
-              >
-                {q === 'all' ? 'All' : q}
-              </button>
-            ))}
-          </div>
-
-          <Button 
-            onClick={() => setPortfolioDialogOpen(true)}
-            className="mt-2 w-full bg-emerald-600 hover:bg-emerald-700 font-semibold text-sm"
-          >
-            Add to Your Portfolio
-          </Button>
-
-          {(fundamentalsLoading || fundamentals) && (
-            <div className="mt-4 flex flex-col gap-8">
-              <Card>
+          {chartData.chartArray && chartData.chartArray.length > 0 && (
+            <div className="space-y-3">
+              <Card className="overflow-hidden bg-transparent border-none rounded-none">
                 <CardHeader>
-                  <CardTitle className="text-sm">Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  {fundamentalsLoading ? (
-                    <div className="grid grid-cols-2 gap-3">
-                      {[...Array(6)].map((_, idx) => (
-                        <div key={idx} className="space-y-1">
-                          <div className="h-3 w-24 rounded bg-muted animate-pulse"></div>
-                          <div className="h-4 w-20 rounded bg-muted animate-pulse"></div>
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex flex-col gap-2">
+                      <CardDescription className="text-xs">{assetName}</CardDescription>
+                      {marketStateInfo ? (
+                        <span className={`flex items-center gap-1 text-xs font-medium ${marketStateInfo.tone}`}>
+                          {MarketStateIcon ? <MarketStateIcon className="h-3 w-3" /> : null}
+                          {marketStateInfo.label}
+                        </span>
+                      ) : null}
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-baseline gap-2">
+                          <span className="text-xl font-bold">
+                            {symbolInfo?.currentPrice != null
+                              ? symbolInfo.currentPrice.toLocaleString('en-US', {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2,
+                                })
+                              : '-'}
+                          </span>
+                          {symbolInfo?.currency && (
+                            <span className="text-xs text-muted-foreground">{symbolInfo.currency}</span>
+                          )}
                         </div>
-                      ))}
+                        {symbolInfo?.dailyChange != null && symbolInfo?.dailyChangePct != null && (
+                          <span
+                            className={`text-xs font-medium ${symbolInfo.dailyChange >= 0 ? 'text-green-600' : 'text-red-600'}`}
+                          >
+                            {symbolInfo.dailyChange >= 0 ? '+' : ''}
+                            {symbolInfo.dailyChange.toFixed(2)} ({symbolInfo.dailyChangePct.toFixed(2)}%)
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  ) : quickStats.length > 0 ? (
-                    <dl className="grid grid-cols-2 gap-3">
-                      {quickStats.map((item) => (
-                        <div key={item.label} className="space-y-1">
-                          <dt className="text-xs text-muted-foreground">{item.label}</dt>
-                          <dd className="text-xs font-medium">{item.value}</dd>
-                        </div>
+                    <div className="flex flex-col items-end gap-3">
+                      <Select
+                        className="w-full"
+                        value={selectedCycles.join(',')}
+                        onValueChange={(value) => setSelectedCycles(value.split(','))}
+                      >
+                        <SelectTrigger className="h-6 text-xs">
+                          <SelectValue placeholder="Select cycles" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem className="text-xs" value="pre,current">Pre-Election + Current</SelectItem>
+                          <SelectItem className="text-xs" value="election,current">Election + Current</SelectItem>
+                          <SelectItem className="text-xs" value="mid,current">Mid-Term + Current</SelectItem>
+                          <SelectItem className="text-xs" value="post,current">Post-Election + Current</SelectItem>
+                          <SelectItem className="text-xs" value="all,current">All Years + Current</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <div className="inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5">
+                        {[
+                          { value: 'linear', label: 'Linear' },
+                          { value: 'log', label: 'Logarithmic' },
+                        ].map((option) => (
+                          <Button
+                            key={option.value}
+                            type="button"
+                            size="xs"
+                            variant={scaleChoice === option.value ? 'default' : 'ghost'}
+                            className={`px-2 py-1 text-xs ${scaleChoice === option.value ? 'shadow-sm' : ''}`}
+                            onClick={() => setScaleChoice(option.value)}
+                          >
+                            {option.label}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="px-0 -mr-5 pb-0">
+                  <ResponsiveContainer width="100%" height={280}>
+                    <AreaChart
+                      data={filteredChartData}
+                      margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                    >
+                      <defs>
+                        {chartData.linesData.map((line) => {
+                          const gradientId = `gradient-${line.key}`;
+                          return (
+                            <linearGradient key={gradientId} id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor={line.color} stopOpacity={0.3} />
+                              <stop offset="100%" stopColor={line.color} stopOpacity={0} />
+                            </linearGradient>
+                          );
+                        })}
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                      <XAxis
+                        dataKey="dayOfYear"
+                        tickFormatter={formatTick}
+                        ticks={quarterFilter === 'all' ? [1, 91, 182, 274] : undefined}
+                        className="text-[10px]"
+                        height={30}
+                      />
+                      <YAxis
+                        orientation="right"
+                        scale={scaleChoice === 'log' ? 'log' : 'linear'}
+                        domain={scaleChoice === 'log' ? ['auto', 'auto'] : ['auto', 'auto']}
+                        tickFormatter={formatYAxis}
+                        className="text-[10px]"
+                        width={45}
+                        allowDataOverflow={false}
+                      />
+                      <Tooltip
+                        formatter={formatTooltip}
+                        labelFormatter={formatTooltipDate}
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--background))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                          fontSize: '12px'
+                        }}
+                      />
+                      <Legend
+                        align="left"
+                        verticalAlign="bottom"
+                        wrapperStyle={{ paddingTop: '10px', fontSize: '11px' }}
+                      />
+                      {chartData.linesData.map(line => (
+                        <Area
+                          key={line.key}
+                          type="monotone"
+                          dataKey={line.key}
+                          stroke={line.color}
+                          fill={`url(#gradient-${line.key})`}
+                          fillOpacity={1}
+                          name={line.name}
+                          dot={false}
+                          strokeWidth={2}
+                        />
                       ))}
-                    </dl>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">
-                      Fundamentals unavailable for {symbol}.
-                    </p>
-                  )}
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </CardContent>
               </Card>
 
-              {fundamentalsLoading ? (
-                <div className="grid gap-2 md:grid-cols-2">
-                  <Card className="h-full">
+              <div className="flex gap-2">
+                {['all', 'Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
+                  <button
+                    key={q}
+                    className={`flex-1 h-6 text-xs rounded-md border-2 transition-colors ${
+                      quarterFilter === q
+                        ? 'border-primary bg-primary text-primary-foreground'
+                        : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'
+                    }`}
+                    onClick={() => setQuarterFilter(q)}
+                  >
+                    {q === 'all' ? 'All' : q}
+                  </button>
+                ))}
+              </div>
+
+              <Button
+                onClick={() => setPortfolioDialogOpen(true)}
+                className="mt-2 w-full bg-emerald-600 hover:bg-emerald-700 font-semibold text-sm"
+              >
+                Add to Your Portfolio
+              </Button>
+
+              {(fundamentalsLoading || fundamentals) && (
+                <div className="mt-4 flex flex-col gap-8">
+                  <Card>
                     <CardHeader>
-                      <div className="h-4 w-32 rounded bg-muted animate-pulse"></div>
+                      <CardTitle className="text-sm">Summary</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="h-[220px] rounded-lg bg-muted animate-pulse"></div>
+                      {fundamentalsLoading ? (
+                        <div className="grid grid-cols-2 gap-3">
+                          {[...Array(6)].map((_, idx) => (
+                            <div key={idx} className="space-y-1">
+                              <div className="h-3 w-24 rounded bg-muted animate-pulse"></div>
+                              <div className="h-4 w-20 rounded bg-muted animate-pulse"></div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : quickStats.length > 0 ? (
+                        <dl className="grid grid-cols-2 gap-3">
+                          {quickStats.map((item) => (
+                            <div key={item.label} className="space-y-1">
+                              <dt className="text-xs text-muted-foreground">{item.label}</dt>
+                              <dd className="text-xs font-medium">{item.value}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          Fundamentals unavailable for {symbol}.
+                        </p>
+                      )}
                     </CardContent>
                   </Card>
-                  <Card className="h-full">
-                    <CardHeader>
-                      <div className="h-4 w-32 rounded bg-muted animate-pulse"></div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="h-[220px] rounded-lg bg-muted animate-pulse"></div>
-                    </CardContent>
-                  </Card>
+
+                  {fundamentalsLoading ? (
+                    <div className="grid gap-2 md:grid-cols-2">
+                      <Card className="h-full">
+                        <CardHeader>
+                          <div className="h-4 w-32 rounded bg-muted animate-pulse"></div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="h-[220px] rounded-lg bg-muted animate-pulse"></div>
+                        </CardContent>
+                      </Card>
+                      <Card className="h-full">
+                        <CardHeader>
+                          <div className="h-4 w-32 rounded bg-muted animate-pulse"></div>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="h-[220px] rounded-lg bg-muted animate-pulse"></div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  ) : (
+                    (hasEarningsAnalysis || hasRevenueAnalysis) && (
+                      <div className="grid gap-2 md:grid-cols-2">
+                        {hasEarningsAnalysis && latestEarningsPoint && (
+                          <div className="relative">
+                            <Card
+                              className={`h-full ${
+                                !isAuthenticated
+                                  ? 'pointer-events-none select-none opacity-60 blur-[1.5px]'
+                                  : ''
+                              }`}
+                            >
+                              <CardHeader className="gap-3">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="space-y-1">
+                                    <CardTitle className="text-sm">Earnings Results</CardTitle>
+                                    <p className="text-xs text-muted-foreground">
+                                      <span className="font-semibold text-foreground">
+                                        {latestEarningsPoint.periodLabel}
+                                      </span>{' '}
+                                      • Estimate{' '}
+                                      <span className="font-medium text-muted-foreground">
+                                        {formatSignedEarnings(latestEarningsPoint.estimate)}
+                                      </span>{' '}
+                                      • Actual{' '}
+                                      <span className="font-medium text-emerald-600">
+                                        {formatSignedEarnings(latestEarningsPoint.actual)}
+                                      </span>
+                                    </p>
+                                    {latestEarningsOutcome ? (
+                                      <p
+                                        className={`text-xs font-semibold ${
+                                          latestEarningsOutcome.tone === 'beat'
+                                            ? 'text-emerald-600'
+                                            : 'text-red-600'
+                                        }`}
+                                      >
+                                        {latestEarningsOutcome.label}
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                  <span className="rounded-full border bg-muted/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                    Normalized
+                                  </span>
+                                </div>
+                              </CardHeader>
+                              <CardContent className="h-[260px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <ComposedChart
+                                    data={earningsChartData}
+                                    margin={{ top: 20, right: 48, bottom: 32, left: -10 }}
+                                  >
+                                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                                    <XAxis
+                                      dataKey="periodLabel"
+                                      interval={0}
+                                      height={48}
+                                      tick={renderEarningsTick}
+                                    />
+                                    <YAxis
+                                      tickFormatter={(value) =>
+                                        value == null ? '' : formatEarningsValue(value)
+                                      }
+                                      width={50}
+                                      axisLine={false}
+                                      tick={{ fontSize: 10 }}
+                                    />
+                                    <Tooltip
+                                      formatter={earningsTooltipFormatter}
+                                      labelFormatter={(_, payload) =>
+                                        payload?.[0]?.payload?.periodLabel || ''
+                                      }
+                                      contentStyle={{
+                                        backgroundColor: 'hsl(var(--background))',
+                                        border: '1px solid hsl(var(--border))',
+                                        borderRadius: '8px',
+                                        fontSize: '12px',
+                                      }}
+                                    />
+                                    <Line
+                                      type="monotone"
+                                      dataKey="estimate"
+                                      stroke="transparent"
+                                      dot={renderEstimateDot}
+                                      activeDot={false}
+                                    />
+                                    <Line
+                                      type="monotone"
+                                      dataKey="actual"
+                                      stroke="transparent"
+                                      dot={renderActualDot}
+                                      activeDot={false}
+                                    >
+                                      <ErrorBar
+                                        dataKey="range"
+                                        direction="y"
+                                        stroke={secondaryChartColor}
+                                        strokeDasharray="3 3"
+                                        width={0}
+                                      />
+                                    </Line>
+                                  </ComposedChart>
+                                </ResponsiveContainer>
+                              </CardContent>
+                            </Card>
+                            {!isAuthenticated && (
+                              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm px-6 text-center">
+                                <Lock className="h-6 w-6 text-muted-foreground" />
+                                <p className="text-xs font-semibold text-muted-foreground">
+                                  Sign in to view detailed earnings results
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {hasRevenueAnalysis && latestRevenuePoint && (
+                          <div className="relative">
+                            <Card
+                              className={`h-full ${
+                                !isAuthenticated
+                                  ? 'pointer-events-none select-none opacity-60 blur-[1.5px]'
+                                  : ''
+                              }`}
+                            >
+                              <CardHeader className="gap-3">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="space-y-1">
+                                    <CardTitle className="text-sm">Revenue vs Earnings</CardTitle>
+                                    <p className="text-xs text-muted-foreground">
+                                      <span className="font-semibold text-foreground">
+                                        {formatPeriodLabel(latestRevenuePoint.period)}
+                                      </span>{' '}
+                                      •{' '}
+                                      <span style={{ color: primaryChartColor }}>
+                                        Revenue {formatRevenueValue(latestRevenuePoint.revenue)}
+                                      </span>{' '}
+                                      •{' '}
+                                      <span style={{ color: secondaryChartColor }}>
+                                        Earnings {formatRevenueValue(latestRevenuePoint.earnings)}
+                                      </span>
+                                    </p>
+                                  </div>
+                                  <div className="inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5">
+                                    {[
+                                      { value: 'annual', label: 'Annual', disabled: !hasAnnualRevenue },
+                                      { value: 'quarterly', label: 'Quarterly', disabled: false },
+                                    ].map((option) => (
+                                      <Button
+                                        key={option.value}
+                                        type="button"
+                                        size="xs"
+                                        variant={revenuePeriod === option.value ? 'default' : 'ghost'}
+                                        className={`px-2 py-1 text-xs ${
+                                          revenuePeriod === option.value ? 'shadow-sm' : ''
+                                        }`}
+                                        onClick={() => setRevenuePeriod(option.value)}
+                                        disabled={option.disabled}
+                                      >
+                                        {option.label}
+                                      </Button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </CardHeader>
+                              <CardContent className="h-[260px]">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <BarChart
+                                    data={revenueChartData}
+                                    margin={{ top: 16, right: 32, bottom: 12, left: -12 }}
+                                  >
+                                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                                    <XAxis dataKey="periodLabel" tick={{ fontSize: 10 }} />
+                                    <YAxis
+                                      tickFormatter={(value) =>
+                                        value == null ? '' : compactNumberFormatter.format(value)
+                                      }
+                                      width={60}
+                                      axisLine={false}
+                                      tick={{ fontSize: 10 }}
+                                    />
+                                    <Tooltip
+                                      formatter={revenueTooltipFormatter}
+                                      labelFormatter={(_, payload) =>
+                                        payload?.[0]?.payload?.periodLabel || ''
+                                      }
+                                      cursor={{ fill: 'transparent' }}
+                                      contentStyle={{
+                                        backgroundColor: 'hsl(var(--background))',
+                                        border: '1px solid hsl(var(--border))',
+                                        borderRadius: '8px',
+                                        fontSize: '12px',
+                                      }}
+                                    />
+                                    <Legend wrapperStyle={{ fontSize: '11px' }} />
+                                    <Bar
+                                      dataKey="revenue"
+                                      name={`Revenue${analysisCurrency ? ` (${analysisCurrency})` : ''}`}
+                                      fill={primaryChartColor}
+                                      radius={[6, 6, 2, 2]}
+                                    />
+                                    <Bar
+                                      dataKey="earnings"
+                                      name={`Earnings${analysisCurrency ? ` (${analysisCurrency})` : ''}`}
+                                      fill={secondaryChartColor}
+                                      radius={[6, 6, 2, 2]}
+                                    />
+                                  </BarChart>
+                                </ResponsiveContainer>
+                              </CardContent>
+                            </Card>
+                            {!isAuthenticated && (
+                              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm px-6 text-center">
+                                <Lock className="h-6 w-6 text-muted-foreground" />
+                                <p className="text-xs font-semibold text-muted-foreground">
+                                  Sign in to compare revenue and earnings
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  )}
                 </div>
-              ) : (
-                (hasEarningsAnalysis || hasRevenueAnalysis) && (
-                  <div className="grid gap-2 md:grid-cols-2">
-                    {hasEarningsAnalysis && latestEarningsPoint && (
-                      <div className="relative">
-                        <Card
-                          className={`h-full ${
-                            !isAuthenticated
-                              ? 'pointer-events-none select-none opacity-60 blur-[1.5px]'
-                              : ''
-                          }`}
-                        >
-                          <CardHeader className="gap-3">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="space-y-1">
-                                <CardTitle className="text-sm">Earnings Results</CardTitle>
-                                <p className="text-xs text-muted-foreground">
-                                  <span className="font-semibold text-foreground">
-                                    {latestEarningsPoint.periodLabel}
-                                  </span>{' '}
-                                  • Estimate{' '}
-                                  <span className="font-medium text-muted-foreground">
-                                    {formatSignedEarnings(latestEarningsPoint.estimate)}
-                                  </span>{' '}
-                                  • Actual{' '}
-                                  <span className="font-medium text-emerald-600">
-                                    {formatSignedEarnings(latestEarningsPoint.actual)}
-                                  </span>
-                                </p>
-                                {latestEarningsOutcome ? (
-                                  <p
-                                    className={`text-xs font-semibold ${
-                                      latestEarningsOutcome.tone === 'beat'
-                                        ? 'text-emerald-600'
-                                        : 'text-red-600'
-                                    }`}
-                                  >
-                                    {latestEarningsOutcome.label}
-                                  </p>
-                                ) : null}
-                              </div>
-                              <span className="rounded-full border bg-muted/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                Normalized
-                              </span>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="h-[260px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <ComposedChart
-                                data={earningsChartData}
-                                margin={{ top: 20, right: 48, bottom: 32, left: -10 }}
-                              >
-                                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                                <XAxis
-                                  dataKey="periodLabel"
-                                  interval={0}
-                                  height={48}
-                                  tick={renderEarningsTick}
-                                />
-                                <YAxis
-                                  tickFormatter={(value) =>
-                                    value == null ? '' : formatEarningsValue(value)
-                                  }
-                                  width={50}
-                                  axisLine={false}
-                                  tick={{ fontSize: 10 }}
-                                />
-                                <Tooltip
-                                  formatter={earningsTooltipFormatter}
-                                  labelFormatter={(_, payload) =>
-                                    payload?.[0]?.payload?.periodLabel || ''
-                                  }
-                                  contentStyle={{
-                                    backgroundColor: 'hsl(var(--background))',
-                                    border: '1px solid hsl(var(--border))',
-                                    borderRadius: '8px',
-                                    fontSize: '12px',
-                                  }}
-                                />
-                                <Line
-                                  type="monotone"
-                                  dataKey="estimate"
-                                  stroke="transparent"
-                                  dot={renderEstimateDot}
-                                  activeDot={false}
-                                />
-                                <Line
-                                  type="monotone"
-                                  dataKey="actual"
-                                  stroke="transparent"
-                                  dot={renderActualDot}
-                                  activeDot={false}
-                                >
-                                  <ErrorBar
-                                    dataKey="range"
-                                    direction="y"
-                                    stroke={secondaryChartColor}
-                                    strokeDasharray="3 3"
-                                    width={0}
-                                  />
-                                </Line>
-                              </ComposedChart>
-                            </ResponsiveContainer>
-                          </CardContent>
-                        </Card>
-                        {!isAuthenticated && (
-                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm px-6 text-center">
-                            <Lock className="h-6 w-6 text-muted-foreground" />
-                            <p className="text-xs font-semibold text-muted-foreground">
-                              Sign in to view detailed earnings results
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {hasRevenueAnalysis && latestRevenuePoint && (
-                      <div className="relative">
-                        <Card
-                          className={`h-full ${
-                            !isAuthenticated
-                              ? 'pointer-events-none select-none opacity-60 blur-[1.5px]'
-                              : ''
-                          }`}
-                        >
-                          <CardHeader className="gap-3">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="space-y-1">
-                                <CardTitle className="text-sm">Revenue vs Earnings</CardTitle>
-                                <p className="text-xs text-muted-foreground">
-                                  <span className="font-semibold text-foreground">
-                                    {formatPeriodLabel(latestRevenuePoint.period)}
-                                  </span>{' '}
-                                  •{' '}
-                                  <span style={{ color: primaryChartColor }}>
-                                    Revenue {formatRevenueValue(latestRevenuePoint.revenue)}
-                                  </span>{' '}
-                                  •{' '}
-                                  <span style={{ color: secondaryChartColor }}>
-                                    Earnings {formatRevenueValue(latestRevenuePoint.earnings)}
-                                  </span>
-                                </p>
-                              </div>
-                              <div className="inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5">
-                                {[
-                                  { value: 'annual', label: 'Annual', disabled: !hasAnnualRevenue },
-                                  { value: 'quarterly', label: 'Quarterly', disabled: false },
-                                ].map((option) => (
-                                  <Button
-                                    key={option.value}
-                                    type="button"
-                                    size="xs"
-                                    variant={revenuePeriod === option.value ? 'default' : 'ghost'}
-                                    className={`px-2 py-1 text-xs ${
-                                      revenuePeriod === option.value ? 'shadow-sm' : ''
-                                    }`}
-                                    onClick={() => setRevenuePeriod(option.value)}
-                                    disabled={option.disabled}
-                                  >
-                                    {option.label}
-                                  </Button>
-                                ))}
-                              </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="h-[260px]">
-                            <ResponsiveContainer width="100%" height="100%">
-                              <BarChart
-                                data={revenueChartData}
-                                margin={{ top: 16, right: 32, bottom: 12, left: -12 }}
-                              >
-                                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                                <XAxis dataKey="periodLabel" tick={{ fontSize: 10 }} />
-                                <YAxis
-                                  tickFormatter={(value) =>
-                                    value == null ? '' : compactNumberFormatter.format(value)
-                                  }
-                                  width={60}
-                                  axisLine={false}
-                                  tick={{ fontSize: 10 }}
-                                />
-                                <Tooltip
-                                  formatter={revenueTooltipFormatter}
-                                  labelFormatter={(_, payload) =>
-                                    payload?.[0]?.payload?.periodLabel || ''
-                                  }
-                                  cursor={{ fill: 'transparent' }}
-                                  contentStyle={{
-                                    backgroundColor: 'hsl(var(--background))',
-                                    border: '1px solid hsl(var(--border))',
-                                    borderRadius: '8px',
-                                    fontSize: '12px',
-                                  }}
-                                />
-                                <Legend wrapperStyle={{ fontSize: '11px' }} />
-                                <Bar
-                                  dataKey="revenue"
-                                  name={`Revenue${analysisCurrency ? ` (${analysisCurrency})` : ''}`}
-                                  fill={primaryChartColor}
-                                  radius={[6, 6, 2, 2]}
-                                />
-                                <Bar
-                                  dataKey="earnings"
-                                  name={`Earnings${analysisCurrency ? ` (${analysisCurrency})` : ''}`}
-                                  fill={secondaryChartColor}
-                                  radius={[6, 6, 2, 2]}
-                                />
-                              </BarChart>
-                            </ResponsiveContainer>
-                          </CardContent>
-                        </Card>
-                        {!isAuthenticated && (
-                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm px-6 text-center">
-                            <Lock className="h-6 w-6 text-muted-foreground" />
-                            <p className="text-xs font-semibold text-muted-foreground">
-                              Sign in to compare revenue and earnings
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )
               )}
-            </div>
-          )}
 
-          <Accordion type="multiple" defaultValue={['quarterly', 'monthly']}>
+              <Accordion type="multiple" defaultValue={['quarterly', 'monthly']}>
             <AccordionItem value="quarterly" className="border-b-0">
               <AccordionTrigger className="py-3 text-sm font-semibold hover:no-underline">
                 Quarterly Returns
@@ -1578,6 +1878,9 @@ function ElectionCyclePageContent() {
               </AccordionContent>
             </AccordionItem>
           </Accordion>
+
+        </div>
+      )}
 
         </>
       )}

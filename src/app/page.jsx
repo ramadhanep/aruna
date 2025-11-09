@@ -406,7 +406,7 @@ export default function HomePage() {
   }
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className="flex flex-col gap-4"
       onTouchStart={handleTouchStart}
@@ -415,9 +415,9 @@ export default function HomePage() {
     >
       {/* Pull to refresh indicator */}
       {pullDistance > 0 && (
-        <div 
+        <div
           className="flex items-center justify-center transition-all duration-200"
-          style={{ 
+          style={{
             height: `${pullDistance}px`,
             opacity: Math.min(pullDistance / 80, 1)
           }}
@@ -425,6 +425,18 @@ export default function HomePage() {
           <Loader2 className={`h-6 w-6 text-muted-foreground ${pullDistance > 80 || isRefreshing ? 'animate-spin' : ''}`} />
         </div>
       )}
+
+      <Card className="border-none bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] text-white shadow-lg">
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-sm font-semibold">Daily Inspiration</CardTitle>
+          <CardDescription className="text-xs text-white/70">Jim Simons</CardDescription>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <p className="text-sm leading-relaxed text-white/90">
+            &ldquo;We search through historical data looking for anomalous patterns that we would not expect to occur at random.&rdquo;
+          </p>
+        </CardContent>
+      </Card>
 
       <div className="overflow-hidden">
         <SectionHeader title="Watchlist" />
