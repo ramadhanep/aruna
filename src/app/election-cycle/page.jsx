@@ -48,14 +48,14 @@ const DEFAULT_WATCHLIST = [
 const PRICE_TIMEFRAMES = ['1D', '1W', '1M', '3M', 'YTD', '1Y', '3Y', '5Y'];
 
 const PRICE_TIMEFRAME_CONFIG = {
-  '1D': { days: 2, interval: '15m' },
-  '1W': { days: 8, interval: '1h' },
-  '1M': { days: 35, interval: '1h' },
-  '3M': { days: 110, interval: '1d' },
+  '1D': { days: 3, interval: '5m' },
+  '1W': { days: 10, interval: '30m' },
+  '1M': { days: 60, interval: '90m' },
+  '3M': { days: 140, interval: '1d' },
   YTD: { startOfYear: true, interval: '1d' },
-  '1Y': { days: 370, interval: '1d' },
-  '3Y': { days: 365 * 3 + 30, interval: '1wk' },
-  '5Y': { days: 365 * 5 + 60, interval: '1wk' },
+  '1Y': { days: 400, interval: '1d' },
+  '3Y': { days: 365 * 3 + 120, interval: '1wk' },
+  '5Y': { days: 365 * 5 + 150, interval: '1wk' },
 };
 
 function readWatchlist() {
@@ -1179,8 +1179,23 @@ function ElectionCyclePageContent() {
           <Card className="overflow-hidden bg-transparent border-none rounded-none">
             <CardHeader className="gap-3">
               <div className="flex flex-wrap items-start justify-between gap-4">
-                <div className="space-y-2">
-                  <CardTitle className="text-sm">Normal (Price)</CardTitle>
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <CardTitle className="text-sm">Normal (Price)</CardTitle>
+                    {assetName ? (
+                      <CardDescription className="text-xs text-muted-foreground">
+                        {assetName}
+                      </CardDescription>
+                    ) : null}
+                    {marketStateInfo ? (
+                      <span
+                        className={`inline-flex items-center gap-1 text-[11px] font-medium ${marketStateInfo.tone}`}
+                      >
+                        {MarketStateIcon ? <MarketStateIcon className="h-3 w-3" /> : null}
+                        {marketStateInfo.label}
+                      </span>
+                    ) : null}
+                  </div>
                   {priceStats ? (
                     <div className="flex flex-wrap items-baseline gap-2">
                       <span className="text-xl font-bold">
@@ -1301,47 +1316,21 @@ function ElectionCyclePageContent() {
           {chartData.chartArray && chartData.chartArray.length > 0 && (
             <div className="space-y-3">
               <Card className="overflow-hidden bg-transparent border-none rounded-none">
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex flex-col gap-2">
-                      <CardDescription className="text-xs">{assetName}</CardDescription>
-                      {marketStateInfo ? (
-                        <span className={`flex items-center gap-1 text-xs font-medium ${marketStateInfo.tone}`}>
-                          {MarketStateIcon ? <MarketStateIcon className="h-3 w-3" /> : null}
-                          {marketStateInfo.label}
-                        </span>
-                      ) : null}
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-baseline gap-2">
-                          <span className="text-xl font-bold">
-                            {symbolInfo?.currentPrice != null
-                              ? symbolInfo.currentPrice.toLocaleString('en-US', {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                })
-                              : '-'}
-                          </span>
-                          {symbolInfo?.currency && (
-                            <span className="text-xs text-muted-foreground">{symbolInfo.currency}</span>
-                          )}
-                        </div>
-                        {symbolInfo?.dailyChange != null && symbolInfo?.dailyChangePct != null && (
-                          <span
-                            className={`text-xs font-medium ${symbolInfo.dailyChange >= 0 ? 'text-green-600' : 'text-red-600'}`}
-                          >
-                            {symbolInfo.dailyChange >= 0 ? '+' : ''}
-                            {symbolInfo.dailyChange.toFixed(2)} ({symbolInfo.dailyChangePct.toFixed(2)}%)
-                          </span>
-                        )}
+                <CardHeader className="gap-4">
+                  <div className="flex flex-wrap items-start justify-between gap-4">
+                    <div className="min-w-[220px] space-y-3">
+                      <div className="space-y-1">
+                        <CardTitle className="text-sm">Election cycle performance</CardTitle>
+                        <CardDescription className="text-xs text-muted-foreground">
+                          {assetName ? `${assetName} (${symbol})` : symbol}
+                        </CardDescription>
                       </div>
-                    </div>
-                    <div className="flex flex-col items-end gap-3">
                       <Select
                         className="w-full"
                         value={selectedCycles.join(',')}
                         onValueChange={(value) => setSelectedCycles(value.split(','))}
                       >
-                        <SelectTrigger className="h-6 text-xs">
+                        <SelectTrigger className="h-7 text-xs">
                           <SelectValue placeholder="Select cycles" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1352,6 +1341,8 @@ function ElectionCyclePageContent() {
                           <SelectItem className="text-xs" value="all,current">All Years + Current</SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
                       <div className="inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5">
                         {[
                           { value: 'linear', label: 'Linear' },
@@ -1366,6 +1357,20 @@ function ElectionCyclePageContent() {
                             onClick={() => setScaleChoice(option.value)}
                           >
                             {option.label}
+                          </Button>
+                        ))}
+                      </div>
+                      <div className="inline-flex flex-wrap justify-end gap-1">
+                        {['all', 'Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
+                          <Button
+                            key={q}
+                            type="button"
+                            size="xs"
+                            variant={quarterFilter === q ? 'default' : 'ghost'}
+                            className={`px-2 py-1 text-[11px] ${quarterFilter === q ? 'shadow-sm' : ''}`}
+                            onClick={() => setQuarterFilter(q)}
+                          >
+                            {q === 'all' ? 'All' : q}
                           </Button>
                         ))}
                       </div>
@@ -1438,22 +1443,6 @@ function ElectionCyclePageContent() {
                   </ResponsiveContainer>
                 </CardContent>
               </Card>
-
-              <div className="flex gap-2">
-                {['all', 'Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
-                  <button
-                    key={q}
-                    className={`flex-1 h-6 text-xs rounded-md border-2 transition-colors ${
-                      quarterFilter === q
-                        ? 'border-primary bg-primary text-primary-foreground'
-                        : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'
-                    }`}
-                    onClick={() => setQuarterFilter(q)}
-                  >
-                    {q === 'all' ? 'All' : q}
-                  </button>
-                ))}
-              </div>
 
               <Button
                 onClick={() => setPortfolioDialogOpen(true)}
