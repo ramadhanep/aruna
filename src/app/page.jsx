@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo, useId } from "react";
 import Link from "next/link";
 import { TrendingUp, TrendingDown, Loader2, Download, Edit, BarChart3 } from "lucide-react";
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
@@ -85,30 +85,52 @@ async function fetchQuote(symbol) {
   }
 }
 
-function MiniChart({ data, isPositive }) {
-  if (!data || data.length === 0) return null;
-  
+function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
+  const generatedId = useId();
+  const gradientKey = chartId ?? generatedId;
+  if (!Array.isArray(data) || data.length < 2) {
+    return <div style={{ width, height }} className="rounded-full bg-muted/40" />;
+  }
+
   const min = Math.min(...data);
   const max = Math.max(...data);
   const range = max - min || 1;
-  const width = 60;
-  const height = 30;
-  
-  const points = data.map((value, i) => {
+
+  const coordinates = data.map((value, i) => {
     const x = (i / (data.length - 1)) * width;
     const y = height - ((value - min) / range) * height;
-    return `${x},${y}`;
-  }).join(' ');
-  
+    return { x, y };
+  });
+
+  const linePath = coordinates
+    .map((point, idx) => `${idx === 0 ? "M" : "L"}${point.x.toFixed(2)},${point.y.toFixed(2)}`)
+    .join(" ");
+  const areaPath = `${linePath} L${coordinates[coordinates.length - 1].x.toFixed(2)},${height} L0,${height} Z`;
+  const strokeColor = isPositive ? "#10b981" : "#ef4444";
+  const gradientId = `${gradientKey}-fill`;
+
   return (
-    <svg width={width} height={height} className="opacity-70">
-      <polyline
-        points={points}
+    <svg width={width} height={height} className="overflow-visible">
+      <defs>
+        <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={strokeColor} stopOpacity="0.45" />
+          <stop offset="100%" stopColor={strokeColor} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={areaPath} fill={`url(#${gradientId})`} opacity="0.9" />
+      <path
+        d={linePath}
         fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
+        stroke={strokeColor}
+        strokeWidth={1.6}
         strokeLinecap="round"
         strokeLinejoin="round"
+      />
+      <circle
+        cx={coordinates[coordinates.length - 1].x}
+        cy={coordinates[coordinates.length - 1].y}
+        r={2.4}
+        fill={strokeColor}
       />
     </svg>
   );
@@ -127,7 +149,11 @@ function StockItem({ quote }) {
         <div className="text-xs text-muted-foreground truncate">{quote.name}</div>
       </div>
       <div className={`flex items-center ${color}`}>
-        <MiniChart data={quote.chartData} isPositive={isPositive} />
+        <MiniChart
+          data={quote.chartData}
+          isPositive={isPositive}
+          chartId={`watch-${quote.symbol}`}
+        />
       </div>
       <div className="flex flex-col items-end">
         <div className="font-semibold text-sm">{quote.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
@@ -152,13 +178,13 @@ function ShimmerItem() {
   return (
     <div className="flex items-center gap-3 py-3">
       <div className="flex-1 min-w-0 space-y-1.5">
-        <div className="h-4 w-16 rounded bg-muted animate-pulse"></div>
-        <div className="h-3 w-32 rounded bg-muted/80 animate-pulse"></div>
+        <div className="h-3 w-16 rounded-full shimmer"></div>
+        <div className="h-3 w-32 rounded-full shimmer"></div>
       </div>
-      <div className="w-[60px] h-[30px] rounded bg-muted animate-pulse"></div>
+      <div className="w-[72px] h-[36px] rounded-xl shimmer"></div>
       <div className="flex flex-col items-end gap-1">
-        <div className="h-4 w-20 rounded bg-muted animate-pulse"></div>
-        <div className="h-3 w-16 rounded bg-muted/80 animate-pulse"></div>
+        <div className="h-3 w-20 rounded-full shimmer"></div>
+        <div className="h-3 w-16 rounded-full shimmer"></div>
       </div>
     </div>
   );
@@ -379,25 +405,25 @@ export default function HomePage() {
             {[...Array(8)].map((_, i) => <ShimmerItem key={i} />)}
           </div>
           <div className="border-t py-3 flex justify-center">
-            <div className="h-8 w-40 rounded-full bg-muted animate-pulse"></div>
+            <div className="h-8 w-40 rounded-full shimmer"></div>
           </div>
         </div>
 
         <Card>
           <CardHeader className="pb-0">
             <div className="flex items-center gap-2">
-              <div className="h-5 w-5 rounded-full bg-muted animate-pulse"></div>
-              <div className="h-4 w-24 rounded bg-muted animate-pulse"></div>
+              <div className="h-5 w-5 rounded-full shimmer"></div>
+              <div className="h-4 w-24 rounded-full shimmer"></div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4 pt-4">
             {[...Array(2)].map((_, idx) => (
               <div key={idx} className="flex items-center justify-between gap-3">
                 <div className="space-y-1">
-                  <div className="h-3 w-16 rounded bg-muted animate-pulse"></div>
-                  <div className="h-3 w-24 rounded bg-muted/80 animate-pulse"></div>
+                  <div className="h-3 w-16 rounded-full shimmer"></div>
+                  <div className="h-3 w-24 rounded-full shimmer"></div>
                 </div>
-                <div className="h-6 w-20 rounded bg-muted animate-pulse"></div>
+                <div className="h-6 w-20 rounded-full shimmer"></div>
               </div>
             ))}
           </CardContent>
@@ -472,7 +498,13 @@ export default function HomePage() {
                 </p>
               </div>
               <div className={`flex items-center ${marketPulse.topGainer.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                <MiniChart data={marketPulse.topGainer.chartData} isPositive={marketPulse.topGainer.change >= 0} />
+                <MiniChart
+                  data={marketPulse.topGainer.chartData}
+                  isPositive={marketPulse.topGainer.change >= 0}
+                  width={110}
+                  height={46}
+                  chartId={`pulse-top-${marketPulse.topGainer.symbol}`}
+                />
               </div>
             </div>
             <div className="flex items-center justify-between rounded-lg">
@@ -484,7 +516,13 @@ export default function HomePage() {
                 </p>
               </div>
               <div className={`flex items-center ${marketPulse.topLoser.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                <MiniChart data={marketPulse.topLoser.chartData} isPositive={marketPulse.topLoser.change >= 0} />
+                <MiniChart
+                  data={marketPulse.topLoser.chartData}
+                  isPositive={marketPulse.topLoser.change >= 0}
+                  width={110}
+                  height={46}
+                  chartId={`pulse-low-${marketPulse.topLoser.symbol}`}
+                />
               </div>
             </div>
             <div className="rounded-lg">

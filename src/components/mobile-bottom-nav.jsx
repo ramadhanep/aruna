@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, RefreshCcwDot, BriefcaseBusiness, UserRound, Search as SearchIcon } from "lucide-react";
+import { Home, RefreshCcwDot, BriefcaseBusiness, UserRound, Brain } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -18,9 +18,9 @@ const navItems = [
     icon: RefreshCcwDot,
   },
   {
-    title: "Search",
-    url: "/search",
-    icon: SearchIcon,
+    title: "Explore",
+    url: "/explore",
+    icon: Brain,
   },
   {
     title: "Portfolio",
