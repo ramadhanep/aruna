@@ -27,8 +27,8 @@ export function PortfolioPie({ digitalUSD, cashUSD, currency = 'USD', idrPerUsd 
   };
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <ChartContainer config={config} className="w-full h-60">
+    <div className="flex flex-col items-center">
+      <ChartContainer config={config} className="w-full h-52">
         <PieChart margin={{ top: 8, right: 16, bottom: 28, left: 16 }}>
           <Pie
             data={data}

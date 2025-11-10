@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense, useId } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import {
   removeIncompleteYears,
@@ -24,7 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AreaChart, Area, Line, LineChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar } from 'recharts';
+import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar } from 'recharts';
 import { Loader2, Sun, MoonStar, Clock3, Star, Lock, Rocket, WandSparkles, LucideWandSparkles } from "lucide-react";
 import { useTheme } from 'next-themes';
 import { AddAssetModal } from "@/components/add-asset-modal";
@@ -108,6 +108,52 @@ const NORMAL_RANGE_OPTIONS = [
   { value: '3Y', label: '3Y', days: 365 * 3 },
   { value: '5Y', label: '5Y', days: 365 * 5 },
 ];
+
+const NORMAL_DENSITY_TARGET = {
+  '1D': 96,
+  '1W': 140,
+  '1M': 180,
+  '3M': 220,
+  'YTD': 240,
+  '1Y': 260,
+  '3Y': 300,
+  '5Y': 320,
+};
+
+const EMA_PERIOD = 32;
+const EMA_COLOR = '#0ea5e9';
+
+function densifySeries(sorted, targetCount) {
+  if (!Array.isArray(sorted) || sorted.length < 2) return sorted;
+  const safeTarget = Math.max(targetCount, sorted.length);
+  if (safeTarget <= sorted.length) {
+    return sorted;
+  }
+  const totalExtra = safeTarget - sorted.length;
+  const intervalCount = sorted.length - 1;
+  const extrasPerInterval = Math.floor(totalExtra / intervalCount);
+  let remainder = totalExtra % intervalCount;
+  const densified = [];
+
+  for (let index = 0; index < intervalCount; index += 1) {
+    const current = sorted[index];
+    const next = sorted[index + 1];
+    densified.push(current);
+    const extrasHere = extrasPerInterval + (remainder > 0 ? 1 : 0);
+    if (remainder > 0) remainder -= 1;
+    for (let extraIndex = 1; extraIndex <= extrasHere; extraIndex += 1) {
+      const steps = extrasHere + 1;
+      const ratio = steps === 0 ? 0 : extraIndex / steps;
+      const duration = next.timestamp - current.timestamp;
+      const timestamp = current.timestamp + duration * ratio;
+      const price = current.price + (next.price - current.price) * ratio;
+      densified.push({ timestamp, price, interpolated: true });
+    }
+  }
+
+  densified.push(sorted[sorted.length - 1]);
+  return densified;
+}
 
 function isCryptoTicker(symbol = '') {
   const upper = symbol.toUpperCase();
@@ -757,16 +803,27 @@ function ElectionCyclePageContent() {
       )
       .sort((a, b) => a.timestamp - b.timestamp);
     if (sorted.length === 0) return [];
-    const basePrice = sorted[0].price;
-    const baseTimestamp = sorted[0].timestamp;
+    const densityTarget = NORMAL_DENSITY_TARGET[normalRange] ?? sorted.length;
+    const denseSeries = densifySeries(sorted, densityTarget);
+    if (denseSeries.length === 0) return [];
+    const basePrice = denseSeries[0].price;
+    const baseTimestamp = denseSeries[0].timestamp;
     if (!basePrice || !Number.isFinite(basePrice)) return [];
-    return sorted.map((point) => ({
-      timestamp: point.timestamp,
-      elapsed: point.timestamp - baseTimestamp,
-      price: point.price,
-      changePct: ((point.price - basePrice) / basePrice) * 100,
-    }));
-  }, [isNormalView, normalSeries]);
+    let previousEma = null;
+    const multiplier = 2 / (EMA_PERIOD + 1);
+    return denseSeries.map((point) => {
+      const emaValue =
+        previousEma == null ? point.price : point.price * multiplier + previousEma * (1 - multiplier);
+      previousEma = emaValue;
+      return {
+        timestamp: point.timestamp,
+        elapsed: point.timestamp - baseTimestamp,
+        price: point.price,
+        changePct: ((point.price - basePrice) / basePrice) * 100,
+        ema32: emaValue,
+      };
+    });
+  }, [isNormalView, normalSeries, normalRange]);
 
   const normalChartBaseTimestamp =
     filteredNormalChartData.length > 0 ? filteredNormalChartData[0].timestamp : null;
@@ -774,6 +831,7 @@ function ElectionCyclePageContent() {
     filteredNormalChartData.length > 0
       ? filteredNormalChartData[filteredNormalChartData.length - 1].elapsed
       : null;
+  const normalAreaGradientId = useId();
 
   const hasCycleChartData = chartData.chartArray && chartData.chartArray.length > 0;
   const showChartSection =
@@ -1210,13 +1268,13 @@ function ElectionCyclePageContent() {
             <span className="dark:text-white/70 text-xs">🇮🇩 Hidup Jokowi!</span>
           )}
           {symbol.endsWith('-USD') && (
-            <span className="dark:text-white/70 text-xs flex gap-1"><Rocket className="size-4"/> to the moon (katanya)</span>
+            <span className="dark:text-white/70 text-xs flex gap-1"><Rocket className="size-3"/> to the moon (katanya)</span>
           )}
           {['QQQ', 'SPY'].some((s) => symbol.endsWith(s)) && (
             <span className="dark:text-white/70 text-xs">🇺🇸 Pension Fund</span>
           )}
           {['AAPL','MSFT','GOOGL','GOOG','AMZN','META','NVDA','AVGO'].some((s) => symbol.endsWith(s)) && (
-            <span className="dark:text-white/70 text-xs flex gap-1"><LucideWandSparkles className="size-4"/> Magnificent 7</span>
+            <span className="dark:text-white/70 text-xs flex gap-1"><LucideWandSparkles className="size-3"/> Magnificent 7</span>
           )}
         </div>
         <button
@@ -1240,29 +1298,29 @@ function ElectionCyclePageContent() {
             <CardHeader>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 space-y-2">
-                  <div className="h-3 w-28 rounded bg-muted animate-pulse"></div>
-                  <div className="h-8 w-32 rounded bg-muted animate-pulse"></div>
-                  <div className="h-4 w-24 rounded bg-muted animate-pulse"></div>
-                  <div className="h-4 w-20 rounded bg-muted animate-pulse"></div>
+                  <div className="h-3 w-28 rounded-full shimmer"></div>
+                  <div className="h-8 w-32 rounded-2xl shimmer"></div>
+                  <div className="h-4 w-24 rounded-full shimmer"></div>
+                  <div className="h-4 w-20 rounded-full shimmer"></div>
                 </div>
                 <div className="flex flex-col gap-2">
-                  <div className="h-6 w-40 rounded bg-muted animate-pulse"></div>
-                  <div className="h-6 w-32 rounded bg-muted animate-pulse"></div>
+                  <div className="h-6 w-40 rounded-full shimmer"></div>
+                  <div className="h-6 w-32 rounded-full shimmer"></div>
                 </div>
               </div>
             </CardHeader>
             <CardContent className="px-0 -mr-5 pb-0">
-              <div className="w-full h-[280px] bg-muted animate-pulse rounded"></div>
+              <div className="w-full h-[280px] rounded-lg shimmer"></div>
             </CardContent>
           </Card>
 
           <div className="flex gap-2">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex-1 h-7 bg-muted rounded-md animate-pulse"></div>
+              <div key={i} className="flex-1 h-7 rounded-full shimmer"></div>
             ))}
           </div>
 
-          <div className="h-10 bg-muted rounded-md animate-pulse"></div>
+          <div className="h-10 rounded-xl shimmer"></div>
 
           <div className="mt-4 flex flex-col gap-8">
             <Card>
@@ -1273,8 +1331,8 @@ function ElectionCyclePageContent() {
                 <div className="grid grid-cols-2 gap-3">
                   {[...Array(6)].map((_, idx) => (
                     <div key={idx} className="space-y-1">
-                      <div className="h-3 w-24 rounded bg-muted animate-pulse"></div>
-                      <div className="h-4 w-20 rounded bg-muted animate-pulse"></div>
+                      <div className="h-3 w-24 rounded-full shimmer"></div>
+                      <div className="h-4 w-20 rounded-full shimmer"></div>
                     </div>
                   ))}
                 </div>
@@ -1286,7 +1344,7 @@ function ElectionCyclePageContent() {
                   <CardTitle className="text-sm">Earnings Results</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-[240px] rounded-lg bg-muted animate-pulse"></div>
+                  <div className="h-[240px] rounded-xl shimmer"></div>
                 </CardContent>
               </Card>
               <Card>
@@ -1294,7 +1352,7 @@ function ElectionCyclePageContent() {
                   <CardTitle className="text-sm">Revenue vs Earnings</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-[240px] rounded-lg bg-muted animate-pulse"></div>
+                  <div className="h-[240px] rounded-xl shimmer"></div>
                 </CardContent>
               </Card>
             </div>
@@ -1392,10 +1450,16 @@ function ElectionCyclePageContent() {
                   </div>
                 ) : filteredNormalChartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={280}>
-                    <LineChart
+                    <AreaChart
                       data={filteredNormalChartData}
                       margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
                     >
+                      <defs>
+                        <linearGradient id={normalAreaGradientId} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={CURRENT_LINE_COLOR} stopOpacity={0.35} />
+                          <stop offset="100%" stopColor={CURRENT_LINE_COLOR} stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                       <XAxis
                         dataKey="elapsed"
@@ -1418,9 +1482,15 @@ function ElectionCyclePageContent() {
                         allowDataOverflow={false}
                       />
                       <Tooltip
-                        formatter={(value, _, payload) => {
-                          const pct = formatNormalChange(payload?.payload?.changePct);
-                          return [formatPriceValue(value), pct ? `Price (${pct})` : 'Price'];
+                        formatter={(value, name, payload) => {
+                          if (name === 'Price') {
+                            const pct = formatNormalChange(payload?.payload?.changePct);
+                            return [formatPriceValue(value), pct ? `Price (${pct})` : 'Price'];
+                          }
+                          if (name === 'EMA 32') {
+                            return [formatPriceValue(value), 'EMA 32'];
+                          }
+                          return [value, name];
                         }}
                         labelFormatter={(_, payload) =>
                           formatNormalTooltipLabel(payload?.[0]?.payload?.timestamp)
@@ -1432,15 +1502,25 @@ function ElectionCyclePageContent() {
                           fontSize: '12px',
                         }}
                       />
-                      <Line
+                      <Area
                         type="monotone"
                         dataKey="price"
                         stroke={CURRENT_LINE_COLOR}
                         strokeWidth={2}
-                        dot={false}
+                        fill={`url(#${normalAreaGradientId})`}
                         name="Price"
+                        dot={false}
+                        activeDot={{ r: 3 }}
                       />
-                    </LineChart>
+                      <Line
+                        type="monotone"
+                        dataKey="ema32"
+                        stroke={EMA_COLOR}
+                        strokeWidth={1.2}
+                        dot={false}
+                        name="EMA 32"
+                      />
+                    </AreaChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="flex h-[280px] items-center justify-center text-xs text-muted-foreground">
@@ -1518,20 +1598,22 @@ function ElectionCyclePageContent() {
           </Card>
 
           {isNormalView ? (
-            <div className="flex flex-nowrap justify-center gap-2">
+            <div className="flex flex-wrap justify-center gap-2">
               {NORMAL_RANGE_OPTIONS.map((option) => (
-                <button
+                <Button
                   key={option.value}
                   type="button"
-                  onClick={() => setNormalRange(option.value)}
-                  className={`text-xs px-2 uppercase tracking-wide transition-colors pb-0.5 font-bold ${
+                  size="sm"
+                  variant={normalRange === option.value ? 'default' : 'ghost'}
+                  className={`rounded-sm px-2 w-8 font-bold py-0 text-[11px] uppercase tracking-wider ${
                     normalRange === option.value
-                      ? 'font-bold text-emerald-700 border-b border-emerald-700'
-                      : 'text-muted-foreground hover:text-foreground'
+                      ? 'bg-emerald-700 text-white/80 shadow-sm'
+                      : 'border-border/70 text-muted-foreground'
                   }`}
+                  onClick={() => setNormalRange(option.value)}
                 >
                   {option.label}
-                </button>
+                </Button>
               ))}
             </div>
           ) : (
@@ -1570,8 +1652,8 @@ function ElectionCyclePageContent() {
                     <div className="grid grid-cols-2 gap-3">
                       {[...Array(6)].map((_, idx) => (
                         <div key={idx} className="space-y-1">
-                          <div className="h-3 w-24 rounded bg-muted animate-pulse"></div>
-                          <div className="h-4 w-20 rounded bg-muted animate-pulse"></div>
+                          <div className="h-3 w-24 rounded-full shimmer"></div>
+                          <div className="h-4 w-20 rounded-full shimmer"></div>
                         </div>
                       ))}
                     </div>
@@ -1596,18 +1678,18 @@ function ElectionCyclePageContent() {
                 <div className="grid gap-2 md:grid-cols-2">
                   <Card className="h-full">
                     <CardHeader>
-                      <div className="h-4 w-32 rounded bg-muted animate-pulse"></div>
+                      <div className="h-4 w-32 rounded-full shimmer"></div>
                     </CardHeader>
                     <CardContent>
-                      <div className="h-[220px] rounded-lg bg-muted animate-pulse"></div>
+                      <div className="h-[220px] rounded-xl shimmer"></div>
                     </CardContent>
                   </Card>
                   <Card className="h-full">
                     <CardHeader>
-                      <div className="h-4 w-32 rounded bg-muted animate-pulse"></div>
+                      <div className="h-4 w-32 rounded-full shimmer"></div>
                     </CardHeader>
                     <CardContent>
-                      <div className="h-[220px] rounded-lg bg-muted animate-pulse"></div>
+                      <div className="h-[220px] rounded-xl shimmer"></div>
                     </CardContent>
                   </Card>
                 </div>

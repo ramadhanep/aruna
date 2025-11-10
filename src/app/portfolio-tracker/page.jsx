@@ -732,18 +732,18 @@ export default function PortfolioTrackerPage() {
       <div className="flex flex-col gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <div className="h-4 w-24 rounded bg-muted animate-pulse"></div>
-            <div className="h-8 w-24 rounded bg-muted animate-pulse"></div>
+            <div className="h-4 w-24 rounded-full shimmer"></div>
+            <div className="h-8 w-24 rounded-2xl shimmer"></div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <div className="h-3 w-28 rounded bg-muted animate-pulse"></div>
-              <div className="h-8 w-36 rounded bg-muted animate-pulse"></div>
-              <div className="h-3 w-32 rounded bg-muted/80 animate-pulse"></div>
+              <div className="h-3 w-28 rounded-full shimmer"></div>
+              <div className="h-8 w-36 rounded-2xl shimmer"></div>
+              <div className="h-3 w-32 rounded-full shimmer"></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               {[...Array(2)].map((_, idx) => (
-                <div key={idx} className="h-20 rounded-lg bg-muted animate-pulse"></div>
+                <div key={idx} className="h-20 rounded-xl shimmer"></div>
               ))}
             </div>
           </CardContent>
@@ -751,16 +751,16 @@ export default function PortfolioTrackerPage() {
 
         <Card>
           <CardHeader>
-            <div className="h-4 w-24 rounded bg-muted animate-pulse"></div>
+            <div className="h-4 w-24 rounded-full shimmer"></div>
           </CardHeader>
           <CardContent className="space-y-3">
             {[...Array(3)].map((_, idx) => (
-              <div key={idx} className="h-16 rounded-lg bg-muted animate-pulse"></div>
+              <div key={idx} className="h-16 rounded-xl shimmer"></div>
             ))}
           </CardContent>
         </Card>
 
-        <div className="fixed bottom-20 right-4 h-14 w-14 rounded-full bg-muted animate-pulse"></div>
+        <div className="fixed bottom-20 right-4 h-14 w-14 rounded-full shimmer"></div>
       </div>
     );
   }
@@ -829,7 +829,7 @@ export default function PortfolioTrackerPage() {
                   <div className="flex items-start gap-3 p-3 rounded-lg border">
                     <div className="flex-1">
                       <p className="text-sm text-muted-foreground mb-1">Digital Assets</p>
-                      <p className="text-lg font-semibold">{formatValue(digitalMarket).primary}</p>
+                      <p className="text-base font-semibold">{formatValue(digitalMarket).primary}</p>
                       <p className="text-xs text-muted-foreground">{formatValue(digitalMarket).secondary}</p>
                       <div className="mt-1 flex items-center gap-1">
                         <span className={`text-xs font-medium ${digitalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -848,7 +848,7 @@ export default function PortfolioTrackerPage() {
                   <div className="flex items-start gap-3 p-3 rounded-lg border">
                     <div className="flex-1">
                       <p className="text-sm text-muted-foreground mb-1">Total Cash</p>
-                      <p className="text-lg font-semibold">{formatValue(totalCash).primary}</p>
+                      <p className="text-base font-semibold">{formatValue(totalCash).primary}</p>
                       <p className="text-xs text-muted-foreground">{formatValue(totalCash).secondary}</p>
                     </div>
                     <div className="p-2 rounded-full bg-emerald-700/10">
