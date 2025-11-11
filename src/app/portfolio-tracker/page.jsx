@@ -759,8 +759,6 @@ export default function PortfolioTrackerPage() {
             ))}
           </CardContent>
         </Card>
-
-        <div className="fixed bottom-20 right-4 h-14 w-14 rounded-full shimmer"></div>
       </div>
     );
   }
@@ -1181,7 +1179,7 @@ export default function PortfolioTrackerPage() {
 
       <Button
         size="icon"
-        className="fixed bottom-20 right-4 h-14 w-14 rounded-full bg-emerald-700 shadow-lg z-40"
+        className="fixed bottom-30 right-4 h-14 w-14 rounded-full bg-emerald-700 shadow-lg z-40"
         onClick={openAdd}
       >
         <Plus className="size-6" />

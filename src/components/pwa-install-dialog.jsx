@@ -61,8 +61,10 @@ export function PWAInstallDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-sm">
         <div className="flex flex-col items-center gap-4 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-            <AlignEndHorizontal className="h-8 w-8 text-primary" />
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-700/30">
+            <div className="h-7 relative overflow-hidden">
+              <AlignEndHorizontal className="h-8 w-8" />
+            </div>
           </div>
           <DialogTitle className="text-sm font-bold">Install Aruna</DialogTitle>
           <DialogDescription className="text-sm">
