@@ -15,8 +15,8 @@ const CATEGORY_LABELS = {
 const CATEGORY_ORDER = ["idx", "us", "crypto"];
 
 const HIGHLIGHT_SYMBOLS = [
-  { symbol: "SPY", label: "S&P 500", badge: "500", group: "US", accent: "bg-rose-500" },
-  { symbol: "QQQ", label: "Nasdaq 100", badge: "100", group: "US", accent: "bg-sky-500" },
+  { symbol: "^SPX", label: "S&P 500", badge: "500", group: "US", accent: "bg-rose-500" },
+  { symbol: "^IXIC", label: "Nasdaq 100", badge: "100", group: "US", accent: "bg-sky-500" },
   { symbol: "^JKSE", label: "IDX Composite", badge: "JK", group: "ID", accent: "bg-amber-500" },
   { symbol: "BTC-USD", label: "Bitcoin", badge: "BTC", group: "Crypto", accent: "bg-emerald-500" },
 ];
@@ -587,7 +587,7 @@ export default function ExplorePage() {
         <div className="rounded-lg bg-background/80">
           <div className="mt-4 grid grid-cols-2 gap-3">
             {HIGHLIGHT_SYMBOLS.map((symbol) => (
-              <div key={symbol.symbol} className="rounded-2xl border border-border/50 p-4 space-y-3">
+              <div key={symbol.symbol} className="py-4 space-y-3">
                 <div className="flex items-center gap-2">
                   {/* <div className="h-8 w-8 rounded-full shimmer" /> */}
                   <div className="flex-1 space-y-2">
@@ -640,15 +640,10 @@ export default function ExplorePage() {
               return (
                 <div
                   key={item.symbol}
-                  className="rounded-lg border border-border/60 bg-gradient-to-b from-muted/30 via-background/80 to-background/60 p-4 shadow-inner overflow-hidden"
+                  className="rounded-lg py-4 overflow-hidden"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      {/* <span
-                        className={`h-8 w-8 rounded-full text-[11px] font-semibold text-white flex items-center justify-center ${item.accent}`}
-                      >
-                        {item.badge}
-                      </span> */}
                       <div>
                         {/* <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{item.group}</p> */}
                         <p className="text-base font-semibold text-foreground">{item.label}</p>
@@ -673,7 +668,7 @@ export default function ExplorePage() {
                       <MiniChart
                         data={item.quote?.chartData || []}
                         isPositive={isPositive}
-                        width={120}
+                        width={80}
                         height={48}
                         chartId={`highlight-${item.symbol}`}
                       />

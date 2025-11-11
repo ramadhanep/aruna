@@ -36,15 +36,15 @@ export const metadata = {
   manifest: '/manifest.json',
   icons: {
     icon: [
-      { url: '/aruna.webp', sizes: 'any', type: 'image/png' },
-      { url: '/aruna.webp', sizes: '32x32', type: 'image/png' },
-      { url: '/aruna.webp', sizes: '192x192', type: 'image/png' },
-      { url: '/aruna.webp', sizes: '512x512', type: 'image/png' },
+      { url: '/aruna.png', sizes: 'any', type: 'image/png' },
+      { url: '/aruna.png', sizes: '32x32', type: 'image/png' },
+      { url: '/aruna.png', sizes: '192x192', type: 'image/png' },
+      { url: '/aruna.png', sizes: '512x512', type: 'image/png' },
     ],
     apple: [
-      { url: '/aruna.webp', sizes: '180x180', type: 'image/png' },
+      { url: '/aruna.png', sizes: '180x180', type: 'image/png' },
     ],
-    shortcut: '/aruna.webp',
+    shortcut: '/aruna.png',
   },
   appleWebApp: {
     capable: true,
@@ -77,7 +77,9 @@ export default function RootLayout({ children }) {
                 <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3 px-2">
                   <HeaderAccountMenu />
                   <div className="flex flex-1 items-center justify-center gap-1">
-                    <AlignEndHorizontal className="size-5" />
+                    <div className="h-4 relative overflow-hidden">
+                      <AlignEndHorizontal className="size-5" />
+                    </div>
                     <h1 className="text-lg font-bold">{"aruna"}...</h1>
                   </div>
                   <HeaderSymbolSearch />

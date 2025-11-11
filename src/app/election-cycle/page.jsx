@@ -1617,11 +1617,11 @@ function ElectionCyclePageContent() {
               ))}
             </div>
           ) : (
-            <div className="flex gap-2">
+            <div className="flex items-center justify-center gap-2">
               {['all', 'Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
                 <button
                   key={q}
-                  className={`flex-1 h-6 text-xs rounded-md border-2 transition-colors ${
+                  className={`w-16 h-6 text-xs font-bold rounded-sm border-2 transition-colors ${
                     quarterFilter === q
                       ? 'border-primary bg-primary text-primary-foreground'
                       : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'

@@ -7,7 +7,7 @@ const urlsToCache = [
   '/portfolio-tracker',
   '/docs',
   '/offline',
-  '/aruna.webp'
+  '/aruna.png'
 ];
 
 // Install Service Worker
