@@ -23,12 +23,16 @@ const SCREENER_CONFIG = {
     fallback: CRYPTO_TOP100_SYMBOLS,
   },
 };
+const MIN_DAILY_VALUE_CONFIG = {
+  idx: 10_000_000_000,   // 10B IDR
+  us: 500_000_000,       // 500M USD
+  crypto: 1_000_000_000, // 1B USD
+};
 
 const EMA_PERIOD = 32;
 const VOLUME_MA_PERIOD = 32;
 const EMA_SLOPE_PERIOD = 5;
 const CANDLE_LOOKBACK = 5;
-const MIN_DAILY_VALUE = 10_000_000_000;
 const BATCH_TIME_LIMIT_MS = 50000;
 
 const STOCK_UNIVERSE_COLUMNS = {
@@ -164,7 +168,7 @@ async function fetchDailySeries(symbol) {
   }
 }
 
-function evaluateSymbol(quotes) {
+function evaluateSymbol(quotes, category) {
   if (!Array.isArray(quotes) || quotes.length < 50) {
     return false;
   }
@@ -232,7 +236,7 @@ function evaluateSymbol(quotes) {
       emaSlope != null &&
       emaSlope > 0 &&
       volume > volumeAvg &&
-      dailyValue >= MIN_DAILY_VALUE
+      dailyValue >= (MIN_DAILY_VALUE_CONFIG[category] ?? 10_000_000_000)
     ) {
       hasValidBreakout = true;
     }
@@ -316,7 +320,7 @@ export async function GET(request, context) {
     const symbol = universe[index];
     const { quotes } = await fetchDailySeries(symbol);
     if (quotes) {
-      const isBreakout = evaluateSymbol(quotes);
+      const isBreakout = evaluateSymbol(quotes, category);
       if (isBreakout) {
         batchResults.push(symbol);
       }

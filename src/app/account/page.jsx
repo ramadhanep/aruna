@@ -280,14 +280,14 @@ export default function AccountPage() {
                 </button>
               }
             />
-            <div className="flex justify-center">
+            {/* <div className="flex justify-center">
               {user ? (
               <DeleteAccountAction
                 onConfirm={deleteAccount}
                 disabled={!supabaseConfigured}
               />
             ) : null}
-            </div>
+            </div> */}
             {user ? (
               <Button
                 type="button"
