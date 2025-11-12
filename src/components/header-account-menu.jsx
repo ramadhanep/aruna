@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/components/auth-provider";
-import { Loader2, LogOut, LogIn, UserRound, BriefcaseBusiness, Flame } from "lucide-react";
+import { Loader2, LogOut, LogIn, UserRound, Pocket, Send } from "lucide-react";
 
 function buildInitials(user) {
   const fullName =
@@ -73,13 +73,13 @@ export function HeaderAccountMenu() {
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="text-xs">
               <Link href="/portfolio-tracker" className="flex w-full items-center gap-2">
-                <BriefcaseBusiness className="h-3.5 w-3.5" />
-                Portfolio tracker
+                <Pocket className="h-3.5 w-3.5" />
+                Portfolio
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild className="text-xs">
               <Link href="/explore" className="flex w-full items-center gap-2">
-                <Flame className="h-3.5 w-3.5" />
+                <Send className="h-3.5 w-3.5" />
                 Explore
               </Link>
             </DropdownMenuItem>

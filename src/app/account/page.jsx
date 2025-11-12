@@ -312,14 +312,15 @@ export default function AccountPage() {
       <section>
         <Card>
           <CardContent className="flex flex-col items-center gap-2 py-6 text-center">
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground">
               Version {process.env.NEXT_PUBLIC_APP_VERSION || "1.0.0"}
             </p>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
               <span>Made with</span>
               <Heart className="h-4 w-4 fill-white" />
               <span>by Ramadhan Edy from 🇮🇩</span>
             </div>
+            <p className="text-[11px] text-muted-foreground"><a href="https://trakteer.id/romadhan2" target="_blank" className="text-emerald-700">https://trakteer.id/romadhan2</a></p>
           </CardContent>
         </Card>
       </section>
