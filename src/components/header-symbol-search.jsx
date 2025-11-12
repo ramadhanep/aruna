@@ -141,15 +141,10 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
             placeholder="Search by symbol or company name"
             className="flex-1"
           />
-          {query && (
-            <Button variant="ghost" size="icon-sm" aria-label="Clear search" onClick={() => setQuery("")}>
-              <X className="h-4 w-4" />
-            </Button>
-          )}
         </div>
 
-        <div className="max-h-72 overflow-hidden rounded-md border">
-          <div className="max-h-72 overflow-y-auto">
+        <div className="max-h-full overflow-hidden rounded-md border">
+          <div className="max-h-full overflow-y-auto">
             {loading && (
               <div className="flex items-center justify-center py-6 text-muted-foreground text-sm">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

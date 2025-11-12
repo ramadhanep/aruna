@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, RefreshCcwDot, BriefcaseBusiness, UserRound, Flame } from "lucide-react";
+import { Home, TrendingUpDown, Pocket, UserRound, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -15,17 +15,17 @@ const navItems = [
   {
     title: "Election Cycle",
     url: "/election-cycle",
-    icon: RefreshCcwDot,
+    icon: TrendingUpDown,
   },
   {
     title: "Explore",
     url: "/explore",
-    icon: Flame,
+    icon: Send,
   },
   {
     title: "Portfolio",
     url: "/portfolio-tracker",
-    icon: BriefcaseBusiness,
+    icon: Pocket,
   },
   {
     title: "Account",

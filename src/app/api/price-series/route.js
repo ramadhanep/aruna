@@ -4,13 +4,13 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 const RANGE_CONFIG = {
   '1D': { interval: '15m', lookbackMs: 2 * DAY_IN_MS, filterMs: 1 * DAY_IN_MS },
-  '1W': { interval: '1h', lookbackMs: 10 * DAY_IN_MS, filterMs: 7 * DAY_IN_MS },
-  '1M': { interval: '90m', lookbackMs: 45 * DAY_IN_MS, filterMs: 31 * DAY_IN_MS },
+  '1W': { interval: '60m', lookbackMs: 14 * DAY_IN_MS, filterMs: 7 * DAY_IN_MS },
+  '1M': { interval: '1d', lookbackMs: 60 * DAY_IN_MS, filterMs: 31 * DAY_IN_MS },
   '3M': { interval: '1d', lookbackMs: 150 * DAY_IN_MS, filterMs: 92 * DAY_IN_MS },
   'YTD': { interval: '1d', type: 'ytd' },
   '1Y': { interval: '1d', lookbackMs: 370 * DAY_IN_MS, filterMs: 365 * DAY_IN_MS },
-  '3Y': { interval: '1wk', lookbackMs: 4 * 365 * DAY_IN_MS, filterMs: 3 * 365 * DAY_IN_MS },
-  '5Y': { interval: '1mo', lookbackMs: 6 * 365 * DAY_IN_MS, filterMs: 5 * 365 * DAY_IN_MS },
+  '3Y': { interval: '1d', lookbackMs: 4 * 365 * DAY_IN_MS, filterMs: 3 * 365 * DAY_IN_MS },
+  '5Y': { interval: '1d', lookbackMs: 6 * 365 * DAY_IN_MS, filterMs: 5 * 365 * DAY_IN_MS },
 };
 
 export async function GET(request) {

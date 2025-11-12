@@ -80,7 +80,7 @@ export default function RootLayout({ children }) {
                     <div className="h-4 relative overflow-hidden">
                       <AlignEndHorizontal className="size-5" />
                     </div>
-                    <h1 className="text-lg font-bold">{"aruna"}...</h1>
+                    <h1 className="text-lg font-bold">aruna.</h1>
                   </div>
                   <HeaderSymbolSearch />
                 </div>

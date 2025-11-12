@@ -600,7 +600,7 @@ export default function ExplorePage() {
             ))}
           </div>
         </div>
-        <div className="rounded-3xl border border-border/60 bg-background/80 p-4">
+        <div className="rounded-3xl">
           <div className="h-5 w-32 rounded-full shimmer" />
           <div className="mt-4 divide-y">
             {[...Array(4)].map((_, idx) => (
@@ -645,11 +645,10 @@ export default function ExplorePage() {
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <div>
-                        {/* <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{item.group}</p> */}
                         <p className="text-base font-semibold text-foreground">{item.label}</p>
                       </div>
                     </div>
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-[10px] text-muted-foreground mr-3">
                       {item.quote ? "Live" : "Syncing"}
                     </span>
                   </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Trash2, Plus, X, ChevronFirst, ChevronLast } from "lucide-react";
+import { Trash2, Plus, X, ArrowBigUpDash, ArrowBigDownDash } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -180,18 +180,18 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
                     onClick={() => handleMove(index, -1)}
                     disabled={index === 0}
                     aria-label="Move up"
-                    className="p-1 rounded hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed rotate-90"
+                    className="p-1 rounded hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    <ChevronFirst className="size-4" />
+                    <ArrowBigUpDash className="size-4" />
                   </button>
                   <button
                     type="button"
                     onClick={() => handleMove(index, 1)}
                     disabled={index === items.length - 1}
                     aria-label="Move down"
-                    className="p-1 rounded hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed rotate-90"
+                    className="p-1 rounded hover:bg-accent disabled:opacity-40 disabled:cursor-not-allowed"
                   >
-                    <ChevronLast className="size-4" />
+                    <ArrowBigDownDash className="size-4" />
                   </button>
                 </div>
 

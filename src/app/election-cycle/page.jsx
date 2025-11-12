@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar } from 'recharts';
-import { Loader2, Sun, MoonStar, Clock3, Star, Lock, Rocket, WandSparkles, LucideWandSparkles } from "lucide-react";
+import { Loader2, Sun, MoonStar, Clock3, Star, Lock, Bitcoin, Crown } from "lucide-react";
 import { useTheme } from 'next-themes';
 import { AddAssetModal } from "@/components/add-asset-modal";
 import { SymbolSearchDialog } from "@/components/header-symbol-search";
@@ -123,7 +123,7 @@ const NORMAL_DENSITY_TARGET = {
 const EMA_PERIOD = 32;
 const EMA_COLOR = '#0ea5e9';
 
-function densifySeries(sorted, targetCount) {
+function densifySeries(sorted, targetCount, interpolateKeys = ['price']) {
   if (!Array.isArray(sorted) || sorted.length < 2) return sorted;
   const safeTarget = Math.max(targetCount, sorted.length);
   if (safeTarget <= sorted.length) {
@@ -146,8 +146,25 @@ function densifySeries(sorted, targetCount) {
       const ratio = steps === 0 ? 0 : extraIndex / steps;
       const duration = next.timestamp - current.timestamp;
       const timestamp = current.timestamp + duration * ratio;
-      const price = current.price + (next.price - current.price) * ratio;
-      densified.push({ timestamp, price, interpolated: true });
+      const interpolatedPoint = {
+        ...current,
+        timestamp,
+        date: new Date(timestamp).toISOString(),
+        interpolated: true,
+      };
+      interpolateKeys.forEach((key) => {
+        const startValue = current[key];
+        const endValue = next[key];
+        if (
+          typeof startValue === 'number' &&
+          Number.isFinite(startValue) &&
+          typeof endValue === 'number' &&
+          Number.isFinite(endValue)
+        ) {
+          interpolatedPoint[key] = startValue + (endValue - startValue) * ratio;
+        }
+      });
+      densified.push(interpolatedPoint);
     }
   }
 
@@ -803,26 +820,42 @@ function ElectionCyclePageContent() {
       )
       .sort((a, b) => a.timestamp - b.timestamp);
     if (sorted.length === 0) return [];
-    const densityTarget = NORMAL_DENSITY_TARGET[normalRange] ?? sorted.length;
-    const denseSeries = densifySeries(sorted, densityTarget);
-    if (denseSeries.length === 0) return [];
-    const basePrice = denseSeries[0].price;
-    const baseTimestamp = denseSeries[0].timestamp;
-    if (!basePrice || !Number.isFinite(basePrice)) return [];
-    let previousEma = null;
+
     const multiplier = 2 / (EMA_PERIOD + 1);
-    return denseSeries.map((point) => {
-      const emaValue =
-        previousEma == null ? point.price : point.price * multiplier + previousEma * (1 - multiplier);
-      previousEma = emaValue;
+    let emaValue = null;
+    const withEma = sorted.map((point, index) => {
+      const price = point.price;
+      if (!Number.isFinite(price)) {
+        return { ...point, ema32: emaValue };
+      }
+      if (emaValue == null) {
+        emaValue = price;
+      } else {
+        emaValue = price * multiplier + emaValue * (1 - multiplier);
+      }
       return {
-        timestamp: point.timestamp,
-        elapsed: point.timestamp - baseTimestamp,
-        price: point.price,
-        changePct: ((point.price - basePrice) / basePrice) * 100,
+        ...point,
         ema32: emaValue,
       };
     });
+
+    const densityTarget = NORMAL_DENSITY_TARGET[normalRange] ?? withEma.length;
+    const denseSeries = densifySeries(withEma, densityTarget, ['price', 'ema32']);
+    if (denseSeries.length === 0) return [];
+    const basePrice = withEma[0]?.price;
+    const baseTimestamp = withEma[0]?.timestamp;
+    if (!basePrice || !Number.isFinite(basePrice) || typeof baseTimestamp !== 'number') {
+      return [];
+    }
+
+    return denseSeries.map((point) => ({
+      timestamp: point.timestamp,
+      elapsed: point.timestamp - baseTimestamp,
+      price: point.price,
+      changePct: ((point.price - basePrice) / basePrice) * 100,
+      ema32: point.ema32 ?? point.price,
+      interpolated: Boolean(point.interpolated),
+    }));
   }, [isNormalView, normalSeries, normalRange]);
 
   const normalChartBaseTimestamp =
@@ -831,6 +864,61 @@ function ElectionCyclePageContent() {
     filteredNormalChartData.length > 0
       ? filteredNormalChartData[filteredNormalChartData.length - 1].elapsed
       : null;
+  const latestNormalPoint =
+    filteredNormalChartData.length > 0
+      ? filteredNormalChartData[filteredNormalChartData.length - 1]
+      : null;
+
+  const normalRangeChange = useMemo(() => {
+    if (!isNormalView || filteredNormalChartData.length < 2) {
+      return null;
+    }
+    const actualPoints = filteredNormalChartData.filter((point) => !point.interpolated);
+    const firstPoint = actualPoints[0] ?? filteredNormalChartData[0];
+    const lastPoint = filteredNormalChartData[filteredNormalChartData.length - 1];
+    if (
+      !firstPoint ||
+      !lastPoint ||
+      typeof firstPoint.price !== 'number' ||
+      typeof lastPoint.price !== 'number'
+    ) {
+      return null;
+    }
+    const changeValue = lastPoint.price - firstPoint.price;
+    const changePct =
+      firstPoint.price !== 0 ? (changeValue / firstPoint.price) * 100 : null;
+    return {
+      value: changeValue,
+      pct: changePct,
+    };
+  }, [filteredNormalChartData, isNormalView]);
+
+  const displayedPrice =
+    isNormalView && typeof latestNormalPoint?.price === 'number'
+      ? latestNormalPoint.price
+      : symbolInfo?.currentPrice ?? null;
+
+  const displayedChange = useMemo(() => {
+    if (isNormalView && normalRangeChange) {
+      return {
+        value: normalRangeChange.value,
+        pct: normalRangeChange.pct,
+        label: `${normalRange} change`,
+      };
+    }
+    if (
+      !isNormalView &&
+      symbolInfo?.dailyChange != null &&
+      symbolInfo?.dailyChangePct != null
+    ) {
+      return {
+        value: symbolInfo.dailyChange,
+        pct: symbolInfo.dailyChangePct,
+        label: 'Daily change',
+      };
+    }
+    return null;
+  }, [isNormalView, normalRange, normalRangeChange, symbolInfo]);
   const normalAreaGradientId = useId();
 
   const hasCycleChartData = chartData.chartArray && chartData.chartArray.length > 0;
@@ -1154,7 +1242,7 @@ function ElectionCyclePageContent() {
         r={6}
         fill="hsl(var(--background))"
         stroke={secondaryChartColor}
-        strokeWidth={2}
+        strokeWidth={1.5}
       />
     );
   }, [secondaryChartColor]);
@@ -1265,16 +1353,16 @@ function ElectionCyclePageContent() {
           </h1>
           <span className="text-muted">|</span>
           {symbol.endsWith('.JK') && (
-            <span className="dark:text-white/70 text-xs">🇮🇩 Hidup Jokowi!</span>
+            <span className="dark:text-white/70 text-xs">🇮🇩 IDX</span>
           )}
           {symbol.endsWith('-USD') && (
-            <span className="dark:text-white/70 text-xs flex gap-1"><Rocket className="size-3"/> to the moon (katanya)</span>
+            <span className="dark:text-white/70 text-xs flex items-center gap-1"><Bitcoin className="size-4"/> to the moon</span>
           )}
           {['QQQ', 'SPY'].some((s) => symbol.endsWith(s)) && (
             <span className="dark:text-white/70 text-xs">🇺🇸 Pension Fund</span>
           )}
           {['AAPL','MSFT','GOOGL','GOOG','AMZN','META','NVDA','AVGO'].some((s) => symbol.endsWith(s)) && (
-            <span className="dark:text-white/70 text-xs flex gap-1"><LucideWandSparkles className="size-3"/> Magnificent 7</span>
+            <span className="dark:text-white/70 text-xs flex items-center gap-1"><Crown className="size-3.5"/> magnificent 7</span>
           )}
         </div>
         <button
@@ -1286,7 +1374,7 @@ function ElectionCyclePageContent() {
         >
           <Star
             className="size-5"
-            strokeWidth={isFavorite ? 1.5 : 2}
+            strokeWidth={isFavorite ? 1.2 : 1.5}
             fill={isFavorite ? 'currentColor' : 'none'}
           />
         </button>
@@ -1377,8 +1465,8 @@ function ElectionCyclePageContent() {
                   <div className="flex flex-col gap-1">
                     <div className="flex items-baseline gap-2">
                       <span className="text-xl font-bold">
-                        {symbolInfo?.currentPrice != null
-                          ? symbolInfo.currentPrice.toLocaleString('en-US', {
+                        {displayedPrice != null
+                          ? displayedPrice.toLocaleString('en-US', {
                               minimumFractionDigits: 2,
                               maximumFractionDigits: 2,
                             })
@@ -1388,13 +1476,26 @@ function ElectionCyclePageContent() {
                         <span className="text-xs text-muted-foreground">{symbolInfo.currency}</span>
                       )}
                     </div>
-                    {symbolInfo?.dailyChange != null && symbolInfo?.dailyChangePct != null && (
-                      <span
-                        className={`text-xs font-medium ${symbolInfo.dailyChange >= 0 ? 'text-green-600' : 'text-red-600'}`}
-                      >
-                        {symbolInfo.dailyChange >= 0 ? '+' : ''}
-                        {symbolInfo.dailyChange.toFixed(2)} ({symbolInfo.dailyChangePct.toFixed(2)}%)
-                      </span>
+                    {displayedChange && (
+                      <div className="flex flex-col text-xs">
+                        <span
+                          className={`font-medium ${
+                            displayedChange.value >= 0 ? 'text-green-600' : 'text-red-600'
+                          }`}
+                        >
+                          {displayedChange.value >= 0 ? '+' : ''}
+                          {displayedChange.value.toFixed(2)} (
+                          {displayedChange.pct != null
+                            ? `${displayedChange.pct >= 0 ? '+' : ''}${displayedChange.pct.toFixed(2)}%`
+                            : '—'}
+                          )
+                        </span>
+                        {displayedChange.label && (
+                          <span className="text-[10px] text-muted-foreground">
+                            {displayedChange.label}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1404,18 +1505,18 @@ function ElectionCyclePageContent() {
                     value={selectedCycles.join(',')}
                     onValueChange={(value) => setSelectedCycles(value.split(','))}
                   >
-                    <SelectTrigger className="h-6 text-xs">
+                    <SelectTrigger className="h-3 text-[11px]">
                       <SelectValue placeholder="Select cycles" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem className="text-xs" value="normal">
+                      <SelectItem className="text-[11px]" value="normal">
                         Normal (Price)
                       </SelectItem>
-                      <SelectItem className="text-xs" value="pre,current">Pre-Election + Current</SelectItem>
-                      <SelectItem className="text-xs" value="election,current">Election + Current</SelectItem>
-                      <SelectItem className="text-xs" value="mid,current">Mid-Term + Current</SelectItem>
-                      <SelectItem className="text-xs" value="post,current">Post-Election + Current</SelectItem>
-                      <SelectItem className="text-xs" value="all,current">All Years + Current</SelectItem>
+                      <SelectItem className="text-[11px]" value="pre,current">Pre-Election + Current</SelectItem>
+                      <SelectItem className="text-[11px]" value="election,current">Election + Current</SelectItem>
+                      <SelectItem className="text-[11px]" value="mid,current">Mid-Term + Current</SelectItem>
+                      <SelectItem className="text-[11px]" value="post,current">Post-Election + Current</SelectItem>
+                      <SelectItem className="text-[11px]" value="all,current">All Years + Current</SelectItem>
                       {/* <SelectItem value="pre,election,mid,post,current">All Cycles + Current</SelectItem> */}
                     </SelectContent>
                   </Select>
@@ -1430,7 +1531,7 @@ function ElectionCyclePageContent() {
                           type="button"
                           size="xs"
                           variant={scaleChoice === option.value ? 'default' : 'ghost'}
-                          className={`px-2 py-1 text-xs ${scaleChoice === option.value ? 'shadow-sm' : ''}`}
+                          className={`px-2 py-1 text-xs rounded-full ${scaleChoice === option.value ? 'shadow-sm' : ''}`}
                           onClick={() => setScaleChoice(option.value)}
                         >
                           {option.label}
@@ -1506,7 +1607,7 @@ function ElectionCyclePageContent() {
                         type="monotone"
                         dataKey="price"
                         stroke={CURRENT_LINE_COLOR}
-                        strokeWidth={2}
+                        strokeWidth={1.5}
                         fill={`url(#${normalAreaGradientId})`}
                         name="Price"
                         dot={false}
@@ -1516,7 +1617,7 @@ function ElectionCyclePageContent() {
                         type="monotone"
                         dataKey="ema32"
                         stroke={EMA_COLOR}
-                        strokeWidth={1.2}
+                        strokeWidth={1}
                         dot={false}
                         name="EMA 32"
                       />
@@ -1588,7 +1689,7 @@ function ElectionCyclePageContent() {
                         fillOpacity={1}
                         name={line.name}
                         dot={false}
-                        strokeWidth={2}
+                        strokeWidth={1.5}
                       />
                     ))}
                   </AreaChart>
@@ -1621,7 +1722,7 @@ function ElectionCyclePageContent() {
               {['all', 'Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
                 <button
                   key={q}
-                  className={`w-16 h-6 text-xs font-bold rounded-sm border-2 transition-colors ${
+                  className={`w-16 h-6 text-xs font-semibold rounded-sm border-2 transition-colors ${
                     quarterFilter === q
                       ? 'border-primary bg-primary text-primary-foreground'
                       : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'
@@ -1846,7 +1947,7 @@ function ElectionCyclePageContent() {
                                     type="button"
                                     size="xs"
                                     variant={revenuePeriod === option.value ? 'default' : 'ghost'}
-                                    className={`px-2 py-1 text-xs ${
+                                    className={`px-2 py-1 text-xs rounded-full ${
                                       revenuePeriod === option.value ? 'shadow-sm' : ''
                                     }`}
                                     onClick={() => setRevenuePeriod(option.value)}
