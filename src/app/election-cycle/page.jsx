@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, Suspense, useId } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import {
   removeIncompleteYears,
@@ -30,6 +30,7 @@ import { useTheme } from 'next-themes';
 import { AddAssetModal } from "@/components/add-asset-modal";
 import { SymbolSearchDialog } from "@/components/header-symbol-search";
 import { useAuth } from "@/components/auth-provider";
+import { NormalCandlestickChart } from "@/components/normal-candlestick-chart";
 
 const CURRENT_LINE_COLOR = 'oklch(59.6% 0.145 163.225)';
 const WATCHLIST_STORAGE_KEY = 'aruna_watchlist';
@@ -109,68 +110,8 @@ const NORMAL_RANGE_OPTIONS = [
   { value: '5Y', label: '5Y', days: 365 * 5 },
 ];
 
-const NORMAL_DENSITY_TARGET = {
-  '1D': 96,
-  '1W': 140,
-  '1M': 180,
-  '3M': 220,
-  'YTD': 240,
-  '1Y': 260,
-  '3Y': 300,
-  '5Y': 320,
-};
-
 const EMA_PERIOD = 32;
 const EMA_COLOR = '#0ea5e9';
-
-function densifySeries(sorted, targetCount, interpolateKeys = ['price']) {
-  if (!Array.isArray(sorted) || sorted.length < 2) return sorted;
-  const safeTarget = Math.max(targetCount, sorted.length);
-  if (safeTarget <= sorted.length) {
-    return sorted;
-  }
-  const totalExtra = safeTarget - sorted.length;
-  const intervalCount = sorted.length - 1;
-  const extrasPerInterval = Math.floor(totalExtra / intervalCount);
-  let remainder = totalExtra % intervalCount;
-  const densified = [];
-
-  for (let index = 0; index < intervalCount; index += 1) {
-    const current = sorted[index];
-    const next = sorted[index + 1];
-    densified.push(current);
-    const extrasHere = extrasPerInterval + (remainder > 0 ? 1 : 0);
-    if (remainder > 0) remainder -= 1;
-    for (let extraIndex = 1; extraIndex <= extrasHere; extraIndex += 1) {
-      const steps = extrasHere + 1;
-      const ratio = steps === 0 ? 0 : extraIndex / steps;
-      const duration = next.timestamp - current.timestamp;
-      const timestamp = current.timestamp + duration * ratio;
-      const interpolatedPoint = {
-        ...current,
-        timestamp,
-        date: new Date(timestamp).toISOString(),
-        interpolated: true,
-      };
-      interpolateKeys.forEach((key) => {
-        const startValue = current[key];
-        const endValue = next[key];
-        if (
-          typeof startValue === 'number' &&
-          Number.isFinite(startValue) &&
-          typeof endValue === 'number' &&
-          Number.isFinite(endValue)
-        ) {
-          interpolatedPoint[key] = startValue + (endValue - startValue) * ratio;
-        }
-      });
-      densified.push(interpolatedPoint);
-    }
-  }
-
-  densified.push(sorted[sorted.length - 1]);
-  return densified;
-}
 
 function isCryptoTicker(symbol = '') {
   const upper = symbol.toUpperCase();
@@ -814,56 +755,90 @@ function ElectionCyclePageContent() {
         (point) =>
           point &&
           typeof point.timestamp === 'number' &&
-          Number.isFinite(point.timestamp) &&
-          typeof point.price === 'number' &&
-          Number.isFinite(point.price)
+          Number.isFinite(point.timestamp)
       )
       .sort((a, b) => a.timestamp - b.timestamp);
     if (sorted.length === 0) return [];
 
     const multiplier = 2 / (EMA_PERIOD + 1);
     let emaValue = null;
-    const withEma = sorted.map((point, index) => {
-      const price = point.price;
-      if (!Number.isFinite(price)) {
-        return { ...point, ema32: emaValue };
-      }
-      if (emaValue == null) {
-        emaValue = price;
-      } else {
-        emaValue = price * multiplier + emaValue * (1 - multiplier);
-      }
-      return {
-        ...point,
-        ema32: emaValue,
-      };
-    });
+    const baseTimestamp = sorted[0].timestamp;
+    const firstClose =
+      typeof sorted[0].close === 'number' && Number.isFinite(sorted[0].close)
+        ? sorted[0].close
+        : typeof sorted[0].price === 'number' && Number.isFinite(sorted[0].price)
+          ? sorted[0].price
+          : null;
 
-    const densityTarget = NORMAL_DENSITY_TARGET[normalRange] ?? withEma.length;
-    const denseSeries = densifySeries(withEma, densityTarget, ['price', 'ema32']);
-    if (denseSeries.length === 0) return [];
-    const basePrice = withEma[0]?.price;
-    const baseTimestamp = withEma[0]?.timestamp;
-    if (!basePrice || !Number.isFinite(basePrice) || typeof baseTimestamp !== 'number') {
-      return [];
-    }
+    let prevHeikinOpen = null;
+    let prevHeikinClose = null;
 
-    return denseSeries.map((point) => ({
-      timestamp: point.timestamp,
-      elapsed: point.timestamp - baseTimestamp,
-      price: point.price,
-      changePct: ((point.price - basePrice) / basePrice) * 100,
-      ema32: point.ema32 ?? point.price,
-      interpolated: Boolean(point.interpolated),
-    }));
-  }, [isNormalView, normalSeries, normalRange]);
+    return sorted
+      .map((point) => {
+        const close =
+          typeof point.close === 'number' && Number.isFinite(point.close)
+            ? point.close
+            : typeof point.price === 'number' && Number.isFinite(point.price)
+              ? point.price
+              : null;
+        if (close == null) {
+          return null;
+        }
 
-  const normalChartBaseTimestamp =
-    filteredNormalChartData.length > 0 ? filteredNormalChartData[0].timestamp : null;
-  const normalChartMaxElapsed =
-    filteredNormalChartData.length > 0
-      ? filteredNormalChartData[filteredNormalChartData.length - 1].elapsed
-      : null;
+        const open =
+          typeof point.open === 'number' && Number.isFinite(point.open) ? point.open : close;
+        const high =
+          typeof point.high === 'number' && Number.isFinite(point.high)
+            ? point.high
+            : Math.max(open, close);
+        const low =
+          typeof point.low === 'number' && Number.isFinite(point.low)
+            ? point.low
+            : Math.min(open, close);
+
+        const heikinClose = (open + high + low + close) / 4;
+        const heikinOpen =
+          prevHeikinOpen == null || prevHeikinClose == null
+            ? (open + close) / 2
+            : (prevHeikinOpen + prevHeikinClose) / 2;
+        const heikinHigh = Math.max(high, heikinOpen, heikinClose);
+        const heikinLow = Math.min(low, heikinOpen, heikinClose);
+        prevHeikinOpen = heikinOpen;
+        prevHeikinClose = heikinClose;
+
+        if (emaValue == null) {
+          emaValue = close;
+        } else {
+          emaValue = close * multiplier + emaValue * (1 - multiplier);
+        }
+
+        const changePct =
+          firstClose && firstClose !== 0 ? ((close - firstClose) / firstClose) * 100 : null;
+
+        return {
+          timestamp: point.timestamp,
+          elapsed: point.timestamp - baseTimestamp,
+          price: close,
+          open,
+          high,
+          low,
+          close,
+          changePct,
+          ema32: emaValue,
+          interpolated: false,
+          volume:
+            typeof point.volume === 'number' && Number.isFinite(point.volume)
+              ? point.volume
+              : null,
+          heikinOpen,
+          heikinHigh,
+          heikinLow,
+          heikinClose,
+        };
+      })
+      .filter(Boolean);
+  }, [isNormalView, normalSeries]);
+
   const latestNormalPoint =
     filteredNormalChartData.length > 0
       ? filteredNormalChartData[filteredNormalChartData.length - 1]
@@ -919,7 +894,77 @@ function ElectionCyclePageContent() {
     }
     return null;
   }, [isNormalView, normalRange, normalRangeChange, symbolInfo]);
-  const normalAreaGradientId = useId();
+
+  const normalCandlestickSeries = useMemo(() => {
+    if (!isNormalView || filteredNormalChartData.length === 0) {
+      return { candles: [], ema: [], meta: {} };
+    }
+    const candles = [];
+    const ema = [];
+    const meta = {};
+    filteredNormalChartData.forEach((point) => {
+      if (typeof point.timestamp !== 'number') return;
+      const time = Math.floor(point.timestamp / 1000);
+      if (!Number.isFinite(time)) return;
+      const actualOpen =
+        typeof point.open === 'number' && Number.isFinite(point.open) ? point.open : point.price;
+      const actualClose =
+        typeof point.close === 'number' && Number.isFinite(point.close) ? point.close : point.price;
+      const actualHigh =
+        typeof point.high === 'number' && Number.isFinite(point.high)
+          ? point.high
+          : Math.max(actualOpen, actualClose);
+      const actualLow =
+        typeof point.low === 'number' && Number.isFinite(point.low)
+          ? point.low
+          : Math.min(actualOpen, actualClose);
+
+      const open =
+        typeof point.heikinOpen === 'number' && Number.isFinite(point.heikinOpen)
+          ? point.heikinOpen
+          : actualOpen;
+      const close =
+        typeof point.heikinClose === 'number' && Number.isFinite(point.heikinClose)
+          ? point.heikinClose
+          : actualClose;
+      const high =
+        typeof point.heikinHigh === 'number' && Number.isFinite(point.heikinHigh)
+          ? point.heikinHigh
+          : actualHigh;
+      const low =
+        typeof point.heikinLow === 'number' && Number.isFinite(point.heikinLow)
+          ? point.heikinLow
+          : actualLow;
+
+      candles.push({ time, open, high, low, close });
+      if (typeof point.ema32 === 'number' && Number.isFinite(point.ema32)) {
+        ema.push({ time, value: point.ema32 });
+      } else {
+        ema.push({ time, value: close });
+      }
+      meta[time] = {
+        timestamp: point.timestamp,
+        open,
+        high,
+        low,
+        close,
+        actualOpen,
+        actualHigh,
+        actualLow,
+        actualClose,
+        ema32:
+          typeof point.ema32 === 'number' && Number.isFinite(point.ema32) ? point.ema32 : close,
+        changePct:
+          typeof point.changePct === 'number' && Number.isFinite(point.changePct)
+            ? point.changePct
+            : null,
+      };
+    });
+
+    return { candles, ema, meta };
+  }, [filteredNormalChartData, isNormalView]);
+
+  const isIntradayRange = normalRange === '1D' || normalRange === '1W';
 
   const hasCycleChartData = chartData.chartArray && chartData.chartArray.length > 0;
   const showChartSection =
@@ -934,39 +979,28 @@ function ElectionCyclePageContent() {
     return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
   };
 
-  const formatNormalTick = useCallback(
-    (elapsed) => {
-      const timestamp = (normalChartBaseTimestamp ?? 0) + Number(elapsed ?? 0);
+  const formatNormalTimestamp = useCallback(
+    (timestamp) => {
       const date = new Date(Number(timestamp));
       if (Number.isNaN(date.getTime())) return '';
       if (normalRange === '1D') {
         return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
       }
       if (normalRange === '1W') {
-        return date.toLocaleDateString('en-US', { weekday: 'short' });
+        return date.toLocaleString('en-US', {
+          weekday: 'short',
+          hour: 'numeric',
+          minute: '2-digit',
+        });
       }
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+      const options =
+        normalRange === '3Y' || normalRange === '5Y'
+          ? { month: 'short', year: 'numeric' }
+          : { month: 'short', day: 'numeric' };
+      return date.toLocaleDateString('en-US', options);
     },
-    [normalChartBaseTimestamp, normalRange]
+    [normalRange]
   );
-
-  const formatNormalTooltipLabel = useCallback((timestamp) => {
-    const date = new Date(Number(timestamp));
-    if (Number.isNaN(date.getTime())) return '';
-    if (normalRange === '1D') {
-      return date.toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit',
-      });
-    }
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  }, [normalRange]);
 
   const formatPriceValue = useCallback((value) => {
     if (value == null || Number.isNaN(Number(value))) return '-';
@@ -974,19 +1008,6 @@ function ElectionCyclePageContent() {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
-  }, []);
-
-  const formatPriceAxis = useCallback((value) => {
-    if (value == null || Number.isNaN(Number(value))) return '';
-    return Number(value).toLocaleString('en-US', {
-      maximumFractionDigits: 2,
-    });
-  }, []);
-
-  const formatNormalChange = useCallback((value) => {
-    if (value == null || Number.isNaN(Number(value))) return '';
-    const numeric = Number(value);
-    return `${numeric >= 0 ? '+' : ''}${numeric.toFixed(2)}%`;
   }, []);
 
   const currencyCode = fundamentals?.profile?.currency || symbolInfo?.currency || 'USD';
@@ -1542,7 +1563,7 @@ function ElectionCyclePageContent() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="px-0 -mr-5 pb-0">
+            <CardContent className={`px-0 pb-0 ${!isNormalView ? "-mr-5" : ""}`}>
               {isNormalView ? (
                 normalSeriesLoading ? (
                   <div className="flex h-[280px] items-center justify-center gap-2 text-xs text-muted-foreground">
@@ -1550,79 +1571,20 @@ function ElectionCyclePageContent() {
                     Loading {normalRange} prices…
                   </div>
                 ) : filteredNormalChartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={280}>
-                    <AreaChart
-                      data={filteredNormalChartData}
-                      margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
-                    >
-                      <defs>
-                        <linearGradient id={normalAreaGradientId} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={CURRENT_LINE_COLOR} stopOpacity={0.35} />
-                          <stop offset="100%" stopColor={CURRENT_LINE_COLOR} stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                      <XAxis
-                        dataKey="elapsed"
-                        type="number"
-                        domain={
-                          normalChartMaxElapsed != null
-                            ? [0, normalChartMaxElapsed]
-                            : ['dataMin', 'dataMax']
-                        }
-                        tickFormatter={formatNormalTick}
-                        className="text-[10px]"
-                        minTickGap={12}
-                      />
-                      <YAxis
-                        orientation="right"
-                        tickFormatter={formatPriceAxis}
-                        className="text-[10px]"
-                        width={60}
-                        domain={['auto', 'auto']}
-                        allowDataOverflow={false}
-                      />
-                      <Tooltip
-                        formatter={(value, name, payload) => {
-                          if (name === 'Price') {
-                            const pct = formatNormalChange(payload?.payload?.changePct);
-                            return [formatPriceValue(value), pct ? `Price (${pct})` : 'Price'];
-                          }
-                          if (name === 'EMA 32') {
-                            return [formatPriceValue(value), 'EMA 32'];
-                          }
-                          return [value, name];
-                        }}
-                        labelFormatter={(_, payload) =>
-                          formatNormalTooltipLabel(payload?.[0]?.payload?.timestamp)
-                        }
-                        contentStyle={{
-                          backgroundColor: 'hsl(var(--background))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                        }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="price"
-                        stroke={CURRENT_LINE_COLOR}
-                        strokeWidth={1.5}
-                        fill={`url(#${normalAreaGradientId})`}
-                        name="Price"
-                        dot={false}
-                        activeDot={{ r: 3 }}
-                      />
-                      <Line
-                        type="monotone"
-                        dataKey="ema32"
-                        stroke={EMA_COLOR}
-                        strokeWidth={1}
-                        dot={false}
-                        name="EMA 32"
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
+                  <NormalCandlestickChart
+                    candles={normalCandlestickSeries.candles}
+                    ema={normalCandlestickSeries.ema}
+                    meta={normalCandlestickSeries.meta}
+                    formatTimestamp={formatNormalTimestamp}
+                    currency={symbolInfo?.currency}
+                    formatPrice={formatPriceValue}
+                    isDark={resolvedTheme === 'dark'}
+                    showTimeScale={isIntradayRange}
+                    showSeconds={normalRange === '1D'}
+                    emaColor={EMA_COLOR}
+                    valueLabelPrefix="HA"
+                    showTooltip={false}
+                    />
                 ) : (
                   <div className="flex h-[280px] items-center justify-center text-xs text-muted-foreground">
                     {normalSeriesError || 'Intraday price data unavailable for this range.'}
@@ -1900,7 +1862,7 @@ function ElectionCyclePageContent() {
                           </CardContent>
                         </Card>
                         {!isAuthenticated && (
-                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm px-6 text-center">
+                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/40 backdrop-blur-xs px-6 text-center">
                             <Lock className="h-6 w-6 text-muted-foreground" />
                             <p className="text-xs font-semibold text-muted-foreground">
                               Sign in to view detailed earnings results
@@ -2006,7 +1968,7 @@ function ElectionCyclePageContent() {
                           </CardContent>
                         </Card>
                         {!isAuthenticated && (
-                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm px-6 text-center">
+                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/40 backdrop-blur-xs px-6 text-center">
                             <Lock className="h-6 w-6 text-muted-foreground" />
                             <p className="text-xs font-semibold text-muted-foreground">
                               Sign in to compare revenue and earnings
@@ -2079,7 +2041,7 @@ function ElectionCyclePageContent() {
                     </table>
                   </div>
                   {!isAuthenticated && (
-                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm px-6 text-center">
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/40 backdrop-blur-xs px-6 text-center">
                       <Lock className="h-6 w-6 text-muted-foreground" />
                       <p className="text-xs font-semibold text-muted-foreground">
                         Sign in to explore quarterly returns
@@ -2147,7 +2109,7 @@ function ElectionCyclePageContent() {
                     </table>
                   </div>
                   {!isAuthenticated && (
-                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/80 backdrop-blur-sm px-6 text-center">
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/40 backdrop-blur-xs px-6 text-center">
                       <Lock className="h-6 w-6 text-muted-foreground" />
                       <p className="text-xs font-semibold text-muted-foreground">
                         Sign in to view monthly returns
