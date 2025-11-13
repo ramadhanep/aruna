@@ -128,6 +128,9 @@ export default function AccountPage() {
   } = useAuth();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [authError, setAuthError] = useState(null);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState(null);
   const isDark = theme === "dark" || resolvedTheme === "dark";
 
   const fullName = useMemo(() => {
@@ -157,10 +160,16 @@ export default function AccountPage() {
   };
 
   const handleSignOut = async () => {
+    setSignOutError(null);
+    setSigningOut(true);
     try {
       await signOut();
+      setShowSignOutConfirm(false);
     } catch (error) {
       console.error("Failed to sign out", error);
+      setSignOutError("Failed to log out. Please try again.");
+    } finally {
+      setSigningOut(false);
     }
   };
 
@@ -289,15 +298,62 @@ export default function AccountPage() {
             ) : null}
             </div> */}
             {user ? (
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full justify-center gap-2 rounded-xl text-xs"
-                onClick={handleSignOut}
+              <Dialog
+                open={showSignOutConfirm}
+                onOpenChange={(nextOpen) => {
+                  if (!nextOpen && signingOut) return;
+                  setShowSignOutConfirm(nextOpen);
+                  if (!nextOpen) {
+                    setSignOutError(null);
+                  }
+                }}
               >
-                <LogOut className="h-4 w-4" />
-                Sign out
-              </Button>
+                <DialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full justify-center gap-2 rounded-xl text-xs"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Sign out
+                  </Button>
+                </DialogTrigger>
+                <DialogContent closeButtonPosition="right">
+                  <DialogHeader>
+                    <DialogTitle className="text-sm font-semibold">Log out?</DialogTitle>
+                    <DialogDescription className="text-xs text-muted-foreground">
+                      We&apos;ll sign you out of this device. You can sign back in anytime to sync your data again.
+                    </DialogDescription>
+                  </DialogHeader>
+                  {signOutError ? (
+                    <div className="rounded-md border border-red-500/60 bg-red-500/10 px-3 py-2 text-xs text-red-600">
+                      {signOutError}
+                    </div>
+                  ) : null}
+                  <DialogFooter className="gap-2">
+                    <DialogClose asChild>
+                      <Button variant="outline" className="text-xs" disabled={signingOut}>
+                        Cancel
+                      </Button>
+                    </DialogClose>
+                    <Button
+                      variant="destructive"
+                      className="text-xs"
+                      disabled={signingOut}
+                      onClick={handleSignOut}
+                    >
+                      {signingOut ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Logging out…
+                        </span>
+                      ) : (
+                        "Log out"
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             ) : null}
             {user && !supabaseConfigured ? (
               <div className="flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-700">

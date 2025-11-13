@@ -3,9 +3,9 @@ import yahooFinance from '@/lib/yahoo-finance';
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 const RANGE_CONFIG = {
-  '1D': { interval: '15m', lookbackMs: 2 * DAY_IN_MS, filterMs: 1 * DAY_IN_MS },
-  '1W': { interval: '60m', lookbackMs: 14 * DAY_IN_MS, filterMs: 7 * DAY_IN_MS },
-  '1M': { interval: '1d', lookbackMs: 60 * DAY_IN_MS, filterMs: 31 * DAY_IN_MS },
+  '1D': { interval: '5m', lookbackMs: 2 * DAY_IN_MS, filterMs: 1 * DAY_IN_MS },
+  '1W': { interval: '30m', lookbackMs: 14 * DAY_IN_MS, filterMs: 7 * DAY_IN_MS },
+  '1M': { interval: '1h', lookbackMs: 60 * DAY_IN_MS, filterMs: 31 * DAY_IN_MS },
   '3M': { interval: '1d', lookbackMs: 150 * DAY_IN_MS, filterMs: 92 * DAY_IN_MS },
   'YTD': { interval: '1d', type: 'ytd' },
   '1Y': { interval: '1d', lookbackMs: 370 * DAY_IN_MS, filterMs: 365 * DAY_IN_MS },
@@ -71,16 +71,38 @@ export async function GET(request) {
     const rawPoints = quotes
       .map((quote) => {
         if (!quote?.date) return null;
-        const price =
-          quote.adjclose ??
-          quote.close ??
-          quote.open ??
-          null;
-        if (price == null) return null;
+        const timestamp = quote.date.getTime();
+        const close =
+          (typeof quote.adjclose === 'number' && Number.isFinite(quote.adjclose)
+            ? quote.adjclose
+            : null) ??
+          (typeof quote.close === 'number' && Number.isFinite(quote.close)
+            ? quote.close
+            : null) ??
+          (typeof quote.open === 'number' && Number.isFinite(quote.open)
+            ? quote.open
+            : null);
+        if (close == null) return null;
+        const open =
+          typeof quote.open === 'number' && Number.isFinite(quote.open) ? quote.open : close;
+        const high =
+          typeof quote.high === 'number' && Number.isFinite(quote.high)
+            ? quote.high
+            : Math.max(open, close);
+        const low =
+          typeof quote.low === 'number' && Number.isFinite(quote.low) ? quote.low : Math.min(open, close);
+        const volume =
+          typeof quote.volume === 'number' && Number.isFinite(quote.volume) ? quote.volume : null;
+
         return {
-          timestamp: quote.date.getTime(),
+          timestamp,
           date: quote.date.toISOString(),
-          price,
+          price: close,
+          open,
+          high,
+          low,
+          close,
+          volume,
         };
       })
       .filter(Boolean)

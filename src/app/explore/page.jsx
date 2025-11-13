@@ -728,7 +728,7 @@ export default function ExplorePage() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  BREAKOUT IN {section.title}
+                  BUY SIGNALS IN {section.title}
                 </p>
                 {section.lastScreened && (
                   <p className="text-[11px] text-muted-foreground">
