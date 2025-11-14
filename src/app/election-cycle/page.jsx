@@ -47,6 +47,47 @@ const DEFAULT_WATCHLIST = [
   { symbol: 'AVGO', order: 9 },
 ];
 
+const SCREENING_CATEGORIES = ['idx', 'us', 'crypto'];
+
+function matchScreeningEntry(results, targetSymbol) {
+  if (!Array.isArray(results) || !targetSymbol) return null;
+  const normalizedTarget = targetSymbol.trim().toUpperCase();
+  if (!normalizedTarget) return null;
+  for (const candidate of results) {
+    if (!candidate) continue;
+    if (typeof candidate === 'string') {
+      if (candidate.trim().toUpperCase() === normalizedTarget) {
+        return { symbol: candidate, signal_date: null, is_warning: false };
+      }
+      continue;
+    }
+    if (
+      typeof candidate === 'object' &&
+      typeof candidate.symbol === 'string' &&
+      candidate.symbol.trim().toUpperCase() === normalizedTarget
+    ) {
+      return {
+        symbol: candidate.symbol,
+        signal_date: candidate.signal_date ?? null,
+        is_warning: Boolean(candidate.is_warning),
+      };
+    }
+  }
+  return null;
+}
+
+function formatScreeningTimestamp(value) {
+  if (!value) return null;
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
 function readWatchlist() {
   if (typeof window === 'undefined') return DEFAULT_WATCHLIST;
   try {
@@ -118,20 +159,8 @@ function isCryptoTicker(symbol = '') {
   return upper.includes('-USD') || upper.startsWith('CRYPTO:');
 }
 
-function getDefaultCyclesForSymbol(symbol) {
-  if (isCryptoTicker(symbol)) {
-    return ['all', 'current'];
-  }
-  const year = new Date().getFullYear();
-  const label = getElectionCycleLabel(year);
-  const mapping = {
-    'Pre-Election Year': 'pre',
-    'Election Year': 'election',
-    'Mid-Term Year': 'mid',
-    'Post-Election Year': 'post',
-  };
-  const key = mapping[label] || 'all';
-  return [key, 'current'];
+function getDefaultCyclesForSymbol() {
+  return ['normal'];
 }
 
 function getDayOfYear(date) {
@@ -146,6 +175,7 @@ function ElectionCyclePageContent() {
   const router = useRouter();
   const { resolvedTheme } = useTheme();
   const {
+    supabase,
     user,
     remoteWatchlist,
     remoteWatchlistUpdatedAt,
@@ -185,6 +215,7 @@ function ElectionCyclePageContent() {
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
   const [watchlist, setWatchlist] = useState([]);
   const [watchlistUpdatedAt, setWatchlistUpdatedAt] = useState(() => readWatchlistUpdatedAt());
+  const [screeningSignal, setScreeningSignal] = useState(null);
   const remoteWatchlistSeedRef = React.useRef(false);
 
   const [selectedCycles, setSelectedCycles] = useState(() => {
@@ -197,6 +228,9 @@ function ElectionCyclePageContent() {
     return getDefaultCyclesForSymbol(initialSymbol);
   });
   const isNormalView = selectedCycles.length === 1 && selectedCycles[0] === 'normal';
+  const screeningSignalDateLabel = screeningSignal?.signal_date
+    ? formatScreeningTimestamp(screeningSignal.signal_date)
+    : null;
 
   const colors = useMemo(() => {
     const isDark = resolvedTheme === 'dark';
@@ -254,6 +288,65 @@ function ElectionCyclePageContent() {
     const nextUrl = query ? `${pathname}?${query}` : pathname;
     router.replace(nextUrl, { scroll: false });
   }, [selectedCycles, searchParamsString, pathname, router]);
+
+  const loadScreeningSignal = useCallback(async () => {
+    if (!supabase) {
+      setScreeningSignal(null);
+      return;
+    }
+    const normalizedSymbol = typeof symbol === 'string' ? symbol.trim().toUpperCase() : '';
+    if (!normalizedSymbol) {
+      setScreeningSignal(null);
+      return;
+    }
+    try {
+      const { data, error } = await supabase
+        .from('screening_snapshots')
+        .select('category, results')
+        .in('category', SCREENING_CATEGORIES);
+      if (error) throw error;
+
+      let found = null;
+      data?.some((snapshot) => {
+        const match = matchScreeningEntry(snapshot.results, normalizedSymbol);
+        if (match) {
+          found = { ...match, category: snapshot.category };
+          return true;
+        }
+        return false;
+      });
+      setScreeningSignal(found);
+    } catch (error) {
+      console.warn('Failed to load screening snapshots', error);
+      setScreeningSignal(null);
+    }
+  }, [supabase, symbol]);
+
+  useEffect(() => {
+    loadScreeningSignal();
+  }, [loadScreeningSignal]);
+
+  useEffect(() => {
+    if (!supabase) return;
+    const channel = supabase
+      .channel('election_cycle_screening')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'screening_snapshots' },
+        () => {
+          loadScreeningSignal();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, loadScreeningSignal]);
+
+  useEffect(() => {
+    setScreeningSignal(null);
+  }, [symbol]);
 
   // Persist last viewed symbol
   useEffect(() => {
@@ -1475,13 +1568,25 @@ function ElectionCyclePageContent() {
           <Card className="overflow-hidden bg-transparent border-none rounded-none">
             <CardHeader>
               <div className="flex items-start justify-between gap-4">
-                <div className="flex flex-col gap-2">
-                  <CardDescription className="text-xs">{assetName}</CardDescription>
-                  {marketStateInfo ? (
-                    <span className={`flex items-center gap-1 text-[10px] font-medium ${marketStateInfo.tone}`}>
-                      {MarketStateIcon ? <MarketStateIcon className="h-3 w-3" /> : null}
-                      {marketStateInfo.label}
+              <div className="flex flex-col gap-2">
+                <CardDescription className="text-xs">{assetName}</CardDescription>
+                {screeningSignal && (
+                  <div className="flex gap-1">
+                    <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-600">
+                      BUY SIGNAL
                     </span>
+                    {screeningSignalDateLabel && (
+                      <span className="rounded-full border border-muted/60 bg-muted/20 px-3 py-1 text-[10px] text-muted-foreground">
+                        Signal {screeningSignalDateLabel}
+                      </span>
+                    )}
+                  </div>
+                )}
+                {marketStateInfo ? (
+                  <span className={`flex items-center gap-1 text-[10px] font-medium ${marketStateInfo.tone}`}>
+                    {MarketStateIcon ? <MarketStateIcon className="h-3 w-3" /> : null}
+                    {marketStateInfo.label}
+                  </span>
                   ) : null}
                   <div className="flex flex-col gap-1">
                     <div className="flex items-baseline gap-2">
@@ -1501,7 +1606,7 @@ function ElectionCyclePageContent() {
                       <div className="flex flex-col text-xs">
                         <span
                           className={`font-medium ${
-                            displayedChange.value >= 0 ? 'text-green-600' : 'text-red-600'
+                            displayedChange.value >= 0 ? 'text-emerald-600' : 'text-red-600'
                           }`}
                         >
                           {displayedChange.value >= 0 ? '+' : ''}
@@ -1531,7 +1636,7 @@ function ElectionCyclePageContent() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem className="text-[11px]" value="normal">
-                        Normal (Price)
+                        Normal
                       </SelectItem>
                       <SelectItem className="text-[11px]" value="pre,current">Pre-Election + Current</SelectItem>
                       <SelectItem className="text-[11px]" value="election,current">Election + Current</SelectItem>
@@ -1684,7 +1789,7 @@ function ElectionCyclePageContent() {
               {['all', 'Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
                 <button
                   key={q}
-                  className={`w-16 h-6 text-xs font-semibold rounded-sm border-2 transition-colors ${
+                  className={`w-16 h-6 text-xs font-semibold rounded-sm border-1.5 transition-colors ${
                     quarterFilter === q
                       ? 'border-primary bg-primary text-primary-foreground'
                       : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'

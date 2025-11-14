@@ -60,11 +60,12 @@ export function NormalCandlestickChart({
         const container = containerRef.current;
         const chart = createChart(container, {
           width: container.clientWidth,
-        height,
-        layout: {
-          background: { color: "transparent" },
-          textColor: isDark ? "#cbd5f5" : "#0f172a",
-        },
+          height,
+          layout: {
+            background: { color: "transparent" },
+            textColor: isDark ? "#cbd5f5" : "#0f172a",
+            fontSize: 12,
+          },
         grid: {
           horzLines: {
             color: isDark ? "rgba(148, 163, 184, 0.2)" : "rgba(100, 116, 139, 0.2)",
@@ -120,7 +121,7 @@ export function NormalCandlestickChart({
         chartRef.current = chart;
         if (Array.isArray(candlesRef.current) && candlesRef.current.length > 0) {
           candlestickSeries.setData(candlesRef.current);
-          chart.timeScale().fitContent();
+          chart.timeScale().resetTimeScale();
         }
         if (Array.isArray(emaRef.current) && emaRef.current.length > 0) {
           emaSeries.setData(emaRef.current);

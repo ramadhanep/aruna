@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo, useId } from "react"
 import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
-import { Loader2, TrendingUp, TrendingDown, Compass } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock } from "lucide-react";
 
 const CATEGORY_LABELS = {
   idx: "IDX 🇮🇩",
@@ -200,11 +200,12 @@ function PickItem({ pick, quote }) {
         ? pickData.lastClose
         : null;
   const isPositive = change >= 0;
-  const color = isPositive ? "text-green-600" : "text-red-600";
+  const color = isPositive ? "text-emerald-600" : "text-red-600";
   const formattedPrice = typeof price === "number"
     ? price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : "-";
   const displayName = quote?.name || pickData?.name || symbol;
+  const isWarning = Boolean(pickData?.is_warning);
   const chartData =
     Array.isArray(quote?.chartData) && quote.chartData.length > 0
       ? quote.chartData
@@ -218,7 +219,12 @@ function PickItem({ pick, quote }) {
       className="flex items-center gap-3 py-3 hover:bg-accent/30 transition-colors"
     >
       <div className="flex-1 min-w-0">
-        <div className="font-semibold text-sm truncate">{symbol}</div>
+        <div className="font-semibold text-sm truncate flex items-center gap-1">
+          <span>{symbol}</span>
+          {isWarning ? (
+            <AlertTriangle className="h-3.5 w-3.5 text-amber-500" title="High volume vs market cap" />
+          ) : null}
+        </div>
         <div className="text-xs text-muted-foreground truncate">{displayName}</div>
       </div>
       <div className={`flex items-center ${Array.isArray(chartData) ? color : "text-muted-foreground"}`}>
@@ -237,7 +243,7 @@ function PickItem({ pick, quote }) {
 }
 
 export default function ExplorePage() {
-  const { supabase } = useAuth();
+  const { supabase, user } = useAuth();
   const [snapshots, setSnapshots] = useState({});
   const [quotes, setQuotes] = useState({});
   const [loading, setLoading] = useState(true);
@@ -485,6 +491,8 @@ export default function ExplorePage() {
     [manualLoading, loadSnapshots]
   );
 
+  const isAuthenticated = Boolean(user);
+
   const breakoutInsights = useMemo(() => {
     const categories = [];
     const allSignals = [];
@@ -638,9 +646,10 @@ export default function ExplorePage() {
               const changeValue = item.quote?.change ?? 0;
               const isPositive = changeValue >= 0;
               return (
-                <div
+                <Link
                   key={item.symbol}
-                  className="rounded-lg py-4 overflow-hidden"
+                  href={`/election-cycle?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
+                  className="rounded-lg py-4 overflow-hidden border border-transparent hover:border-border/60 transition-colors block"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -673,7 +682,7 @@ export default function ExplorePage() {
                       />
                     </div>
                   </div>
-                </div>
+                </Link>
               );
             })}
           </div>
@@ -723,44 +732,68 @@ export default function ExplorePage() {
           </div>
         </section>
 
-        {categoriesWithSignals.map((section) => (
-          <section key={section.category} className="bg-background/70 py-5">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  BUY SIGNALS IN {section.title}
-                </p>
-                {section.lastScreened && (
-                  <p className="text-[11px] text-muted-foreground">
-                    Last screened {formatLocalDateTimeLabel(section.lastScreened)}
+        {categoriesWithSignals.map((section) => {
+          const gatedPicks = section.picks.slice(2);
+          const firstPicks = section.picks.slice(0, 2);
+          const shouldGate = !isAuthenticated && gatedPicks.length > 0;
+          return (
+            <section key={section.category} className="bg-background/70 py-5">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                    BUY SIGNALS IN {section.title}
                   </p>
+                  {section.lastScreened && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Last screened {formatLocalDateTimeLabel(section.lastScreened)}
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                  <span>{section.picks.length} signals</span>
+                  <span className="rounded-full border border-muted/80 px-3 py-1 uppercase tracking-wider">
+                    {section.snapshot?.status ?? "idle"}
+                  </span>
+                </div>
+              </div>
+              <div className="mt-4 space-y-1 divide-y divide-border/70">
+                {firstPicks.map((pick) => (
+                  <PickItem key={pick.symbol} pick={pick} quote={quotes[pick.symbol]} />
+                ))}
+              </div>
+              {gatedPicks.length > 0 && (
+                <div className="mt-1 relative">
+                  <div
+                    className={`space-y-1 divide-y divide-border/70 border-t border-border/70 pt-1 ${shouldGate ? "pointer-events-none select-none blur-[1.5px] opacity-60" : ""}`}
+                  >
+                    {gatedPicks.map((pick) => (
+                      <PickItem key={pick.symbol} pick={pick} quote={quotes[pick.symbol]} />
+                    ))}
+                  </div>
+                  {shouldGate && (
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/40 backdrop-blur-xs px-6 text-center">
+                      <Lock className="h-4 w-4 text-muted-foreground" />
+                      <p className="text-[11px] font-semibold text-muted-foreground">
+                        Sign in to explore all signals
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+              <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+                {typeof section.averageChange === "number" ? (
+                  <span>Average move {formatPercent(section.averageChange)}</span>
+                ) : null}
+                {section.snapshot?.metadata?.batchProcessed != null && (
+                  <span>Batch {section.snapshot.metadata.batchProcessed} symbols</span>
+                )}
+                {section.snapshot?.metadata?.lastBatchDurationMs != null && (
+                  <span>Last run {(section.snapshot.metadata.lastBatchDurationMs / 1000).toFixed(1)}s</span>
                 )}
               </div>
-              <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                <span>{section.picks.length} signals</span>
-                <span className="rounded-full border border-muted/80 px-3 py-1 uppercase tracking-wider">
-                  {section.snapshot?.status ?? "idle"}
-                </span>
-              </div>
-            </div>
-            <div className="mt-4 space-y-1 divide-y divide-border/70">
-              {section.picks.map((pick) => (
-                <PickItem key={pick.symbol} pick={pick} quote={quotes[pick.symbol]} />
-              ))}
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
-              {typeof section.averageChange === "number" ? (
-                <span>Average move {formatPercent(section.averageChange)}</span>
-              ) : null}
-              {section.snapshot?.metadata?.batchProcessed != null && (
-                <span>Batch {section.snapshot.metadata.batchProcessed} symbols</span>
-              )}
-              {section.snapshot?.metadata?.lastBatchDurationMs != null && (
-                <span>Last run {(section.snapshot.metadata.lastBatchDurationMs / 1000).toFixed(1)}s</span>
-              )}
-            </div>
-          </section>
-        ))}
+            </section>
+          );
+        })}
       </div>
     </div>
   );

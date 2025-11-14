@@ -88,41 +88,82 @@ function computeSMA(values, period) {
   return result;
 }
 
-function normalizeSymbolList(results) {
-  if (!Array.isArray(results)) return [];
-  const symbols = [];
-  const seen = new Set();
-  for (const entry of results) {
-    const symbol =
-      typeof entry === "string"
-        ? entry
-        : entry && typeof entry.symbol === "string"
-          ? entry.symbol
-          : null;
-    if (symbol && !seen.has(symbol)) {
-      seen.add(symbol);
-      symbols.push(symbol);
-    }
+function toNumeric(value) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
   }
-  return symbols;
+  if (typeof value === "string") {
+    const cleaned = value.replace(/[, ]/g, "");
+    const numeric = Number(cleaned);
+    return Number.isFinite(numeric) ? numeric : null;
+  }
+  if (value && typeof value === "object") {
+    if (typeof value.raw === "number") return value.raw;
+    if (typeof value.fmt === "string") return toNumeric(value.fmt);
+  }
+  return null;
 }
 
-function mergeSymbolLists(existing = [], incoming = []) {
-  const merged = [];
-  const seen = new Set();
-  for (const symbol of incoming) {
-    if (symbol && !seen.has(symbol)) {
-      seen.add(symbol);
-      merged.push(symbol);
-    }
+function normalizeResultEntry(entry) {
+  if (!entry) return null;
+  if (typeof entry === "string") {
+    return {
+      symbol: entry,
+      signal_date: null,
+      is_warning: false,
+    };
   }
-  for (const symbol of existing) {
-    if (symbol && !seen.has(symbol)) {
-      seen.add(symbol);
-      merged.push(symbol);
-    }
+
+  if (typeof entry !== "object") return null;
+  const symbol = typeof entry.symbol === "string" ? entry.symbol : null;
+  if (!symbol) return null;
+
+  const signalDateValue = entry.signal_date;
+  const signalDate =
+    typeof signalDateValue === "string"
+      ? signalDateValue
+      : signalDateValue instanceof Date
+        ? signalDateValue.toISOString()
+        : null;
+
+  return {
+    symbol,
+    signal_date: signalDate,
+    is_warning: Boolean(entry.is_warning),
+  };
+}
+
+function buildResultMap(results) {
+  const map = new Map();
+  if (!Array.isArray(results)) {
+    return map;
   }
-  return merged;
+  results.forEach((entry) => {
+    const normalized = normalizeResultEntry(entry);
+    if (normalized?.symbol && !map.has(normalized.symbol)) {
+      map.set(normalized.symbol, normalized);
+    }
+  });
+  return map;
+}
+
+function shouldFlagWarning(price, volume, marketCap) {
+  if (
+    typeof price !== "number" ||
+    typeof volume !== "number" ||
+    typeof marketCap !== "number"
+  ) {
+    return false;
+  }
+  if (price <= 0 || volume <= 0 || marketCap <= 0) {
+    return false;
+  }
+  const tradeValue = price * volume;
+  if (!Number.isFinite(tradeValue) || tradeValue <= 0) {
+    return false;
+  }
+  const ratio = tradeValue / marketCap;
+  return Number.isFinite(ratio) && ratio >= 0.1;
 }
 
 async function fetchUniverseSymbols(supabase, category) {
@@ -168,9 +209,9 @@ async function fetchDailySeries(symbol) {
   }
 }
 
-function evaluateSymbol(quotes, category) {
+function evaluateSymbol(quotes, category, meta) {
   if (!Array.isArray(quotes) || quotes.length < 50) {
-    return false;
+    return { isBreakout: false, isWarning: false };
   }
 
   const cleaned = quotes
@@ -193,7 +234,7 @@ function evaluateSymbol(quotes, category) {
     .filter(Boolean);
 
   if (cleaned.length < 50) {
-    return false;
+    return { isBreakout: false, isWarning: false };
   }
 
   const closes = cleaned.map((row) => row.close);
@@ -203,6 +244,8 @@ function evaluateSymbol(quotes, category) {
 
   const startIndex = Math.max(1, cleaned.length - CANDLE_LOOKBACK);
   let hasValidBreakout = false;
+  const marketCap = toNumeric(meta?.marketCap);
+  let warningFlagged = false;
 
   for (let i = startIndex; i < cleaned.length; i++) {
     const price = cleaned[i].close;
@@ -231,18 +274,23 @@ function evaluateSymbol(quotes, category) {
 
     const dailyValue = price * volume;
 
+    const minDailyValue = MIN_DAILY_VALUE_CONFIG[category] ?? 10_000_000_000;
+
     if (
       touchBreak &&
       emaSlope != null &&
       emaSlope > 0 &&
       volume > volumeAvg &&
-      dailyValue >= (MIN_DAILY_VALUE_CONFIG[category] ?? 10_000_000_000)
+      dailyValue >= minDailyValue
     ) {
       hasValidBreakout = true;
+      if (!warningFlagged && shouldFlagWarning(price, volume, marketCap)) {
+        warningFlagged = true;
+      }
     }
   }
 
-  return hasValidBreakout;
+  return { isBreakout: hasValidBreakout, isWarning: warningFlagged };
 }
 
 export async function GET(request, context) {
@@ -285,10 +333,10 @@ export async function GET(request, context) {
     .maybeSingle();
 
   let cursor = 0;
-  let existingResults = [];
+  let existingResultsMap = new Map();
 
   if (snapshot && !shouldReset) {
-    existingResults = normalizeSymbolList(snapshot.results);
+    existingResultsMap = buildResultMap(snapshot.results);
     if (overrideCursor != null && !Number.isNaN(overrideCursor)) {
       cursor = Math.max(0, Math.min(totalCount - 1, overrideCursor));
     } else {
@@ -298,19 +346,20 @@ export async function GET(request, context) {
       cursor = 0;
     }
     if (snapshot.status === "idle" && cursor === 0 && overrideCursor == null) {
-      existingResults = [];
+      existingResultsMap = new Map();
     }
   }
 
   if (shouldReset) {
     cursor = 0;
-    existingResults = [];
+    existingResultsMap = new Map();
   }
 
   const startedAt = Date.now();
   let index = cursor;
   let processedCount = 0;
   const batchResults = [];
+  const batchEntries = [];
 
   while (index < totalCount) {
     if (Date.now() - startedAt >= BATCH_TIME_LIMIT_MS && processedCount > 0) {
@@ -318,11 +367,22 @@ export async function GET(request, context) {
     }
 
     const symbol = universe[index];
-    const { quotes } = await fetchDailySeries(symbol);
+    const { quotes, meta } = await fetchDailySeries(symbol);
     if (quotes) {
-      const isBreakout = evaluateSymbol(quotes, category);
-      if (isBreakout) {
+      const evaluation = evaluateSymbol(quotes, category, meta);
+      if (evaluation.isBreakout) {
+        const existingEntry = existingResultsMap.get(symbol);
+        const signalDate = existingEntry?.signal_date ?? new Date().toISOString();
+        const entry = {
+          symbol,
+          signal_date: signalDate,
+          is_warning: Boolean(evaluation.isWarning),
+        };
+        existingResultsMap.set(symbol, entry);
         batchResults.push(symbol);
+        batchEntries.push(entry);
+      } else if (existingResultsMap.has(symbol)) {
+        existingResultsMap.delete(symbol);
       }
     }
     processedCount += 1;
@@ -330,11 +390,18 @@ export async function GET(request, context) {
   }
 
   const finished = index >= totalCount;
-  const merged = mergeSymbolLists(existingResults, batchResults);
+  const prioritizedSymbols = new Set(batchEntries.map((entry) => entry.symbol));
+  const merged = [
+    ...batchEntries,
+    ...Array.from(existingResultsMap.values()).filter(
+      (entry) => !prioritizedSymbols.has(entry.symbol)
+    ),
+  ];
+  const trimmedResults = merged.slice(0, 100);
 
   const payload = {
     category,
-    results: merged.slice(0, 100),
+    results: trimmedResults,
     status: finished ? "idle" : "running",
     next_cursor: finished ? 0 : index,
     processed_count: finished ? totalCount : index,
