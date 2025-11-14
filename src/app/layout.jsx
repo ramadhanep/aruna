@@ -32,7 +32,7 @@ export const viewport = {
 
 export const metadata = {
   title: process.env.NEXT_PUBLIC_APP_NAME || "aruna",
-  description: "Hirsch-style seasonal profile with election-cycle overlays",
+  description: "Smart seasonal charts with election-cycle context",
   manifest: '/manifest.json',
   icons: {
     icon: [

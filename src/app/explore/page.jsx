@@ -215,7 +215,7 @@ function PickItem({ pick, quote }) {
 
   return (
     <Link
-      href={`/election-cycle?symbol=${encodeURIComponent(symbol)}&cycle=normal`}
+      href={`/chart?symbol=${encodeURIComponent(symbol)}&cycle=normal`}
       className="flex items-center gap-3 py-3 hover:bg-accent/30 transition-colors"
     >
       <div className="flex-1 min-w-0">
@@ -648,7 +648,7 @@ export default function ExplorePage() {
               return (
                 <Link
                   key={item.symbol}
-                  href={`/election-cycle?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
+                  href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
                   className="rounded-lg py-4 overflow-hidden border border-transparent hover:border-border/60 transition-colors block"
                 >
                   <div className="flex items-center justify-between gap-2">

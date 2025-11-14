@@ -64,7 +64,7 @@ export function NormalCandlestickChart({
           layout: {
             background: { color: "transparent" },
             textColor: isDark ? "#cbd5f5" : "#0f172a",
-            fontSize: 12,
+            fontSize: 11,
           },
         grid: {
           horzLines: {
@@ -200,7 +200,7 @@ export function NormalCandlestickChart({
   const formatLabel = (label) => (valueLabelPrefix ? `${valueLabelPrefix} ${label}` : label);
 
   return (
-    <div className="relative h-[280px] w-full">
+    <div className="relative w-full" style={{ height }}>
       <div ref={containerRef} className="absolute inset-0" />
       {showTooltip && tooltipData ? (
         <div className="pointer-events-none absolute left-3 top-3 rounded-md border border-border bg-background/95 px-3 py-2 text-[10px] shadow-sm">

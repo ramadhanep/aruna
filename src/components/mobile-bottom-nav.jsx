@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, TrendingUpDown, Pocket, UserRound, Send } from "lucide-react";
+import { Home, SquareKanban, ChartPie, UserRound, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -13,9 +13,9 @@ const navItems = [
     icon: Home,
   },
   {
-    title: "Election Cycle",
-    url: "/election-cycle",
-    icon: TrendingUpDown,
+    title: "Smart Charts",
+    url: "/chart",
+    icon: SquareKanban,
   },
   {
     title: "Explore",
@@ -25,7 +25,7 @@ const navItems = [
   {
     title: "Portfolio",
     url: "/portfolio-tracker",
-    icon: Pocket,
+    icon: ChartPie,
   },
   {
     title: "Account",
@@ -51,11 +51,11 @@ export function MobileBottomNav() {
               className={cn(
                 "flex flex-col items-center justify-center gap-1 flex-1 h-full transition-colors",
                 isActive 
-                  ? "text-primary" 
+                  ? "text-emerald-600" 
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <Icon className={cn("h-5 w-5", isActive && "fill-current")} />
+              <Icon className={cn("h-5 w-5", isActive && "text-emerald-600")} />
               <span className="text-[10px] font-medium">{item.title}</span>
             </Link>
           );

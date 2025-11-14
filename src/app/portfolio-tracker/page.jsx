@@ -19,6 +19,7 @@ const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { 
 const PORTFOLIO_STORAGE_KEY = 'aruna_portfolio';
 const PORTFOLIO_UPDATED_AT_KEY = 'aruna_portfolio_updated_at';
 const PORTFOLIO_CURRENCY_KEY = 'portfolio_currency';
+const PORTFOLIO_VISIBILITY_KEY = 'portfolio_visibility_hidden';
 const DEFAULT_PORTFOLIO_ENTRIES = [
   { symbol: 'BTC-USD', name: 'Bitcoin', amount: 1, unit: 'share', avgPrice: 65000, type: 'digital' },
   { symbol: 'NVDA', name: 'NVIDIA Corporation', amount: 100, unit: 'share', avgPrice: 900, type: 'digital' },
@@ -102,6 +103,23 @@ function saveCurrencyPreference(currency) {
   }
 }
 
+function loadPortfolioVisibility() {
+  if (typeof window === 'undefined') return false;
+  try {
+    return localStorage.getItem(PORTFOLIO_VISIBILITY_KEY) === 'true';
+  } catch (e) {
+    return false;
+  }
+}
+
+function savePortfolioVisibility(hidden) {
+  try {
+    localStorage.setItem(PORTFOLIO_VISIBILITY_KEY, hidden ? 'true' : 'false');
+  } catch (e) {
+    console.warn('Failed to persist portfolio visibility', e);
+  }
+}
+
 export default function PortfolioTrackerPage() {
   const router = useRouter();
   const [entries, setEntries] = useState(() => loadPortfolio());
@@ -121,11 +139,11 @@ export default function PortfolioTrackerPage() {
   const justSelectedRef = React.useRef(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
-  const [isPortfolioHidden, setIsPortfolioHidden] = useState(false);
+  const [isPortfolioHidden, setIsPortfolioHidden] = useState(() => loadPortfolioVisibility());
   const touchStartY = React.useRef(0);
   const containerRef = React.useRef(null);
   const remotePortfolioSeedRef = React.useRef(false);
-  const skipPortfolioSyncRef = React.useRef(false);
+  const hydratePortfolioRef = React.useRef(false);
   const entriesRef = React.useRef(entries);
   const {
     user,
@@ -134,6 +152,7 @@ export default function PortfolioTrackerPage() {
     portfolioLoaded,
     syncPortfolio,
   } = useAuth();
+  const isAuthenticated = Boolean(user);
   
   // Fetch latest prices (simple batch sequential)
   const fetchPrice = useCallback(async (symbol) => {
@@ -265,109 +284,65 @@ export default function PortfolioTrackerPage() {
   }, [entries]);
 
   useEffect(() => {
-    if (!user) {
-      remotePortfolioSeedRef.current = false;
-      skipPortfolioSyncRef.current = true;
+    if (!isAuthenticated) {
+      hydratePortfolioRef.current = true;
       const local = loadPortfolio();
-      const localSerialized = JSON.stringify(local);
-      const currentSerialized = JSON.stringify(entriesRef.current);
-      if (currentSerialized !== localSerialized) {
-        setEntries(local);
-      }
-      const localUpdatedAt = loadPortfolioUpdatedAt();
-      setPortfolioUpdatedAt(localUpdatedAt);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    if (!user || !portfolioLoaded) {
+      setEntries(local);
+      setPortfolioUpdatedAt(loadPortfolioUpdatedAt());
       return;
     }
 
-    if (Array.isArray(remotePortfolio) && remotePortfolio.length > 0) {
-      remotePortfolioSeedRef.current = false;
-      const timestamp = remotePortfolioUpdatedAt || new Date().toISOString();
-      skipPortfolioSyncRef.current = true;
-      const currentSerialized = JSON.stringify(entriesRef.current);
-      const remoteSerialized = JSON.stringify(remotePortfolio);
-      if (currentSerialized !== remoteSerialized) {
-        setEntries(remotePortfolio);
-        savePortfolio(remotePortfolio, timestamp);
-      } else {
-        const storedUpdatedAt = loadPortfolioUpdatedAt();
-        if (storedUpdatedAt !== timestamp) {
-          savePortfolio(remotePortfolio, timestamp);
-        }
-      }
-      if (portfolioUpdatedAt !== timestamp) {
-        setPortfolioUpdatedAt(timestamp);
-      }
+    if (!portfolioLoaded) {
+      return;
+    }
+
+    if (Array.isArray(remotePortfolio)) {
+      hydratePortfolioRef.current = true;
+      setEntries(remotePortfolio);
+      setPortfolioUpdatedAt(remotePortfolioUpdatedAt || null);
       return;
     }
 
     if (!remotePortfolioSeedRef.current) {
       remotePortfolioSeedRef.current = true;
       const defaults = getDefaultPortfolio();
-      const timestamp = new Date().toISOString();
-      skipPortfolioSyncRef.current = true;
-      const currentSerialized = JSON.stringify(entriesRef.current);
-      const defaultsSerialized = JSON.stringify(defaults);
-      if (currentSerialized !== defaultsSerialized) {
-        setEntries(defaults);
-        savePortfolio(defaults, timestamp);
-      } else {
-        const storedUpdatedAt = loadPortfolioUpdatedAt();
-        if (storedUpdatedAt !== timestamp) {
-          savePortfolio(defaults, timestamp);
-        }
-      }
-      if (portfolioUpdatedAt !== timestamp) {
-        setPortfolioUpdatedAt(timestamp);
-      }
+      hydratePortfolioRef.current = true;
+      setEntries(defaults);
       syncPortfolio(defaults)
-        .then((remoteTimestamp) => {
-          remotePortfolioSeedRef.current = false;
-          if (remoteTimestamp) {
-            if (portfolioUpdatedAt !== remoteTimestamp) {
-              setPortfolioUpdatedAt(remoteTimestamp);
-            }
-            savePortfolio(defaults, remoteTimestamp);
-          }
-        })
-        .catch(() => {
+        .catch(() => null)
+        .finally(() => {
           remotePortfolioSeedRef.current = false;
         });
     }
   }, [
-    user,
+    isAuthenticated,
     portfolioLoaded,
     remotePortfolio,
     remotePortfolioUpdatedAt,
-    portfolioUpdatedAt,
     syncPortfolio,
   ]);
 
   // Persist changes and refresh prices when entries mutate
   useEffect(() => {
-    const shouldSkipSync = skipPortfolioSyncRef.current;
-    if (shouldSkipSync) {
-      skipPortfolioSyncRef.current = false;
+    if (hydratePortfolioRef.current) {
+      hydratePortfolioRef.current = false;
     } else {
       const timestamp = new Date().toISOString();
-      savePortfolio(entries, timestamp);
-      setPortfolioUpdatedAt(timestamp);
-      if (user) {
+      if (isAuthenticated) {
         syncPortfolio(entries)
           .then((remoteTimestamp) => {
             if (remoteTimestamp) {
               setPortfolioUpdatedAt(remoteTimestamp);
-              savePortfolio(entries, remoteTimestamp);
             }
           })
           .catch(() => {});
+      } else {
+        savePortfolio(entries, timestamp);
+        setPortfolioUpdatedAt(timestamp);
       }
     }
-    const digitalEntries = entries.filter(e => e.type !== 'cash');
+
+    const digitalEntries = entries.filter((e) => e.type !== 'cash');
     let cancelled = false;
 
     (async () => {
@@ -385,12 +360,16 @@ export default function PortfolioTrackerPage() {
     return () => {
       cancelled = true;
     };
-  }, [entries, refreshPrices, user, syncPortfolio]);
+  }, [entries, isAuthenticated, refreshPrices, syncPortfolio]);
 
   // Persist currency preference
   useEffect(() => {
     saveCurrencyPreference(currency);
   }, [currency]);
+
+  useEffect(() => {
+    savePortfolioVisibility(isPortfolioHidden);
+  }, [isPortfolioHidden]);
 
   // Search debounce
   useEffect(() => {
@@ -564,7 +543,7 @@ export default function PortfolioTrackerPage() {
   const navigateToSymbol = useCallback(
     (nextSymbol) => {
       if (!nextSymbol) return;
-      router.push(`/election-cycle?symbol=${encodeURIComponent(nextSymbol)}&cycle=normal`);
+      router.push(`/chart?symbol=${encodeURIComponent(nextSymbol)}&cycle=normal`);
     },
     [router]
   );
@@ -983,7 +962,12 @@ export default function PortfolioTrackerPage() {
                     className={`flex items-center gap-3 border-b rounded-lg transition-colors min-h-16 ${!isCash ? 'hover:bg-accent/50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2' : ''}`}
                     role={!isCash ? 'button' : undefined}
                     tabIndex={!isCash ? 0 : -1}
-                    onClick={!isCash ? () => navigateToSymbol(entry.symbol) : undefined}
+                    onClick={!isCash ? (event) => {
+                      if (event.target.closest('[data-holdings-actions="true"]')) {
+                        return;
+                      }
+                      navigateToSymbol(entry.symbol);
+                    } : undefined}
                     onKeyDown={!isCash ? (event) => {
                       if (event.key === 'Enter' || event.key === ' ') {
                         event.preventDefault();
@@ -1014,7 +998,7 @@ export default function PortfolioTrackerPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2" data-holdings-actions="true">
                       <div className="text-right">
                         <p className="text-sm font-semibold">{formatted.primary}</p>
                         <p className="text-[10px] text-muted-foreground">{formatted.secondary}</p>
@@ -1039,11 +1023,25 @@ export default function PortfolioTrackerPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEdit(originalIndex)} className="text-xs">
+                          <DropdownMenuItem
+                            onSelect={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              openEdit(originalIndex);
+                            }}
+                            className="text-xs"
+                          >
                             <Pencil className="mr-1 size-3" />
                             Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => removeEntry(originalIndex)} className="text-xs text-red-600">
+                          <DropdownMenuItem
+                            onSelect={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              removeEntry(originalIndex);
+                            }}
+                            className="text-xs text-red-600"
+                          >
                             <Trash2 className="mr-1 size-3" />
                             Delete
                           </DropdownMenuItem>
