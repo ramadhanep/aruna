@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, MoreVertical, Pencil, Trash2, Loader2, Wallet, Coins, TrendingUp, DollarSign, ArrowUpDown, Check } from 'lucide-react';
+import { Plus, MoreVertical, Pencil, Trash2, Loader2, Wallet, Coins, TrendingUp, DollarSign, ArrowUpDown, Check, Eye, EyeOff } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth-provider';
 
@@ -102,6 +103,7 @@ function saveCurrencyPreference(currency) {
 }
 
 export default function PortfolioTrackerPage() {
+  const router = useRouter();
   const [entries, setEntries] = useState(() => loadPortfolio());
   const [portfolioUpdatedAt, setPortfolioUpdatedAt] = useState(() => loadPortfolioUpdatedAt());
   const [holdingsSort, setHoldingsSort] = useState('alpha');
@@ -119,6 +121,7 @@ export default function PortfolioTrackerPage() {
   const justSelectedRef = React.useRef(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
+  const [isPortfolioHidden, setIsPortfolioHidden] = useState(false);
   const touchStartY = React.useRef(0);
   const containerRef = React.useRef(null);
   const remotePortfolioSeedRef = React.useRef(false);
@@ -558,6 +561,14 @@ export default function PortfolioTrackerPage() {
     }
   }
 
+  const navigateToSymbol = useCallback(
+    (nextSymbol) => {
+      if (!nextSymbol) return;
+      router.push(`/election-cycle?symbol=${encodeURIComponent(nextSymbol)}&cycle=normal`);
+    },
+    [router]
+  );
+
   function removeEntry(idx) {
     const newEntries = entries.filter((_, i) => i !== idx);
     setEntries(newEntries);
@@ -727,6 +738,15 @@ export default function PortfolioTrackerPage() {
     }
   }
 
+  const maskToken = currency === 'IDR' ? '*********' : '******';
+  const getDisplayValue = (usdAmount) => (isPortfolioHidden ? { primary: maskToken, secondary: maskToken } : formatValue(usdAmount));
+  const getPnLColor = (value) => (isPortfolioHidden ? 'text-muted-foreground' : value >= 0 ? 'text-emerald-600' : 'text-red-600');
+  const totalNetWorthDisplay = getDisplayValue(totalNetWorth);
+  const totalPnLDisplay = getDisplayValue(totalPnL);
+  const digitalMarketDisplay = getDisplayValue(digitalMarket);
+  const digitalPnLDisplay = getDisplayValue(digitalPnL);
+  const totalCashDisplay = getDisplayValue(totalCash);
+
   if (initialLoading) {
     return (
       <div className="flex flex-col gap-4">
@@ -786,29 +806,42 @@ export default function PortfolioTrackerPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="font-semibold text-sm">Overview</CardTitle>
-          <Select value={currency} onValueChange={setCurrency}>
-            <SelectTrigger className="w-[100px] h-8">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="IDR">IDR</SelectItem>
-              <SelectItem value="USD">USD</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              aria-pressed={isPortfolioHidden}
+              aria-label={isPortfolioHidden ? 'Show portfolio' : 'Hide portfolio'}
+              onClick={() => setIsPortfolioHidden((prev) => !prev)}
+            >
+              {isPortfolioHidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </Button>
+            <Select value={currency} onValueChange={setCurrency}>
+              <SelectTrigger className="w-[100px] h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="IDR">IDR</SelectItem>
+                <SelectItem value="USD">USD</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent className="space-y-3">
           {/* Top summary always visible */}
           <div className="flex items-start gap-3">
             <div className="flex-1">
               <p className="text-sm text-muted-foreground mb-1">Total Net Worth</p>
-              <p className="text-lg font-bold">{formatValue(totalNetWorth).primary}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{formatValue(totalNetWorth).secondary}</p>
+              <p className="text-lg font-bold">{totalNetWorthDisplay.primary}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{totalNetWorthDisplay.secondary}</p>
               <div className="mt-1 flex items-center gap-1">
-                <span className={`text-xs font-medium ${totalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {totalPnL >= 0 ? '+' : ''}{formatValue(totalPnL).primary}
+                <span className={`text-xs font-medium ${getPnLColor(totalPnL)}`}>
+                  {isPortfolioHidden ? maskToken : `${totalPnL >= 0 ? '+' : ''}${totalPnLDisplay.primary}`}
                 </span>
                 <span className="text-[10px] text-muted-foreground">
-                  ({formatValue(totalPnL).secondary})
+                  {isPortfolioHidden ? maskToken : `(${totalPnLDisplay.secondary})`}
                 </span>
               </div>
             </div>
@@ -827,14 +860,14 @@ export default function PortfolioTrackerPage() {
                   <div className="flex items-start gap-3 p-3 rounded-lg border">
                     <div className="flex-1">
                       <p className="text-sm text-muted-foreground mb-1">Digital Assets</p>
-                      <p className="text-base font-semibold">{formatValue(digitalMarket).primary}</p>
-                      <p className="text-xs text-muted-foreground">{formatValue(digitalMarket).secondary}</p>
+                      <p className="text-base font-semibold">{digitalMarketDisplay.primary}</p>
+                      <p className="text-xs text-muted-foreground">{digitalMarketDisplay.secondary}</p>
                       <div className="mt-1 flex items-center gap-1">
-                        <span className={`text-xs font-medium ${digitalPnL >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {digitalPnL >= 0 ? '+' : ''}{formatValue(digitalPnL).primary}
+                        <span className={`text-xs font-medium ${getPnLColor(digitalPnL)}`}>
+                          {isPortfolioHidden ? maskToken : `${digitalPnL >= 0 ? '+' : ''}${digitalPnLDisplay.primary}`}
                         </span>
                         <span className="text-[10px] text-muted-foreground">
-                          ({formatValue(digitalPnL).secondary})
+                          {isPortfolioHidden ? maskToken : `(${digitalPnLDisplay.secondary})`}
                         </span>
                       </div>
                     </div>
@@ -846,8 +879,8 @@ export default function PortfolioTrackerPage() {
                   <div className="flex items-start gap-3 p-3 rounded-lg border">
                     <div className="flex-1">
                       <p className="text-sm text-muted-foreground mb-1">Total Cash</p>
-                      <p className="text-base font-semibold">{formatValue(totalCash).primary}</p>
-                      <p className="text-xs text-muted-foreground">{formatValue(totalCash).secondary}</p>
+                      <p className="text-base font-semibold">{totalCashDisplay.primary}</p>
+                      <p className="text-xs text-muted-foreground">{totalCashDisplay.secondary}</p>
                     </div>
                     <div className="p-2 rounded-full bg-emerald-700/10">
                       <Coins className="h-5 w-5 text-emerald-800 dark:text-emerald-500" />
@@ -936,12 +969,28 @@ export default function PortfolioTrackerPage() {
             </p>
           )}
           {entries.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-2 mb-24">
               {sortedHoldings.map(({ entry, index: originalIndex, isCash, currentValueUSD, pnl, cashDisplayAmount }) => {
-                const formatted = formatValue(currentValueUSD);
+                const formatted = getDisplayValue(currentValueUSD);
                 const livePnl = isCash ? 0 : pnl;
+                const pnlDisplay = getDisplayValue(Math.abs(livePnl));
+                const pnlText = isPortfolioHidden
+                  ? maskToken
+                  : `${livePnl >= 0 ? '+' : '-'}${pnlDisplay.primary}`;
                 return (
-                  <div key={originalIndex} className="flex items-center gap-3 border-b rounded-lg hover:bg-accent/50 transition-colors min-h-16">
+                  <div
+                    key={originalIndex}
+                    className={`flex items-center gap-3 border-b rounded-lg transition-colors min-h-16 ${!isCash ? 'hover:bg-accent/50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2' : ''}`}
+                    role={!isCash ? 'button' : undefined}
+                    tabIndex={!isCash ? 0 : -1}
+                    onClick={!isCash ? () => navigateToSymbol(entry.symbol) : undefined}
+                    onKeyDown={!isCash ? (event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        navigateToSymbol(entry.symbol);
+                      }
+                    } : undefined}
+                  >
                     <div className="flex-1 min-w-0">
                       <div className="flex gap-2">
                         <div className="p-2 rounded-full bg-muted">
@@ -957,9 +1006,9 @@ export default function PortfolioTrackerPage() {
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {isCash ? (
-                              <span>{(cashDisplayAmount ?? 0).toLocaleString()} {entry.cashCurrency}</span>
+                              <span>{isPortfolioHidden ? maskToken : `${(cashDisplayAmount ?? 0).toLocaleString()} ${entry.cashCurrency}`}</span>
                             ) : (
-                              <span>{entry.amount} {entry.unit}</span>
+                              <span>{isPortfolioHidden ? maskToken : `${entry.amount} ${entry.unit}`}</span>
                             )}
                           </p>
                         </div>
@@ -971,15 +1020,21 @@ export default function PortfolioTrackerPage() {
                         <p className="text-[10px] text-muted-foreground">{formatted.secondary}</p>
                         {!isCash && livePnl !== 0 && (
                           <p className="text-[10px]">
-                            <span className={livePnl >= 0 ? 'text-green-600' : 'text-red-600'}>
-                              {livePnl >= 0 ? '+' : '-'}{formatValue(Math.abs(livePnl)).primary}
+                            <span className={getPnLColor(livePnl)}>
+                              {pnlText}
                             </span>
                           </p>
                         )}
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={(event) => event.stopPropagation()}
+                            onKeyDown={(event) => event.stopPropagation()}
+                          >
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>

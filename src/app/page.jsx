@@ -140,10 +140,13 @@ function StockItem({ quote }) {
   if (!quote) return null;
   
   const isPositive = quote.change >= 0;
-  const color = isPositive ? 'text-green-600' : 'text-red-600';
+  const color = isPositive ? 'text-emerald-600' : 'text-red-600';
   
   return (
-    <Link href={`/election-cycle?symbol=${encodeURIComponent(quote.symbol)}`} className="flex items-center gap-3 py-3 hover:bg-accent/30 transition-colors">
+    <Link
+      href={`/election-cycle?symbol=${encodeURIComponent(quote.symbol)}&cycle=normal`}
+      className="flex items-center gap-3 py-3 hover:bg-accent/30 transition-colors"
+    >
       <div className="flex-1 min-w-0">
         <div className="font-semibold text-sm truncate">{quote.symbol}</div>
         <div className="text-xs text-muted-foreground truncate">{quote.name}</div>
@@ -493,11 +496,11 @@ export default function HomePage() {
               <div>
                 <p className="text-xs text-muted-foreground">Top Gainer</p>
                 <p className="text-sm font-semibold uppercase">{marketPulse.topGainer.symbol}</p>
-                <p className={`text-xs font-medium ${marketPulse.topGainer.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <p className={`text-xs font-medium ${marketPulse.topGainer.change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                   {marketPulse.topGainer.change >= 0 ? '+' : ''}{marketPulse.topGainer.change.toFixed(2)} ({marketPulse.topGainer.changePercent.toFixed(2)}%)
                 </p>
               </div>
-              <div className={`flex items-center ${marketPulse.topGainer.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`flex items-center ${marketPulse.topGainer.change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                 <MiniChart
                   data={marketPulse.topGainer.chartData}
                   isPositive={marketPulse.topGainer.change >= 0}
@@ -511,11 +514,11 @@ export default function HomePage() {
               <div>
                 <p className="text-xs text-muted-foreground">Top Loser</p>
                 <p className="text-sm font-semibold uppercase">{marketPulse.topLoser.symbol}</p>
-                <p className={`text-xs font-medium ${marketPulse.topLoser.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                <p className={`text-xs font-medium ${marketPulse.topLoser.change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                   {marketPulse.topLoser.change >= 0 ? '+' : ''}{marketPulse.topLoser.change.toFixed(2)} ({marketPulse.topLoser.changePercent.toFixed(2)}%)
                 </p>
               </div>
-              <div className={`flex items-center ${marketPulse.topLoser.change >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <div className={`flex items-center ${marketPulse.topLoser.change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                 <MiniChart
                   data={marketPulse.topLoser.chartData}
                   isPositive={marketPulse.topLoser.change >= 0}
@@ -527,7 +530,7 @@ export default function HomePage() {
             </div>
             <div className="rounded-lg">
               <p className="text-xs text-muted-foreground">Average Change</p>
-              <p className={`text-sm font-semibold ${marketPulse.averageChange >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <p className={`text-sm font-semibold ${marketPulse.averageChange >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                 {marketPulse.averageChange >= 0 ? '+' : ''}{marketPulse.averageChange.toFixed(2)}%
               </p>
             </div>
