@@ -22,6 +22,16 @@ const DEFAULT_WATCHLIST = [
   { symbol: 'AVGO', order: 9 },
 ];
 
+function areWatchlistsEqual(a = [], b = []) {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i].symbol !== b[i].symbol || (a[i].order ?? i) !== (b[i].order ?? i)) {
+      return false;
+    }
+  }
+  return true;
+}
+
 function loadWatchlist() {
   if (typeof window === 'undefined') return DEFAULT_WATCHLIST;
   try {
@@ -144,7 +154,7 @@ function StockItem({ quote }) {
   
   return (
     <Link
-      href={`/election-cycle?symbol=${encodeURIComponent(quote.symbol)}&cycle=normal`}
+      href={`/chart?symbol=${encodeURIComponent(quote.symbol)}&cycle=normal`}
       className="flex items-center gap-3 py-3 hover:bg-accent/30 transition-colors"
     >
       <div className="flex-1 min-w-0">
@@ -213,6 +223,7 @@ export default function HomePage() {
     watchlistLoaded,
     syncWatchlist,
   } = useAuth();
+  const isAuthenticated = Boolean(user);
 
   const marketPulse = useMemo(() => {
     if (!quotes.length) {
@@ -244,12 +255,9 @@ export default function HomePage() {
   }, [loadQuotes]);
 
   useEffect(() => {
-    if (!user) {
-      remoteDefaultSeedRef.current = false;
+    if (!isAuthenticated) {
       const local = loadWatchlist();
-      const localSerialized = JSON.stringify(local);
-      const currentSerialized = JSON.stringify(watchlist);
-      if (currentSerialized !== localSerialized) {
+      if (!areWatchlistsEqual(local, watchlist)) {
         setWatchlist(local);
       }
       const localUpdatedAt = loadWatchlistUpdatedAt();
@@ -263,22 +271,12 @@ export default function HomePage() {
       return;
     }
 
-    if (Array.isArray(remoteWatchlist) && remoteWatchlist.length > 0) {
-      remoteDefaultSeedRef.current = false;
-      const timestamp = remoteWatchlistUpdatedAt || new Date().toISOString();
-      const localSerialized = JSON.stringify(watchlist);
-      const remoteSerialized = JSON.stringify(remoteWatchlist);
-      if (localSerialized !== remoteSerialized) {
+    if (Array.isArray(remoteWatchlist)) {
+      if (!areWatchlistsEqual(remoteWatchlist, watchlist)) {
         setWatchlist(remoteWatchlist);
-        saveWatchlist(remoteWatchlist, timestamp);
-      } else {
-        const storedUpdatedAt = loadWatchlistUpdatedAt();
-        if (storedUpdatedAt !== timestamp) {
-          saveWatchlist(remoteWatchlist, timestamp);
-        }
       }
-      if (watchlistUpdatedAt !== timestamp) {
-        setWatchlistUpdatedAt(timestamp);
+      if ((remoteWatchlistUpdatedAt || null) !== watchlistUpdatedAt) {
+        setWatchlistUpdatedAt(remoteWatchlistUpdatedAt || null);
       }
       return;
     }
@@ -286,32 +284,15 @@ export default function HomePage() {
     if (!remoteDefaultSeedRef.current) {
       remoteDefaultSeedRef.current = true;
       const defaults = DEFAULT_WATCHLIST;
-      const timestamp = new Date().toISOString();
-      const currentSerialized = JSON.stringify(watchlist);
-      const defaultsSerialized = JSON.stringify(defaults);
-      if (currentSerialized !== defaultsSerialized) {
-        setWatchlist(defaults);
-      }
-      if (watchlistUpdatedAt !== timestamp) {
-        setWatchlistUpdatedAt(timestamp);
-      }
-      saveWatchlist(defaults, timestamp);
+      setWatchlist(defaults);
       syncWatchlist(defaults)
-        .then((remoteTimestamp) => {
-          remoteDefaultSeedRef.current = false;
-          if (remoteTimestamp) {
-            if (watchlistUpdatedAt !== remoteTimestamp) {
-              setWatchlistUpdatedAt(remoteTimestamp);
-            }
-            saveWatchlist(defaults, remoteTimestamp);
-          }
-        })
-        .catch(() => {
+        .catch(() => null)
+        .finally(() => {
           remoteDefaultSeedRef.current = false;
         });
     }
   }, [
-    user,
+    isAuthenticated,
     watchlistLoaded,
     remoteWatchlist,
     remoteWatchlistUpdatedAt,
@@ -553,20 +534,19 @@ export default function HomePage() {
         onOpenChange={setManageDialogOpen}
         watchlist={watchlist}
         onSave={(newWatchlist) => {
-          const timestamp = new Date().toISOString();
-          saveWatchlist(newWatchlist, timestamp);
-          setWatchlistUpdatedAt(timestamp);
           setWatchlist(newWatchlist);
-          loadQuotes();
-          if (user) {
+          if (isAuthenticated) {
             syncWatchlist(newWatchlist)
               .then((remoteTimestamp) => {
                 if (remoteTimestamp) {
                   setWatchlistUpdatedAt(remoteTimestamp);
-                  saveWatchlist(newWatchlist, remoteTimestamp);
                 }
               })
               .catch(() => {});
+          } else {
+            const timestamp = new Date().toISOString();
+            saveWatchlist(newWatchlist, timestamp);
+            setWatchlistUpdatedAt(timestamp);
           }
         }}
       />

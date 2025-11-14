@@ -78,10 +78,11 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
         return nextHistory;
       });
 
+      const target = `/chart?symbol=${encodeURIComponent(symbol)}&cycle=normal`;
       if (onSelect) {
         onSelect(symbol);
       } else {
-        router.push(`/election-cycle?symbol=${encodeURIComponent(symbol)}`);
+        router.push(target);
       }
 
       onOpenChange?.(false);
@@ -226,7 +227,7 @@ export function HeaderSymbolSearch() {
   const handleSelect = useCallback(
     (symbol) => {
       if (!symbol) return;
-      router.push(`/election-cycle?symbol=${encodeURIComponent(symbol)}`);
+      router.push(`/chart?symbol=${encodeURIComponent(symbol)}&cycle=normal`);
     },
     [router]
   );

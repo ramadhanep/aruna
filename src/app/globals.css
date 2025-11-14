@@ -178,3 +178,7 @@
     transform: translateX(100%);
   }
 }
+
+#tv-attr-logo {
+  display: none !important;
+}

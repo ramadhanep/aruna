@@ -24,7 +24,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar } from 'recharts';
+import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar, ReferenceLine } from 'recharts';
 import { Loader2, Sun, MoonStar, Clock3, Star, Lock, Bitcoin, Crown } from "lucide-react";
 import { useTheme } from 'next-themes';
 import { AddAssetModal } from "@/components/add-asset-modal";
@@ -48,6 +48,16 @@ const DEFAULT_WATCHLIST = [
 ];
 
 const SCREENING_CATEGORIES = ['idx', 'us', 'crypto'];
+
+function areWatchlistsEqual(a = [], b = []) {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i].symbol !== b[i].symbol || (a[i].order ?? i) !== (b[i].order ?? i)) {
+      return false;
+    }
+  }
+  return true;
+}
 
 function matchScreeningEntry(results, targetSymbol) {
   if (!Array.isArray(results) || !targetSymbol) return null;
@@ -153,6 +163,111 @@ const NORMAL_RANGE_OPTIONS = [
 
 const EMA_PERIOD = 32;
 const EMA_COLOR = '#0ea5e9';
+
+function computeRSI(values = [], period = 14) {
+  const output = new Array(values.length).fill(null);
+  if (values.length <= period) {
+    return output;
+  }
+
+  let gainSum = 0;
+  let lossSum = 0;
+  let avgGain = null;
+  let avgLoss = null;
+
+  for (let i = 1; i < values.length; i++) {
+    const current = values[i];
+    const prev = values[i - 1];
+    if (!Number.isFinite(current) || !Number.isFinite(prev)) {
+      continue;
+    }
+    const change = current - prev;
+    const gain = change > 0 ? change : 0;
+    const loss = change < 0 ? -change : 0;
+
+    if (i <= period) {
+      gainSum += gain;
+      lossSum += loss;
+      if (i === period) {
+        avgGain = gainSum / period;
+        avgLoss = lossSum / period;
+        output[i] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
+      }
+    } else if (avgGain != null && avgLoss != null) {
+      avgGain = (avgGain * (period - 1) + gain) / period;
+      avgLoss = (avgLoss * (period - 1) + loss) / period;
+      if (avgLoss === 0) {
+        output[i] = 100;
+      } else {
+        const rs = avgGain / avgLoss;
+        output[i] = 100 - 100 / (1 + rs);
+      }
+    }
+  }
+
+  return output;
+}
+
+function smoothSeries(values = [], period = 3) {
+  const result = new Array(values.length).fill(null);
+  const window = [];
+  let sum = 0;
+  let count = 0;
+
+  for (let i = 0; i < values.length; i++) {
+    const value = values[i];
+    const numeric = Number.isFinite(value) ? value : null;
+    window.push(numeric);
+    if (numeric != null) {
+      sum += numeric;
+      count += 1;
+    }
+    if (window.length > period) {
+      const removed = window.shift();
+      if (removed != null) {
+        sum -= removed;
+        count -= 1;
+      }
+    }
+    if (window.length === period && count === period) {
+      result[i] = sum / period;
+    }
+  }
+
+  return result;
+}
+
+function computeStochasticRSI(values = [], stochasticLength = 14, rsiLength = 14, smoothK = 3, smoothD = 3) {
+  const rsiValues = computeRSI(values, rsiLength);
+  const rawK = new Array(values.length).fill(null);
+
+  for (let i = 0; i < rsiValues.length; i++) {
+    const currentRsi = rsiValues[i];
+    if (!Number.isFinite(currentRsi)) continue;
+    const start = i - stochasticLength + 1;
+    if (start < 0) continue;
+    let min = Infinity;
+    let max = -Infinity;
+    let valid = true;
+    for (let j = start; j <= i; j++) {
+      const value = rsiValues[j];
+      if (!Number.isFinite(value)) {
+        valid = false;
+        break;
+      }
+      if (value < min) min = value;
+      if (value > max) max = value;
+    }
+    if (!valid || !Number.isFinite(min) || !Number.isFinite(max) || max === min) {
+      continue;
+    }
+    rawK[i] = ((currentRsi - min) / (max - min)) * 100;
+  }
+
+  const smoothKValues = smoothSeries(rawK, smoothK);
+  const smoothDValues = smoothSeries(smoothKValues, smoothD);
+  return { k: smoothKValues, d: smoothDValues };
+}
 
 function isCryptoTicker(symbol = '') {
   const upper = symbol.toUpperCase();
@@ -362,12 +477,9 @@ function ElectionCyclePageContent() {
   }, []);
 
   useEffect(() => {
-    if (!user) {
-      remoteWatchlistSeedRef.current = false;
+    if (!isAuthenticated) {
       const local = readWatchlist();
-      const localSerialized = JSON.stringify(local);
-      const currentSerialized = JSON.stringify(watchlist);
-      if (currentSerialized !== localSerialized) {
+      if (!areWatchlistsEqual(local, watchlist)) {
         setWatchlist(local);
       }
       const localUpdatedAt = readWatchlistUpdatedAt();
@@ -381,21 +493,12 @@ function ElectionCyclePageContent() {
       return;
     }
 
-    if (Array.isArray(remoteWatchlist) && remoteWatchlist.length > 0) {
-      remoteWatchlistSeedRef.current = false;
-      const timestamp = remoteWatchlistUpdatedAt || new Date().toISOString();
-      const currentSerialized = JSON.stringify(watchlist);
-      const remoteSerialized = JSON.stringify(remoteWatchlist);
-      if (currentSerialized !== remoteSerialized) {
+    if (Array.isArray(remoteWatchlist)) {
+      if (!areWatchlistsEqual(remoteWatchlist, watchlist)) {
         setWatchlist(remoteWatchlist);
-        writeWatchlist(remoteWatchlist, timestamp);
-      } else {
-        const storedUpdatedAt = readWatchlistUpdatedAt();
-        if (storedUpdatedAt !== timestamp) {
-          writeWatchlist(remoteWatchlist, timestamp);
-        }
       }
-      if (watchlistUpdatedAt !== timestamp) {
+      const timestamp = remoteWatchlistUpdatedAt || null;
+      if (timestamp !== watchlistUpdatedAt) {
         setWatchlistUpdatedAt(timestamp);
       }
       return;
@@ -404,37 +507,15 @@ function ElectionCyclePageContent() {
     if (!remoteWatchlistSeedRef.current) {
       remoteWatchlistSeedRef.current = true;
       const defaults = DEFAULT_WATCHLIST;
-      const timestamp = new Date().toISOString();
-      const currentSerialized = JSON.stringify(watchlist);
-      const defaultsSerialized = JSON.stringify(defaults);
-      if (currentSerialized !== defaultsSerialized) {
-        setWatchlist(defaults);
-        writeWatchlist(defaults, timestamp);
-      } else {
-        const storedUpdatedAt = readWatchlistUpdatedAt();
-        if (storedUpdatedAt !== timestamp) {
-          writeWatchlist(defaults, timestamp);
-        }
-      }
-      if (watchlistUpdatedAt !== timestamp) {
-        setWatchlistUpdatedAt(timestamp);
-      }
+      setWatchlist(defaults);
       syncWatchlist(defaults)
-        .then((remoteTimestamp) => {
-          remoteWatchlistSeedRef.current = false;
-          if (remoteTimestamp) {
-            if (watchlistUpdatedAt !== remoteTimestamp) {
-              setWatchlistUpdatedAt(remoteTimestamp);
-            }
-            writeWatchlist(defaults, remoteTimestamp);
-          }
-        })
-        .catch(() => {
+        .catch(() => null)
+        .finally(() => {
           remoteWatchlistSeedRef.current = false;
         });
     }
   }, [
-    user,
+    isAuthenticated,
     watchlistLoaded,
     remoteWatchlist,
     remoteWatchlistUpdatedAt,
@@ -990,12 +1071,24 @@ function ElectionCyclePageContent() {
 
   const normalCandlestickSeries = useMemo(() => {
     if (!isNormalView || filteredNormalChartData.length === 0) {
-      return { candles: [], ema: [], meta: {} };
+      return { candles: [], ema: [], meta: {}, stochastic: { k: [], d: [] } };
     }
     const candles = [];
     const ema = [];
     const meta = {};
-    filteredNormalChartData.forEach((point) => {
+    const closingValues = filteredNormalChartData.map((point) => {
+      if (typeof point.close === 'number' && Number.isFinite(point.close)) {
+        return point.close;
+      }
+      if (typeof point.price === 'number' && Number.isFinite(point.price)) {
+        return point.price;
+      }
+      return null;
+    });
+    const stochasticValues = computeStochasticRSI(closingValues, 14, 14, 3, 3);
+    const stochasticK = [];
+    const stochasticD = [];
+    filteredNormalChartData.forEach((point, index) => {
       if (typeof point.timestamp !== 'number') return;
       const time = Math.floor(point.timestamp / 1000);
       if (!Number.isFinite(time)) return;
@@ -1052,10 +1145,33 @@ function ElectionCyclePageContent() {
             ? point.changePct
             : null,
       };
+
+      const kValue = stochasticValues.k[index];
+      const dValue = stochasticValues.d[index];
+      if (Number.isFinite(kValue)) {
+        stochasticK.push({ time, value: Number(kValue.toFixed(2)) });
+      }
+      if (Number.isFinite(dValue)) {
+        stochasticD.push({ time, value: Number(dValue.toFixed(2)) });
+      }
     });
 
-    return { candles, ema, meta };
+    return { candles, ema, meta, stochastic: { k: stochasticK, d: stochasticD } };
   }, [filteredNormalChartData, isNormalView]);
+
+  const stochasticChartData = useMemo(() => {
+    const combined = new Map();
+    (normalCandlestickSeries.stochastic?.k ?? []).forEach(({ time, value }) => {
+      combined.set(time, { time, k: value });
+    });
+    (normalCandlestickSeries.stochastic?.d ?? []).forEach(({ time, value }) => {
+      const merged = combined.get(time) ?? { time };
+      merged.d = value;
+      combined.set(time, merged);
+    });
+    const sorted = Array.from(combined.values()).sort((a, b) => a.time - b.time);
+    return sorted.slice(-400);
+  }, [normalCandlestickSeries.stochastic]);
 
   const isIntradayRange = normalRange === '1D' || normalRange === '1W';
 
@@ -1386,22 +1502,21 @@ function ElectionCyclePageContent() {
 
   const persistWatchlist = useCallback(
     (nextList, timestampOverride) => {
-      const timestamp = timestampOverride ?? new Date().toISOString();
-      writeWatchlist(nextList, timestamp);
-      setWatchlistUpdatedAt(timestamp);
-
-      if (user) {
+      if (isAuthenticated) {
         syncWatchlist(nextList)
           .then((remoteTimestamp) => {
             if (remoteTimestamp) {
               setWatchlistUpdatedAt(remoteTimestamp);
-              writeWatchlist(nextList, remoteTimestamp);
             }
           })
           .catch(() => {});
+      } else {
+        const timestamp = timestampOverride ?? new Date().toISOString();
+        writeWatchlist(nextList, timestamp);
+        setWatchlistUpdatedAt(timestamp);
       }
     },
-    [user, syncWatchlist]
+    [isAuthenticated, syncWatchlist]
   );
 
   const marketStateInfo = useMemo(() => {
@@ -1496,7 +1611,7 @@ function ElectionCyclePageContent() {
 
       {loading && (
         <>
-          <Card className="overflow-hidden bg-transparent border-none rounded-none">
+          <Card className="bg-transparent border-none rounded-none">
             <CardHeader>
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1 space-y-2">
@@ -1511,7 +1626,7 @@ function ElectionCyclePageContent() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="px-0 -mr-5 pb-0">
+            <CardContent className="px-0 -mx-5 pb-0">
               <div className="w-full h-[280px] rounded-lg shimmer"></div>
             </CardContent>
           </Card>
@@ -1565,13 +1680,13 @@ function ElectionCyclePageContent() {
 
       {showChartSection && (
         <>
-          <Card className="overflow-hidden bg-transparent border-none rounded-none">
+          <Card className="bg-transparent border-none rounded-none">
             <CardHeader>
               <div className="flex items-start justify-between gap-4">
               <div className="flex flex-col gap-2">
                 <CardDescription className="text-xs">{assetName}</CardDescription>
                 {screeningSignal && (
-                  <div className="flex gap-1">
+                  <div className="flex flex-wrap gap-1">
                     <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 py-1 text-[11px] font-semibold text-emerald-600">
                       BUY SIGNAL
                     </span>
@@ -1638,12 +1753,12 @@ function ElectionCyclePageContent() {
                       <SelectItem className="text-[11px]" value="normal">
                         Normal
                       </SelectItem>
-                      <SelectItem className="text-[11px]" value="pre,current">Pre-Election + Current</SelectItem>
-                      <SelectItem className="text-[11px]" value="election,current">Election + Current</SelectItem>
-                      <SelectItem className="text-[11px]" value="mid,current">Mid-Term + Current</SelectItem>
-                      <SelectItem className="text-[11px]" value="post,current">Post-Election + Current</SelectItem>
-                      <SelectItem className="text-[11px]" value="all,current">All Years + Current</SelectItem>
-                      {/* <SelectItem value="pre,election,mid,post,current">All Cycles + Current</SelectItem> */}
+                      <SelectItem className="text-[11px]" value="pre,current">Pre-Election</SelectItem>
+                      <SelectItem className="text-[11px]" value="election,current">Election</SelectItem>
+                      <SelectItem className="text-[11px]" value="mid,current">Mid-Term</SelectItem>
+                      <SelectItem className="text-[11px]" value="post,current">Post-Election</SelectItem>
+                      <SelectItem className="text-[11px]" value="all,current">All Years</SelectItem>
+                      {/* <SelectItem value="pre,election,mid,post,current">All Cycles</SelectItem> */}
                     </SelectContent>
                   </Select>
                   {!isNormalView && (
@@ -1668,30 +1783,59 @@ function ElectionCyclePageContent() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className={`px-0 pb-0 ${!isNormalView ? "-mr-5" : ""}`}>
+            <CardContent className={isNormalView ? "px-0 pb-0" : "px-0 pb-0 -mr-5"}>
               {isNormalView ? (
                 normalSeriesLoading ? (
-                  <div className="flex h-[280px] items-center justify-center gap-2 text-xs text-muted-foreground">
+                  <div className="flex h-[400px] items-center justify-center gap-2 text-xs text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Loading {normalRange} prices…
                   </div>
                 ) : filteredNormalChartData.length > 0 ? (
-                  <NormalCandlestickChart
-                    candles={normalCandlestickSeries.candles}
-                    ema={normalCandlestickSeries.ema}
-                    meta={normalCandlestickSeries.meta}
-                    formatTimestamp={formatNormalTimestamp}
-                    currency={symbolInfo?.currency}
-                    formatPrice={formatPriceValue}
-                    isDark={resolvedTheme === 'dark'}
-                    showTimeScale={isIntradayRange}
-                    showSeconds={normalRange === '1D'}
-                    emaColor={EMA_COLOR}
-                    valueLabelPrefix="HA"
-                    showTooltip={false}
-                    />
+                  <>
+                    <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2">
+                      <NormalCandlestickChart
+                        candles={normalCandlestickSeries.candles}
+                        ema={normalCandlestickSeries.ema}
+                        meta={normalCandlestickSeries.meta}
+                        formatTimestamp={formatNormalTimestamp}
+                        currency={symbolInfo?.currency}
+                        formatPrice={formatPriceValue}
+                        isDark={resolvedTheme === 'dark'}
+                        showTimeScale={isIntradayRange}
+                        showSeconds={normalRange === '1D'}
+                        emaColor={EMA_COLOR}
+                        valueLabelPrefix="HA"
+                        showTooltip={false}
+                        height={400}
+                      />
+                    </div>
+                    {/* {stochasticChartData.length > 0 ? (
+                      <div className="relative left-1/2 right-1/2 w-screen -translate-x-1/2 pb-4">
+                        <div className="mb-2 flex items-center justify-between text-[10px] text-muted-foreground">
+                          <span>Stochastic RSI</span>
+                          <span>14, 14</span>
+                        </div>
+                        <ResponsiveContainer width="100%" height={160}>
+                          <ComposedChart data={stochasticChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted/70" />
+                            <XAxis
+                              dataKey="time"
+                              tickFormatter={(value) => formatNormalTimestamp(value * 1000)}
+                              className="text-[10px]"
+                              minTickGap={30}
+                            />
+                            <YAxis domain={[0, 100]} className="text-[10px]" width={30} allowDecimals={false} />
+                            <ReferenceLine y={80} stroke="#f87171" strokeDasharray="4 4" />
+                            <ReferenceLine y={20} stroke="#34d399" strokeDasharray="4 4" />
+                            <Line type="monotone" dataKey="k" stroke="#f97316" strokeWidth={1.8} dot={false} isAnimationActive={false} />
+                            <Line type="monotone" dataKey="d" stroke="#6366f1" strokeWidth={1.2} dot={false} isAnimationActive={false} />
+                          </ComposedChart>
+                        </ResponsiveContainer>
+                      </div>
+                    ) : null} */}
+                  </>
                 ) : (
-                  <div className="flex h-[280px] items-center justify-center text-xs text-muted-foreground">
+                  <div className="flex h-[400px] items-center justify-center text-xs text-muted-foreground">
                     {normalSeriesError || 'Intraday price data unavailable for this range.'}
                   </div>
                 )
@@ -2265,14 +2409,14 @@ function ElectionCyclePageContent() {
           }
           setSymbol(nextSymbol);
           setSelectedCycles(getDefaultCyclesForSymbol(nextSymbol));
-          router.push(`/election-cycle?symbol=${encodeURIComponent(nextSymbol)}`);
+          router.push(`/chart?symbol=${encodeURIComponent(nextSymbol)}&cycle=normal`);
         }}
       />
     </div>
   );
 }
 
-export default function ElectionCyclePage() {
+export default function SmartChartsPage() {
   return (
     <Suspense fallback={
       <div className="flex items-center justify-center py-12">
