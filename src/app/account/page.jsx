@@ -85,7 +85,7 @@ function DeleteAccountAction({ onConfirm, disabled }) {
           </DialogDescription>
         </DialogHeader>
         {error ? (
-          <div className="rounded-md border border-red-500/60 bg-red-500/10 px-3 py-2 text-xs text-red-600">
+          <div className="rounded-md border border-red-600/60 bg-red-600/10 px-3 py-2 text-xs text-red-600">
             {error}
           </div>
         ) : null}
@@ -224,7 +224,7 @@ export default function AccountPage() {
                   <span>Sign in with Google</span>
                 </Button>
                 {authError ? (
-                  <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-3 text-xs text-red-200">
+                  <div className="rounded-xl border border-red-600/40 bg-red-600/10 p-3 text-xs text-red-200">
                     {authError}
                   </div>
                 ) : null}
@@ -326,7 +326,7 @@ export default function AccountPage() {
                     </DialogDescription>
                   </DialogHeader>
                   {signOutError ? (
-                    <div className="rounded-md border border-red-500/60 bg-red-500/10 px-3 py-2 text-xs text-red-600">
+                    <div className="rounded-md border border-red-600/60 bg-red-600/10 px-3 py-2 text-xs text-red-600">
                       {signOutError}
                     </div>
                   ) : null}

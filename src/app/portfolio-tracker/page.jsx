@@ -460,6 +460,8 @@ export default function PortfolioTrackerPage() {
     const amountNum = parseFloat(form.amount);
     if (isNaN(amountNum)) return;
 
+    const targetIndex = editingIndex;
+
     if (assetType === 'cash') {
       // Cash asset
       if (!form.category.trim()) {
@@ -494,13 +496,15 @@ export default function PortfolioTrackerPage() {
         cashCurrency: form.cashCurrency,
         nativeAmount,
       };
-      let newEntries = [...entries];
-      if (editingIndex != null) {
-        newEntries[editingIndex] = entry;
-      } else {
-        newEntries.push(entry);
-      }
-      setEntries(newEntries);
+      setEntries((prev) => {
+        const next = [...prev];
+        if (targetIndex != null && targetIndex >= 0 && targetIndex < next.length) {
+          next[targetIndex] = entry;
+        } else {
+          next.push(entry);
+        }
+        return next;
+      });
       setDialogOpen(false);
       resetForm();
     } else {
@@ -528,13 +532,15 @@ export default function PortfolioTrackerPage() {
 
       const unit = form.unit;
       const entry = { symbol: form.symbol, name: form.name, amount: amountNum, unit, avgPrice: avgPriceNum, type: 'digital' };
-      let newEntries = [...entries];
-      if (editingIndex != null) {
-        newEntries[editingIndex] = entry;
-      } else {
-        newEntries.push(entry);
-      }
-      setEntries(newEntries);
+      setEntries((prev) => {
+        const next = [...prev];
+        if (targetIndex != null && targetIndex >= 0 && targetIndex < next.length) {
+          next[targetIndex] = entry;
+        } else {
+          next.push(entry);
+        }
+        return next;
+      });
       setDialogOpen(false);
       resetForm();
     }
@@ -549,8 +555,7 @@ export default function PortfolioTrackerPage() {
   );
 
   function removeEntry(idx) {
-    const newEntries = entries.filter((_, i) => i !== idx);
-    setEntries(newEntries);
+    setEntries((prev) => prev.filter((_, i) => i !== idx));
   }
 
   // Effective unit (.JK defaults to lot)
@@ -959,45 +964,43 @@ export default function PortfolioTrackerPage() {
                 return (
                   <div
                     key={originalIndex}
-                    className={`flex items-center gap-3 border-b rounded-lg transition-colors min-h-16 ${!isCash ? 'hover:bg-accent/50 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2' : ''}`}
-                    role={!isCash ? 'button' : undefined}
-                    tabIndex={!isCash ? 0 : -1}
-                    onClick={!isCash ? (event) => {
-                      if (event.target.closest('[data-holdings-actions="true"]')) {
-                        return;
-                      }
-                      navigateToSymbol(entry.symbol);
-                    } : undefined}
-                    onKeyDown={!isCash ? (event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        navigateToSymbol(entry.symbol);
-                      }
-                    } : undefined}
+                    className="flex items-center gap-3 border-b rounded-lg min-h-16"
                   >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex gap-2">
+                    {isCash ? (
+                      <div className="flex flex-1 min-w-0 items-center gap-2 px-1 py-2">
                         <div className="p-2 rounded-full bg-muted">
-                          {isCash ? (
-                            <DollarSign className="h-4 w-4 text-emerald-800 dark:text-emerald-500" />
-                          ) : (
-                            <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          )}
+                          <DollarSign className="h-4 w-4 text-emerald-800 dark:text-emerald-500" />
                         </div>
                         <div className="flex flex-col justify-start">
                           <p className="font-semibold text-xs truncate">
-                            {isCash ? entry.category : entry.symbol}
+                            {entry.category}
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5">
-                            {isCash ? (
-                              <span>{isPortfolioHidden ? maskToken : `${(cashDisplayAmount ?? 0).toLocaleString()} ${entry.cashCurrency}`}</span>
-                            ) : (
-                              <span>{isPortfolioHidden ? maskToken : `${entry.amount} ${entry.unit}`}</span>
-                            )}
+                            {isPortfolioHidden
+                              ? maskToken
+                              : `${(cashDisplayAmount ?? 0).toLocaleString()} ${entry.cashCurrency}`}
                           </p>
                         </div>
                       </div>
-                    </div>
+                    ) : (
+                      <button
+                        type="button"
+                        className="flex flex-1 min-w-0 items-center gap-2 rounded-md px-1 py-2 text-left transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2"
+                        onClick={() => navigateToSymbol(entry.symbol)}
+                      >
+                        <div className="p-2 rounded-full bg-muted">
+                          <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        </div>
+                        <div className="flex flex-col justify-start">
+                          <p className="font-semibold text-xs truncate">
+                            {entry.symbol}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            {isPortfolioHidden ? maskToken : `${entry.amount} ${entry.unit}`}
+                          </p>
+                        </div>
+                      </button>
+                    )}
                     <div className="flex items-center gap-2" data-holdings-actions="true">
                       <div className="text-right">
                         <p className="text-sm font-semibold">{formatted.primary}</p>

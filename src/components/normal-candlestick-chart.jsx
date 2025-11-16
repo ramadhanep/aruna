@@ -17,6 +17,7 @@ export function NormalCandlestickChart({
   emaColor = "#0ea5e9",
   valueLabelPrefix = "",
   showTooltip = true,
+  priceScaleType = "linear",
 }) {
   const containerRef = useRef(null);
   const chartRef = useRef(null);
@@ -26,6 +27,8 @@ export function NormalCandlestickChart({
   const metaRef = useRef(meta);
   const candlesRef = useRef(candles);
   const emaRef = useRef(ema);
+  const priceScaleModeRef = useRef(null);
+  const priceScaleTypeRef = useRef(priceScaleType);
   const [hoveredTime, setHoveredTime] = useState(null);
 
   const fallbackMeta = useMemo(() => {
@@ -54,10 +57,15 @@ export function NormalCandlestickChart({
     let observedElement = null;
 
     loadLightweightCharts().then(
-      ({ createChart, CrosshairMode, CandlestickSeries, LineSeries }) => {
+      ({ createChart, CrosshairMode, CandlestickSeries, LineSeries, PriceScaleMode }) => {
         if (cancelled || !containerRef.current) return;
 
         const container = containerRef.current;
+        priceScaleModeRef.current = PriceScaleMode;
+        const initialScaleMode =
+          priceScaleTypeRef.current === "log"
+            ? PriceScaleMode.Logarithmic
+            : PriceScaleMode.Normal;
         const chart = createChart(container, {
           width: container.clientWidth,
           height,
@@ -89,6 +97,7 @@ export function NormalCandlestickChart({
         rightPriceScale: {
           borderVisible: false,
           scaleMargins: { top: 0.1, bottom: 0.15 },
+          mode: initialScaleMode,
         },
         timeScale: {
           borderColor: isDark ? "rgba(148, 163, 184, 0.25)" : "rgba(15, 23, 42, 0.1)",
@@ -173,6 +182,16 @@ export function NormalCandlestickChart({
   }, [height, isDark, showSeconds, showTimeScale, emaColor]);
 
   useEffect(() => {
+    priceScaleTypeRef.current = priceScaleType;
+    if (!chartRef.current || !priceScaleModeRef.current) return;
+    const PriceScaleMode = priceScaleModeRef.current;
+    const scale = chartRef.current.priceScale("right");
+    scale.applyOptions({
+      mode: priceScaleType === "log" ? PriceScaleMode.Logarithmic : PriceScaleMode.Normal,
+    });
+  }, [priceScaleType]);
+
+  useEffect(() => {
     if (!candleSeriesRef.current) return;
     candleSeriesRef.current.setData(candles);
     chartRef.current?.timeScale().fitContent();
@@ -242,7 +261,7 @@ export function NormalCandlestickChart({
             {pct != null ? (
               <div
                 className={`col-span-2 text-right text-[11px] font-semibold ${
-                  pct >= 0 ? "text-emerald-600" : "text-red-500"
+                  pct >= 0 ? "text-emerald-600" : "text-red-600"
                 }`}
               >
                 {pct >= 0 ? "+" : ""}

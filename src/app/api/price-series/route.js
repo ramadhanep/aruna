@@ -2,45 +2,131 @@ import yahooFinance from '@/lib/yahoo-finance';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
-const RANGE_CONFIG = {
-  '1D': { interval: '5m', lookbackMs: 2 * DAY_IN_MS, filterMs: 1 * DAY_IN_MS },
-  '1W': { interval: '30m', lookbackMs: 14 * DAY_IN_MS, filterMs: 7 * DAY_IN_MS },
-  '1M': { interval: '1h', lookbackMs: 60 * DAY_IN_MS, filterMs: 31 * DAY_IN_MS },
-  '3M': { interval: '1d', lookbackMs: 150 * DAY_IN_MS, filterMs: 92 * DAY_IN_MS },
-  'YTD': { interval: '1d', type: 'ytd' },
-  '1Y': { interval: '1d', lookbackMs: 370 * DAY_IN_MS, filterMs: 365 * DAY_IN_MS },
-  '3Y': { interval: '1d', lookbackMs: 4 * 365 * DAY_IN_MS, filterMs: 3 * 365 * DAY_IN_MS },
-  '5Y': { interval: '1d', lookbackMs: 6 * 365 * DAY_IN_MS, filterMs: 5 * 365 * DAY_IN_MS },
+const TIMEFRAME_CONFIG = {
+  '15M': { interval: '15m', lookbackDays: 30 },
+  '1H': { interval: '1h', lookbackDays: 180 },
+  '2H': { interval: '1h', lookbackDays: 180, groupSize: 2 },
+  '4H': { interval: '1h', lookbackDays: 240, groupSize: 4 },
+  D: { interval: '1d', lookbackDays: 365 * 2 },
+  W: { interval: '1wk', lookbackDays: 365 * 7 },
+  M: { interval: '1mo', lookbackDays: 365 * 15 },
 };
+
+const INTERVAL_TO_MS = {
+  '1m': 60 * 1000,
+  '2m': 2 * 60 * 1000,
+  '5m': 5 * 60 * 1000,
+  '15m': 15 * 60 * 1000,
+  '30m': 30 * 60 * 1000,
+  '60m': 60 * 60 * 1000,
+  '90m': 90 * 60 * 1000,
+  '1h': 60 * 60 * 1000,
+  '1d': DAY_IN_MS,
+  '5d': 5 * DAY_IN_MS,
+  '1wk': 7 * DAY_IN_MS,
+  '1mo': 30 * DAY_IN_MS,
+  '3mo': 90 * DAY_IN_MS,
+};
+
+function aggregateCandles(points = [], groupSize = 1, interval) {
+  if (!Array.isArray(points) || !Number.isInteger(groupSize) || groupSize <= 1) {
+    return points;
+  }
+  const chunk = [];
+  const aggregated = [];
+  const intervalMs = INTERVAL_TO_MS[interval] || null;
+  let lastTimestamp = null;
+
+  const flushChunk = () => {
+    if (chunk.length === 0) return;
+    const first = chunk[0];
+    const last = chunk[chunk.length - 1];
+    let high = null;
+    let low = null;
+    let volumeSum = 0;
+
+    chunk.forEach((point) => {
+      if (typeof point.high === 'number' && Number.isFinite(point.high)) {
+        high = high == null ? point.high : Math.max(high, point.high);
+      }
+      if (typeof point.low === 'number' && Number.isFinite(point.low)) {
+        low = low == null ? point.low : Math.min(low, point.low);
+      }
+      if (typeof point.volume === 'number' && Number.isFinite(point.volume)) {
+        volumeSum += point.volume;
+      }
+    });
+
+    const open =
+      typeof first.open === 'number' && Number.isFinite(first.open)
+        ? first.open
+        : typeof first.price === 'number' && Number.isFinite(first.price)
+          ? first.price
+          : last.close;
+    const close =
+      typeof last.close === 'number' && Number.isFinite(last.close)
+        ? last.close
+        : typeof last.price === 'number' && Number.isFinite(last.price)
+          ? last.price
+          : open;
+
+    aggregated.push({
+      timestamp: last.timestamp,
+      date: last.date ?? new Date(last.timestamp).toISOString(),
+      price: close,
+      open,
+      high: high ?? Math.max(open, close),
+      low: low ?? Math.min(open, close),
+      close,
+      volume: Number.isFinite(volumeSum) ? volumeSum : null,
+    });
+    chunk.length = 0;
+  };
+
+  points.forEach((point) => {
+    if (
+      chunk.length > 0 &&
+      intervalMs &&
+      lastTimestamp != null &&
+      point.timestamp - lastTimestamp > intervalMs * 1.5
+    ) {
+      flushChunk();
+    }
+    chunk.push(point);
+    lastTimestamp = point.timestamp;
+    if (chunk.length === groupSize) {
+      flushChunk();
+    }
+  });
+
+  flushChunk();
+  return aggregated;
+}
 
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get('symbol');
-  const rangeParam = (searchParams.get('range') || 'YTD').toUpperCase();
+  const timeframeParam = (
+    searchParams.get('timeframe') ||
+    searchParams.get('range') ||
+    'D'
+  ).toUpperCase();
 
   if (!symbol) {
     return Response.json({ error: 'Missing symbol parameter' }, { status: 400 });
   }
 
-  const config = RANGE_CONFIG[rangeParam];
+  const config = TIMEFRAME_CONFIG[timeframeParam];
   if (!config) {
     return Response.json(
-      { error: `Unsupported range. Use one of ${Object.keys(RANGE_CONFIG).join(', ')}` },
+      { error: `Unsupported timeframe. Use one of ${Object.keys(TIMEFRAME_CONFIG).join(', ')}` },
       { status: 400 }
     );
   }
 
   const now = new Date();
-  let period1;
-
-  if (config.type === 'ytd') {
-    period1 = new Date(now.getFullYear(), 0, 1);
-  } else if (config.lookbackMs) {
-    period1 = new Date(now.getTime() - config.lookbackMs);
-  } else {
-    // Fallback: 1 year
-    period1 = new Date(now.getTime() - 365 * DAY_IN_MS);
-  }
+  const lookbackDays = config.lookbackDays ?? 365;
+  let period1 = new Date(now.getTime() - lookbackDays * DAY_IN_MS);
 
   // Intraday intervals cannot exceed 60 days on Yahoo Finance
   // Clamp the lookback if needed
@@ -63,7 +149,7 @@ export async function GET(request) {
     const quotes = result?.quotes ?? [];
     if (quotes.length === 0) {
       return Response.json(
-        { error: 'No price data for requested range' },
+        { error: 'No price data for requested timeframe' },
         { status: 404 }
       );
     }
@@ -107,28 +193,17 @@ export async function GET(request) {
       })
       .filter(Boolean)
       .sort((a, b) => a.timestamp - b.timestamp);
-
-    const filterWindowMs =
-      config.type === 'ytd'
-        ? now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()
-        : config.filterMs ?? config.lookbackMs;
-    const cutoffTimestamp =
-      config.type === 'ytd'
-        ? new Date(now.getFullYear(), 0, 1).getTime()
-        : now.getTime() - (filterWindowMs || 0);
-
-    const data = rawPoints.filter((point) => {
-      if (!cutoffTimestamp) return true;
-      return point.timestamp >= cutoffTimestamp;
-    });
+    const processedPoints = aggregateCandles(rawPoints, config.groupSize ?? 1, config.interval);
+    const data = processedPoints.length > 0 ? processedPoints : rawPoints;
 
     return Response.json({
-      data: data.length > 0 ? data : rawPoints,
+      data,
       meta: {
         symbol: result?.meta?.symbol ?? symbol,
         currency: result?.meta?.currency,
         interval: config.interval,
-        range: rangeParam,
+        timeframe: timeframeParam,
+        range: timeframeParam,
         provider: 'yahoo-finance2',
       },
     });

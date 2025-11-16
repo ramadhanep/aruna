@@ -86,7 +86,7 @@ export function HeaderAccountMenu() {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={handleSignOut}
-              className="text-xs text-red-600 focus:text-red-600 focus:bg-red-500/10"
+              className="text-xs text-red-600 focus:text-red-600 focus:bg-red-600/10"
             >
               <LogOut className="mr-2 h-3.5 w-3.5" />
               Sign out
