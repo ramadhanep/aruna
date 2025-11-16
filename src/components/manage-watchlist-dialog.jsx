@@ -197,7 +197,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
 
                 <button
                   onClick={() => handleRemove(item.symbol)}
-                  className="text-red-500 hover:text-red-600 transition-colors"
+                  className="text-red-600 hover:text-red-600 transition-colors"
                   aria-label={`Remove ${item.symbol}`}
                 >
                   <Trash2 className="h-4 w-4" />

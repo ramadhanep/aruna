@@ -666,13 +666,13 @@ export default function ExplorePage() {
                       <p className="text-base font-semibold text-foreground">
                         {item.quote ? formatPrice(item.quote.price) : "—"}
                       </p>
-                      <p className={`text-xs font-semibold ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
+                      <p className={`text-xs font-semibold ${isPositive ? "text-emerald-500" : "text-red-600"}`}>
                         {item.quote && typeof item.quote.changePercent === "number"
                           ? `${isPositive ? "+" : ""}${item.quote.changePercent.toFixed(2)}% today`
                           : "Fetching data"}
                       </p>
                     </div>
-                    <div className={`flex items-center ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
+                    <div className={`flex items-center ${isPositive ? "text-emerald-500" : "text-red-600"}`}>
                       <MiniChart
                         data={item.quote?.chartData || []}
                         isPositive={isPositive}

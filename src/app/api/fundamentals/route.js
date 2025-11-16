@@ -11,6 +11,23 @@ const toPlainValue = (value) => {
   return value;
 };
 
+const simplifyValue = (value) => {
+  if (value == null) return null;
+  if (Array.isArray(value)) {
+    return value.map((entry) => simplifyValue(entry));
+  }
+  if (typeof value === 'object') {
+    if ('raw' in value || 'fmt' in value || 'longFmt' in value || 'shortFmt' in value) {
+      return toPlainValue(value);
+    }
+    return Object.entries(value).reduce((acc, [key, val]) => {
+      acc[key] = simplifyValue(val);
+      return acc;
+    }, {});
+  }
+  return value;
+};
+
 const toNumber = (value) => {
   const plain = toPlainValue(value);
   if (plain == null) return null;
@@ -95,13 +112,28 @@ export async function GET(request) {
     console.warn(`Failed to fetch quote for ${symbolKey}`, error);
   }
 
-  let earningsSummary = null;
+  let summaryModules = null;
   try {
-    const summary = await yahooFinance.quoteSummary(symbolKey, { modules: ['earnings'] });
-    earningsSummary = summary?.earnings ?? null;
+    summaryModules = await yahooFinance.quoteSummary(symbolKey, {
+      modules: [
+        'earnings',
+        'assetProfile',
+        'summaryDetail',
+        'defaultKeyStatistics',
+        'financialData',
+        'recommendationTrend',
+      ],
+    });
   } catch (error) {
-    console.warn(`Failed to fetch earnings summary for ${symbolKey}`, error);
+    console.warn(`Failed to fetch fundamentals summary for ${symbolKey}`, error);
   }
+
+  const earningsSummary = summaryModules?.earnings ?? null;
+  const assetProfile = summaryModules?.assetProfile ?? null;
+  const summaryDetail = summaryModules?.summaryDetail ?? null;
+  const defaultKeyStatistics = summaryModules?.defaultKeyStatistics ?? null;
+  const financialData = summaryModules?.financialData ?? null;
+  const recommendationTrend = summaryModules?.recommendationTrend ?? null;
 
   if (!quote && !earningsSummary) {
     return Response.json(
@@ -191,6 +223,38 @@ export async function GET(request) {
   const earningsChart = earningsSummary?.earningsChart || {};
   const financialsChart = earningsSummary?.financialsChart || {};
 
+  const simplifiedAssetProfile = assetProfile ? simplifyValue(assetProfile) : null;
+  const simplifiedSummaryDetail = summaryDetail ? simplifyValue(summaryDetail) : null;
+  const simplifiedKeyStatistics = defaultKeyStatistics ? simplifyValue(defaultKeyStatistics) : null;
+  const simplifiedFinancialData = financialData ? simplifyValue(financialData) : null;
+
+  const recommendations =
+    recommendationTrend || financialData
+      ? {
+          trend: Array.isArray(recommendationTrend?.trend)
+            ? recommendationTrend.trend.map((entry) => ({
+                period: entry.period || null,
+                strongBuy: entry.strongBuy ?? null,
+                buy: entry.buy ?? null,
+                hold: entry.hold ?? null,
+                sell: entry.sell ?? null,
+                strongSell: entry.strongSell ?? null,
+              }))
+            : [],
+          details: simplifiedFinancialData
+            ? {
+                targetHighPrice: simplifiedFinancialData.targetHighPrice ?? null,
+                targetLowPrice: simplifiedFinancialData.targetLowPrice ?? null,
+                targetMeanPrice: simplifiedFinancialData.targetMeanPrice ?? null,
+                targetMedianPrice: simplifiedFinancialData.targetMedianPrice ?? null,
+                numberOfAnalystOpinions: simplifiedFinancialData.numberOfAnalystOpinions ?? null,
+                recommendationMean: simplifiedFinancialData.recommendationMean ?? null,
+                recommendationKey: simplifiedFinancialData.recommendationKey ?? null,
+              }
+            : null,
+        }
+      : null;
+
   const analysis = {
     earnings: {
       quarterly: mapEarningsSeries(earningsChart.quarterly),
@@ -208,6 +272,11 @@ export async function GET(request) {
     price,
     valuations,
     analysis,
+    assetProfile: simplifiedAssetProfile,
+    summaryDetail: simplifiedSummaryDetail,
+    keyStatistics: simplifiedKeyStatistics,
+    financialData: simplifiedFinancialData,
+    recommendations,
     source: { provider: 'yahoo-finance2' },
   });
 }
