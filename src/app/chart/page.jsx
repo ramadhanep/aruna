@@ -1300,6 +1300,10 @@ function ElectionCyclePageContent() {
   }, []);
 
   const currencyCode = fundamentals?.profile?.currency || symbolInfo?.currency || 'USD';
+  const currencyFractionDigits = useMemo(
+    () => (currencyCode === 'IDR' ? 0 : 2),
+    [currencyCode]
+  );
 
   const compactNumberFormatter = useMemo(
     () =>
@@ -1331,10 +1335,10 @@ function ElectionCyclePageContent() {
   const formatDetailedCurrency = useCallback((value) => {
     if (value == null || Number.isNaN(Number(value))) return '—';
     return Number(value).toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: currencyFractionDigits,
+      maximumFractionDigits: currencyFractionDigits,
     });
-  }, []);
+  }, [currencyFractionDigits]);
 
   const formatQuantityValue = useCallback((value) => {
     if (value == null || Number.isNaN(Number(value))) return '—';
@@ -2223,8 +2227,8 @@ function ElectionCyclePageContent() {
             </CardHeader>
             <CardContent className="mt-4 space-y-3 text-xs flex items-start gap-4">
               <div className="flex flex-col justify-center items-center gap-3">
-                <div className={`flex w-20 h-20 text-center items-center justify-center rounded-full text-xs font-bold tracking-widest ${ratingBgClass}`}>
-                  {(ratingLabel || 'N/A').split(' ')[0]}
+                <div className={`flex w-20 h-20 p-4 text-center items-center justify-center rounded-full text-sm font-bold tracking-wide ${ratingBgClass}`}>
+                  {(ratingLabel || 'N/A')}
                 </div>
                 {ratingScore && (
                   <span className="text-xs text-muted-foreground">
@@ -2317,7 +2321,7 @@ function ElectionCyclePageContent() {
                 )}
                 {currentPrice != null && (
                   <span
-                    className="absolute -top-1 h-4 w-4 -translate-x-1/2 rounded-full border-2 border-white bg-background"
+                    className="absolute -top-1 h-4 w-4 -translate-x-1/2 rounded-full border-2 border-white bg-white"
                     style={{ left: getPosition(currentPrice) }}
                     title="Current"
                   />
@@ -2520,7 +2524,7 @@ function ElectionCyclePageContent() {
   };
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 pb-8">
       <div className="flex justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <h1
@@ -2917,9 +2921,9 @@ function ElectionCyclePageContent() {
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
                       <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                        My Portfolio in {symbol}
+                        Your Portfolio in {symbol}
                       </p>
-                      <p className="text-2xl font-semibold">
+                      <p className="text-xl font-semibold">
                         {portfolioPosition.marketValue != null
                           ? `${formatDetailedCurrency(portfolioPosition.marketValue)} ${currencyCode}`
                           : '—'}
@@ -2928,7 +2932,7 @@ function ElectionCyclePageContent() {
                     </div>
                     {portfolioPosition.pnlPct != null && (
                       <span
-                        className={`text-sm font-semibold ${
+                        className={`text-xs font-semibold ${
                           portfolioPosition.pnlPct >= 0 ? 'text-emerald-600' : 'text-red-600'
                         }`}
                       >
@@ -2947,7 +2951,7 @@ function ElectionCyclePageContent() {
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[11px] text-muted-foreground">P/L</p>
+                    <p className="text-[11px] text-muted-foreground">PNL</p>
                     <p
                       className={
                         portfolioPosition.pnl != null

@@ -59,7 +59,7 @@ export function PWAInstallDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="max-w-sm">
+      <DialogContent className="max-w-sm" closeButtonPosition="right">
         <div className="flex flex-col items-center gap-4 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-700/30">
             <div className="h-7 relative overflow-hidden">

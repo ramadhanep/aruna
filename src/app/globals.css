@@ -182,3 +182,6 @@
 #tv-attr-logo {
   display: none !important;
 }
+button[data-slot="dialog-close"].ring-offset-background {
+  display: none;
+}
