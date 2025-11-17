@@ -10,7 +10,7 @@ import { fetchEncodedJson } from "@/lib/api-client";
 const CATEGORY_LABELS = {
   idx: "IDX 🇮🇩",
   us: "US 🇺🇸",
-  crypto: "Crypto ⚡",
+  crypto: "Cryptod ⚡",
 };
 
 const CATEGORY_ORDER = ["idx", "us", "crypto"];
@@ -109,6 +109,25 @@ function resolveName(pick, quote) {
     return pick.name;
   }
   return pick?.symbol || "";
+}
+
+function sortPicksByDescendingChange(picks, quotes) {
+  return [...picks].sort((a, b) => {
+    const changeA = resolveChangePercent(a, quotes[a.symbol]);
+    const changeB = resolveChangePercent(b, quotes[b.symbol]);
+    const hasA = typeof changeA === "number";
+    const hasB = typeof changeB === "number";
+    if (hasA && hasB) {
+      return changeB - changeA;
+    }
+    if (hasA) {
+      return -1;
+    }
+    if (hasB) {
+      return 1;
+    }
+    return 0;
+  });
 }
 
 function ShimmerItem() {
@@ -539,12 +558,13 @@ export default function ExplorePage() {
         allSignals.push(detail);
         return detail;
       });
+      const sortedPicks = sortPicksByDescendingChange(normalized, quotes);
 
       categories.push({
         category,
         title: CATEGORY_LABELS[category] ?? category,
         snapshot,
-        picks: normalized,
+        picks: sortedPicks,
         enriched,
         lastScreened,
         averageChange:
@@ -690,50 +710,6 @@ export default function ExplorePage() {
           </div>
         </section>
 
-        <section className="mt-5 bg-background/80">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                Screening Now
-              </p>
-              <p className="text-[11px] text-muted-foreground">
-                Run a fresh pass whenever you need fresh signals.
-              </p>
-            </div>
-          </div>
-          <div className="mt-4 grid grid-cols-3 gap-3">
-            {CATEGORY_ORDER.map((category) => {
-              const snapshot = snapshots[category];
-              const lastScreened = snapshot?.updated_at ? new Date(snapshot.updated_at) : null;
-              const screenedToday = isSameCalendarDay(lastScreened);
-              const label = category.toUpperCase();
-              return (
-                <div key={category} className="space-y-1 text-center">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-full rounded-full text-xs border-border/70 bg-background/80"
-                    onClick={() => triggerBatch(category)}
-                    disabled={manualLoading[category]}
-                  >
-                    {manualLoading[category] ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      label
-                    )}
-                  </Button>
-                  <p className="text-[10px] text-muted-foreground">
-                    {lastScreened
-                      ? `Last ${screenedToday ? "today" : formatLocalDateTimeLabel(lastScreened)}`
-                      : "Never screened"}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
         {categoriesWithSignals.map((section) => {
           const gatedPicks = section.picks.slice(2);
           const firstPicks = section.picks.slice(0, 2);
@@ -743,7 +719,7 @@ export default function ExplorePage() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    BUY SIGNALS IN {section.title}
+                    Alpha in {section.title}
                   </p>
                   {section.lastScreened && (
                     <p className="text-[11px] text-muted-foreground">
@@ -796,6 +772,47 @@ export default function ExplorePage() {
             </section>
           );
         })}
+
+        <section className="mt-5 bg-background/80">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-[11px] text-muted-foreground">
+                Run a fresh pass whenever you need fresh alpha.
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            {CATEGORY_ORDER.map((category) => {
+              const snapshot = snapshots[category];
+              const lastScreened = snapshot?.updated_at ? new Date(snapshot.updated_at) : null;
+              const screenedToday = isSameCalendarDay(lastScreened);
+              const label = category.toUpperCase();
+              return (
+                <div key={category} className="space-y-1 text-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-full rounded-full text-xs border-border/70 bg-background/80"
+                    onClick={() => triggerBatch(category)}
+                    disabled={manualLoading[category]}
+                  >
+                    {manualLoading[category] ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      label
+                    )}
+                  </Button>
+                  <p className="text-[10px] text-muted-foreground">
+                    {lastScreened
+                      ? `Last ${screenedToday ? "today" : formatLocalDateTimeLabel(lastScreened)}`
+                      : "Never screened"}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </section>
       </div>
     </div>
   );

@@ -126,7 +126,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
           <div className="mb-4">
             <div className="relative">
               <Input
-                placeholder="Search symbol..."
+                placeholder="Search ticker..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery((e.target.value || '').toUpperCase())}
                 className="pr-10"
