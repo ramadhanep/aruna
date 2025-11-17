@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import yahooFinance from "@/lib/yahoo-finance";
 import { getSupabaseServiceRoleClient } from "@/lib/supabase-server";
+import { encodePayload } from "@/lib/secure-payload";
 import {
   IDX_SYMBOLS,
   US_SP500_SYMBOLS,
@@ -298,7 +299,7 @@ export async function GET(request, context) {
   const category = params?.category?.toLowerCase();
   if (!SCREENER_CONFIG[category]) {
     return NextResponse.json(
-      { error: "Unknown screener category" },
+      { payload: encodePayload({ error: "Unknown screener category" }) },
       { status: 400 }
     );
   }
@@ -306,7 +307,7 @@ export async function GET(request, context) {
   const supabase = getSupabaseServiceRoleClient();
   if (!supabase) {
     return NextResponse.json(
-      { error: "Supabase service role key is not configured" },
+      { payload: encodePayload({ error: "Supabase service role key is not configured" }) },
       { status: 500 }
     );
   }
@@ -321,7 +322,7 @@ export async function GET(request, context) {
   const totalCount = universe.length;
   if (!totalCount) {
     return NextResponse.json(
-      { error: "Symbol universe is empty", category },
+      { payload: encodePayload({ error: "Symbol universe is empty", category }) },
       { status: 500 }
     );
   }
@@ -372,15 +373,21 @@ export async function GET(request, context) {
       const evaluation = evaluateSymbol(quotes, category, meta);
       if (evaluation.isBreakout) {
         const existingEntry = existingResultsMap.get(symbol);
-        const signalDate = existingEntry?.signal_date ?? new Date().toISOString();
-        const entry = {
-          symbol,
-          signal_date: signalDate,
-          is_warning: Boolean(evaluation.isWarning),
-        };
-        existingResultsMap.set(symbol, entry);
-        batchResults.push(symbol);
-        batchEntries.push(entry);
+        if (existingEntry) {
+          existingResultsMap.set(symbol, {
+            ...existingEntry,
+            is_warning: Boolean(evaluation.isWarning),
+          });
+        } else {
+          const entry = {
+            symbol,
+            signal_date: new Date().toISOString(),
+            is_warning: Boolean(evaluation.isWarning),
+          };
+          existingResultsMap.set(symbol, entry);
+          batchResults.push(symbol);
+          batchEntries.push(entry);
+        }
       } else if (existingResultsMap.has(symbol)) {
         existingResultsMap.delete(symbol);
       }
@@ -420,18 +427,20 @@ export async function GET(request, context) {
   if (upsertError) {
     console.error("Failed to persist screening snapshot:", upsertError.message);
     return NextResponse.json(
-      { error: "Failed to persist screening snapshot", category },
+      { payload: encodePayload({ error: "Failed to persist screening snapshot", category }) },
       { status: 500 }
     );
   }
 
   return NextResponse.json({
-    category,
-    status: finished ? "done" : "continue",
-    processedThisBatch: processedCount,
-    nextCursor: finished ? null : index,
-    totalSymbols: totalCount,
-    appendedSignals: batchResults.length,
-    durationMs: Date.now() - startedAt,
+    payload: encodePayload({
+      category,
+      status: finished ? "done" : "continue",
+      processedThisBatch: processedCount,
+      nextCursor: finished ? null : index,
+      totalSymbols: totalCount,
+      appendedSignals: batchResults.length,
+      durationMs: Date.now() - startedAt,
+    }),
   });
 }

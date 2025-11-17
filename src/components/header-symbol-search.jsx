@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Loader2, Clock, X } from "lucide-react";
+import { fetchEncodedJson } from "@/lib/api-client";
 
 const SEARCH_HISTORY_KEY = "aruna_header_symbol_history";
 
@@ -41,12 +42,16 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
 
     const timeout = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/symbol-search?q=${encodeURIComponent(normalizedQuery)}`, {
-          signal: controller.signal,
-        });
-        if (!res.ok) throw new Error("Search failed");
-        const json = await res.json();
-        setResults(Array.isArray(json.symbols) ? json.symbols.slice(0, 12) : []);
+        const { response, data } = await fetchEncodedJson(
+          `/api/symbol-search?q=${encodeURIComponent(normalizedQuery)}`,
+          {
+            signal: controller.signal,
+          }
+        );
+        if (!response.ok) {
+          throw new Error(data?.error || "Search failed");
+        }
+        setResults(Array.isArray(data.symbols) ? data.symbols.slice(0, 12) : []);
       } catch (error) {
         if (error.name !== "AbortError") {
           console.warn("Symbol search error", error);

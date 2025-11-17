@@ -31,6 +31,7 @@ import { AddAssetModal } from "@/components/add-asset-modal";
 import { SymbolSearchDialog } from "@/components/header-symbol-search";
 import { useAuth } from "@/components/auth-provider";
 import { NormalCandlestickChart } from "@/components/normal-candlestick-chart";
+import { fetchEncodedJson } from "@/lib/api-client";
 
 const CURRENT_LINE_COLOR = 'oklch(59.6% 0.145 163.225)';
 const WATCHLIST_STORAGE_KEY = 'aruna_watchlist';
@@ -591,11 +592,12 @@ function ElectionCyclePageContent() {
 
     (async () => {
       try {
-        const res = await fetch(`/api/fundamentals?symbol=${encodeURIComponent(symbol)}`);
-        if (!res.ok) {
-          throw new Error('Failed to load fundamentals');
+        const { response, data } = await fetchEncodedJson(
+          `/api/fundamentals?symbol=${encodeURIComponent(symbol)}`
+        );
+        if (!response.ok) {
+          throw new Error(data?.error || 'Failed to load fundamentals');
         }
-        const data = await res.json();
         if (!cancelled) {
           setFundamentals(data);
         }
@@ -630,16 +632,15 @@ function ElectionCyclePageContent() {
       const startDate = Math.floor(new Date('1971-01-01').getTime() / 1000);
       const endDate = Math.floor(Date.now() / 1000);
 
-      const response = await fetch(
+      const { response, data } = await fetchEncodedJson(
         `/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`
       );
 
       if (!response.ok) {
-        throw new Error('Failed to fetch data');
+        throw new Error(data?.error || 'Failed to fetch data');
       }
 
-      const json = await response.json();
-      let rawData = json.data.map(row => ({
+      let rawData = (data.data || []).map(row => ({
         date: row.date,
         adjclose: row.adjclose,
       }));
@@ -735,7 +736,7 @@ function ElectionCyclePageContent() {
       // Simpan raw linesData saja, transformasi akan dilakukan di useMemo
       setRawLinesData(linesData);
 
-      const symbolName = json.meta?.name || symbol;
+      const symbolName = data.meta?.name || symbol;
       setAssetName(symbolName);
 
       let currentPrice = null;
@@ -780,7 +781,7 @@ function ElectionCyclePageContent() {
         }
       }
 
-      const marketState = json.meta?.marketState ? String(json.meta.marketState).toUpperCase() : 'CLOSED';
+      const marketState = data.meta?.marketState ? String(data.meta.marketState).toUpperCase() : 'CLOSED';
       const isMarketOpen = ['REGULAR', 'OPEN', 'TRADING'].some(state => marketState.includes(state));
 
       setSymbolInfo({
@@ -791,7 +792,7 @@ function ElectionCyclePageContent() {
         dailyChange,
         dailyChangePct,
         isMarketOpen,
-        currency: json.meta?.currency,
+        currency: data.meta?.currency,
       });
 
       const monthlyReturns = calculateMonthlyReturns(rawData);
@@ -940,15 +941,14 @@ function ElectionCyclePageContent() {
       setNormalSeries([]);
       try {
         const params = new URLSearchParams({ symbol, timeframe: normalTimeframe });
-        const res = await fetch(`/api/price-series?${params.toString()}`, {
+        const { response, data } = await fetchEncodedJson(`/api/price-series?${params.toString()}`, {
           signal: controller.signal,
         });
-        const payload = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error(payload?.error || 'Failed to load price data');
+        if (!response.ok) {
+          throw new Error(data?.error || 'Failed to load price data');
         }
         if (!cancelled) {
-          setNormalSeries(Array.isArray(payload?.data) ? payload.data : []);
+          setNormalSeries(Array.isArray(data?.data) ? data.data : []);
         }
       } catch (error) {
         if (error.name === 'AbortError') return;
@@ -1244,6 +1244,42 @@ function ElectionCyclePageContent() {
   }, [normalCandlestickSeries.stochastic]);
 
   const showIntradayScale = isIntradayTimeframe;
+  const buySignalMarkers = useMemo(() => {
+    if (
+      !isNormalView ||
+      !screeningSignal?.signal_date ||
+      filteredNormalChartData.length === 0
+    ) {
+      return [];
+    }
+    const signalDate = new Date(screeningSignal.signal_date);
+    if (Number.isNaN(signalDate.getTime())) {
+      return [];
+    }
+    const signalMs = signalDate.getTime();
+    let closest = null;
+    let minDelta = Infinity;
+    filteredNormalChartData.forEach((point) => {
+      if (typeof point.timestamp !== 'number') return;
+      const delta = Math.abs(point.timestamp - signalMs);
+      if (delta < minDelta) {
+        minDelta = delta;
+        closest = Math.floor(point.timestamp / 1000);
+      }
+    });
+    if (closest == null) {
+      return [];
+    }
+    return [
+      {
+        time: closest,
+        position: 'belowBar',
+        shape: 'arrowUp',
+        color: '#059669',
+        text: 'Buy',
+      },
+    ];
+  }, [filteredNormalChartData, screeningSignal?.signal_date, isNormalView]);
   const infoTabs = [
     { value: 'keystats', label: 'KEYSTATS' },
     { value: 'analysis', label: 'ANALYSIS' },
@@ -1514,11 +1550,18 @@ function ElectionCyclePageContent() {
 
   const formatPeriodLabel = useCallback((period) => {
     if (!period) return '';
-    const upper = String(period).toUpperCase();
-    if (/FY\d{2,4}/.test(upper)) return upper.replace(/ /g, ' ');
-    if (/Q\d/.test(upper) && /FY/.test(upper)) return upper;
-    if (/^\d{4}$/.test(upper)) return `${upper.slice(-2)}`;
-    return upper.replace(/(\d{4})/g, ' $1').replace(/\s+/g, ' ').trim();
+    const raw = String(period).toUpperCase();
+    const compact = raw.replace(/\s+/g, '');
+    const flippedQuarterMatch = compact.match(/^(\d)Q(\d{2,4})$/) || compact.match(/^Q(\d)(\d{2,4})$/);
+    if (flippedQuarterMatch) {
+      const [, quarter, yearGroup] = flippedQuarterMatch;
+      const fullYear = yearGroup.length === 2 ? `20${yearGroup}` : yearGroup;
+      return `Q${quarter} ${fullYear}`;
+    }
+    if (/^Q\d/.test(raw) && /FY/.test(raw)) return raw.replace(/\s+/g, ' ').trim();
+    if (/FY\d{2,4}/.test(raw)) return raw.replace(/ /g, ' ');
+    if (/^\d{4}$/.test(raw)) return `${raw.slice(-2)}`;
+    return raw.replace(/(\d{4})/g, ' $1').replace(/\s+/g, ' ').trim();
   }, []);
 
   const earningsChartData = useMemo(() => {
@@ -1995,6 +2038,7 @@ function ElectionCyclePageContent() {
                           }}
                         />
                         <Line
+                          key="earnings-estimate"
                           type="monotone"
                           dataKey="estimate"
                           stroke="transparent"
@@ -2002,6 +2046,7 @@ function ElectionCyclePageContent() {
                           activeDot={false}
                         />
                         <Line
+                          key="earnings-actual"
                           type="monotone"
                           dataKey="actual"
                           stroke="transparent"
@@ -2216,7 +2261,7 @@ function ElectionCyclePageContent() {
         {recommendationData && (
           <Card>
             <CardHeader>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <CardTitle className="text-sm mb-2">{totalOpinions || 0} Analyst Rating</CardTitle>
                   <CardDescription className="text-xs text-muted-foreground">
@@ -2225,9 +2270,9 @@ function ElectionCyclePageContent() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="mt-4 space-y-3 text-xs flex items-start gap-4">
+            <CardContent className="mt-4 space-y-3 text-xs">
               <div className="flex flex-col justify-center items-center gap-3">
-                <div className={`flex w-20 h-20 p-4 text-center items-center justify-center rounded-full text-sm font-bold tracking-wide ${ratingBgClass}`}>
+                <div className={`flex w-28 p-2 text-center items-center justify-center rounded-full text-sm font-bold tracking-wide ${ratingBgClass}`}>
                   {(ratingLabel || 'N/A')}
                 </div>
                 {ratingScore && (
@@ -2297,17 +2342,17 @@ function ElectionCyclePageContent() {
                     : '—'}
                 </span>
               </div>
-              <div className="relative h-2 rounded-full bg-muted">
+              <div className="relative h-2 rounded-full bg-muted mx-1.5">
                 {lowTarget != null && (
                   <span
-                    className="absolute -top-1 h-4 w-4 -translate-x-1/2 rounded-full border border-border bg-muted"
+                    className="absolute -top-1 h-4 w-4 -translate-x-1/2 rounded-full border border-border bg-muted-foreground"
                     style={{ left: getPosition(lowTarget) }}
                     title="Low"
                   />
                 )}
                 {highTarget != null && (
                   <span
-                    className="absolute -top-1 h-4 w-4 -translate-x-1/2 rounded-full border border-border bg-muted"
+                    className="absolute -top-1 h-4 w-4 -translate-x-1/2 rounded-full border border-border bg-muted-foreground"
                     style={{ left: getPosition(highTarget) }}
                     title="High"
                   />
@@ -2742,7 +2787,7 @@ function ElectionCyclePageContent() {
                 </div>
               </div>
             </CardHeader>
-            <CardContent className={isNormalView ? "px-0 pb-0 -mx-5" : "px-0 pb-0 -mr-5"}>
+            <CardContent className={isNormalView ? "px-0 pb-0 -mx-4" : "px-0 pb-0 -mr-4"}>
               {isNormalView ? (
                 normalSeriesLoading ? (
                   <div className="flex h-[280px] items-center justify-center gap-2 text-xs text-muted-foreground">
@@ -2756,6 +2801,7 @@ function ElectionCyclePageContent() {
                         candles={normalCandlestickSeries.candles}
                         ema={normalCandlestickSeries.ema}
                         meta={normalCandlestickSeries.meta}
+                        markers={buySignalMarkers}
                         formatTimestamp={formatNormalTimestamp}
                         currency={symbolInfo?.currency}
                         formatPrice={formatPriceValue}
@@ -2788,8 +2834,8 @@ function ElectionCyclePageContent() {
                             <YAxis domain={[0, 100]} className="text-[10px]" width={30} allowDecimals={false} />
                             <ReferenceLine y={80} stroke="#f87171" strokeDasharray="4 4" />
                             <ReferenceLine y={20} stroke="#34d399" strokeDasharray="4 4" />
-                            <Line type="monotone" dataKey="k" stroke="#f97316" strokeWidth={1.8} dot={false} isAnimationActive={false} />
-                            <Line type="monotone" dataKey="d" stroke="#6366f1" strokeWidth={1.2} dot={false} isAnimationActive={false} />
+                            <Line key="stoch-k" type="monotone" dataKey="k" stroke="#f97316" strokeWidth={1.8} dot={false} isAnimationActive={false} />
+                            <Line key="stoch-d" type="monotone" dataKey="d" stroke="#6366f1" strokeWidth={1.2} dot={false} isAnimationActive={false} />
                           </ComposedChart>
                         </ResponsiveContainer>
                       </div>

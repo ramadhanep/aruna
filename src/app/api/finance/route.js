@@ -1,4 +1,5 @@
 import yahooFinance from '@/lib/yahoo-finance';
+import { encodePayload } from '@/lib/secure-payload';
 
 /**
  * Yahoo Finance API proxy route
@@ -16,7 +17,7 @@ export async function GET(request) {
 
   if (!symbol || !startDate || !endDate) {
     return Response.json(
-      { error: 'Missing required parameters: symbol, startDate, endDate' },
+      { payload: encodePayload({ error: 'Missing required parameters: symbol, startDate, endDate' }) },
       { status: 400 }
     );
   }
@@ -26,7 +27,7 @@ export async function GET(request) {
 
   if (Number.isNaN(start) || Number.isNaN(end)) {
     return Response.json(
-      { error: 'Invalid date parameters; expected Unix timestamps' },
+      { payload: encodePayload({ error: 'Invalid date parameters; expected Unix timestamps' }) },
       { status: 400 }
     );
   }
@@ -35,7 +36,7 @@ export async function GET(request) {
   const validIntervals = ['1m', '2m', '5m', '15m', '30m', '60m', '90m', '1h', '1d', '5d', '1wk', '1mo', '3mo'];
   if (!validIntervals.includes(interval)) {
     return Response.json(
-      { error: `Invalid interval. Must be one of: ${validIntervals.join(', ')}` },
+      { payload: encodePayload({ error: `Invalid interval. Must be one of: ${validIntervals.join(', ')}` }) },
       { status: 400 }
     );
   }
@@ -61,7 +62,7 @@ export async function GET(request) {
     // Handle empty results
     if (!result?.quotes || result.quotes.length === 0) {
       return Response.json(
-        { error: 'No data available for the specified period. Symbol may be invalid or delisted.' },
+        { payload: encodePayload({ error: 'No data available for the specified period. Symbol may be invalid or delisted.' }) },
         { status: 404 }
       );
     }
@@ -99,31 +100,33 @@ export async function GET(request) {
     }
 
     return Response.json({
-      data: prices,
-      events: Object.keys(eventsData).length > 0 ? eventsData : undefined,
-      meta: {
-        symbol: meta.symbol,
-        name: meta.longName || meta.shortName || meta.symbol || symbol,
-        currency: meta.currency,
-        exchangeName: meta.exchangeName,
-        fullExchangeName: meta.fullExchangeName,
-        instrumentType: meta.instrumentType,
-        firstTradeDate: meta.firstTradeDate,
-        regularMarketTime: meta.regularMarketTime,
-        regularMarketPrice: meta.regularMarketPrice,
-        chartPreviousClose: meta.chartPreviousClose,
-        previousClose: meta.previousClose,
-        scale: meta.scale,
-        priceHint: meta.priceHint,
-        dataGranularity: meta.dataGranularity,
-        range: meta.range,
-        validRanges: meta.validRanges,
-        gmtoffset: meta.gmtoffset,
-        timezone: meta.exchangeTimezoneName,
-        currentTradingPeriod: meta.currentTradingPeriod,
-        marketState: meta.marketState, // Add marketState for pages to detect market status
-        provider: 'yahoo-finance2',
-      },
+      payload: encodePayload({
+        data: prices,
+        events: Object.keys(eventsData).length > 0 ? eventsData : undefined,
+        meta: {
+          symbol: meta.symbol,
+          name: meta.longName || meta.shortName || meta.symbol || symbol,
+          currency: meta.currency,
+          exchangeName: meta.exchangeName,
+          fullExchangeName: meta.fullExchangeName,
+          instrumentType: meta.instrumentType,
+          firstTradeDate: meta.firstTradeDate,
+          regularMarketTime: meta.regularMarketTime,
+          regularMarketPrice: meta.regularMarketPrice,
+          chartPreviousClose: meta.chartPreviousClose,
+          previousClose: meta.previousClose,
+          scale: meta.scale,
+          priceHint: meta.priceHint,
+          dataGranularity: meta.dataGranularity,
+          range: meta.range,
+          validRanges: meta.validRanges,
+          gmtoffset: meta.gmtoffset,
+          timezone: meta.exchangeTimezoneName,
+          currentTradingPeriod: meta.currentTradingPeriod,
+          marketState: meta.marketState, // Add marketState for pages to detect market status
+          provider: 'yahoo-finance2',
+        },
+      }),
     });
   } catch (error) {
     console.error('Error fetching Yahoo Finance chart data:', error);
@@ -139,6 +142,6 @@ export async function GET(request) {
       message = 'Yahoo Finance API session error. Please try again.';
     }
     
-    return Response.json({ error: message }, { status });
+    return Response.json({ payload: encodePayload({ error: message }) }, { status });
   }
 }

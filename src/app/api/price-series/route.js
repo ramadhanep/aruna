@@ -1,4 +1,5 @@
 import yahooFinance from '@/lib/yahoo-finance';
+import { encodePayload } from '@/lib/secure-payload';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
@@ -113,13 +114,17 @@ export async function GET(request) {
   ).toUpperCase();
 
   if (!symbol) {
-    return Response.json({ error: 'Missing symbol parameter' }, { status: 400 });
+    return Response.json({ payload: encodePayload({ error: 'Missing symbol parameter' }) }, { status: 400 });
   }
 
   const config = TIMEFRAME_CONFIG[timeframeParam];
   if (!config) {
     return Response.json(
-      { error: `Unsupported timeframe. Use one of ${Object.keys(TIMEFRAME_CONFIG).join(', ')}` },
+      {
+        payload: encodePayload({
+          error: `Unsupported timeframe. Use one of ${Object.keys(TIMEFRAME_CONFIG).join(', ')}`,
+        }),
+      },
       { status: 400 }
     );
   }
@@ -149,7 +154,7 @@ export async function GET(request) {
     const quotes = result?.quotes ?? [];
     if (quotes.length === 0) {
       return Response.json(
-        { error: 'No price data for requested timeframe' },
+        { payload: encodePayload({ error: 'No price data for requested timeframe' }) },
         { status: 404 }
       );
     }
@@ -197,20 +202,22 @@ export async function GET(request) {
     const data = processedPoints.length > 0 ? processedPoints : rawPoints;
 
     return Response.json({
-      data,
-      meta: {
-        symbol: result?.meta?.symbol ?? symbol,
-        currency: result?.meta?.currency,
-        interval: config.interval,
-        timeframe: timeframeParam,
-        range: timeframeParam,
-        provider: 'yahoo-finance2',
-      },
+      payload: encodePayload({
+        data,
+        meta: {
+          symbol: result?.meta?.symbol ?? symbol,
+          currency: result?.meta?.currency,
+          interval: config.interval,
+          timeframe: timeframeParam,
+          range: timeframeParam,
+          provider: 'yahoo-finance2',
+        },
+      }),
     });
   } catch (error) {
     console.error('[price-series] Failed to fetch data:', error);
     const message = error?.message || 'Failed to fetch price data';
     const status = message.includes('No data') ? 404 : 500;
-    return Response.json({ error: message }, { status });
+    return Response.json({ payload: encodePayload({ error: message }) }, { status });
   }
 }

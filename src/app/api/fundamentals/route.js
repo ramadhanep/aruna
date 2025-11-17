@@ -1,4 +1,5 @@
 import yahooFinance from '@/lib/yahoo-finance';
+import { encodePayload } from '@/lib/secure-payload';
 
 const toPlainValue = (value) => {
   if (value == null) return null;
@@ -97,7 +98,7 @@ export async function GET(request) {
   const symbol = searchParams.get('symbol');
 
   if (!symbol) {
-    return Response.json({ error: 'Missing symbol parameter' }, { status: 400 });
+    return Response.json({ payload: encodePayload({ error: 'Missing symbol parameter' }) }, { status: 400 });
   }
 
   const symbolKey = symbol.trim().toUpperCase();
@@ -137,7 +138,11 @@ export async function GET(request) {
 
   if (!quote && !earningsSummary) {
     return Response.json(
-      { error: `No fundamentals data found for ${symbolKey}. Symbol may be invalid or not supported.` },
+      {
+        payload: encodePayload({
+          error: `No fundamentals data found for ${symbolKey}. Symbol may be invalid or not supported.`,
+        }),
+      },
       { status: 404 }
     );
   }
@@ -268,15 +273,17 @@ export async function GET(request) {
   };
 
   return Response.json({
-    profile,
-    price,
-    valuations,
-    analysis,
-    assetProfile: simplifiedAssetProfile,
-    summaryDetail: simplifiedSummaryDetail,
-    keyStatistics: simplifiedKeyStatistics,
-    financialData: simplifiedFinancialData,
-    recommendations,
-    source: { provider: 'yahoo-finance2' },
+    payload: encodePayload({
+      profile,
+      price,
+      valuations,
+      analysis,
+      assetProfile: simplifiedAssetProfile,
+      summaryDetail: simplifiedSummaryDetail,
+      keyStatistics: simplifiedKeyStatistics,
+      financialData: simplifiedFinancialData,
+      recommendations,
+      source: { provider: 'yahoo-finance2' },
+    }),
   });
 }
