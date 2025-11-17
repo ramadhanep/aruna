@@ -29,7 +29,8 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
   }, []);
 
   useEffect(() => {
-    if (!query.trim()) {
+    const normalizedQuery = query.trim();
+    if (!normalizedQuery) {
       setResults([]);
       setLoading(false);
       return;
@@ -40,7 +41,7 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
 
     const timeout = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/symbol-search?q=${encodeURIComponent(query.trim())}`, {
+        const res = await fetch(`/api/symbol-search?q=${encodeURIComponent(normalizedQuery)}`, {
           signal: controller.signal,
         });
         if (!res.ok) throw new Error("Search failed");
@@ -138,7 +139,7 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
           <Input
             autoFocus
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => setQuery((event.target.value || '').toUpperCase())}
             placeholder="Search by symbol or company name"
             className="flex-1"
           />
@@ -199,11 +200,9 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
           </div>
         </div>
 
-        <DialogClose asChild>
-          <Button variant="outline" className="w-full text-sm mt-2" onClick={() => handleOpenChange(false)}>
-            Cancel
-          </Button>
-        </DialogClose>
+        <Button variant="outline" className="w-full text-sm mt-2" onClick={() => handleOpenChange(false)}>
+          Cancel
+        </Button>
       </DialogContent>
     </Dialog>
   );

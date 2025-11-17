@@ -33,7 +33,8 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
 
   // Search for symbols (debounced)
   useEffect(() => {
-    if (!searchQuery.trim()) {
+    const normalizedQuery = searchQuery.trim();
+    if (!normalizedQuery) {
       setSearchResults([]);
       return;
     }
@@ -45,7 +46,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
     searchTimeoutRef.current = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(`/api/symbol-search?q=${encodeURIComponent(searchQuery)}`);
+        const res = await fetch(`/api/symbol-search?q=${encodeURIComponent(normalizedQuery)}`);
         if (res.ok) {
           const data = await res.json();
           setSearchResults(data.symbols || []);
@@ -124,7 +125,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
               <Input
                 placeholder="Search symbol..."
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => setSearchQuery((e.target.value || '').toUpperCase())}
                 className="pr-10"
               />
               {searchQuery && (
