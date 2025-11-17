@@ -37,6 +37,15 @@ const buildUnauthorizedResponse = () =>
     headers: { 'Content-Type': 'application/json' },
   });
 
+const isServerToServerRequest = (request) => {
+  const authorizationHeader = request.headers.get('authorization');
+  if (!authorizationHeader) {
+    return false;
+  }
+  const expected = `Bearer ${process.env.CRON_SECRET}`;
+  return authorizationHeader == expected;
+};
+
 const applyCorsHeaders = (response, origin) => {
   if (!origin) return response;
   response.headers.set('Access-Control-Allow-Origin', origin);
@@ -82,17 +91,22 @@ const resolveAllowedOrigin = (request) => {
 export function middleware(request) {
   const allowedOrigin = resolveAllowedOrigin(request);
 
-  if (request.method === 'OPTIONS') {
-    if (!allowedOrigin) {
-      return buildUnauthorizedResponse();
-    }
-    const response = new NextResponse(null, { status: 204 });
-    return applyCorsHeaders(response, allowedOrigin);
-  }
+  // if (isServerToServerRequest(request)) {
+  //   const response = NextResponse.next();
+  //   return applyCorsHeaders(response, allowedOrigin);
+  // }
 
-  if (!allowedOrigin) {
-    return buildUnauthorizedResponse();
-  }
+  // if (request.method === 'OPTIONS') {
+  //   if (!allowedOrigin) {
+  //     return buildUnauthorizedResponse();
+  //   }
+  //   const response = new NextResponse(null, { status: 204 });
+  //   return applyCorsHeaders(response, allowedOrigin);
+  // }
+
+  // if (!allowedOrigin) {
+  //   return buildUnauthorizedResponse();
+  // }
 
   const response = NextResponse.next();
   return applyCorsHeaders(response, allowedOrigin);
