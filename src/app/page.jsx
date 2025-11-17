@@ -7,6 +7,7 @@ import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/com
 import { Button } from "@/components/ui/button";
 import { ManageWatchlistDialog } from "@/components/manage-watchlist-dialog";
 import { useAuth } from "@/components/auth-provider";
+import { fetchEncodedJson } from "@/lib/api-client";
 
 const WATCHLIST_KEY = 'aruna_watchlist';
 const WATCHLIST_UPDATED_AT_KEY = 'aruna_watchlist_updated_at';
@@ -68,18 +69,21 @@ async function fetchQuote(symbol) {
   try {
     const endDate = Math.floor(Date.now() / 1000);
     const startDate = endDate - 60 * 60 * 24 * 5; // 5 days
-    const res = await fetch(`/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`);
-    if (!res.ok) return null;
-    const json = await res.json();
-    const data = json.data || [];
-    if (data.length < 2) return null;
+    const { response, data } = await fetchEncodedJson(
+      `/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`
+    );
+    if (!response.ok) {
+      throw new Error(data?.error || "Failed to load quote");
+    }
+    const series = data.data || [];
+    if (series.length < 2) return null;
     
-    const current = data[data.length - 1];
-    const previous = data[data.length - 2];
+    const current = series[series.length - 1];
+    const previous = series[series.length - 2];
     const price = current.adjclose;
     const change = price - previous.adjclose;
     const changePercent = (change / previous.adjclose) * 100;
-    const name = json.meta?.name || symbol;
+    const name = data.meta?.name || symbol;
     
     return {
       symbol,
@@ -87,7 +91,7 @@ async function fetchQuote(symbol) {
       price,
       change,
       changePercent,
-      chartData: data.slice(-30).map(d => d.adjclose) // Last 30 points for mini chart
+      chartData: series.slice(-30).map(d => d.adjclose) // Last 30 points for mini chart
     };
   } catch (e) {
     console.warn(`Failed to fetch ${symbol}`, e);

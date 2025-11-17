@@ -8,6 +8,7 @@ export function NormalCandlestickChart({
   ema = [],
   meta = {},
   height = 280,
+  markers = [],
   formatTimestamp,
   currency,
   isDark = false,
@@ -25,6 +26,8 @@ export function NormalCandlestickChart({
   const emaSeriesRef = useRef(null);
   const crosshairHandlerRef = useRef(null);
   const metaRef = useRef(meta);
+  const markersRef = useRef(markers);
+  const markersPluginRef = useRef(null);
   const candlesRef = useRef(candles);
   const emaRef = useRef(ema);
   const priceScaleModeRef = useRef(null);
@@ -44,6 +47,18 @@ export function NormalCandlestickChart({
   }, [meta]);
 
   useEffect(() => {
+    markersRef.current = Array.isArray(markers) ? markers : [];
+    if (markersPluginRef.current) {
+      markersPluginRef.current.setMarkers(markersRef.current);
+    } else if (
+      candleSeriesRef.current &&
+      typeof candleSeriesRef.current.setMarkers === "function"
+    ) {
+      candleSeriesRef.current.setMarkers(markersRef.current);
+    }
+  }, [markers]);
+
+  useEffect(() => {
     candlesRef.current = candles;
   }, [candles]);
 
@@ -57,7 +72,14 @@ export function NormalCandlestickChart({
     let observedElement = null;
 
     loadLightweightCharts().then(
-      ({ createChart, CrosshairMode, CandlestickSeries, LineSeries, PriceScaleMode }) => {
+      ({
+        createChart,
+        CrosshairMode,
+        CandlestickSeries,
+        LineSeries,
+        PriceScaleMode,
+        createSeriesMarkers,
+      }) => {
         if (cancelled || !containerRef.current) return;
 
         const container = containerRef.current;
@@ -127,13 +149,29 @@ export function NormalCandlestickChart({
 
         candleSeriesRef.current = candlestickSeries;
         emaSeriesRef.current = emaSeries;
+        markersPluginRef.current = null;
         chartRef.current = chart;
         if (Array.isArray(candlesRef.current) && candlesRef.current.length > 0) {
           candlestickSeries.setData(candlesRef.current);
           chart.timeScale().resetTimeScale();
         }
+        if (typeof candlestickSeries.setMarkers === "function") {
+          candlestickSeries.setMarkers(markersRef.current);
+        }
         if (Array.isArray(emaRef.current) && emaRef.current.length > 0) {
           emaSeries.setData(emaRef.current);
+        }
+        if (
+          typeof candlestickSeries.setMarkers !== "function" &&
+          typeof createSeriesMarkers === "function"
+        ) {
+          try {
+            markersPluginRef.current = createSeriesMarkers(candlestickSeries, markersRef.current);
+            markersPluginRef.current.setMarkers(markersRef.current);
+          } catch (error) {
+            console.warn("Failed to initialize series markers", error);
+            markersPluginRef.current = null;
+          }
         }
 
       const handleCrosshairMove = (param) => {
@@ -171,6 +209,9 @@ export function NormalCandlestickChart({
       if (chartRef.current && crosshairHandlerRef.current) {
         chartRef.current.unsubscribeCrosshairMove(crosshairHandlerRef.current);
       }
+      if (markersPluginRef.current?.detach) {
+        markersPluginRef.current.detach();
+      }
       if (chartRef.current) {
         chartRef.current.remove();
       }
@@ -178,6 +219,7 @@ export function NormalCandlestickChart({
       candleSeriesRef.current = null;
       emaSeriesRef.current = null;
       crosshairHandlerRef.current = null;
+      markersPluginRef.current = null;
     };
   }, [height, isDark, showSeconds, showTimeScale, emaColor]);
 

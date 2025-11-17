@@ -5,13 +5,18 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { fetchEncodedJson } from '@/lib/api-client';
 
 async function searchSymbols(query) {
   if (!query) return [];
   try {
-    const res = await fetch(`/api/symbol-search?q=${encodeURIComponent(query)}`);
-    const json = await res.json();
-    return json.symbols || [];
+    const { response, data } = await fetchEncodedJson(
+      `/api/symbol-search?q=${encodeURIComponent(query)}`
+    );
+    if (!response.ok) {
+      throw new Error(data?.error || 'Search failed');
+    }
+    return data.symbols || [];
   } catch (e) {
     console.warn('Symbol search failed', e);
     return [];
@@ -22,12 +27,15 @@ async function fetchPrice(symbol) {
   try {
     const endDate = Math.floor(Date.now() / 1000);
     const startDate = endDate - 60 * 60 * 24 * 5;
-    const res = await fetch(`/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`);
-    if (!res.ok) return null;
-    const json = await res.json();
-    const data = json.data || [];
-    if (data.length === 0) return null;
-    const last = data[data.length - 1];
+    const { response, data } = await fetchEncodedJson(
+      `/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`
+    );
+    if (!response.ok) {
+      throw new Error(data?.error || 'Failed to fetch price');
+    }
+    const series = data.data || [];
+    if (series.length === 0) return null;
+    const last = series[series.length - 1];
     return last.adjclose ?? null;
   } catch (e) {
     return null;
@@ -53,12 +61,13 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
           // Fetch name from Yahoo Finance
           const endDate = Math.floor(Date.now() / 1000);
           const startDate = endDate - 60 * 60 * 24 * 5;
-          const res = await fetch(`/api/finance?symbol=${initialSymbol}&startDate=${startDate}&endDate=${endDate}`);
-          if (res.ok) {
-            const json = await res.json();
-            const name = json.meta?.name || initialSymbol;
-            const data = json.data || [];
-            const price = data.length > 0 ? data[data.length - 1].adjclose : null;
+          const { response, data } = await fetchEncodedJson(
+            `/api/finance?symbol=${initialSymbol}&startDate=${startDate}&endDate=${endDate}`
+          );
+          if (response.ok) {
+            const name = data.meta?.name || initialSymbol;
+            const series = data.data || [];
+            const price = series.length > 0 ? series[series.length - 1].adjclose : null;
             const isJk = initialSymbol.endsWith('.JK');
             
             setForm({

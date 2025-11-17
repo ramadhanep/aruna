@@ -1,18 +1,19 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServiceRoleClient, getUserFromRequest } from "@/lib/supabase-server";
+import { encodePayload } from "@/lib/secure-payload";
 
 export async function POST(request) {
   const supabaseAdmin = getSupabaseServiceRoleClient();
   if (!supabaseAdmin) {
     return NextResponse.json(
-      { error: "Supabase service role key is not configured" },
+      { payload: encodePayload({ error: "Supabase service role key is not configured" }) },
       { status: 500 }
     );
   }
 
   const { user, error } = await getUserFromRequest(request);
   if (error || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ payload: encodePayload({ error: "Unauthorized" }) }, { status: 401 });
   }
 
   try {
@@ -27,9 +28,12 @@ export async function POST(request) {
       throw deleteError;
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ payload: encodePayload({ success: true }) });
   } catch (err) {
     console.error("Failed to delete account", err);
-    return NextResponse.json({ error: "Failed to delete account" }, { status: 500 });
+    return NextResponse.json(
+      { payload: encodePayload({ error: "Failed to delete account" }) },
+      { status: 500 }
+    );
   }
 }

@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { fetchEncodedJson } from "@/lib/api-client";
 
 export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave }) {
   const [items, setItems] = useState([]);
@@ -46,11 +47,13 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
     searchTimeoutRef.current = setTimeout(async () => {
       setIsSearching(true);
       try {
-        const res = await fetch(`/api/symbol-search?q=${encodeURIComponent(normalizedQuery)}`);
-        if (res.ok) {
-          const data = await res.json();
-          setSearchResults(data.symbols || []);
+        const { response, data } = await fetchEncodedJson(
+          `/api/symbol-search?q=${encodeURIComponent(normalizedQuery)}`
+        );
+        if (!response.ok) {
+          throw new Error(data?.error || "Search failed");
         }
+        setSearchResults(data.symbols || []);
       } catch (e) {
         console.warn('Search failed', e);
       } finally {

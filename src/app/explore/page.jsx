@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock } from "lucide-react";
+import { fetchEncodedJson } from "@/lib/api-client";
 
 const CATEGORY_LABELS = {
   idx: "IDX 🇮🇩",
@@ -289,14 +290,13 @@ export default function ExplorePage() {
           const url = `/api/finance?symbol=${encodeURIComponent(
             symbol
           )}&startDate=${startDate}&endDate=${endDate}`;
-          const res = await fetch(url);
-          if (!res.ok) return null;
-          const json = await res.json();
-          const data = Array.isArray(json?.data) ? json.data : [];
-          if (data.length < 2) return null;
+          const { response, data } = await fetchEncodedJson(url);
+          if (!response.ok) return null;
+          const series = Array.isArray(data?.data) ? data.data : [];
+          if (series.length < 2) return null;
 
-          const current = data[data.length - 1];
-          const previous = data[data.length - 2];
+          const current = series[series.length - 1];
+          const previous = series[series.length - 2];
           const currentRaw =
             typeof current?.adjclose === "number"
               ? current.adjclose
@@ -316,7 +316,7 @@ export default function ExplorePage() {
 
           const change = currentRaw - previousRaw;
           const changePercent = previousRaw === 0 ? 0 : (change / previousRaw) * 100;
-          const chartData = data
+          const chartData = series
             .slice(-30)
             .map((row) =>
               typeof row?.adjclose === "number"
@@ -329,7 +329,7 @@ export default function ExplorePage() {
 
           return {
             symbol,
-            name: json?.meta?.name || symbol,
+            name: data?.meta?.name || symbol,
             price: currentRaw,
             change,
             changePercent,
@@ -474,8 +474,10 @@ export default function ExplorePage() {
       if (manualLoading[category]) return;
       setManualLoading((prev) => ({ ...prev, [category]: true }));
       try {
-        const res = await fetch(`/api/screeners/${category}`);
-        const data = await res.json();
+        const { response, data } = await fetchEncodedJson(`/api/screeners/${category}`);
+        if (!response.ok) {
+          throw new Error(data?.error || "Failed to trigger screener");
+        }
         const message = data?.status
           ? `${category.toUpperCase()} → ${data.status.toUpperCase()}`
           : `${category.toUpperCase()} → failed`;

@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import yahooFinance from '@/lib/yahoo-finance';
+import { encodePayload } from '@/lib/secure-payload';
 
 // Symbol search using yahoo-finance2 search endpoint
 export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const query = searchParams.get('q');
   if (!query || query.length < 1) {
-    return NextResponse.json({ symbols: [] });
+    return NextResponse.json({ payload: encodePayload({ symbols: [] }) });
   }
 
   try {
@@ -22,9 +23,14 @@ export async function GET(req) {
         exchange: q.exchange,
         type: q.quoteType,
       }));
-    return NextResponse.json({ symbols, source: { provider: 'yahoo-finance2' } });
+    return NextResponse.json({
+      payload: encodePayload({ symbols, source: { provider: 'yahoo-finance2' } }),
+    });
   } catch (error) {
     console.error('Symbol search failed', error);
-    return NextResponse.json({ error: error?.message || 'Search failed', symbols: [] }, { status: 500 });
+    return NextResponse.json(
+      { payload: encodePayload({ error: error?.message || 'Search failed', symbols: [] }) },
+      { status: 500 }
+    );
   }
 }

@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { fetchEncodedJson } from "@/lib/api-client";
 
 const AuthContext = createContext({
   supabase: null,
@@ -319,16 +320,15 @@ export function AuthProvider({ children }) {
     }
 
     try {
-      const res = await fetch("/api/delete-account", {
+      const { response, data } = await fetchEncodedJson("/api/delete-account", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${session.access_token}`,
         },
       });
 
-      if (!res.ok) {
-        const payload = await res.json().catch(() => ({}));
-        throw new Error(payload?.error ?? "Failed to delete account");
+      if (!response.ok) {
+        throw new Error(data?.error ?? "Failed to delete account");
       }
 
       await signOut();

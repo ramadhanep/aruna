@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, MoreVertical, Pencil, Trash2, Loader2, Wallet, Coins, TrendingUp, DollarSign, ArrowUpDown, Check, Eye, EyeOff } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth-provider';
+import { fetchEncodedJson } from '@/lib/api-client';
 
 // Dynamic chart component to keep page light and avoid SSR issues
 const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { ssr: false });
@@ -34,9 +35,13 @@ function getDefaultPortfolio() {
 async function searchSymbols(query) {
   if (!query) return [];
   try {
-    const res = await fetch(`/api/symbol-search?q=${encodeURIComponent(query)}`);
-    const json = await res.json();
-    return json.symbols || [];
+    const { response, data } = await fetchEncodedJson(
+      `/api/symbol-search?q=${encodeURIComponent(query)}`
+    );
+    if (!response.ok) {
+      throw new Error(data?.error || 'Search failed');
+    }
+    return data.symbols || [];
   } catch (e) {
     console.warn('Symbol search failed', e);
     return [];
@@ -159,12 +164,13 @@ export default function PortfolioTrackerPage() {
     try {
       const endDate = Math.floor(Date.now() / 1000);
       const startDate = endDate - 60 * 60 * 24 * 5; // last ~5 days window
-      const res = await fetch(`/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`);
-      if (!res.ok) return null;
-      const json = await res.json();
-      const data = json.data || [];
-      if (data.length === 0) return null;
-      const last = data[data.length - 1];
+      const { response, data } = await fetchEncodedJson(
+        `/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`
+      );
+      if (!response.ok) return null;
+      const series = data.data || [];
+      if (series.length === 0) return null;
+      const last = series[series.length - 1];
       return last.adjclose ?? null;
     } catch (e) {
       return null;
@@ -195,12 +201,13 @@ export default function PortfolioTrackerPage() {
       // Fetch FX rate
       const endDate = Math.floor(Date.now() / 1000);
       const startDate = endDate - 60 * 60 * 24 * 5;
-      const res = await fetch(`/api/finance?symbol=IDR=X&startDate=${startDate}&endDate=${endDate}`);
-      if (res.ok) {
-        const json = await res.json();
-        const data = json.data || [];
-        if (data.length > 0) {
-          const last = data[data.length - 1];
+      const { response, data } = await fetchEncodedJson(
+        `/api/finance?symbol=IDR=X&startDate=${startDate}&endDate=${endDate}`
+      );
+      if (response.ok) {
+        const series = data.data || [];
+        if (series.length > 0) {
+          const last = series[series.length - 1];
           const idrPerUsdVal = last.adjclose;
           if (idrPerUsdVal) {
             setIdrPerUsd(idrPerUsdVal);
@@ -259,17 +266,17 @@ export default function PortfolioTrackerPage() {
         // Fetch IDR=X from Yahoo Finance to get USD per IDR
         const endDate = Math.floor(Date.now() / 1000);
         const startDate = endDate - 60 * 60 * 24 * 5;
-        const res = await fetch(`/api/finance?symbol=IDR=X&startDate=${startDate}&endDate=${endDate}`);
-        if (res.ok) {
-          const json = await res.json();
-          const data = json.data || [];
-          if (data.length > 0) {
-            const last = data[data.length - 1];
-            // Yahoo's IDR=X returns the rate in IDR per 1 USD (e.g., 16500)
-            const idrPerUsdVal = last.adjclose; // e.g., 16500
+        const { response, data } = await fetchEncodedJson(
+          `/api/finance?symbol=IDR=X&startDate=${startDate}&endDate=${endDate}`
+        );
+        if (response.ok) {
+          const series = data.data || [];
+          if (series.length > 0) {
+            const last = series[series.length - 1];
+            const idrPerUsdVal = last.adjclose;
             if (idrPerUsdVal) {
               setIdrPerUsd(idrPerUsdVal);
-              setFxRate(1 / idrPerUsdVal); // USD per 1 IDR
+              setFxRate(1 / idrPerUsdVal);
             }
           }
         }
