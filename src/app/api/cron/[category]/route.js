@@ -23,7 +23,8 @@ export async function GET(request, context) {
     return buildErrorResponse("Unauthorized", 401);
   }
 
-  const category = context?.params?.category?.toLowerCase();
+  const params = await context?.params;
+  const category = params?.category?.toLowerCase();
   if (!VALID_CATEGORIES.includes(category)) {
     return buildErrorResponse("Unknown screener category", 400);
   }
