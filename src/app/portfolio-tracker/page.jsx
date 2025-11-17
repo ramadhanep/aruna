@@ -23,8 +23,8 @@ const PORTFOLIO_CURRENCY_KEY = 'portfolio_currency';
 const PORTFOLIO_VISIBILITY_KEY = 'portfolio_visibility_hidden';
 const DEFAULT_PORTFOLIO_ENTRIES = [
   { symbol: 'BTC-USD', name: 'Bitcoin', amount: 1, unit: 'share', avgPrice: 65000, type: 'digital' },
-  { symbol: 'NVDA', name: 'NVIDIA Corporation', amount: 100, unit: 'share', avgPrice: 900, type: 'digital' },
-  { symbol: 'BBCA.JK', name: 'Bank Central Asia Tbk', amount: 1000, unit: 'lot', avgPrice: 9000, type: 'digital' },
+  { symbol: 'NVDA', name: 'NVIDIA Corporation', amount: 100, unit: 'share', avgPrice: 120, type: 'digital' },
+  { symbol: 'BBCA.JK', name: 'Bank Central Asia Tbk', amount: 1000, unit: 'lot', avgPrice: 7500, type: 'digital' },
 ];
 
 function getDefaultPortfolio() {

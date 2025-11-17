@@ -138,14 +138,14 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
       {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
       <DialogContent className="fixed max-w-none h-screen rounded-none p-0 flex flex-col p-4" closeButtonPosition="right">
         <DialogHeader className="space-y-1">
-          <DialogTitle className="text-base font-semibold">Search Symbol</DialogTitle>
+          <DialogTitle className="text-base font-semibold">Search Ticker</DialogTitle>
         </DialogHeader>
         <div className="flex items-center gap-2">
           <Input
             autoFocus
             value={query}
             onChange={(event) => setQuery((event.target.value || '').toUpperCase())}
-            placeholder="Search by symbol or company name"
+            placeholder="Search ticker or company name"
             className="flex-1"
           />
         </div>
@@ -222,7 +222,7 @@ export function HeaderSymbolSearch() {
       variant="ghost"
       size="icon"
       className="rounded-full p-2 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-      aria-label="Search symbol"
+      aria-label="Search ticker"
     >
       <Search className="size-5" />
     </Button>

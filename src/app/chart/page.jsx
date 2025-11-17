@@ -25,7 +25,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar, ReferenceLine } from 'recharts';
-import { Loader2, Sun, MoonStar, Clock3, Star, Lock, Bitcoin, Crown } from "lucide-react";
+import { Loader2, Sun, MoonStar, Clock3, Star, Lock, Bitcoin, Crown, ChevronDown } from "lucide-react";
 import { useTheme } from 'next-themes';
 import { AddAssetModal } from "@/components/add-asset-modal";
 import { SymbolSearchDialog } from "@/components/header-symbol-search";
@@ -1284,7 +1284,7 @@ function ElectionCyclePageContent() {
     { value: 'keystats', label: 'KEYSTATS' },
     { value: 'analysis', label: 'ANALYSIS' },
     { value: 'seasonality', label: 'SEASONALITY' },
-    { value: 'profile', label: 'PROFILE' },
+    { value: 'profile', label: 'ABOUT' },
   ];
 
   const hasCycleChartData = chartData.chartArray && chartData.chartArray.length > 0;
@@ -1871,7 +1871,7 @@ function ElectionCyclePageContent() {
         )}
 
         {extendedProfile?.longBusinessSummary && (
-          <Card className="mt-4 pt-4 border-t">
+          <Card className="mt-4 pt-4">
             <CardHeader>
               <CardTitle className="text-sm mb-2">Company Background</CardTitle>
             </CardHeader>
@@ -1884,7 +1884,7 @@ function ElectionCyclePageContent() {
         )}
 
         {officers.length > 0 && (
-          <Card className="mt-4 pt-4 border-t">
+          <Card className="mt-4 pt-4">
             <CardHeader>
               <CardTitle className="text-sm mb-2">Leadership</CardTitle>
             </CardHeader>
@@ -2272,7 +2272,7 @@ function ElectionCyclePageContent() {
             </CardHeader>
             <CardContent className="mt-4 space-y-3 text-xs">
               <div className="flex flex-col justify-center items-center gap-3">
-                <div className={`flex w-28 p-2 text-center items-center justify-center rounded-full text-sm font-bold tracking-wide ${ratingBgClass}`}>
+                <div className={`flex p-3 text-center items-center justify-center rounded-full text-sm font-bold tracking-wide ${ratingBgClass}`}>
                   {(ratingLabel || 'N/A')}
                 </div>
                 {ratingScore && (
@@ -2573,7 +2573,7 @@ function ElectionCyclePageContent() {
       <div className="flex justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <h1
-            className="text-base font-bold uppercase cursor-pointer transition-colors hover:text-primary"
+            className="text-base font-bold uppercase cursor-pointer transition-colors hover:text-primary flex items-center gap-1"
             onClick={() => setSearchDialogOpen(true)}
             role="button"
             tabIndex={0}
@@ -2584,7 +2584,7 @@ function ElectionCyclePageContent() {
               }
             }}
           >
-            {symbol}
+            {symbol} <ChevronDown className="size-4 dark:text-white/70"/>
           </h1>
           <span className="text-muted">|</span>
           {symbol.endsWith('.JK') && (
