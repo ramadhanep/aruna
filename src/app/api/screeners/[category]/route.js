@@ -346,9 +346,6 @@ export async function GET(request, context) {
     if (cursor >= totalCount) {
       cursor = 0;
     }
-    if (snapshot.status === "idle" && cursor === 0 && overrideCursor == null) {
-      existingResultsMap = new Map();
-    }
   }
 
   if (shouldReset) {
