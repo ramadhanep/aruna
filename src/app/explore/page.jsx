@@ -749,7 +749,7 @@ export default function ExplorePage() {
                     ))}
                   </div>
                   {shouldGate && (
-                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/40 backdrop-blur-xs px-6 text-center">
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/05 backdrop-blur-xs px-6 text-center">
                       <Lock className="h-4 w-4 text-muted-foreground" />
                       <p className="text-[11px] font-semibold text-muted-foreground">
                         Sign in to explore all signals

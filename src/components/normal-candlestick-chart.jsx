@@ -98,10 +98,10 @@ export function NormalCandlestickChart({
           },
         grid: {
           horzLines: {
-            color: isDark ? "rgba(148, 163, 184, 0.2)" : "rgba(100, 116, 139, 0.2)",
+            visible: false,
           },
           vertLines: {
-            color: isDark ? "rgba(148, 163, 184, 0.18)" : "rgba(100, 116, 139, 0.18)",
+            visible: false,
           },
         },
         crosshair: {

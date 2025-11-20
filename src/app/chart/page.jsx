@@ -23,9 +23,10 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar, ReferenceLine } from 'recharts';
-import { Loader2, Sun, MoonStar, Clock3, Star, Lock, Bitcoin, Crown, ChevronDown } from "lucide-react";
+import { Loader2, Sun, MoonStar, Clock3, Star, Lock, Bitcoin, Crown, ChevronDown, Fullscreen, ArrowLeft } from "lucide-react";
 import { useTheme } from 'next-themes';
 import { AddAssetModal } from "@/components/add-asset-modal";
 import { SymbolSearchDialog } from "@/components/header-symbol-search";
@@ -352,6 +353,7 @@ function ElectionCyclePageContent() {
   const [watchlistUpdatedAt, setWatchlistUpdatedAt] = useState(() => readWatchlistUpdatedAt());
   const [screeningSignal, setScreeningSignal] = useState(null);
   const [infoTab, setInfoTab] = useState('keystats');
+  const [normalFullscreenOpen, setNormalFullscreenOpen] = useState(false);
   const remoteWatchlistSeedRef = React.useRef(false);
 
   const [selectedCycles, setSelectedCycles] = useState(() => {
@@ -1229,6 +1231,43 @@ function ElectionCyclePageContent() {
     return { candles, ema, meta, stochastic: { k: stochasticK, d: stochasticD } };
   }, [filteredNormalChartData, isNormalView]);
 
+  const normalChartReady = normalCandlestickSeries.candles.length > 0;
+
+  const renderTimeframeButtons = ({ includeFullscreenToggle = false } = {}) => (
+    <>
+      {NORMAL_TIMEFRAME_OPTIONS.map((option) => (
+        <Button
+          key={option.value}
+          type="button"
+          size="sm"
+          variant={normalTimeframe === option.value ? 'default' : 'ghost'}
+          className={`rounded-sm px-2 min-w-[2.1rem] font-bold py-0 text-[11px] ${
+            normalTimeframe === option.value
+              ? 'bg-emerald-700 text-white/80 shadow-sm'
+              : 'border-border/70 text-muted-foreground'
+          }`}
+          onClick={() => setNormalTimeframe(option.value)}
+        >
+          {option.label}
+        </Button>
+      ))}
+      {includeFullscreenToggle ? (
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="h-6 w-6 rounded-full border border-border/60 p-0 text-muted-foreground shadow-sm"
+          onClick={() => setNormalFullscreenOpen(true)}
+          disabled={normalSeriesLoading || !normalChartReady}
+          title={`Fullscreen ${normalTimeframeLabel} candlestick`}
+          aria-label="Open candlestick fullscreen"
+        >
+          <Fullscreen className="h-4 w-4" />
+        </Button>
+      ) : null}
+    </>
+  );
+
   const stochasticChartData = useMemo(() => {
     const combined = new Map();
     (normalCandlestickSeries.stochastic?.k ?? []).forEach(({ time, value }) => {
@@ -1244,6 +1283,11 @@ function ElectionCyclePageContent() {
   }, [normalCandlestickSeries.stochastic]);
 
   const showIntradayScale = isIntradayTimeframe;
+  useEffect(() => {
+    if (!isNormalView && normalFullscreenOpen) {
+      setNormalFullscreenOpen(false);
+    }
+  }, [isNormalView, normalFullscreenOpen]);
   const buySignalMarkers = useMemo(() => {
     if (
       !isNormalView ||
@@ -2066,7 +2110,7 @@ function ElectionCyclePageContent() {
                   </CardContent>
                 </Card>
                 {!isAuthenticated && (
-                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/40 backdrop-blur-xs px-6 text-center">
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/05 backdrop-blur-xs px-6 text-center">
                     <Lock className="h-6 w-6 text-muted-foreground" />
                     <p className="text-xs font-semibold text-muted-foreground">
                       Sign in to explore earnings results
@@ -2168,7 +2212,7 @@ function ElectionCyclePageContent() {
                   </CardContent>
                 </Card>
                 {!isAuthenticated && (
-                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/40 backdrop-blur-xs px-6 text-center">
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/05 backdrop-blur-xs px-6 text-center">
                     <Lock className="h-6 w-6 text-muted-foreground" />
                     <p className="text-xs font-semibold text-muted-foreground">
                       Sign in to compare revenue and earnings
@@ -2272,7 +2316,7 @@ function ElectionCyclePageContent() {
             </CardHeader>
             <CardContent className="mt-4 space-y-3 text-xs">
               <div className="flex flex-col justify-center items-center gap-3">
-                <div className={`flex p-3 text-center items-center justify-center rounded-full text-sm font-bold tracking-wide ${ratingBgClass}`}>
+                <div className={`flex p-3 text-center items-center justify-center rounded-full text-sm tracking-wide ${ratingBgClass}`}>
                   {(ratingLabel || 'N/A')}
                 </div>
                 {ratingScore && (
@@ -2492,7 +2536,7 @@ function ElectionCyclePageContent() {
                 </table>
               </div>
               {!isAuthenticated && (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/40 backdrop-blur-xs px-6 text-center">
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/05 backdrop-blur-xs px-6 text-center">
                   <Lock className="h-6 w-6 text-muted-foreground" />
                   <p className="text-xs font-semibold text-muted-foreground">
                     Sign in to explore quarterly returns
@@ -2554,7 +2598,7 @@ function ElectionCyclePageContent() {
                 </table>
               </div>
               {!isAuthenticated && (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/40 backdrop-blur-xs px-6 text-center">
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/05 backdrop-blur-xs px-6 text-center">
                   <Lock className="h-6 w-6 text-muted-foreground" />
                   <p className="text-xs font-semibold text-muted-foreground">
                     Sign in to view monthly returns
@@ -2573,7 +2617,7 @@ function ElectionCyclePageContent() {
       <div className="flex justify-between gap-2">
         <div className="flex flex-wrap items-center gap-2">
           <h1
-            className="text-base font-bold uppercase cursor-pointer transition-colors hover:text-primary flex items-center gap-1"
+            className="text-base font-semibold uppercase cursor-pointer transition-colors hover:text-primary flex items-center gap-1"
             onClick={() => setSearchDialogOpen(true)}
             role="button"
             tabIndex={0}
@@ -2588,13 +2632,13 @@ function ElectionCyclePageContent() {
           </h1>
           <span className="text-muted">|</span>
           {symbol.endsWith('.JK') && (
-            <span className="dark:text-white/70 text-xs">🇮🇩 IDX</span>
+            <span className="dark:text-white/70 text-xs">🇮🇩 in purbaya we trust</span>
           )}
           {symbol.endsWith('-USD') && (
             <span className="dark:text-white/70 text-xs flex items-center gap-1"><Bitcoin className="size-4"/> to the moon</span>
           )}
           {['QQQ', 'SPY'].some((s) => symbol.endsWith(s)) && (
-            <span className="dark:text-white/70 text-xs">🇺🇸 Pension Fund</span>
+            <span className="dark:text-white/70 text-xs">🇺🇸 pension fund</span>
           )}
           {['AAPL','MSFT','GOOGL','GOOG','AMZN','META','NVDA','AVGO'].some((s) => symbol.endsWith(s)) && (
             <span className="dark:text-white/70 text-xs flex items-center gap-1"><Crown className="size-3.5"/> magnificent 7</span>
@@ -2864,7 +2908,6 @@ function ElectionCyclePageContent() {
                         );
                       })}
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis
                       dataKey="dayOfYear"
                       tickFormatter={formatTick}
@@ -2918,24 +2961,54 @@ function ElectionCyclePageContent() {
           </Card>
 
           {isNormalView ? (
-            <div className="flex flex-wrap justify-center gap-1">
-              {NORMAL_TIMEFRAME_OPTIONS.map((option) => (
-                <Button
-                  key={option.value}
-                  type="button"
-                  size="sm"
-                  variant={normalTimeframe === option.value ? 'default' : 'ghost'}
-                  className={`rounded-sm px-2 min-w-[2.1rem] font-bold py-0 text-[11px] ${
-                    normalTimeframe === option.value
-                      ? 'bg-emerald-700 text-white/80 shadow-sm'
-                      : 'border-border/70 text-muted-foreground'
-                  }`}
-                  onClick={() => setNormalTimeframe(option.value)}
+            <>
+              <div className="flex flex-wrap justify-center items-center gap-1">
+                {renderTimeframeButtons({ includeFullscreenToggle: true })}
+              </div>
+              <Dialog open={normalFullscreenOpen} onOpenChange={setNormalFullscreenOpen}>
+                <DialogContent
+                  className="fixed max-w-none h-screen rounded-none p-0 flex flex-col"
+                  onEscapeKeyDown={(event) => event.preventDefault()}
+                  onPointerDownOutside={(event) => event.preventDefault()}
+                  showCloseButton={false}
                 >
-                  {option.label}
-                </Button>
-              ))}
-            </div>
+                  <DialogHeader className="flex justify-center border-b py-4 text-center">
+                    <div
+                      className="absolute top-5 left-5"
+                      onClick={() => setNormalFullscreenOpen(false)}
+                    >
+                      <ArrowLeft className="size-6 text-muted-foreground"/>
+                    </div>
+                    <DialogTitle className="text-sm font-semibold leading-none">
+                      {symbol}
+                    </DialogTitle>
+                    <p className="text-muted-foreground text-xs">{assetName}</p>
+                  </DialogHeader>
+                  <div>
+                    <NormalCandlestickChart
+                      candles={normalCandlestickSeries.candles}
+                      ema={normalCandlestickSeries.ema}
+                      meta={normalCandlestickSeries.meta}
+                      markers={buySignalMarkers}
+                      formatTimestamp={formatNormalTimestamp}
+                      currency={symbolInfo?.currency}
+                      formatPrice={formatPriceValue}
+                      isDark={resolvedTheme === 'dark'}
+                      showTimeScale={showIntradayScale}
+                      showSeconds={normalTimeframe === '15m'}
+                      emaColor={EMA_COLOR}
+                      valueLabelPrefix="HA"
+                      showTooltip={false}
+                      priceScaleType={scaleChoice}
+                      height={700}
+                    />
+                  </div>
+                  <DialogFooter className="flex flex-col gap-3 border-t px-4 py-2 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+                    <div className="flex flex-wrap justify-center items-center gap-1">{renderTimeframeButtons()}</div>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </>
           ) : (
             <div className="flex items-center justify-center gap-2">
               {['all', 'Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
@@ -3018,7 +3091,7 @@ function ElectionCyclePageContent() {
 
             <Button
               onClick={() => setPortfolioDialogOpen(true)}
-              className="w-full bg-emerald-700 hover:bg-emerald-800 font-semibold text-xs text-white/80"
+              className="w-full bg-emerald-700 hover:bg-emerald-800 text-xs text-white/80"
             >
               Add to Your Portfolio
             </Button>
@@ -3026,7 +3099,7 @@ function ElectionCyclePageContent() {
 
           {(fundamentalsLoading || fundamentals || cycleSummary || quarterlyHeatmap.rows.length > 0 || monthlyHeatmap.rows.length > 0) && (
             <div className="mt-4 space-y-4">
-              <div className="flex flex-wrap gap-2 border-b border-border/50 text-xs font-semibold">
+              <div className="flex flex-wrap gap-2 border-b border-border/50 text-xs">
                 {infoTabs.map((tab) => (
                   <button
                     key={tab.value}
