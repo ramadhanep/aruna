@@ -41,6 +41,16 @@ export async function GET(request) {
     );
   }
   
+  let quoteMeta = null;
+  try {
+    quoteMeta = await yahooFinance.quote(symbol, {
+      lang: 'en-US',
+      region: 'US',
+    });
+  } catch (error) {
+    console.warn(`Failed to fetch quote metadata for ${symbol}`, error);
+  }
+
   try {
     // Build chart options according to documentation
     const chartOptions = {
@@ -79,6 +89,16 @@ export async function GET(request) {
     }));
 
     const meta = result.meta ?? {};
+    const normalizedSymbol = symbol.toUpperCase();
+    let logoUrl = quoteMeta?.companyLogoUrl || quoteMeta?.logoUrl || null;
+    if (!logoUrl) {
+      if (quoteMeta.market == 'id_market') {
+        const idxSymbol = normalizedSymbol.replace(/\.JK$/i, '');
+        logoUrl = `https://assets.stockbit.com/logos/companies/${idxSymbol}.png`;
+      } else if (quoteMeta.market == 'us_market') {
+        logoUrl = `https://image-cdn.pluang.com/icons/light/global-stocks/${normalizedSymbol.toLowerCase()}.svg`;
+      }
+    }
 
     // Process events if available
     const eventsData = {};
@@ -106,6 +126,7 @@ export async function GET(request) {
         meta: {
           symbol: meta.symbol,
           name: meta.longName || meta.shortName || meta.symbol || symbol,
+          logo: logoUrl,
           currency: meta.currency,
           exchangeName: meta.exchangeName,
           fullExchangeName: meta.fullExchangeName,

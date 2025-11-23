@@ -232,20 +232,33 @@ function PickItem({ pick, quote }) {
       : Array.isArray(pickData?.sparkline)
         ? pickData.sparkline
         : [];
+  const logo = quote?.logo || null;
+  const fallbackChar = symbol ? symbol.charAt(0) : "?";
 
   return (
     <Link
       href={`/chart?symbol=${encodeURIComponent(symbol)}&cycle=normal`}
       className="flex items-center gap-3 py-3 hover:bg-accent/30 transition-colors"
     >
-      <div className="flex-1 min-w-0">
-        <div className="font-semibold text-sm truncate flex items-center gap-1">
-          <span>{symbol}</span>
-          {isWarning ? (
-            <AlertTriangle className="h-3.5 w-3.5 text-amber-500" title="High volume vs market cap" />
-          ) : null}
+      <div className="flex-1 min-w-0 flex items-center gap-3">
+        <div className="flex-shrink-0">
+          <div className="h-7 w-7 rounded-full bg-muted/20 overflow-hidden flex items-center justify-center">
+            {logo ? (
+              <img src={logo} alt={`${symbol} logo`} className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-[11px] font-semibold uppercase text-muted-foreground">{fallbackChar}</span>
+            )}
+          </div>
         </div>
-        <div className="text-xs text-muted-foreground truncate">{displayName}</div>
+        <div className="min-w-0">
+          <div className="font-semibold text-sm truncate flex items-center gap-1">
+            <span>{symbol}</span>
+            {isWarning ? (
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-500" title="High volume vs market cap" />
+            ) : null}
+          </div>
+          <div className="text-xs text-muted-foreground truncate">{displayName}</div>
+        </div>
       </div>
       <div className={`flex items-center ${Array.isArray(chartData) ? color : "text-muted-foreground"}`}>
         <MiniChart data={chartData} isPositive={isPositive} chartId={`explore-${symbol}`} />
@@ -345,6 +358,7 @@ export default function ExplorePage() {
                   : null
             )
             .filter((value) => typeof value === "number");
+          const logo = data?.meta?.logo || null;
 
           return {
             symbol,
@@ -353,6 +367,7 @@ export default function ExplorePage() {
             change,
             changePercent,
             chartData,
+            logo,
           };
         } catch (error) {
           console.warn(`Failed to fetch real-time quote for ${symbol}`, error);
@@ -711,8 +726,8 @@ export default function ExplorePage() {
         </section>
 
         {categoriesWithSignals.map((section) => {
-          const gatedPicks = section.picks.slice(2);
-          const firstPicks = section.picks.slice(0, 2);
+          const gatedPicks = section.picks.slice(5);
+          const firstPicks = section.picks.slice(0, 5);
           const shouldGate = !isAuthenticated && gatedPicks.length > 0;
           return (
             <section key={section.category} className="bg-background/70 py-5">

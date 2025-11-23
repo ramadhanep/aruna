@@ -181,6 +181,9 @@ const INTRADAY_TIMEFRAMES = new Set(['15m', '1h', '2h', '4h']);
 
 const EMA_PERIOD = 32;
 const EMA_COLOR = '#0ea5e9';
+const LIVERMORE_LOOKBACK = 20;
+const LIVERMORE_UPPER_COLOR = '#f97316';
+const LIVERMORE_LOWER_COLOR = '#6b7380';
 
 function computeRSI(values = [], period = 14) {
   const output = new Array(values.length).fill(null);
@@ -287,6 +290,57 @@ function computeStochasticRSI(values = [], stochasticLength = 14, rsiLength = 14
   return { k: smoothKValues, d: smoothDValues };
 }
 
+function calculateEMA(values = [], period = 13) {
+  if (!Array.isArray(values) || values.length === 0) {
+    return [];
+  }
+  const multiplier = 2 / (period + 1);
+  let emaValue = null;
+  return values.map((value) => {
+    if (!Number.isFinite(value)) {
+      return null;
+    }
+    emaValue = emaValue == null ? value : value * multiplier + emaValue * (1 - multiplier);
+    return emaValue;
+  });
+}
+
+function computeLivermoreKeyLevels(points = [], lookback = 20) {
+  if (!Array.isArray(points) || points.length === 0) {
+    return { upper: [], lower: [], lookup: {} };
+  }
+  const upper = [];
+  const lower = [];
+  const lookup = {};
+  const highs = [];
+  const lows = [];
+  points.forEach((point) => {
+    if (!point || typeof point.time !== 'number') return;
+    const high = Number.isFinite(point.high) ? point.high : null;
+    const low = Number.isFinite(point.low) ? point.low : null;
+    if (high == null || low == null) {
+      lookup[point.time] = { upper: null, lower: null };
+      return;
+    }
+    highs.push(high);
+    lows.push(low);
+    if (highs.length > lookback) highs.shift();
+    if (lows.length > lookback) lows.shift();
+    const highest = Math.max(...highs);
+    const lowest = Math.min(...lows);
+    const upperValue = Number.isFinite(highest) ? Number(highest.toFixed(6)) : null;
+    const lowerValue = Number.isFinite(lowest) ? Number(lowest.toFixed(6)) : null;
+    lookup[point.time] = { upper: upperValue, lower: lowerValue };
+    if (upperValue != null) {
+      upper.push({ time: point.time, value: upperValue });
+    }
+    if (lowerValue != null) {
+      lower.push({ time: point.time, value: lowerValue });
+    }
+  });
+  return { upper, lower, lookup };
+}
+
 function isCryptoTicker(symbol = '') {
   const upper = symbol.toUpperCase();
   return upper.includes('-USD') || upper.startsWith('CRYPTO:');
@@ -349,6 +403,7 @@ function ElectionCyclePageContent() {
   const [fundamentalsLoading, setFundamentalsLoading] = useState(false);
   const [revenuePeriod, setRevenuePeriod] = useState('quarterly');
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
+  const [showLivermoreKey, setShowLivermoreKey] = useState(false);
   const [watchlist, setWatchlist] = useState([]);
   const [watchlistUpdatedAt, setWatchlistUpdatedAt] = useState(() => readWatchlistUpdatedAt());
   const [screeningSignal, setScreeningSignal] = useState(null);
@@ -986,83 +1041,83 @@ function ElectionCyclePageContent() {
       .sort((a, b) => a.timestamp - b.timestamp);
     if (sorted.length === 0) return [];
 
-    const multiplier = 2 / (EMA_PERIOD + 1);
-    let emaValue = null;
     const baseTimestamp = sorted[0].timestamp;
-    const firstClose =
-      typeof sorted[0].close === 'number' && Number.isFinite(sorted[0].close)
-        ? sorted[0].close
-        : typeof sorted[0].price === 'number' && Number.isFinite(sorted[0].price)
-          ? sorted[0].price
-          : null;
-
     let prevHeikinOpen = null;
     let prevHeikinClose = null;
 
-    return sorted
-      .map((point) => {
-        const close =
-          typeof point.close === 'number' && Number.isFinite(point.close)
-            ? point.close
-            : typeof point.price === 'number' && Number.isFinite(point.price)
-              ? point.price
-              : null;
-        if (close == null) {
-          return null;
-        }
+    const normalizedPoints = [];
 
-        const open =
-          typeof point.open === 'number' && Number.isFinite(point.open) ? point.open : close;
-        const high =
-          typeof point.high === 'number' && Number.isFinite(point.high)
-            ? point.high
-            : Math.max(open, close);
-        const low =
-          typeof point.low === 'number' && Number.isFinite(point.low)
-            ? point.low
-            : Math.min(open, close);
+    sorted.forEach((point) => {
+      const close =
+        typeof point.close === 'number' && Number.isFinite(point.close)
+          ? point.close
+          : typeof point.price === 'number' && Number.isFinite(point.price)
+            ? point.price
+            : null;
+      if (close == null) {
+        return;
+      }
 
-        const heikinClose = (open + high + low + close) / 4;
-        const heikinOpen =
-          prevHeikinOpen == null || prevHeikinClose == null
-            ? (open + close) / 2
-            : (prevHeikinOpen + prevHeikinClose) / 2;
-        const heikinHigh = Math.max(high, heikinOpen, heikinClose);
-        const heikinLow = Math.min(low, heikinOpen, heikinClose);
-        prevHeikinOpen = heikinOpen;
-        prevHeikinClose = heikinClose;
+      const open =
+        typeof point.open === 'number' && Number.isFinite(point.open) ? point.open : close;
+      const high =
+        typeof point.high === 'number' && Number.isFinite(point.high)
+          ? point.high
+          : Math.max(open, close);
+      const low =
+        typeof point.low === 'number' && Number.isFinite(point.low)
+          ? point.low
+          : Math.min(open, close);
 
-        if (emaValue == null) {
-          emaValue = close;
-        } else {
-          emaValue = close * multiplier + emaValue * (1 - multiplier);
-        }
+      const heikinClose = (open + high + low + close) / 4;
+      const heikinOpen =
+        prevHeikinOpen == null || prevHeikinClose == null
+          ? (open + close) / 2
+          : (prevHeikinOpen + prevHeikinClose) / 2;
+      const heikinHigh = Math.max(high, heikinOpen, heikinClose);
+      const heikinLow = Math.min(low, heikinOpen, heikinClose);
+      prevHeikinOpen = heikinOpen;
+      prevHeikinClose = heikinClose;
 
-        const changePct =
-          firstClose && firstClose !== 0 ? ((close - firstClose) / firstClose) * 100 : null;
+      normalizedPoints.push({
+        timestamp: point.timestamp,
+        elapsed: point.timestamp - baseTimestamp,
+        price: close,
+        open,
+        high,
+        low,
+        close,
+        interpolated: false,
+        volume:
+          typeof point.volume === 'number' && Number.isFinite(point.volume)
+            ? point.volume
+            : null,
+        heikinOpen,
+        heikinHigh,
+        heikinLow,
+        heikinClose,
+      });
+    });
 
-        return {
-          timestamp: point.timestamp,
-          elapsed: point.timestamp - baseTimestamp,
-          price: close,
-          open,
-          high,
-          low,
-          close,
-          changePct,
-          ema32: emaValue,
-          interpolated: false,
-          volume:
-            typeof point.volume === 'number' && Number.isFinite(point.volume)
-              ? point.volume
-              : null,
-          heikinOpen,
-          heikinHigh,
-          heikinLow,
-          heikinClose,
-        };
-      })
-      .filter(Boolean);
+    if (normalizedPoints.length === 0) {
+      return [];
+    }
+
+    const closingPrices = normalizedPoints.map((point) => point.close);
+    const ema32Series = calculateEMA(closingPrices, EMA_PERIOD);
+    const firstClose =
+      closingPrices.find((value) => typeof value === 'number' && Number.isFinite(value)) ?? null;
+
+    return normalizedPoints.map((point, index) => {
+      const ema32 = Number.isFinite(ema32Series[index]) ? ema32Series[index] : point.close;
+      const changePct =
+        firstClose && firstClose !== 0 ? ((point.close - firstClose) / firstClose) * 100 : null;
+      return {
+        ...point,
+        changePct,
+        ema32,
+      };
+    });
   }, [isNormalView, normalSeries]);
 
   const portfolioPosition = useMemo(() => {
@@ -1143,11 +1198,18 @@ function ElectionCyclePageContent() {
 
   const normalCandlestickSeries = useMemo(() => {
     if (!isNormalView || filteredNormalChartData.length === 0) {
-      return { candles: [], ema: [], meta: {}, stochastic: { k: [], d: [] } };
+      return {
+        candles: [],
+        ema: [],
+        livermore: { upper: [], lower: [] },
+        meta: {},
+        stochastic: { k: [], d: [] },
+      };
     }
     const candles = [];
     const ema = [];
     const meta = {};
+    const livermoreSource = [];
     const closingValues = filteredNormalChartData.map((point) => {
       if (typeof point.close === 'number' && Number.isFinite(point.close)) {
         return point.close;
@@ -1200,6 +1262,7 @@ function ElectionCyclePageContent() {
       } else {
         ema.push({ time, value: close });
       }
+      livermoreSource.push({ time, high: actualHigh, low: actualLow });
       meta[time] = {
         timestamp: point.timestamp,
         open,
@@ -1212,6 +1275,8 @@ function ElectionCyclePageContent() {
         actualClose,
         ema32:
           typeof point.ema32 === 'number' && Number.isFinite(point.ema32) ? point.ema32 : close,
+        livermoreUpper: null,
+        livermoreLower: null,
         changePct:
           typeof point.changePct === 'number' && Number.isFinite(point.changePct)
             ? point.changePct
@@ -1228,7 +1293,22 @@ function ElectionCyclePageContent() {
       }
     });
 
-    return { candles, ema, meta, stochastic: { k: stochasticK, d: stochasticD } };
+    const livermoreLevels = computeLivermoreKeyLevels(livermoreSource, LIVERMORE_LOOKBACK);
+    Object.entries(livermoreLevels.lookup).forEach(([timeKey, values]) => {
+      if (!values) return;
+      if (meta[timeKey]) {
+        meta[timeKey].livermoreUpper = values.upper ?? null;
+        meta[timeKey].livermoreLower = values.lower ?? null;
+      }
+    });
+
+    return {
+      candles,
+      ema,
+      livermore: { upper: livermoreLevels.upper, lower: livermoreLevels.lower },
+      meta,
+      stochastic: { k: stochasticK, d: stochasticD },
+    };
   }, [filteredNormalChartData, isNormalView]);
 
   const normalChartReady = normalCandlestickSeries.candles.length > 0;
@@ -1266,6 +1346,38 @@ function ElectionCyclePageContent() {
         </Button>
       ) : null}
     </>
+  );
+
+  const renderScaleButtons = (className = '') => (
+    <div className={`inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5 ${className}`}>
+      {[
+        { value: 'linear', label: 'Linear' },
+        { value: 'log', label: 'Logarithmic' },
+      ].map((option) => (
+        <Button
+          key={option.value}
+          type="button"
+          size="xs"
+          variant={scaleChoice === option.value ? 'default' : 'ghost'}
+          className={`px-2 py-1 text-xs rounded-full ${scaleChoice === option.value ? 'shadow-sm' : ''}`}
+          onClick={() => setScaleChoice(option.value)}
+        >
+          {option.label}
+        </Button>
+      ))}
+    </div>
+  );
+
+  const renderLivermoreToggle = (className = '') => (
+    <Button
+      type="button"
+      size="xs"
+      variant={showLivermoreKey ? 'default' : 'ghost'}
+      className={`rounded-full px-2 py-1 text-[11px] hover:bg-emerald-700 ${showLivermoreKey ? 'bg-emerald-700 text-white/80 shadow-sm' : 'border-border/70 text-white bg-muted/40'} ${className}`}
+      onClick={() => setShowLivermoreKey((prev) => !prev)}
+    >
+      Livermore Key
+    </Button>
   );
 
   const stochasticChartData = useMemo(() => {
@@ -1722,6 +1834,7 @@ function ElectionCyclePageContent() {
     if (cx == null || cy == null) return null;
     return (
       <circle
+        key={`estimate-dot-${cx}-${cy}`}
         cx={cx}
         cy={cy}
         r={6}
@@ -1734,7 +1847,7 @@ function ElectionCyclePageContent() {
 
   const renderActualDot = useCallback(({ cx, cy }) => {
     if (cx == null || cy == null) return null;
-    return <circle cx={cx} cy={cy} r={7} fill={primaryChartColor} />;
+    return <circle key={`actual-dot-${cx}-${cy}`} cx={cx} cy={cy} r={7} fill={primaryChartColor} />;
   }, [primaryChartColor]);
 
   const earningsTooltipFormatter = useCallback(
@@ -2677,7 +2790,7 @@ function ElectionCyclePageContent() {
               </div>
             </CardHeader>
             <CardContent className="px-0 pb-0">
-              <div className="w-full h-[280px] rounded-lg shimmer"></div>
+              <div className="w-full h-[380px] rounded-lg shimmer"></div>
             </CardContent>
           </Card>
 
@@ -2811,22 +2924,9 @@ function ElectionCyclePageContent() {
                       {/* <SelectItem value="pre,election,mid,post,current">All Cycles</SelectItem> */}
                     </SelectContent>
                   </Select>
-                  <div className="inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5">
-                    {[
-                      { value: 'linear', label: 'Linear' },
-                      { value: 'log', label: 'Logarithmic' },
-                    ].map((option) => (
-                      <Button
-                        key={option.value}
-                        type="button"
-                        size="xs"
-                        variant={scaleChoice === option.value ? 'default' : 'ghost'}
-                        className={`px-2 py-1 text-xs rounded-full ${scaleChoice === option.value ? 'shadow-sm' : ''}`}
-                        onClick={() => setScaleChoice(option.value)}
-                      >
-                        {option.label}
-                      </Button>
-                    ))}
+                  {renderScaleButtons()}
+                  <div className="flex flex-wrap justify-end gap-1">
+                    {renderLivermoreToggle()}
                   </div>
                 </div>
               </div>
@@ -2834,7 +2934,7 @@ function ElectionCyclePageContent() {
             <CardContent className={isNormalView ? "px-0 pb-0 -mx-4" : "px-0 pb-0 -mr-4"}>
               {isNormalView ? (
                 normalSeriesLoading ? (
-                  <div className="flex h-[280px] items-center justify-center gap-2 text-xs text-muted-foreground">
+                  <div className="flex h-[380px] items-center justify-center gap-2 text-xs text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />
                     Loading {normalTimeframeLabel} candles…
                   </div>
@@ -2853,10 +2953,14 @@ function ElectionCyclePageContent() {
                         showTimeScale={showIntradayScale}
                         showSeconds={normalTimeframe === '15m'}
                         emaColor={EMA_COLOR}
+                        livermoreKey={normalCandlestickSeries.livermore}
+                        showLivermoreKey={showLivermoreKey}
+                        livermoreUpperColor={LIVERMORE_UPPER_COLOR}
+                        livermoreLowerColor={LIVERMORE_LOWER_COLOR}
                         valueLabelPrefix="HA"
                         showTooltip={false}
                         priceScaleType={scaleChoice}
-                        height={280}
+                        height={380}
                       />
                     </div>
                     {/* Stochastic RSI temporarily disabled in the UI
@@ -2887,12 +2991,12 @@ function ElectionCyclePageContent() {
                     */}
                   </>
                 ) : (
-                  <div className="flex h-[280px] items-center justify-center text-xs text-muted-foreground">
+                  <div className="flex h-[380px] items-center justify-center text-xs text-muted-foreground">
                     {normalSeriesError || `Price data unavailable for the ${normalTimeframeLabel} timeframe.`}
                   </div>
                 )
               ) : (
-                <ResponsiveContainer width="100%" height={280}>
+                <ResponsiveContainer width="100%" height={380}>
                   <AreaChart
                     data={filteredChartData}
                     margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
@@ -2972,7 +3076,7 @@ function ElectionCyclePageContent() {
                   onPointerDownOutside={(event) => event.preventDefault()}
                   showCloseButton={false}
                 >
-                  <DialogHeader className="flex justify-center border-b py-4 text-center">
+                  <div className="flex flex-col gap-1 justify-center items-center border-b py-4 text-center">
                     <div
                       className="absolute top-5 left-5"
                       onClick={() => setNormalFullscreenOpen(false)}
@@ -2982,8 +3086,14 @@ function ElectionCyclePageContent() {
                     <DialogTitle className="text-sm font-semibold leading-none">
                       {symbol}
                     </DialogTitle>
-                    <p className="text-muted-foreground text-xs">{assetName}</p>
-                  </DialogHeader>
+                    <span className="text-muted-foreground text-xs">{assetName}</span>
+                  </div>
+                  <div className="flex items-center justify-center gap-2">
+                    {renderScaleButtons()}
+                    <div className="flex flex-wrap gap-1">
+                      {renderLivermoreToggle()}
+                    </div>
+                  </div>
                   <div>
                     <NormalCandlestickChart
                       candles={normalCandlestickSeries.candles}
@@ -2997,6 +3107,10 @@ function ElectionCyclePageContent() {
                       showTimeScale={showIntradayScale}
                       showSeconds={normalTimeframe === '15m'}
                       emaColor={EMA_COLOR}
+                      livermoreKey={normalCandlestickSeries.livermore}
+                      showLivermoreKey={showLivermoreKey}
+                      livermoreUpperColor={LIVERMORE_UPPER_COLOR}
+                      livermoreLowerColor={LIVERMORE_LOWER_COLOR}
                       valueLabelPrefix="HA"
                       showTooltip={false}
                       priceScaleType={scaleChoice}

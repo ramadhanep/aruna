@@ -16,6 +16,10 @@ export function NormalCandlestickChart({
   showSeconds = false,
   formatPrice,
   emaColor = "#0ea5e9",
+  livermoreKey = { upper: [], lower: [] },
+  showLivermoreKey = true,
+  livermoreUpperColor = "#f97316",
+  livermoreLowerColor = "#6b7280",
   valueLabelPrefix = "",
   showTooltip = true,
   priceScaleType = "linear",
@@ -24,14 +28,18 @@ export function NormalCandlestickChart({
   const chartRef = useRef(null);
   const candleSeriesRef = useRef(null);
   const emaSeriesRef = useRef(null);
+  const livermoreUpperSeriesRef = useRef(null);
+  const livermoreLowerSeriesRef = useRef(null);
   const crosshairHandlerRef = useRef(null);
   const metaRef = useRef(meta);
   const markersRef = useRef(markers);
   const markersPluginRef = useRef(null);
   const candlesRef = useRef(candles);
   const emaRef = useRef(ema);
+  const livermoreRef = useRef(livermoreKey);
   const priceScaleModeRef = useRef(null);
   const priceScaleTypeRef = useRef(priceScaleType);
+  const supportsStepLineRef = useRef(true);
   const [hoveredTime, setHoveredTime] = useState(null);
 
   const fallbackMeta = useMemo(() => {
@@ -41,6 +49,34 @@ export function NormalCandlestickChart({
   }, [candles, meta]);
   const hoveredMeta = hoveredTime != null ? meta?.[hoveredTime] ?? null : null;
   const tooltipData = hoveredMeta ?? fallbackMeta ?? null;
+
+  const buildLivermoreStepData = (data = []) => {
+    if (!Array.isArray(data) || data.length === 0) {
+      return [];
+    }
+    if (supportsStepLineRef.current || data.length === 1) {
+      return data;
+    }
+    const stepped = [];
+    for (let i = 0; i < data.length; i++) {
+      const point = data[i];
+      if (!point || typeof point.time !== "number" || typeof point.value !== "number") {
+        continue;
+      }
+      const current = { time: point.time, value: point.value };
+      if (i > 0) {
+        const prev = data[i - 1];
+        if (prev && typeof prev.time === "number" && typeof prev.value === "number") {
+          const gap = current.time - prev.time;
+          if (gap > 1) {
+            stepped.push({ time: current.time - 1, value: prev.value });
+          }
+        }
+      }
+      stepped.push(current);
+    }
+    return stepped;
+  };
 
   useEffect(() => {
     metaRef.current = meta;
@@ -67,6 +103,10 @@ export function NormalCandlestickChart({
   }, [ema]);
 
   useEffect(() => {
+    livermoreRef.current = livermoreKey;
+  }, [livermoreKey]);
+
+  useEffect(() => {
     let cancelled = false;
     let resizeObserver;
     let observedElement = null;
@@ -77,6 +117,7 @@ export function NormalCandlestickChart({
         CrosshairMode,
         CandlestickSeries,
         LineSeries,
+        LineType,
         PriceScaleMode,
         createSeriesMarkers,
       }) => {
@@ -146,9 +187,32 @@ export function NormalCandlestickChart({
           priceLineVisible: false,
           lastValueVisible: false,
         });
+        const supportsStepLine = Boolean(LineType?.WithSteps);
+        supportsStepLineRef.current = supportsStepLine;
+        if (!supportsStepLine) {
+          console.warn("lightweight-charts missing step line support, falling back to manual step builder");
+        }
+        const livermoreUpperSeries = chart.addSeries(LineSeries, {
+          color: livermoreUpperColor,
+          lineWidth: 2,
+          priceLineVisible: false,
+          lastValueVisible: false,
+          lineType: supportsStepLine ? LineType.WithSteps : undefined,
+          visible: showLivermoreKey,
+        });
+        const livermoreLowerSeries = chart.addSeries(LineSeries, {
+          color: livermoreLowerColor,
+          lineWidth: 2,
+          priceLineVisible: false,
+          lastValueVisible: false,
+          lineType: supportsStepLine ? LineType.WithSteps : undefined,
+          visible: showLivermoreKey,
+        });
 
         candleSeriesRef.current = candlestickSeries;
         emaSeriesRef.current = emaSeries;
+        livermoreUpperSeriesRef.current = livermoreUpperSeries;
+        livermoreLowerSeriesRef.current = livermoreLowerSeries;
         markersPluginRef.current = null;
         chartRef.current = chart;
         if (Array.isArray(candlesRef.current) && candlesRef.current.length > 0) {
@@ -160,6 +224,17 @@ export function NormalCandlestickChart({
         }
         if (Array.isArray(emaRef.current) && emaRef.current.length > 0) {
           emaSeries.setData(emaRef.current);
+        }
+        const initialLivermore = livermoreRef.current ?? {};
+        const initialUpperRaw = Array.isArray(initialLivermore.upper) ? initialLivermore.upper : [];
+        const initialLowerRaw = Array.isArray(initialLivermore.lower) ? initialLivermore.lower : [];
+        const initialUpper = buildLivermoreStepData(initialUpperRaw);
+        const initialLower = buildLivermoreStepData(initialLowerRaw);
+        if (initialUpper.length > 0) {
+          livermoreUpperSeries.setData(initialUpper);
+        }
+        if (initialLower.length > 0) {
+          livermoreLowerSeries.setData(initialLower);
         }
         if (
           typeof candlestickSeries.setMarkers !== "function" &&
@@ -218,10 +293,20 @@ export function NormalCandlestickChart({
       chartRef.current = null;
       candleSeriesRef.current = null;
       emaSeriesRef.current = null;
+      livermoreUpperSeriesRef.current = null;
+      livermoreLowerSeriesRef.current = null;
       crosshairHandlerRef.current = null;
       markersPluginRef.current = null;
     };
-  }, [height, isDark, showSeconds, showTimeScale, emaColor]);
+  }, [
+    height,
+    isDark,
+    showSeconds,
+    showTimeScale,
+    emaColor,
+    livermoreUpperColor,
+    livermoreLowerColor,
+  ]);
 
   useEffect(() => {
     priceScaleTypeRef.current = priceScaleType;
@@ -236,13 +321,37 @@ export function NormalCandlestickChart({
   useEffect(() => {
     if (!candleSeriesRef.current) return;
     candleSeriesRef.current.setData(candles);
-    chartRef.current?.timeScale().fitContent();
+    chartRef.current?.timeScale();
   }, [candles]);
 
   useEffect(() => {
     if (!emaSeriesRef.current) return;
     emaSeriesRef.current.setData(ema);
   }, [ema]);
+
+  useEffect(() => {
+    if (!livermoreUpperSeriesRef.current || !livermoreLowerSeriesRef.current) return;
+    const upperData = buildLivermoreStepData(
+      Array.isArray(livermoreKey?.upper) ? livermoreKey.upper : []
+    );
+    const lowerData = buildLivermoreStepData(
+      Array.isArray(livermoreKey?.lower) ? livermoreKey.lower : []
+    );
+    livermoreUpperSeriesRef.current.setData(showLivermoreKey ? upperData : []);
+    livermoreLowerSeriesRef.current.setData(showLivermoreKey ? lowerData : []);
+    if (livermoreUpperSeriesRef.current.applyOptions) {
+      livermoreUpperSeriesRef.current.applyOptions({
+        visible: showLivermoreKey,
+        color: livermoreUpperColor,
+      });
+    }
+    if (livermoreLowerSeriesRef.current.applyOptions) {
+      livermoreLowerSeriesRef.current.applyOptions({
+        visible: showLivermoreKey,
+        color: livermoreLowerColor,
+      });
+    }
+  }, [livermoreKey, livermoreUpperColor, livermoreLowerColor, showLivermoreKey]);
 
   const formatValue = (value) => {
     if (typeof value !== "number" || Number.isNaN(value)) {
@@ -300,6 +409,22 @@ export function NormalCandlestickChart({
                 {formatValue(tooltipData.ema32)}
               </span>
             </div>
+            {showLivermoreKey && tooltipData?.livermoreUpper != null ? (
+              <div className="col-span-2 flex items-center justify-between gap-2 border-t border-dashed border-border/70 pt-1">
+                <span className="text-[10px] uppercase text-muted-foreground">Livermore Upper</span>
+                <span className="font-semibold" style={{ color: livermoreUpperColor }}>
+                  {formatValue(tooltipData.livermoreUpper)}
+                </span>
+              </div>
+            ) : null}
+            {showLivermoreKey && tooltipData?.livermoreLower != null ? (
+              <div className="col-span-2 flex items-center justify-between gap-2 border-t border-dashed border-border/70 pt-1">
+                <span className="text-[10px] uppercase text-muted-foreground">Livermore Lower</span>
+                <span className="font-semibold" style={{ color: livermoreLowerColor }}>
+                  {formatValue(tooltipData.livermoreLower)}
+                </span>
+              </div>
+            ) : null}
             {pct != null ? (
               <div
                 className={`col-span-2 text-right text-[11px] font-semibold ${
