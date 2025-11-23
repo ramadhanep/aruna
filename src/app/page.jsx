@@ -84,14 +84,16 @@ async function fetchQuote(symbol) {
     const change = price - previous.adjclose;
     const changePercent = (change / previous.adjclose) * 100;
     const name = data.meta?.name || symbol;
-    
+    const logo = data.meta?.logo || null;
+   
     return {
       symbol,
       name,
       price,
       change,
       changePercent,
-      chartData: series.slice(-30).map(d => d.adjclose) // Last 30 points for mini chart
+      chartData: series.slice(-30).map(d => d.adjclose), // Last 30 points for mini chart
+      logo,
     };
   } catch (e) {
     console.warn(`Failed to fetch ${symbol}`, e);
@@ -152,18 +154,34 @@ function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
 
 function StockItem({ quote }) {
   if (!quote) return null;
-  
+
   const isPositive = quote.change >= 0;
   const color = isPositive ? 'text-emerald-600' : 'text-red-600';
-  
+  const logo = quote.logo;
+  const symbol = quote.symbol || '';
+  const fallbackChar = symbol ? symbol.charAt(0) : '?';
+
   return (
     <Link
       href={`/chart?symbol=${encodeURIComponent(quote.symbol)}&cycle=normal`}
       className="flex items-center gap-3 py-3 hover:bg-accent/30 transition-colors"
     >
-      <div className="flex-1 min-w-0">
-        <div className="font-semibold text-sm truncate">{quote.symbol}</div>
-        <div className="text-xs text-muted-foreground truncate">{quote.name}</div>
+      <div className="flex-1 min-w-0 flex items-center gap-3">
+        <div className="flex-shrink-0">
+          <div className="h-7 w-7 rounded-full bg-muted/20 overflow-hidden flex items-center justify-center">
+            {logo ? (
+              <img src={logo} alt={`${symbol} logo`} className="h-full w-full object-cover" />
+            ) : (
+              <span className="text-[11px] font-semibold uppercase text-muted-foreground">
+                {fallbackChar}
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="min-w-0">
+          <div className="font-semibold text-sm truncate">{quote.symbol}</div>
+          <div className="text-xs text-muted-foreground truncate">{quote.name}</div>
+        </div>
       </div>
       <div className={`flex items-center ${color}`}>
         <MiniChart
