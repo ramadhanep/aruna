@@ -125,6 +125,15 @@ function savePortfolioVisibility(hidden) {
   }
 }
 
+function AssetAvatar({ symbol, logo }) {
+  const fallbackChar = symbol ? symbol.charAt(0) : '?';
+  return logo ? (
+    <img src={logo} alt={`${symbol} logo`} className="h-8 w-8 object-cover" />
+  ) : (
+    <span className="text-[11px] font-semibold uppercase text-muted-foreground">{fallbackChar}</span>
+  );
+}
+
 export default function PortfolioTrackerPage() {
   const router = useRouter();
   const [entries, setEntries] = useState(() => loadPortfolio());
@@ -138,6 +147,7 @@ export default function PortfolioTrackerPage() {
   const [assetType, setAssetType] = useState('digital'); // 'digital' or 'cash'
   const [form, setForm] = useState({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '', type: 'digital', category: '', cashCurrency: 'IDR' });
   const [priceMap, setPriceMap] = useState({}); // { symbol: currentPrice }
+  const [logoMap, setLogoMap] = useState({}); // { symbol: logoUrl }
   const [initialLoading, setInitialLoading] = useState(true);
   const [fxRate, setFxRate] = useState(0); // USD per IDR (e.g., 1/16500 = 0.0000606)
   const [idrPerUsd, setIdrPerUsd] = useState(0); // IDR per USD (e.g., 16500)
@@ -171,7 +181,11 @@ export default function PortfolioTrackerPage() {
       const series = data.data || [];
       if (series.length === 0) return null;
       const last = series[series.length - 1];
-      return last.adjclose ?? null;
+      const logo = data?.meta?.logo || null;
+      return {
+        price: last.adjclose ?? null,
+        logo,
+      };
     } catch (e) {
       return null;
     }
@@ -180,12 +194,22 @@ export default function PortfolioTrackerPage() {
   const refreshPrices = useCallback(async (list) => {
     const uniqueSymbols = [...new Set(list.map(e => e.symbol))];
     const updates = {};
+    const logos = {};
     for (const sym of uniqueSymbols) {
-      const p = await fetchPrice(sym);
-      if (p != null) updates[sym] = p;
+      const result = await fetchPrice(sym);
+      if (!result) continue;
+      if (result.price != null) {
+        updates[sym] = result.price;
+      }
+      if (result.logo) {
+        logos[sym] = result.logo;
+      }
     }
     if (Object.keys(updates).length) {
       setPriceMap(pm => ({ ...pm, ...updates }));
+    }
+    if (Object.keys(logos).length) {
+      setLogoMap((prev) => ({ ...prev, ...logos }));
     }
   }, [fetchPrice]);
   const [loadingSearch, setLoadingSearch] = useState(false);
@@ -409,16 +433,25 @@ export default function PortfolioTrackerPage() {
     const symbol = result.symbol;
     const name = result.name || '';
     const isJk = symbol.endsWith('.JK');
-    let latest = null;
+    let latestResult = null;
     try {
-      latest = await fetchPrice(symbol);
-      if (latest != null) {
-        setPriceMap(pm => ({ ...pm, [symbol]: latest }));
+      latestResult = await fetchPrice(symbol);
+      if (latestResult?.price != null) {
+        setPriceMap((pm) => ({ ...pm, [symbol]: latestResult.price }));
+      }
+      if (latestResult?.logo) {
+        setLogoMap((prev) => ({ ...prev, [symbol]: latestResult.logo }));
       }
     } catch (e) {
       // ignore
     }
-    setForm(f => ({ ...f, symbol, name, unit: isJk ? 'lot' : f.unit, avgPrice: latest != null ? String(latest) : f.avgPrice }));
+    setForm((f) => ({
+      ...f,
+      symbol,
+      name,
+      unit: isJk ? 'lot' : f.unit,
+      avgPrice: latestResult?.price != null ? String(latestResult.price) : f.avgPrice,
+    }));
     // Set flag to prevent search trigger, then update query and clear results
     justSelectedRef.current = true;
     setSymbolQuery(symbol);
@@ -526,8 +559,20 @@ export default function PortfolioTrackerPage() {
       if (isNaN(avgPriceNum) || avgPriceNum <= 0) {
         avgPriceNum = null;
         try {
-          const p = await fetchPrice(form.symbol);
-          if (p != null) avgPriceNum = p;
+          const result = await fetchPrice(form.symbol);
+          if (result?.price != null) {
+            avgPriceNum = result.price;
+            setPriceMap((pm) => ({
+              ...pm,
+              [form.symbol]: result.price,
+            }));
+            if (result.logo) {
+              setLogoMap((prev) => ({
+                ...prev,
+                [form.symbol]: result.logo,
+              }));
+            }
+          }
         } catch (err) {
           // ignore
         }
@@ -995,8 +1040,8 @@ export default function PortfolioTrackerPage() {
                         className="flex flex-1 min-w-0 items-center gap-2 rounded-md px-1 py-2 text-left transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2"
                         onClick={() => navigateToSymbol(entry.symbol)}
                       >
-                        <div className="p-2 rounded-full bg-muted">
-                          <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <div className="rounded-full bg-muted overflow-hidden">
+                          <AssetAvatar symbol={entry.symbol} logo={logoMap[entry.symbol]} />
                         </div>
                         <div className="flex flex-col justify-start">
                           <p className="font-semibold text-xs truncate">

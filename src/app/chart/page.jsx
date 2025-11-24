@@ -1373,7 +1373,7 @@ function ElectionCyclePageContent() {
       type="button"
       size="xs"
       variant={showLivermoreKey ? 'default' : 'ghost'}
-      className={`rounded-full px-2 py-1 text-[11px] hover:bg-emerald-700 ${showLivermoreKey ? 'bg-emerald-700 text-white/80 shadow-sm' : 'border-border/70 text-white bg-muted/40'} ${className}`}
+      className={`rounded-full px-2 py-1 text-[11px] hover:bg-emerald-700 ${showLivermoreKey ? 'bg-emerald-700 text-white/80 shadow-sm' : 'border border-border/70 dark:text-white bg-muted/40'} ${className}`}
       onClick={() => setShowLivermoreKey((prev) => !prev)}
     >
       Livermore Key
@@ -3088,11 +3088,14 @@ function ElectionCyclePageContent() {
                     </DialogTitle>
                     <span className="text-muted-foreground text-xs">{assetName}</span>
                   </div>
-                  <div className="flex items-center justify-center gap-2">
-                    {renderScaleButtons()}
-                    <div className="flex flex-wrap gap-1">
-                      {renderLivermoreToggle()}
+                  <div className="flex flex-col items-center justify-center gap-2">
+                    <div className="flex items-center justify-between gap-2">
+                      {renderScaleButtons()}
+                      <div className="flex flex-wrap gap-1">
+                        {renderLivermoreToggle()}
+                      </div>
                     </div>
+                    <div className="flex flex-wrap justify-center items-center gap-1">{renderTimeframeButtons()}</div>
                   </div>
                   <div>
                     <NormalCandlestickChart
@@ -3114,12 +3117,9 @@ function ElectionCyclePageContent() {
                       valueLabelPrefix="HA"
                       showTooltip={false}
                       priceScaleType={scaleChoice}
-                      height={700}
+                      height={650}
                     />
                   </div>
-                  <DialogFooter className="flex flex-col gap-3 border-t px-4 py-2 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-                    <div className="flex flex-wrap justify-center items-center gap-1">{renderTimeframeButtons()}</div>
-                  </DialogFooter>
                 </DialogContent>
               </Dialog>
             </>
