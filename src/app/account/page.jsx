@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { Suspense, useState, useMemo, useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -95,7 +95,7 @@ function DeleteAccountAction({ onConfirm, disabled }) {
   );
 }
 
-export default function AccountPage() {
+function AccountContent() {
   const {
     user,
     loading,
@@ -375,5 +375,19 @@ export default function AccountPage() {
         </Card>
       </section>
     </div>
+  );
+}
+
+export default function AccountPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <AccountContent />
+    </Suspense>
   );
 }
