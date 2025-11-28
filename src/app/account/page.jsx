@@ -370,7 +370,7 @@ function AccountContent() {
               <Heart className="h-4 w-4 fill-white" />
               <span>by Ramadhan Edy from 🇮🇩</span>
             </div>
-            <p className="text-[11px] text-muted-foreground"><a href="https://trakteer.id/romadhan2" target="_blank" className="text-emerald-700">https://trakteer.id/romadhan2</a></p>
+            {/* <p className="text-[11px] text-muted-foreground"><a href="https://trakteer.id/romadhan2" target="_blank" className="text-emerald-700">https://trakteer.id/romadhan2</a></p> */}
           </CardContent>
         </Card>
       </section>

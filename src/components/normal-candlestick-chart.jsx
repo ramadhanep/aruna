@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { loadLightweightCharts } from "@/lib/lightweight-charts-loader";
+import { ArunaWatermark } from "@/components/aruna-watermark";
 
 export function NormalCandlestickChart({
   candles = [],
@@ -372,6 +373,7 @@ export function NormalCandlestickChart({
   return (
     <div className="relative w-full" style={{ height }}>
       <div ref={containerRef} className="absolute inset-0" />
+      <ArunaWatermark className="absolute inset-0 flex items-end justify-start bottom-10 left-4" />
       {showTooltip && tooltipData ? (
         <div className="pointer-events-none absolute left-3 top-3 rounded-md border border-border bg-background/95 px-3 py-2 text-[10px] shadow-sm">
           <div className="flex items-center justify-between gap-3 text-[11px] font-semibold">

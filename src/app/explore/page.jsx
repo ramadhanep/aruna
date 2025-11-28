@@ -728,7 +728,7 @@ export default function ExplorePage() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Alpha in {section.title}
+                    Alpha Signals in {section.title}
                   </p>
                   {section.lastScreened && (
                     <p className="text-[11px] text-muted-foreground">
@@ -751,14 +751,14 @@ export default function ExplorePage() {
               {gatedPicks.length > 0 && (
                 <div className="mt-1 relative">
                   <div
-                    className={`space-y-1 divide-y divide-border/70 border-t border-border/70 pt-1 ${shouldGate ? "pointer-events-none select-none blur-[1.5px] opacity-60" : ""}`}
+                    className={`space-y-1 divide-y divide-border/70 border-t border-border/70 pt-1 ${shouldGate ? "pointer-events-none select-none blur-[2px] opacity-60" : ""}`}
                   >
                     {gatedPicks.map((pick) => (
                       <PickItem key={pick.symbol} pick={pick} quote={quotes[pick.symbol]} />
                     ))}
                   </div>
                   {shouldGate && (
-                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/05 backdrop-blur-xs px-6 text-center">
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg px-6 text-center">
                       <Lock className="h-4 w-4 text-muted-foreground" />
                       <p className="text-[11px] font-semibold text-muted-foreground">
                         Sign in to explore all signals

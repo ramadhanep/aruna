@@ -10,18 +10,7 @@ import { ManageWatchlistDialog } from "@/components/manage-watchlist-dialog";
 import { useAuth } from "@/components/auth-provider";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { TickerAvatar } from "@/components/ticker-avatar";
-
-const DEFAULT_WATCHLIST = [
-  { symbol: 'BBCA.JK', order: 1 },
-  { symbol: 'BTC-USD', order: 2 },
-  { symbol: 'QQQ', order: 3 },
-  { symbol: 'SPY', order: 4 },
-  { symbol: 'NVDA', order: 5 },
-  { symbol: 'MSFT', order: 6 },
-  { symbol: 'AMZN', order: 7 },
-  { symbol: 'GOOG', order: 8 },
-  { symbol: 'AVGO', order: 9 },
-];
+import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist";
 
 function areWatchlistsEqual(a = [], b = []) {
   if (a.length !== b.length) return false;
@@ -270,7 +259,7 @@ export default function HomePage() {
 
     if (!isAuthenticated) {
       if (!areWatchlistsEqual(DEFAULT_WATCHLIST, watchlist)) {
-        setWatchlist(DEFAULT_WATCHLIST);
+        setWatchlist(getDefaultWatchlist());
       }
       setWatchlistReady(true);
       return;
@@ -291,7 +280,7 @@ export default function HomePage() {
 
     if (!remoteDefaultSeedRef.current) {
       remoteDefaultSeedRef.current = true;
-      const defaults = DEFAULT_WATCHLIST;
+      const defaults = getDefaultWatchlist();
       setWatchlist(defaults);
       setWatchlistReady(true);
       syncWatchlist(defaults)
