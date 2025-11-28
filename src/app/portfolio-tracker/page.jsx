@@ -12,13 +12,12 @@ import { Plus, MoreVertical, Pencil, Trash2, Loader2, Wallet, Coins, TrendingUp,
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth-provider';
 import { fetchEncodedJson } from '@/lib/api-client';
+import { TickerAvatar } from '@/components/ticker-avatar';
 
 // Dynamic chart component to keep page light and avoid SSR issues
 const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { ssr: false });
 
 // LocalStorage key for currency preference
-const PORTFOLIO_STORAGE_KEY = 'aruna_portfolio';
-const PORTFOLIO_UPDATED_AT_KEY = 'aruna_portfolio_updated_at';
 const PORTFOLIO_CURRENCY_KEY = 'portfolio_currency';
 const PORTFOLIO_VISIBILITY_KEY = 'portfolio_visibility_hidden';
 const DEFAULT_PORTFOLIO_ENTRIES = [
@@ -45,45 +44,6 @@ async function searchSymbols(query) {
   } catch (e) {
     console.warn('Symbol search failed', e);
     return [];
-  }
-}
-
-function loadPortfolio() {
-  if (typeof window === 'undefined') return getDefaultPortfolio();
-  try {
-    const raw = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
-    if (!raw) {
-      const defaults = getDefaultPortfolio();
-      localStorage.setItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(defaults));
-      localStorage.setItem(PORTFOLIO_UPDATED_AT_KEY, new Date().toISOString());
-      return defaults;
-    }
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
-      return parsed;
-    }
-    const defaults = getDefaultPortfolio();
-    localStorage.setItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(defaults));
-    return defaults;
-  } catch (e) {
-    console.warn('Failed to parse portfolio', e);
-    return getDefaultPortfolio();
-  }
-}
-
-function loadPortfolioUpdatedAt() {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(PORTFOLIO_UPDATED_AT_KEY);
-}
-
-function savePortfolio(data, updatedAt) {
-  try {
-    localStorage.setItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(data));
-    const timestamp =
-      typeof updatedAt === 'string' ? updatedAt : new Date().toISOString();
-    localStorage.setItem(PORTFOLIO_UPDATED_AT_KEY, timestamp);
-  } catch (e) {
-    console.warn('Failed to save portfolio', e);
   }
 }
 
@@ -125,19 +85,9 @@ function savePortfolioVisibility(hidden) {
   }
 }
 
-function AssetAvatar({ symbol, logo }) {
-  const fallbackChar = symbol ? symbol.charAt(0) : '?';
-  return logo ? (
-    <img src={logo} alt={`${symbol} logo`} className="h-8 w-8 object-cover" />
-  ) : (
-    <span className="text-[11px] font-semibold uppercase text-muted-foreground">{fallbackChar}</span>
-  );
-}
-
 export default function PortfolioTrackerPage() {
   const router = useRouter();
-  const [entries, setEntries] = useState(() => loadPortfolio());
-  const [portfolioUpdatedAt, setPortfolioUpdatedAt] = useState(() => loadPortfolioUpdatedAt());
+  const [entries, setEntries] = useState([]);
   const [holdingsSort, setHoldingsSort] = useState('alpha');
   const [currency, setCurrency] = useState(() => loadCurrencyPreference());
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -159,15 +109,35 @@ export default function PortfolioTrackerPage() {
   const containerRef = React.useRef(null);
   const remotePortfolioSeedRef = React.useRef(false);
   const hydratePortfolioRef = React.useRef(false);
-  const entriesRef = React.useRef(entries);
   const {
     user,
+    loading: authLoading,
     remotePortfolio,
-    remotePortfolioUpdatedAt,
     portfolioLoaded,
     syncPortfolio,
   } = useAuth();
   const isAuthenticated = Boolean(user);
+  const redirectToSignIn = useCallback(() => {
+    const currentPath =
+      typeof window !== 'undefined'
+        ? `${window.location.pathname}${window.location.search}`
+        : '/portfolio-tracker';
+    router.push(`/signin?redirect=${encodeURIComponent(currentPath)}`);
+  }, [router]);
+  const ensureAuthenticated = useCallback(() => {
+    if (isAuthenticated) {
+      return true;
+    }
+    redirectToSignIn();
+    return false;
+  }, [isAuthenticated, redirectToSignIn]);
+
+  useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated) {
+      redirectToSignIn();
+    }
+  }, [authLoading, isAuthenticated, redirectToSignIn]);
   
   // Fetch latest prices (simple batch sequential)
   const fetchPrice = useCallback(async (symbol) => {
@@ -311,15 +281,10 @@ export default function PortfolioTrackerPage() {
   }, []);
 
   useEffect(() => {
-    entriesRef.current = entries;
-  }, [entries]);
-
-  useEffect(() => {
     if (!isAuthenticated) {
       hydratePortfolioRef.current = true;
-      const local = loadPortfolio();
-      setEntries(local);
-      setPortfolioUpdatedAt(loadPortfolioUpdatedAt());
+      setEntries([]);
+      setInitialLoading(false);
       return;
     }
 
@@ -330,7 +295,6 @@ export default function PortfolioTrackerPage() {
     if (Array.isArray(remotePortfolio)) {
       hydratePortfolioRef.current = true;
       setEntries(remotePortfolio);
-      setPortfolioUpdatedAt(remotePortfolioUpdatedAt || null);
       return;
     }
 
@@ -345,32 +309,14 @@ export default function PortfolioTrackerPage() {
           remotePortfolioSeedRef.current = false;
         });
     }
-  }, [
-    isAuthenticated,
-    portfolioLoaded,
-    remotePortfolio,
-    remotePortfolioUpdatedAt,
-    syncPortfolio,
-  ]);
+  }, [isAuthenticated, portfolioLoaded, remotePortfolio, syncPortfolio]);
 
   // Persist changes and refresh prices when entries mutate
   useEffect(() => {
     if (hydratePortfolioRef.current) {
       hydratePortfolioRef.current = false;
-    } else {
-      const timestamp = new Date().toISOString();
-      if (isAuthenticated) {
-        syncPortfolio(entries)
-          .then((remoteTimestamp) => {
-            if (remoteTimestamp) {
-              setPortfolioUpdatedAt(remoteTimestamp);
-            }
-          })
-          .catch(() => {});
-      } else {
-        savePortfolio(entries, timestamp);
-        setPortfolioUpdatedAt(timestamp);
-      }
+    } else if (isAuthenticated) {
+      syncPortfolio(entries).catch(() => {});
     }
 
     const digitalEntries = entries.filter((e) => e.type !== 'cash');
@@ -459,11 +405,13 @@ export default function PortfolioTrackerPage() {
   }
 
   function openAdd() {
+    if (!ensureAuthenticated()) return;
     resetForm();
     setDialogOpen(true);
   }
 
   function openEdit(idx) {
+    if (!ensureAuthenticated()) return;
     const e = entries[idx];
     const isCash = e.type === 'cash';
     let cashAmountDisplay = '';
@@ -497,6 +445,7 @@ export default function PortfolioTrackerPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
+    if (!ensureAuthenticated()) return;
     const amountNum = parseFloat(form.amount);
     if (isNaN(amountNum)) return;
 
@@ -607,6 +556,7 @@ export default function PortfolioTrackerPage() {
   );
 
   function removeEntry(idx) {
+    if (!ensureAuthenticated()) return;
     setEntries((prev) => prev.filter((_, i) => i !== idx));
   }
 
@@ -782,6 +732,18 @@ export default function PortfolioTrackerPage() {
   const digitalMarketDisplay = getDisplayValue(digitalMarket);
   const digitalPnLDisplay = getDisplayValue(digitalPnL);
   const totalCashDisplay = getDisplayValue(totalCash);
+
+  if (authLoading) {
+    return (
+      <div className="flex justify-center items-center py-16">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   if (initialLoading) {
     return (
@@ -1040,9 +1002,12 @@ export default function PortfolioTrackerPage() {
                         className="flex flex-1 min-w-0 items-center gap-2 rounded-md px-1 py-2 text-left transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2"
                         onClick={() => navigateToSymbol(entry.symbol)}
                       >
-                        <div className="rounded-full bg-muted overflow-hidden">
-                          <AssetAvatar symbol={entry.symbol} logo={logoMap[entry.symbol]} />
-                        </div>
+                        <TickerAvatar
+                          symbol={entry.symbol}
+                          logo={logoMap[entry.symbol]}
+                          sizeClass="h-8 w-8"
+                          backgroundClass="bg-muted"
+                        />
                         <div className="flex flex-col justify-start">
                           <p className="font-semibold text-xs truncate">
                             {entry.symbol}
@@ -1111,7 +1076,19 @@ export default function PortfolioTrackerPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog
+        open={dialogOpen && isAuthenticated}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setDialogOpen(false);
+            return;
+          }
+          if (!ensureAuthenticated()) {
+            return;
+          }
+          setDialogOpen(true);
+        }}
+      >
         <DialogContent className="fixed max-w-none m-0 h-screen rounded-none p-0 flex flex-col" closeButtonPosition="right">
           <div className="flex items-center gap-2 p-4 border-b">
             <DialogTitle className="text-base">{editingIndex != null ? 'Edit Asset' : 'Add Asset'}</DialogTitle>

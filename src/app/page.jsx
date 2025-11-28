@@ -2,15 +2,15 @@
 
 import { useEffect, useState, useCallback, useRef, useMemo, useId } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { TrendingUp, TrendingDown, Loader2, Download, Edit, BarChart3 } from "lucide-react";
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ManageWatchlistDialog } from "@/components/manage-watchlist-dialog";
 import { useAuth } from "@/components/auth-provider";
 import { fetchEncodedJson } from "@/lib/api-client";
+import { TickerAvatar } from "@/components/ticker-avatar";
 
-const WATCHLIST_KEY = 'aruna_watchlist';
-const WATCHLIST_UPDATED_AT_KEY = 'aruna_watchlist_updated_at';
 const DEFAULT_WATCHLIST = [
   { symbol: 'BBCA.JK', order: 1 },
   { symbol: 'BTC-USD', order: 2 },
@@ -31,38 +31,6 @@ function areWatchlistsEqual(a = [], b = []) {
     }
   }
   return true;
-}
-
-function loadWatchlist() {
-  if (typeof window === 'undefined') return DEFAULT_WATCHLIST;
-  try {
-    const raw = localStorage.getItem(WATCHLIST_KEY);
-    if (!raw) {
-      localStorage.setItem(WATCHLIST_KEY, JSON.stringify(DEFAULT_WATCHLIST));
-      localStorage.setItem(WATCHLIST_UPDATED_AT_KEY, new Date().toISOString());
-      return DEFAULT_WATCHLIST;
-    }
-    return JSON.parse(raw);
-  } catch (e) {
-    console.warn('Failed to parse watchlist', e);
-    return DEFAULT_WATCHLIST;
-  }
-}
-
-function loadWatchlistUpdatedAt() {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem(WATCHLIST_UPDATED_AT_KEY);
-}
-
-function saveWatchlist(data, updatedAt) {
-  try {
-    localStorage.setItem(WATCHLIST_KEY, JSON.stringify(data));
-    const timestamp =
-      typeof updatedAt === 'string' ? updatedAt : new Date().toISOString();
-    localStorage.setItem(WATCHLIST_UPDATED_AT_KEY, timestamp);
-  } catch (e) {
-    console.warn('Failed to save watchlist', e);
-  }
 }
 
 async function fetchQuote(symbol) {
@@ -159,7 +127,6 @@ function StockItem({ quote }) {
   const color = isPositive ? 'text-emerald-600' : 'text-red-600';
   const logo = quote.logo;
   const symbol = quote.symbol || '';
-  const fallbackChar = symbol ? symbol.charAt(0) : '?';
 
   return (
     <Link
@@ -168,15 +135,7 @@ function StockItem({ quote }) {
     >
       <div className="flex-1 min-w-0 flex items-center gap-3">
         <div className="flex-shrink-0">
-          <div className="h-7 w-7 rounded-full bg-muted/20 overflow-hidden flex items-center justify-center">
-            {logo ? (
-              <img src={logo} alt={`${symbol} logo`} className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-[11px] font-semibold uppercase text-muted-foreground">
-                {fallbackChar}
-              </span>
-            )}
-          </div>
+          <TickerAvatar symbol={symbol} logo={logo} />
         </div>
         <div className="min-w-0">
           <div className="font-semibold text-sm truncate">{quote.symbol}</div>
@@ -226,8 +185,9 @@ function ShimmerItem() {
 }
 
 export default function HomePage() {
-  const [watchlist, setWatchlist] = useState(() => loadWatchlist());
-  const [watchlistUpdatedAt, setWatchlistUpdatedAt] = useState(() => loadWatchlistUpdatedAt());
+  const router = useRouter();
+  const [watchlist, setWatchlist] = useState([]);
+  const [watchlistReady, setWatchlistReady] = useState(false);
   const [quotes, setQuotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -240,12 +200,20 @@ export default function HomePage() {
   const remoteDefaultSeedRef = useRef(false);
   const {
     user,
+    loading: authLoading,
     remoteWatchlist,
-    remoteWatchlistUpdatedAt,
     watchlistLoaded,
     syncWatchlist,
   } = useAuth();
   const isAuthenticated = Boolean(user);
+
+  const redirectToSignIn = useCallback(() => {
+    const currentPath =
+      typeof window !== 'undefined'
+        ? `${window.location.pathname}${window.location.search}`
+        : '/';
+    router.push(`/signin?redirect=${encodeURIComponent(currentPath)}`);
+  }, [router]);
 
   const marketPulse = useMemo(() => {
     if (!quotes.length) {
@@ -259,37 +227,57 @@ export default function HomePage() {
   }, [quotes]);
 
   const loadQuotes = useCallback(async () => {
+    if (!watchlistReady) {
+      return;
+    }
+    if (watchlist.length === 0) {
+      setQuotes([]);
+      return;
+    }
     const sorted = [...watchlist].sort((a, b) => a.order - b.order);
     const quotesData = await Promise.all(
       sorted.map(item => fetchQuote(item.symbol))
     );
     
     setQuotes(quotesData.filter(q => q !== null));
-  }, [watchlist]);
+  }, [watchlist, watchlistReady]);
 
   useEffect(() => {
+    if (!watchlistReady) {
+      setLoading(true);
+      setQuotes([]);
+      return;
+    }
+    let cancelled = false;
     const init = async () => {
       setLoading(true);
       await loadQuotes();
-      setLoading(false);
+      if (!cancelled) {
+        setLoading(false);
+      }
     };
     init();
-  }, [loadQuotes]);
+    return () => {
+      cancelled = true;
+    };
+  }, [loadQuotes, watchlistReady]);
 
   useEffect(() => {
+    if (authLoading) {
+      setWatchlistReady(false);
+      return;
+    }
+
     if (!isAuthenticated) {
-      const local = loadWatchlist();
-      if (!areWatchlistsEqual(local, watchlist)) {
-        setWatchlist(local);
+      if (!areWatchlistsEqual(DEFAULT_WATCHLIST, watchlist)) {
+        setWatchlist(DEFAULT_WATCHLIST);
       }
-      const localUpdatedAt = loadWatchlistUpdatedAt();
-      if (localUpdatedAt !== watchlistUpdatedAt) {
-        setWatchlistUpdatedAt(localUpdatedAt);
-      }
+      setWatchlistReady(true);
       return;
     }
 
     if (!watchlistLoaded) {
+      setWatchlistReady(false);
       return;
     }
 
@@ -297,9 +285,7 @@ export default function HomePage() {
       if (!areWatchlistsEqual(remoteWatchlist, watchlist)) {
         setWatchlist(remoteWatchlist);
       }
-      if ((remoteWatchlistUpdatedAt || null) !== watchlistUpdatedAt) {
-        setWatchlistUpdatedAt(remoteWatchlistUpdatedAt || null);
-      }
+      setWatchlistReady(true);
       return;
     }
 
@@ -307,6 +293,7 @@ export default function HomePage() {
       remoteDefaultSeedRef.current = true;
       const defaults = DEFAULT_WATCHLIST;
       setWatchlist(defaults);
+      setWatchlistReady(true);
       syncWatchlist(defaults)
         .catch(() => null)
         .finally(() => {
@@ -317,10 +304,9 @@ export default function HomePage() {
     isAuthenticated,
     watchlistLoaded,
     remoteWatchlist,
-    remoteWatchlistUpdatedAt,
     watchlist,
-    watchlistUpdatedAt,
     syncWatchlist,
+    authLoading,
   ]);
 
   // Check if app is installable
@@ -476,7 +462,13 @@ export default function HomePage() {
         </div>
         <div className="border-t py-2">
           <button
-            onClick={() => setManageDialogOpen(true)}
+            onClick={() => {
+              if (!isAuthenticated) {
+                redirectToSignIn();
+                return;
+              }
+              setManageDialogOpen(true);
+            }}
             className="w-full flex items-center gap-2 justify-center text-emerald-700 hover:text-emerald-800 transition-colors"
           >
             <Edit className="h-4 w-4" />
@@ -552,24 +544,26 @@ export default function HomePage() {
       )}
 
       <ManageWatchlistDialog
-        open={manageDialogOpen}
-        onOpenChange={setManageDialogOpen}
+        open={manageDialogOpen && isAuthenticated}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setManageDialogOpen(false);
+            return;
+          }
+          if (!isAuthenticated) {
+            redirectToSignIn();
+            return;
+          }
+          setManageDialogOpen(true);
+        }}
         watchlist={watchlist}
         onSave={(newWatchlist) => {
-          setWatchlist(newWatchlist);
-          if (isAuthenticated) {
-            syncWatchlist(newWatchlist)
-              .then((remoteTimestamp) => {
-                if (remoteTimestamp) {
-                  setWatchlistUpdatedAt(remoteTimestamp);
-                }
-              })
-              .catch(() => {});
-          } else {
-            const timestamp = new Date().toISOString();
-            saveWatchlist(newWatchlist, timestamp);
-            setWatchlistUpdatedAt(timestamp);
+          if (!isAuthenticated) {
+            redirectToSignIn();
+            return;
           }
+          setWatchlist(newWatchlist);
+          syncWatchlist(newWatchlist).catch(() => {});
         }}
       />
     </div>

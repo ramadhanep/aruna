@@ -1,11 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useTheme } from "next-themes";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ClearDataButton } from "@/components/clear-data-button";
 import { useAuth } from "@/components/auth-provider";
+import { GoogleGlyph } from "@/components/google-glyph";
 import {
   Loader2,
   LogOut,
@@ -18,29 +20,6 @@ import {
   Heart,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
-
-function GoogleGlyph() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
-      <path
-        fill="#EA4335"
-        d="M24 9.5c3.54 0 6 1.54 7.38 2.83L35.9 8.8C32.86 6 28.82 4.5 24 4.5 15.54 4.5 7.9 9.54 4.8 17l6.86 5.33C12.8 15.56 17.93 9.5 24 9.5z"
-      />
-      <path
-        fill="#4285F4"
-        d="M46.5 24.5c0-1.6-.15-3.1-.45-4.5H24v8.55h12.65c-.55 3.07-2.23 5.68-4.81 7.43l7.32 5.67c4.3-3.96 7.34-9.88 7.34-17.15z"
-      />
-      <path
-        fill="#FBBC05"
-        d="M11.66 28.18A14.47 14.47 0 0 1 11 24c0-1.46.24-2.87.65-4.18l-6.85-5.32A23.4 23.4 0 0 0 1 24c0 3.76.9 7.3 2.47 10.47l8.19-6.29z"
-      />
-      <path
-        fill="#34A853"
-        d="M24 46c6.48 0 11.91-2.1 15.85-5.75l-7.32-5.67c-2.02 1.39-4.62 2.22-8.53 2.22-6.54 0-12.09-4.32-14.07-10.35l-8.19 6.3C5.94 40.82 14.27 46 24 46z"
-      />
-    </svg>
-  );
-}
 
 function DeleteAccountAction({ onConfirm, disabled }) {
   const [open, setOpen] = useState(false);
@@ -126,12 +105,17 @@ export default function AccountPage() {
     deleteAccount,
     supabaseConfigured,
   } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [authError, setAuthError] = useState(null);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState(null);
   const isDark = theme === "dark" || resolvedTheme === "dark";
+  const redirectHandledRef = useRef(false);
+  const rawRedirect = searchParams?.get("redirect") || null;
+  const redirectParam = rawRedirect && rawRedirect.startsWith("/") ? rawRedirect : null;
 
   const fullName = useMemo(() => {
     if (!user) return null;
@@ -145,10 +129,20 @@ export default function AccountPage() {
 
   const primaryEmail = user?.email ?? user?.user_metadata?.email;
 
+  useEffect(() => {
+    if (user && redirectParam && !redirectHandledRef.current) {
+      redirectHandledRef.current = true;
+      router.replace(redirectParam);
+    }
+  }, [user, redirectParam, router]);
+
   const handleGoogleSignIn = async () => {
     setAuthError(null);
     try {
-      await signInWithGoogle();
+      const returnPath = redirectParam
+        ? `/account?redirect=${encodeURIComponent(redirectParam)}`
+        : "/account";
+      await signInWithGoogle(returnPath);
     } catch (error) {
       console.error("Failed to start Google sign-in", error);
       setAuthError(
@@ -280,9 +274,9 @@ export default function AccountPage() {
                   className="flex w-full items-center justify-between rounded-xl border border-border px-3 py-3 text-left"
                 >
                   <div>
-                    <p className="text-sm font-semibold">Reset data</p>
+                    <p className="text-sm font-semibold">Clear Data</p>
                     <p className="text-xs text-muted-foreground">
-                      Resest watchlist & portfolio to default.
+                      Remove watchlist & portfolio items from your account.
                     </p>
                   </div>
                   <Cookie className="h-4 w-4 text-muted-foreground" />

@@ -183,30 +183,32 @@ export function AuthProvider({ children }) {
     refreshRemotePortfolio();
   }, [user, refreshRemoteWatchlist, refreshRemotePortfolio]);
 
-  const signInWithGoogle = useCallback(async () => {
-    if (!supabase) {
-      throw new Error("Supabase is not configured");
-    }
-    const redirectTo =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/account`
-        : undefined;
+  const signInWithGoogle = useCallback(
+    async (returnPath = "/account") => {
+      if (!supabase) {
+        throw new Error("Supabase is not configured");
+      }
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : null;
+      const redirectTo = origin ? `${origin}${returnPath}` : undefined;
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo,
-        queryParams: {
-          access_type: "offline",
-          prompt: "consent",
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          queryParams: {
+            access_type: "offline",
+            prompt: "consent",
+          },
         },
-      },
-    });
+      });
 
-    if (error) {
-      throw error;
-    }
-  }, [supabase]);
+      if (error) {
+        throw error;
+      }
+    },
+    [supabase]
+  );
 
   const signOut = useCallback(async () => {
     if (!supabase) return;
