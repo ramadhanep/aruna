@@ -63,9 +63,9 @@ export function ClearDataButton({
       <DialogTrigger asChild>{trigger ?? defaultTrigger}</DialogTrigger>
       <DialogContent closeButtonPosition="right">
         <DialogHeader>
-          <DialogTitle className="text-sm font-semibold">Reset data?</DialogTitle>
+          <DialogTitle className="text-sm font-semibold">Clear data?</DialogTitle>
           <DialogDescription className="text-xs">
-            This removes your stored portfolio, watchlist, preferences, and recent symbols. You can&apos;t undo this action.
+            This removes your stored watchlist, portfolio, and local preferences. You can&apos;t undo this action.
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>

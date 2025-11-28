@@ -35,8 +35,6 @@ import { NormalCandlestickChart } from "@/components/normal-candlestick-chart";
 import { fetchEncodedJson } from "@/lib/api-client";
 
 const CURRENT_LINE_COLOR = 'oklch(59.6% 0.145 163.225)';
-const WATCHLIST_STORAGE_KEY = 'aruna_watchlist';
-const WATCHLIST_UPDATED_AT_KEY = 'aruna_watchlist_updated_at';
 const DEFAULT_WATCHLIST = [
   { symbol: 'BBCA.JK', order: 1 },
   { symbol: 'BTC-USD', order: 2 },
@@ -98,63 +96,6 @@ function formatScreeningTimestamp(value) {
     hour: 'numeric',
     minute: '2-digit',
   });
-}
-
-function readWatchlist() {
-  if (typeof window === 'undefined') return DEFAULT_WATCHLIST;
-  try {
-    const raw = window.localStorage.getItem(WATCHLIST_STORAGE_KEY);
-    if (!raw) {
-      window.localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(DEFAULT_WATCHLIST));
-      window.localStorage.setItem(WATCHLIST_UPDATED_AT_KEY, new Date().toISOString());
-      return DEFAULT_WATCHLIST;
-    }
-    const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) {
-      return parsed.filter(
-        (item) => item && typeof item.symbol === 'string' && typeof item.order === 'number'
-      );
-    }
-    window.localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(DEFAULT_WATCHLIST));
-    window.localStorage.setItem(WATCHLIST_UPDATED_AT_KEY, new Date().toISOString());
-    return DEFAULT_WATCHLIST;
-  } catch (error) {
-    console.warn('Failed to read watchlist', error);
-    return DEFAULT_WATCHLIST;
-  }
-}
-
-function writeWatchlist(data, updatedAt) {
-  if (typeof window === 'undefined') return;
-  try {
-    window.localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(data));
-    window.localStorage.setItem(
-      WATCHLIST_UPDATED_AT_KEY,
-      typeof updatedAt === 'string' ? updatedAt : new Date().toISOString()
-    );
-  } catch (error) {
-    console.warn('Failed to write watchlist', error);
-  }
-}
-
-function readWatchlistUpdatedAt() {
-  if (typeof window === 'undefined') return null;
-  return window.localStorage.getItem(WATCHLIST_UPDATED_AT_KEY);
-}
-
-const PORTFOLIO_STORAGE_KEY = 'aruna_portfolio';
-
-function readLocalPortfolioEntries() {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = window.localStorage.getItem(PORTFOLIO_STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
-  } catch (error) {
-    console.warn('Failed to read portfolio entries', error);
-    return [];
-  }
 }
 
 const cycleMetaMap = {
@@ -365,11 +306,11 @@ function ElectionCyclePageContent() {
     supabase,
     user,
     remoteWatchlist,
-    remoteWatchlistUpdatedAt,
     watchlistLoaded,
     syncWatchlist,
     remotePortfolio,
     portfolioLoaded,
+    syncPortfolio,
   } = useAuth();
   const isAuthenticated = Boolean(user);
   const symbolParam = searchParams.get('symbol');
@@ -398,18 +339,25 @@ function ElectionCyclePageContent() {
   const [monthlyHeatmap, setMonthlyHeatmap] = useState({ rows: [], average: {} });
   const [quarterlyHeatmap, setQuarterlyHeatmap] = useState({ rows: [], average: {} });
   const [portfolioDialogOpen, setPortfolioDialogOpen] = useState(false);
-  const [portfolioEntries, setPortfolioEntries] = useState(() => readLocalPortfolioEntries());
+  const [portfolioEntries, setPortfolioEntries] = useState([]);
   const [fundamentals, setFundamentals] = useState(null);
   const [fundamentalsLoading, setFundamentalsLoading] = useState(false);
   const [revenuePeriod, setRevenuePeriod] = useState('quarterly');
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
   const [showLivermoreKey, setShowLivermoreKey] = useState(false);
-  const [watchlist, setWatchlist] = useState([]);
-  const [watchlistUpdatedAt, setWatchlistUpdatedAt] = useState(() => readWatchlistUpdatedAt());
+  const [watchlist, setWatchlist] = useState(DEFAULT_WATCHLIST);
   const [screeningSignal, setScreeningSignal] = useState(null);
   const [infoTab, setInfoTab] = useState('keystats');
   const [normalFullscreenOpen, setNormalFullscreenOpen] = useState(false);
   const remoteWatchlistSeedRef = React.useRef(false);
+  const remotePortfolioSeedRef = React.useRef(false);
+  const redirectToSignIn = useCallback(() => {
+    const currentPath =
+      typeof window !== 'undefined'
+        ? `${window.location.pathname}${window.location.search}`
+        : pathname || '/';
+    router.push(`/signin?redirect=${encodeURIComponent(currentPath)}`);
+  }, [pathname, router]);
 
   const [selectedCycles, setSelectedCycles] = useState(() => {
     if (cycleParam) {
@@ -555,20 +503,9 @@ function ElectionCyclePageContent() {
   }, [symbol]);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    setWatchlist(readWatchlist());
-    setWatchlistUpdatedAt(readWatchlistUpdatedAt());
-  }, []);
-
-  useEffect(() => {
     if (!isAuthenticated) {
-      const local = readWatchlist();
-      if (!areWatchlistsEqual(local, watchlist)) {
-        setWatchlist(local);
-      }
-      const localUpdatedAt = readWatchlistUpdatedAt();
-      if (localUpdatedAt !== watchlistUpdatedAt) {
-        setWatchlistUpdatedAt(localUpdatedAt);
+      if (!areWatchlistsEqual(DEFAULT_WATCHLIST, watchlist)) {
+        setWatchlist(DEFAULT_WATCHLIST);
       }
       return;
     }
@@ -580,10 +517,6 @@ function ElectionCyclePageContent() {
     if (Array.isArray(remoteWatchlist)) {
       if (!areWatchlistsEqual(remoteWatchlist, watchlist)) {
         setWatchlist(remoteWatchlist);
-      }
-      const timestamp = remoteWatchlistUpdatedAt || null;
-      if (timestamp !== watchlistUpdatedAt) {
-        setWatchlistUpdatedAt(timestamp);
       }
       return;
     }
@@ -602,9 +535,7 @@ function ElectionCyclePageContent() {
     isAuthenticated,
     watchlistLoaded,
     remoteWatchlist,
-    remoteWatchlistUpdatedAt,
     watchlist,
-    watchlistUpdatedAt,
     syncWatchlist,
   ]);
 
@@ -614,28 +545,36 @@ function ElectionCyclePageContent() {
   }, [symbol, selectedCycles]);
 
   useEffect(() => {
-    if (isAuthenticated) {
-      if (!portfolioLoaded) return;
-      setPortfolioEntries(Array.isArray(remotePortfolio) ? remotePortfolio : []);
+    if (!isAuthenticated) {
+      setPortfolioEntries([]);
       return;
     }
-    setPortfolioEntries(readLocalPortfolioEntries());
-  }, [isAuthenticated, portfolioLoaded, remotePortfolio]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined' || isAuthenticated) {
-      return undefined;
+    if (!portfolioLoaded) {
+      return;
     }
-    const handleStorage = (event) => {
-      if (event.key === PORTFOLIO_STORAGE_KEY) {
-        setPortfolioEntries(readLocalPortfolioEntries());
-      }
-    };
-    window.addEventListener('storage', handleStorage);
-    return () => {
-      window.removeEventListener('storage', handleStorage);
-    };
-  }, [isAuthenticated]);
+
+    if (Array.isArray(remotePortfolio)) {
+      setPortfolioEntries(remotePortfolio);
+      return;
+    }
+
+    if (!remotePortfolioSeedRef.current) {
+      remotePortfolioSeedRef.current = true;
+      const defaults = [];
+      setPortfolioEntries(defaults);
+      syncPortfolio(defaults)
+        .catch(() => null)
+        .finally(() => {
+          remotePortfolioSeedRef.current = false;
+        });
+    }
+  }, [
+    isAuthenticated,
+    portfolioLoaded,
+    remotePortfolio,
+    syncPortfolio,
+  ]);
 
   useEffect(() => {
     if (!symbol) {
@@ -1868,25 +1807,6 @@ function ElectionCyclePageContent() {
     [formatRevenueValue]
   );
 
-  const persistWatchlist = useCallback(
-    (nextList, timestampOverride) => {
-      if (isAuthenticated) {
-        syncWatchlist(nextList)
-          .then((remoteTimestamp) => {
-            if (remoteTimestamp) {
-              setWatchlistUpdatedAt(remoteTimestamp);
-            }
-          })
-          .catch(() => {});
-      } else {
-        const timestamp = timestampOverride ?? new Date().toISOString();
-        writeWatchlist(nextList, timestamp);
-        setWatchlistUpdatedAt(timestamp);
-      }
-    },
-    [isAuthenticated, syncWatchlist]
-  );
-
   const marketStateInfo = useMemo(() => {
     const stateRaw = fundamentals?.profile?.marketState;
     if (!stateRaw) {
@@ -1915,6 +1835,11 @@ function ElectionCyclePageContent() {
   );
 
   const toggleFavorite = useCallback(() => {
+    if (!isAuthenticated) {
+      redirectToSignIn();
+      return;
+    }
+
     setWatchlist((prev) => {
       const exists = prev.some((item) => item.symbol === symbol);
       let next;
@@ -1925,10 +1850,10 @@ function ElectionCyclePageContent() {
           prev.length > 0 ? Math.max(...prev.map((item) => Number(item.order) || 0)) + 1 : 1;
         next = [...prev, { symbol, order: nextOrder }];
       }
-      persistWatchlist(next);
+      syncWatchlist(next).catch(() => {});
       return next;
     });
-  }, [symbol, persistWatchlist]);
+  }, [isAuthenticated, redirectToSignIn, symbol, syncWatchlist]);
 
   const renderProfileTab = () => {
     if (fundamentalsLoading) {
@@ -3204,7 +3129,13 @@ function ElectionCyclePageContent() {
             )}
 
             <Button
-              onClick={() => setPortfolioDialogOpen(true)}
+              onClick={() => {
+                if (!isAuthenticated) {
+                  redirectToSignIn();
+                  return;
+                }
+                setPortfolioDialogOpen(true);
+              }}
               className="w-full bg-emerald-700 hover:bg-emerald-800 text-xs text-white/80"
             >
               Add to Your Portfolio
@@ -3242,29 +3173,34 @@ function ElectionCyclePageContent() {
       )}
 
       <AddAssetModal 
-        open={portfolioDialogOpen} 
-        onOpenChange={setPortfolioDialogOpen}
-        initialSymbol={symbol}
-        onSave={(entry) => {
-          // Load existing portfolio
-          let portfolio = [];
-          try {
-            const raw = localStorage.getItem('aruna_portfolio');
-            portfolio = raw ? JSON.parse(raw) : [];
-          } catch (e) {
-            console.warn('Failed to load portfolio', e);
+        open={portfolioDialogOpen && isAuthenticated} 
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            setPortfolioDialogOpen(false);
+            return;
           }
-          
-          // Add new entry
-          portfolio.push(entry);
-          
-          // Save back to localStorage
+          if (!isAuthenticated) {
+            redirectToSignIn();
+            return;
+          }
+          setPortfolioDialogOpen(true);
+        }}
+        initialSymbol={symbol}
+        onSave={async (entry) => {
+          if (!isAuthenticated) {
+            redirectToSignIn();
+            return;
+          }
+          const nextEntries = Array.isArray(portfolioEntries)
+            ? [...portfolioEntries, entry]
+            : [entry];
+          setPortfolioEntries(nextEntries);
           try {
-            localStorage.setItem('aruna_portfolio', JSON.stringify(portfolio));
+            await syncPortfolio(nextEntries);
             setPortfolioDialogOpen(false);
             router.push('/portfolio-tracker');
-          } catch (e) {
-            console.warn('Failed to save portfolio', e);
+          } catch (error) {
+            console.warn('Failed to sync portfolio', error);
           }
         }}
       />

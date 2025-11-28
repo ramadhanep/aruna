@@ -6,6 +6,7 @@ import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
+import { TickerAvatar } from "@/components/ticker-avatar";
 
 const CATEGORY_LABELS = {
   idx: "IDX 🇮🇩",
@@ -233,7 +234,6 @@ function PickItem({ pick, quote }) {
         ? pickData.sparkline
         : [];
   const logo = quote?.logo || null;
-  const fallbackChar = symbol ? symbol.charAt(0) : "?";
 
   return (
     <Link
@@ -242,13 +242,7 @@ function PickItem({ pick, quote }) {
     >
       <div className="flex-1 min-w-0 flex items-center gap-3">
         <div className="flex-shrink-0">
-          <div className="h-7 w-7 rounded-full bg-muted/20 overflow-hidden flex items-center justify-center">
-            {logo ? (
-              <img src={logo} alt={`${symbol} logo`} className="h-full w-full object-cover" />
-            ) : (
-              <span className="text-[11px] font-semibold uppercase text-muted-foreground">{fallbackChar}</span>
-            )}
-          </div>
+          <TickerAvatar symbol={symbol} logo={logo} />
         </div>
         <div className="min-w-0">
           <div className="font-semibold text-sm truncate flex items-center gap-1">
