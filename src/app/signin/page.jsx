@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,7 +8,7 @@ import { useAuth } from "@/components/auth-provider";
 import { GoogleGlyph } from "@/components/google-glyph";
 import { Loader2, ShieldAlert } from "lucide-react";
 
-export default function SignInPage() {
+function SignInContent() {
   const { signInWithGoogle, supabaseConfigured, user, loading } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -91,5 +91,19 @@ export default function SignInPage() {
         Go back
       </Button>
     </div>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <SignInContent />
+    </Suspense>
   );
 }
