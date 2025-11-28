@@ -105,10 +105,11 @@ export default function PortfolioTrackerPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [isPortfolioHidden, setIsPortfolioHidden] = useState(() => loadPortfolioVisibility());
+  const [portfolioReady, setPortfolioReady] = useState(false);
   const touchStartY = React.useRef(0);
   const containerRef = React.useRef(null);
   const remotePortfolioSeedRef = React.useRef(false);
-  const hydratePortfolioRef = React.useRef(false);
+  const hydratePortfolioRef = React.useRef(true);
   const {
     user,
     loading: authLoading,
@@ -280,39 +281,52 @@ export default function PortfolioTrackerPage() {
     })();
   }, []);
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      hydratePortfolioRef.current = true;
-      setEntries([]);
-      setInitialLoading(false);
-      return;
-    }
+    useEffect(() => {
+      if (authLoading) {
+        setPortfolioReady(false);
+        return;
+      }
 
-    if (!portfolioLoaded) {
-      return;
-    }
+      if (!isAuthenticated) {
+        hydratePortfolioRef.current = true;
+        setEntries([]);
+        setInitialLoading(false);
+        setPortfolioReady(true);
+        return;
+      }
 
-    if (Array.isArray(remotePortfolio)) {
-      hydratePortfolioRef.current = true;
-      setEntries(remotePortfolio);
-      return;
-    }
+      if (!portfolioLoaded) {
+        setPortfolioReady(false);
+        return;
+      }
 
-    if (!remotePortfolioSeedRef.current) {
-      remotePortfolioSeedRef.current = true;
-      const defaults = getDefaultPortfolio();
-      hydratePortfolioRef.current = true;
-      setEntries(defaults);
-      syncPortfolio(defaults)
-        .catch(() => null)
-        .finally(() => {
-          remotePortfolioSeedRef.current = false;
-        });
-    }
-  }, [isAuthenticated, portfolioLoaded, remotePortfolio, syncPortfolio]);
+      if (Array.isArray(remotePortfolio)) {
+        hydratePortfolioRef.current = true;
+        setEntries(remotePortfolio);
+        setPortfolioReady(true);
+        return;
+      }
+
+      if (!remotePortfolioSeedRef.current) {
+        remotePortfolioSeedRef.current = true;
+        const defaults = getDefaultPortfolio();
+        hydratePortfolioRef.current = true;
+        setEntries(defaults);
+        setPortfolioReady(true);
+        syncPortfolio(defaults)
+          .catch(() => null)
+          .finally(() => {
+            remotePortfolioSeedRef.current = false;
+          });
+      }
+    }, [authLoading, isAuthenticated, portfolioLoaded, remotePortfolio, syncPortfolio]);
 
   // Persist changes and refresh prices when entries mutate
   useEffect(() => {
+    if (!portfolioReady) {
+      return;
+    }
+
     if (hydratePortfolioRef.current) {
       hydratePortfolioRef.current = false;
     } else if (isAuthenticated) {
@@ -337,7 +351,7 @@ export default function PortfolioTrackerPage() {
     return () => {
       cancelled = true;
     };
-  }, [entries, isAuthenticated, refreshPrices, syncPortfolio]);
+  }, [entries, isAuthenticated, refreshPrices, syncPortfolio, portfolioReady]);
 
   // Persist currency preference
   useEffect(() => {

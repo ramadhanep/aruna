@@ -33,19 +33,10 @@ import { SymbolSearchDialog } from "@/components/header-symbol-search";
 import { useAuth } from "@/components/auth-provider";
 import { NormalCandlestickChart } from "@/components/normal-candlestick-chart";
 import { fetchEncodedJson } from "@/lib/api-client";
+import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist";
+import { ArunaWatermark } from "@/components/aruna-watermark";
 
 const CURRENT_LINE_COLOR = 'oklch(59.6% 0.145 163.225)';
-const DEFAULT_WATCHLIST = [
-  { symbol: 'BBCA.JK', order: 1 },
-  { symbol: 'BTC-USD', order: 2 },
-  { symbol: 'QQQ', order: 3 },
-  { symbol: 'SPY', order: 4 },
-  { symbol: 'NVDA', order: 5 },
-  { symbol: 'MSFT', order: 6 },
-  { symbol: 'AMZN', order: 7 },
-  { symbol: 'GOOG', order: 8 },
-  { symbol: 'AVGO', order: 9 },
-];
 
 const SCREENING_CATEGORIES = ['idx', 'us', 'crypto'];
 
@@ -345,7 +336,7 @@ function ElectionCyclePageContent() {
   const [revenuePeriod, setRevenuePeriod] = useState('quarterly');
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
   const [showLivermoreKey, setShowLivermoreKey] = useState(false);
-  const [watchlist, setWatchlist] = useState(DEFAULT_WATCHLIST);
+  const [watchlist, setWatchlist] = useState(() => getDefaultWatchlist());
   const [screeningSignal, setScreeningSignal] = useState(null);
   const [infoTab, setInfoTab] = useState('keystats');
   const [normalFullscreenOpen, setNormalFullscreenOpen] = useState(false);
@@ -505,7 +496,7 @@ function ElectionCyclePageContent() {
   useEffect(() => {
     if (!isAuthenticated) {
       if (!areWatchlistsEqual(DEFAULT_WATCHLIST, watchlist)) {
-        setWatchlist(DEFAULT_WATCHLIST);
+        setWatchlist(getDefaultWatchlist());
       }
       return;
     }
@@ -523,7 +514,7 @@ function ElectionCyclePageContent() {
 
     if (!remoteWatchlistSeedRef.current) {
       remoteWatchlistSeedRef.current = true;
-      const defaults = DEFAULT_WATCHLIST;
+      const defaults = getDefaultWatchlist();
       setWatchlist(defaults);
       syncWatchlist(defaults)
         .catch(() => null)
@@ -2670,7 +2661,7 @@ function ElectionCyclePageContent() {
           </h1>
           <span className="text-muted">|</span>
           {symbol.endsWith('.JK') && (
-            <span className="dark:text-white/70 text-xs">🇮🇩 in purbaya we trust</span>
+            <span className="dark:text-white/70 text-xs">🇮🇩</span>
           )}
           {symbol.endsWith('-USD') && (
             <span className="dark:text-white/70 text-xs flex items-center gap-1"><Bitcoin className="size-4"/> to the moon</span>
@@ -2921,12 +2912,13 @@ function ElectionCyclePageContent() {
                   </div>
                 )
               ) : (
-                <ResponsiveContainer width="100%" height={380}>
-                  <AreaChart
+                <div className="relative h-[380px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
                     data={filteredChartData}
                     margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
-                  >
-                    <defs>
+                    >
+                      <defs>
                       {chartData.linesData.map((line) => {
                         const gradientId = `gradient-${line.key}`;
                         return (
@@ -2936,15 +2928,15 @@ function ElectionCyclePageContent() {
                           </linearGradient>
                         );
                       })}
-                    </defs>
-                    <XAxis
+                      </defs>
+                      <XAxis
                       dataKey="dayOfYear"
                       tickFormatter={formatTick}
                       ticks={quarterFilter === 'all' ? [1, 91, 182, 274] : undefined}
                       className="text-[10px]"
                       height={30}
                     />
-                    <YAxis
+                      <YAxis
                       orientation="right"
                       scale={scaleChoice === 'log' ? 'log' : 'linear'}
                       domain={scaleChoice === 'log' ? ['auto', 'auto'] : ['auto', 'auto']}
@@ -2953,7 +2945,7 @@ function ElectionCyclePageContent() {
                       width={45}
                       allowDataOverflow={false}
                     />
-                    <Tooltip
+                      <Tooltip
                       formatter={formatTooltip}
                       labelFormatter={formatTooltipDate}
                       contentStyle={{
@@ -2963,14 +2955,14 @@ function ElectionCyclePageContent() {
                         fontSize: '12px',
                       }}
                     />
-                    {chartData.linesData.length > 0 ? (
+                      {chartData.linesData.length > 0 ? (
                       <Legend
                         align="left"
                         verticalAlign="bottom"
                         wrapperStyle={{ paddingTop: '10px', fontSize: '11px' }}
                       />
-                    ) : null}
-                    {chartData.linesData.map((line) => (
+                      ) : null}
+                      {chartData.linesData.map((line) => (
                       <Area
                         key={line.key}
                         type="monotone"
@@ -2982,9 +2974,11 @@ function ElectionCyclePageContent() {
                         dot={false}
                         strokeWidth={1.5}
                       />
-                    ))}
-                  </AreaChart>
-                </ResponsiveContainer>
+                      ))}
+                    </AreaChart>
+                  </ResponsiveContainer>
+                  <ArunaWatermark className="absolute inset-0 flex items-end justify-start bottom-18 left-4" />
+                </div>
               )}
             </CardContent>
           </Card>

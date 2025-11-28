@@ -10,6 +10,7 @@ import {
 } from "react";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { fetchEncodedJson } from "@/lib/api-client";
+import { getDefaultWatchlist } from "@/lib/default-watchlist";
 
 const AuthContext = createContext({
   supabase: null,
@@ -285,10 +286,12 @@ export function AuthProvider({ children }) {
 
     const timestamp = new Date().toISOString();
 
+    const defaultWatchlist = getDefaultWatchlist();
+
     const { error: watchlistError } = await supabase
       .from("watchlists")
       .upsert(
-        { user_id: user.id, items: [], updated_at: timestamp },
+        { user_id: user.id, items: defaultWatchlist, updated_at: timestamp },
         { onConflict: "user_id" }
       );
 
@@ -309,7 +312,7 @@ export function AuthProvider({ children }) {
       return false;
     }
 
-    setRemoteWatchlist([]);
+    setRemoteWatchlist(defaultWatchlist);
     setRemoteWatchlistUpdatedAt(timestamp);
     setRemotePortfolio([]);
     setRemotePortfolioUpdatedAt(timestamp);
