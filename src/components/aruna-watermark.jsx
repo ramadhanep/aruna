@@ -10,7 +10,7 @@ export function ArunaWatermark({ className = "", labelClassName = "" }) {
     .join(" ");
 
   const labelClasses = [
-    "flex items-center gap-1 text-lg font-bold uppercase tracking-wide",
+    "flex items-center gap-1 text-lg font-bold",
     labelClassName,
   ]
     .filter(Boolean)

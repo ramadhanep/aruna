@@ -114,14 +114,14 @@ export async function GET(request) {
   ).toUpperCase();
 
   if (!symbol) {
-    return Response.json({ payload: encodePayload({ error: 'Missing symbol parameter' }) }, { status: 400 });
+    return Response.json({ mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ error: 'Missing symbol parameter' }) }, { status: 400 });
   }
 
   const config = TIMEFRAME_CONFIG[timeframeParam];
   if (!config) {
     return Response.json(
       {
-        payload: encodePayload({
+        mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({
           error: `Unsupported timeframe. Use one of ${Object.keys(TIMEFRAME_CONFIG).join(', ')}`,
         }),
       },
@@ -154,7 +154,7 @@ export async function GET(request) {
     const quotes = result?.quotes ?? [];
     if (quotes.length === 0) {
       return Response.json(
-        { payload: encodePayload({ error: 'No price data for requested timeframe' }) },
+        { mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ error: 'No price data for requested timeframe' }) },
         { status: 404 }
       );
     }
@@ -202,7 +202,7 @@ export async function GET(request) {
     const data = processedPoints.length > 0 ? processedPoints : rawPoints;
 
     return Response.json({
-      payload: encodePayload({
+      mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({
         data,
         meta: {
           symbol: result?.meta?.symbol ?? symbol,
@@ -218,6 +218,6 @@ export async function GET(request) {
     console.error('[price-series] Failed to fetch data:', error);
     const message = error?.message || 'Failed to fetch price data';
     const status = message.includes('No data') ? 404 : 500;
-    return Response.json({ payload: encodePayload({ error: message }) }, { status });
+    return Response.json({ mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ error: message }) }, { status });
   }
 }

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef, useMemo, useId } from "react"
 import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { TickerAvatar } from "@/components/ticker-avatar";
@@ -23,6 +24,47 @@ const HIGHLIGHT_SYMBOLS = [
   { symbol: "BTC-USD", label: "Bitcoin", badge: "BTC", group: "Crypto", accent: "bg-emerald-500" },
 ];
 
+function isWithinMarketHours(timeZone, openHour, openMinute, closeHour, closeMinute) {
+  try {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hour: "numeric",
+      minute: "numeric",
+      weekday: "short",
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(new Date());
+    const get = (type) => parts.find((part) => part.type === type)?.value;
+    const hour = Number(get("hour"));
+    const minute = Number(get("minute"));
+    const weekday = (get("weekday") || "").slice(0, 3).toLowerCase();
+    if (weekday === "sat" || weekday === "sun") return false;
+    const totalMinutes = hour * 60 + minute;
+    const open = openHour * 60 + openMinute;
+    const close = closeHour * 60 + closeMinute;
+    return totalMinutes >= open && totalMinutes <= close;
+  } catch (error) {
+    console.warn("Failed to evaluate market hours", error);
+    return false;
+  }
+}
+
+function getCategoryDisplayOrder() {
+  const isUsOpen = isWithinMarketHours("America/New_York", 9, 30, 16, 0);
+  const isIdxOpen = isWithinMarketHours("Asia/Jakarta", 9, 0, 15, 15);
+
+  if (isUsOpen && !isIdxOpen) {
+    return ["us", "idx", "crypto"];
+  }
+  if (isIdxOpen && !isUsOpen) {
+    return ["idx", "us", "crypto"];
+  }
+  if (isUsOpen && isIdxOpen) {
+    return ["us", "idx", "crypto"];
+  }
+  return CATEGORY_ORDER;
+}
+
 function formatPercent(value, digits = 2) {
   if (value == null || Number.isNaN(Number(value))) return "—";
   const numeric = Number(value);
@@ -40,6 +82,39 @@ function formatLocalDateTimeLabel(value) {
     hour: "numeric",
     minute: "2-digit",
   });
+}
+
+function formatTimeAgo(value) {
+  if (!value) return "";
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "";
+  const diffSeconds = (date.getTime() - Date.now()) / 1000;
+  const divisions = [
+    { amount: 60, unit: "second" },
+    { amount: 60, unit: "minute" },
+    { amount: 24, unit: "hour" },
+    { amount: 7, unit: "day" },
+    { amount: 4.34524, unit: "week" },
+    { amount: 12, unit: "month" },
+    { amount: Infinity, unit: "year" },
+  ];
+  const formatter =
+    typeof Intl !== "undefined" && typeof Intl.RelativeTimeFormat === "function"
+      ? new Intl.RelativeTimeFormat(undefined, { numeric: "auto" })
+      : null;
+  let remainder = diffSeconds;
+  for (const division of divisions) {
+    if (Math.abs(remainder) < division.amount) {
+      if (formatter) {
+        return formatter.format(Math.round(remainder), division.unit);
+      }
+      const valueAbs = Math.round(Math.abs(remainder));
+      const label = valueAbs === 1 ? division.unit : `${division.unit}s`;
+      return remainder <= 0 ? `${valueAbs} ${label} ago` : `in ${valueAbs} ${label}`;
+    }
+    remainder /= division.amount;
+  }
+  return "";
 }
 
 function formatLocalTimeLabel(value) {
@@ -202,6 +277,7 @@ function PickItem({ pick, quote }) {
   const symbol = typeof pick === "string" ? pick : pick?.symbol;
   if (!symbol) return null;
   const pickData = pick && typeof pick === "object" ? pick : {};
+  const isNewSignal = isSameCalendarDay(pickData?.signal_date);
   const change =
     typeof quote?.change === "number"
       ? quote.change
@@ -247,6 +323,11 @@ function PickItem({ pick, quote }) {
         <div className="min-w-0">
           <div className="font-semibold text-sm truncate flex items-center gap-1">
             <span>{symbol}</span>
+            {isNewSignal ? (
+              <span className="text-[10px] font-semibold tracking-wide text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-[1px] rounded-full">
+                NEW
+              </span>
+            ) : null}
             {isWarning ? (
               <AlertTriangle className="h-3.5 w-3.5 text-amber-500" title="High volume vs market cap" />
             ) : null}
@@ -277,6 +358,7 @@ export default function ExplorePage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [manualLoading, setManualLoading] = useState({ idx: false, us: false, crypto: false });
+  const [categoryDisplayOrder] = useState(() => getCategoryDisplayOrder());
   const touchStartY = useRef(0);
   const containerRef = useRef(null);
   const quoteRequestRef = useRef(0);
@@ -619,34 +701,89 @@ export default function ExplorePage() {
   );
 
   const categoriesWithSignals = breakoutInsights.categories;
+  const orderedCategories = useMemo(() => {
+    if (!Array.isArray(categoriesWithSignals)) {
+      return [];
+    }
+    const rank = categoryDisplayOrder.reduce((map, category, index) => {
+      map[category] = index;
+      return map;
+    }, {});
+    return [...categoriesWithSignals].sort((a, b) => {
+      const orderA = rank[a.category] ?? 999;
+      const orderB = rank[b.category] ?? 999;
+      return orderA - orderB;
+    });
+  }, [categoriesWithSignals, categoryDisplayOrder]);
 
   if (loading) {
     return (
-      <div className="space-y-5">
-        <div className="rounded-lg bg-background/80">
-          <div className="mt-4 grid grid-cols-2 gap-3">
+      <div className="flex flex-col gap-6">
+        <section className="bg-background/80">
+          <div className="grid grid-cols-2 gap-3">
             {HIGHLIGHT_SYMBOLS.map((symbol) => (
-              <div key={symbol.symbol} className="py-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  {/* <div className="h-8 w-8 rounded-full shimmer" /> */}
-                  <div className="flex-1 space-y-2">
+              <div key={symbol.symbol}>
+                <div className="flex items-center justify-between gap-2">
+                  <div className="space-y-2">
                     <div className="h-3 w-16 rounded-full shimmer" />
                     <div className="h-3 w-20 rounded-full shimmer" />
                   </div>
+                  <div className="h-3 w-10 rounded-full shimmer" />
                 </div>
-                <div className="h-12 rounded-2xl shimmer" />
+                <div className="mt-3 flex items-end justify-between gap-4">
+                  <div className="space-y-2">
+                    <div className="h-4 w-20 rounded-full shimmer" />
+                    <div className="h-3 w-16 rounded-full shimmer" />
+                  </div>
+                  <div className="h-12 w-24 rounded-xl shimmer" />
+                </div>
               </div>
             ))}
           </div>
-        </div>
-        <div className="rounded-3xl">
-          <div className="h-5 w-32 rounded-full shimmer" />
-          <div className="mt-4 divide-y">
-            {[...Array(4)].map((_, idx) => (
-              <ShimmerItem key={idx} />
+        </section>
+
+        <Card className="mt-4 border-none">
+          <CardContent className="space-y-3 pt-0">
+            <div className="h-3 w-full rounded-full shimmer bg-white/20"></div>
+            <div className="h-3 w-5/6 rounded-full shimmer bg-white/20"></div>
+          </CardContent>
+        </Card>
+
+        {["idx", "us"].map((category) => (
+          <section key={category} className="rounded-xl bg-background/80">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-2">
+                <div className="h-3 w-32 rounded-full shimmer" />
+                <div className="h-3 w-40 rounded-full shimmer" />
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="h-6 w-16 rounded-full shimmer" />
+                <div className="h-6 w-20 rounded-full shimmer" />
+              </div>
+            </div>
+            <div>
+              {[...Array(5)].map((_, idx) => (
+                <ShimmerItem key={`${category}-shimmer-${idx}`} />
+              ))}
+            </div>
+            <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground/80">
+              <div className="h-3 w-24 rounded-full shimmer" />
+              <div className="h-3 w-20 rounded-full shimmer" />
+            </div>
+          </section>
+        ))}
+
+        <section className="rounded-xl bg-background/80 p-4">
+          <div className="h-4 w-48 rounded-full shimmer" />
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            {CATEGORY_ORDER.map((category) => (
+              <div key={`trigger-${category}`} className="space-y-2 text-center">
+                <div className="h-8 rounded-full shimmer" />
+                <div className="h-3 w-24 mx-auto rounded-full shimmer" />
+              </div>
             ))}
           </div>
-        </div>
+        </section>
       </div>
     );
   }
@@ -670,7 +807,7 @@ export default function ExplorePage() {
         </div>
       )}
 
-      <div className="space-y-6">
+      <div>
         <section className="bg-background/80">
           <div className="grid grid-cols-2 gap-3">
             {highlightClusters.map((item) => {
@@ -719,7 +856,15 @@ export default function ExplorePage() {
           </div>
         </section>
 
-        {categoriesWithSignals.map((section) => {
+        <Card className="mt-4 border-none bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] text-white shadow-lg p-4">
+          <CardContent className="pt-0">
+            <p className="text-xs leading-relaxed text-white/90">
+              ALPHA spotlight unusual stock moves, make sure the story, liquidity, and news support the momentum before acting.
+            </p>
+          </CardContent>
+        </Card>
+
+        {orderedCategories.map((section) => {
           const gatedPicks = section.picks.slice(5);
           const firstPicks = section.picks.slice(0, 5);
           const shouldGate = !isAuthenticated && gatedPicks.length > 0;
@@ -728,11 +873,11 @@ export default function ExplorePage() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Alpha Signals in {section.title}
+                    Alpha in {section.title}
                   </p>
                   {section.lastScreened && (
                     <p className="text-[11px] text-muted-foreground">
-                      Last screened {formatLocalDateTimeLabel(section.lastScreened)}
+                      Last updated {formatTimeAgo(section.lastScreened)}
                     </p>
                   )}
                 </div>
