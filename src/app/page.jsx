@@ -380,13 +380,20 @@ export default function HomePage() {
   if (loading) {
     return (
       <div className="flex flex-col gap-4">
+        <Card className="border-none">
+          <CardContent className="space-y-3 pt-0">
+            <div className="h-3 w-full rounded-full shimmer bg-white/20"></div>
+            <div className="h-3 w-3/4 rounded-full shimmer bg-white/20"></div>
+          </CardContent>
+        </Card>
+
         <div className="overflow-hidden">
           <SectionHeader title="Watchlist" />
           <div className="divide-y">
             {[...Array(8)].map((_, i) => <ShimmerItem key={i} />)}
           </div>
-          <div className="border-t py-3 flex justify-center">
-            <div className="h-8 w-40 rounded-full shimmer"></div>
+          <div className="border-t py-2 flex justify-center">
+            <div className="h-8 w-44 rounded-full shimmer" />
           </div>
         </div>
 

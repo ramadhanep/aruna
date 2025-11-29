@@ -2754,6 +2754,22 @@ function ElectionCyclePageContent() {
             </div>
           </div>
 
+          <div className="mt-6 border-b border-border/40 pb-2 flex flex-wrap gap-2">
+            {[...Array(4)].map((_, idx) => (
+              <div key={`tab-${idx}`} className="h-8 w-20 rounded-full shimmer" />
+            ))}
+          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Analysis</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3 text-xs">
+              {[...Array(5)].map((_, idx) => (
+                <div key={`analysis-${idx}`} className="h-3 rounded-full shimmer w-full" />
+              ))}
+            </CardContent>
+          </Card>
+
         </>
       )}
 
