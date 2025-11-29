@@ -84,6 +84,39 @@ function formatLocalDateTimeLabel(value) {
   });
 }
 
+function formatTimeAgo(value) {
+  if (!value) return "";
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "";
+  const diffSeconds = (date.getTime() - Date.now()) / 1000;
+  const divisions = [
+    { amount: 60, unit: "second" },
+    { amount: 60, unit: "minute" },
+    { amount: 24, unit: "hour" },
+    { amount: 7, unit: "day" },
+    { amount: 4.34524, unit: "week" },
+    { amount: 12, unit: "month" },
+    { amount: Infinity, unit: "year" },
+  ];
+  const formatter =
+    typeof Intl !== "undefined" && typeof Intl.RelativeTimeFormat === "function"
+      ? new Intl.RelativeTimeFormat(undefined, { numeric: "auto" })
+      : null;
+  let remainder = diffSeconds;
+  for (const division of divisions) {
+    if (Math.abs(remainder) < division.amount) {
+      if (formatter) {
+        return formatter.format(Math.round(remainder), division.unit);
+      }
+      const valueAbs = Math.round(Math.abs(remainder));
+      const label = valueAbs === 1 ? division.unit : `${division.unit}s`;
+      return remainder <= 0 ? `${valueAbs} ${label} ago` : `in ${valueAbs} ${label}`;
+    }
+    remainder /= division.amount;
+  }
+  return "";
+}
+
 function formatLocalTimeLabel(value) {
   if (!value) return "";
   const date = typeof value === "string" ? new Date(value) : value;
@@ -244,6 +277,7 @@ function PickItem({ pick, quote }) {
   const symbol = typeof pick === "string" ? pick : pick?.symbol;
   if (!symbol) return null;
   const pickData = pick && typeof pick === "object" ? pick : {};
+  const isNewSignal = isSameCalendarDay(pickData?.signal_date);
   const change =
     typeof quote?.change === "number"
       ? quote.change
@@ -289,6 +323,11 @@ function PickItem({ pick, quote }) {
         <div className="min-w-0">
           <div className="font-semibold text-sm truncate flex items-center gap-1">
             <span>{symbol}</span>
+            {isNewSignal ? (
+              <span className="text-[10px] font-semibold tracking-wide text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-[1px] rounded-full">
+                NEW
+              </span>
+            ) : null}
             {isWarning ? (
               <AlertTriangle className="h-3.5 w-3.5 text-amber-500" title="High volume vs market cap" />
             ) : null}
@@ -820,7 +859,7 @@ export default function ExplorePage() {
         <Card className="mt-4 border-none bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] text-white shadow-lg p-4">
           <CardContent className="pt-0">
             <p className="text-xs leading-relaxed text-white/90">
-              Alpha spotlight unusual stock moves, make sure the story, liquidity, and news support the momentum before acting.
+              ALPHA spotlight unusual stock moves, make sure the story, liquidity, and news support the momentum before acting.
             </p>
           </CardContent>
         </Card>
@@ -834,11 +873,11 @@ export default function ExplorePage() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Alpha Signals in {section.title}
+                    Alpha in {section.title}
                   </p>
                   {section.lastScreened && (
                     <p className="text-[11px] text-muted-foreground">
-                      Last screened {formatLocalDateTimeLabel(section.lastScreened)}
+                      Last updated {formatTimeAgo(section.lastScreened)}
                     </p>
                   )}
                 </div>

@@ -78,5 +78,5 @@ export function decodeApiResponse(body, keyOverride) {
   if (!body || typeof body !== 'object') {
     return null;
   }
-  return decodePayload(body.payload, keyOverride);
+  return decodePayload(body.mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh, keyOverride);
 }

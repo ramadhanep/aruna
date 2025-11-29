@@ -89,6 +89,62 @@ function computeSMA(values, period) {
   return result;
 }
 
+function computeRSI(values, period = 14) {
+  const result = new Array(values.length).fill(null);
+  if (!Array.isArray(values) || values.length <= period) {
+    return result;
+  }
+
+  let gainSum = 0;
+  let lossSum = 0;
+
+  for (let i = 1; i <= period && i < values.length; i++) {
+    const current = values[i];
+    const previous = values[i - 1];
+    if (current == null || previous == null) {
+      continue;
+    }
+    const change = current - previous;
+    gainSum += Math.max(change, 0);
+    lossSum += Math.max(-change, 0);
+  }
+
+  let avgGain = gainSum / period;
+  let avgLoss = lossSum / period;
+  if (!Number.isFinite(avgGain) || !Number.isFinite(avgLoss)) {
+    return result;
+  }
+
+  const computeValue = () => {
+    if (avgLoss === 0) {
+      return 100;
+    }
+    const rs = avgGain / avgLoss;
+    return 100 - 100 / (1 + rs);
+  };
+
+  result[period] = computeValue();
+
+  for (let i = period + 1; i < values.length; i++) {
+    const current = values[i];
+    const previous = values[i - 1];
+    if (current == null || previous == null) {
+      continue;
+    }
+    const change = current - previous;
+    const gain = Math.max(change, 0);
+    const loss = Math.max(-change, 0);
+    avgGain = (avgGain * (period - 1) + gain) / period;
+    avgLoss = (avgLoss * (period - 1) + loss) / period;
+    if (!Number.isFinite(avgGain) || !Number.isFinite(avgLoss)) {
+      continue;
+    }
+    result[i] = computeValue();
+  }
+
+  return result;
+}
+
 function toNumeric(value) {
   if (typeof value === "number" && Number.isFinite(value)) {
     return value;
@@ -242,6 +298,7 @@ function evaluateSymbol(quotes, category, meta) {
   const volumes = cleaned.map((row) => row.volume);
   const ema32 = computeEMA(closes, EMA_PERIOD);
   const volumeMA20 = computeSMA(volumes, VOLUME_MA_PERIOD);
+  const rsi14 = computeRSI(closes, 14);
 
   const startIndex = Math.max(1, cleaned.length - CANDLE_LOOKBACK);
   let hasValidBreakout = false;
@@ -277,11 +334,32 @@ function evaluateSymbol(quotes, category, meta) {
 
     const minDailyValue = MIN_DAILY_VALUE_CONFIG[category] ?? 10_000_000_000;
 
+    const emaAnchorIndex = i - 3;
+    if (emaAnchorIndex < 0 || ema32[emaAnchorIndex] == null) {
+      continue;
+    }
+    const emaAngle = (emaValue - ema32[emaAnchorIndex]) / 3;
+    if (emaAngle <= 0) {
+      continue;
+    }
+
+    const isHigherLow =
+      i >= 5 &&
+      closes[i - 2] != null &&
+      closes[i - 5] != null &&
+      closes[i - 2] > closes[i - 5];
+
+    const rsiValue = rsi14[i];
+    const isBullRSI = typeof rsiValue === "number" && rsiValue > 52;
+    const strongVolume = volume > volumeAvg * 1.3;
+
     if (
       touchBreak &&
       emaSlope != null &&
       emaSlope > 0 &&
-      volume > volumeAvg &&
+      strongVolume &&
+      isHigherLow &&
+      isBullRSI &&
       dailyValue >= minDailyValue
     ) {
       hasValidBreakout = true;
@@ -299,7 +377,7 @@ export async function GET(request, context) {
   const category = params?.category?.toLowerCase();
   if (!SCREENER_CONFIG[category]) {
     return NextResponse.json(
-      { payload: encodePayload({ error: "Unknown screener category" }) },
+      { mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ error: "Unknown screener category" }) },
       { status: 400 }
     );
   }
@@ -307,7 +385,7 @@ export async function GET(request, context) {
   const supabase = getSupabaseServiceRoleClient();
   if (!supabase) {
     return NextResponse.json(
-      { payload: encodePayload({ error: "Supabase service role key is not configured" }) },
+      { mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ error: "Supabase service role key is not configured" }) },
       { status: 500 }
     );
   }
@@ -322,7 +400,7 @@ export async function GET(request, context) {
   const totalCount = universe.length;
   if (!totalCount) {
     return NextResponse.json(
-      { payload: encodePayload({ error: "Symbol universe is empty", category }) },
+      { mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ error: "Symbol universe is empty", category }) },
       { status: 500 }
     );
   }
@@ -424,13 +502,13 @@ export async function GET(request, context) {
   if (upsertError) {
     console.error("Failed to persist screening snapshot:", upsertError.message);
     return NextResponse.json(
-      { payload: encodePayload({ error: "Failed to persist screening snapshot", category }) },
+      { mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ error: "Failed to persist screening snapshot", category }) },
       { status: 500 }
     );
   }
 
   return NextResponse.json({
-    payload: encodePayload({
+    mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({
       category,
       status: finished ? "done" : "continue",
       processedThisBatch: processedCount,
