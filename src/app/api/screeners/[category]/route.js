@@ -30,6 +30,18 @@ const MIN_DAILY_VALUE_CONFIG = {
   crypto: 1_000_000_000, // 1B USD
 };
 
+const TRADING_PLAN_ACCOUNT_SIZE = {
+  idx: 150_000_000,  // ≈IDR 150M
+  us: 50_000,        // USD
+  crypto: 25_000,    // USD
+};
+
+const DEFAULT_RISK_PERCENT = 1;
+const TP_PERCENTAGES = [5, 10, 15];
+const STOP_EMA_BUFFER = 0.98;
+const DEFAULT_STOP_BUFFER = 0.97;
+const SWING_LOOKBACK = 5;
+
 const EMA_PERIOD = 32;
 const VOLUME_MA_PERIOD = 32;
 const EMA_SLOPE_PERIOD = 5;
@@ -89,60 +101,75 @@ function computeSMA(values, period) {
   return result;
 }
 
-function computeRSI(values, period = 14) {
-  const result = new Array(values.length).fill(null);
-  if (!Array.isArray(values) || values.length <= period) {
-    return result;
+function formatPlanPrice(value) {
+  if (!Number.isFinite(value)) return null;
+  return Number(value.toFixed(4));
+}
+
+function resolveAccountSize(category) {
+  return TRADING_PLAN_ACCOUNT_SIZE[category] ?? 50_000;
+}
+
+function buildTradingPlan({ price, emaValue, swingLow, category }) {
+  const entryPrice = formatPlanPrice(price) ?? price ?? null;
+  if (entryPrice == null) {
+    return null;
   }
 
-  let gainSum = 0;
-  let lossSum = 0;
-
-  for (let i = 1; i <= period && i < values.length; i++) {
-    const current = values[i];
-    const previous = values[i - 1];
-    if (current == null || previous == null) {
-      continue;
-    }
-    const change = current - previous;
-    gainSum += Math.max(change, 0);
-    lossSum += Math.max(-change, 0);
+  const stopCandidates = [];
+  if (Number.isFinite(swingLow)) {
+    stopCandidates.push(swingLow);
   }
-
-  let avgGain = gainSum / period;
-  let avgLoss = lossSum / period;
-  if (!Number.isFinite(avgGain) || !Number.isFinite(avgLoss)) {
-    return result;
+  if (Number.isFinite(emaValue)) {
+    stopCandidates.push(emaValue * STOP_EMA_BUFFER);
   }
+  const numericStops = stopCandidates.filter((candidate) => Number.isFinite(candidate));
+  let stopLoss = numericStops.length ? Math.min(...numericStops) : null;
+  if (!Number.isFinite(stopLoss) || stopLoss <= 0 || stopLoss >= entryPrice) {
+    stopLoss = entryPrice * DEFAULT_STOP_BUFFER;
+  }
+  stopLoss = formatPlanPrice(stopLoss);
 
-  const computeValue = () => {
-    if (avgLoss === 0) {
-      return 100;
-    }
-    const rs = avgGain / avgLoss;
-    return 100 - 100 / (1 + rs);
+  const accountSize = resolveAccountSize(category);
+  const riskPercent = DEFAULT_RISK_PERCENT;
+  const riskAmount = (accountSize * riskPercent) / 100;
+  const stopDistance = entryPrice - stopLoss;
+  const positionSize = stopDistance > 0 ? Math.max(Math.floor(riskAmount / stopDistance), 0) : 0;
+  const capitalAtRisk = stopDistance > 0 ? Number((positionSize * stopDistance).toFixed(2)) : 0;
+  const tpTargets = TP_PERCENTAGES.map((percent, index) => ({
+    label: `Take Profit ${index + 1}`,
+    percent,
+    price: formatPlanPrice(entryPrice * (1 + percent / 100)),
+  }));
+
+  return {
+    entry_price: entryPrice,
+    stop_loss: stopLoss,
+    account_size: accountSize,
+    risk_percent: riskPercent,
+    position_size: positionSize,
+    capital_at_risk: capitalAtRisk,
+    tp_targets: tpTargets,
+    basis: {
+      swing_low: swingLow ?? null,
+      ema32: formatPlanPrice(emaValue) ?? null,
+    },
   };
+}
 
-  result[period] = computeValue();
-
-  for (let i = period + 1; i < values.length; i++) {
-    const current = values[i];
-    const previous = values[i - 1];
-    if (current == null || previous == null) {
-      continue;
-    }
-    const change = current - previous;
-    const gain = Math.max(change, 0);
-    const loss = Math.max(-change, 0);
-    avgGain = (avgGain * (period - 1) + gain) / period;
-    avgLoss = (avgLoss * (period - 1) + loss) / period;
-    if (!Number.isFinite(avgGain) || !Number.isFinite(avgLoss)) {
-      continue;
-    }
-    result[i] = computeValue();
+function findRecentSwingLow(points, index) {
+  if (!Array.isArray(points) || points.length === 0) {
+    return null;
   }
-
-  return result;
+  const start = Math.max(0, index - SWING_LOOKBACK);
+  const window = points.slice(start, index + 1);
+  const lows = window
+    .map((point) => (Number.isFinite(point.low) ? point.low : Number.isFinite(point.close) ? point.close : null))
+    .filter((value) => value != null);
+  if (!lows.length) {
+    return null;
+  }
+  return Math.min(...lows);
 }
 
 function toNumeric(value) {
@@ -187,6 +214,10 @@ function normalizeResultEntry(entry) {
     symbol,
     signal_date: signalDate,
     is_warning: Boolean(entry.is_warning),
+    trading_plan:
+      entry.trading_plan && typeof entry.trading_plan === "object"
+        ? entry.trading_plan
+        : null,
   };
 }
 
@@ -268,16 +299,18 @@ async function fetchDailySeries(symbol) {
 
 function evaluateSymbol(quotes, category, meta) {
   if (!Array.isArray(quotes) || quotes.length < 50) {
-    return { isBreakout: false, isWarning: false };
+    return { isBreakout: false, isWarning: false, plan: null };
   }
 
   const cleaned = quotes
     .map((row) => {
       const closeRaw = row?.adjclose ?? row?.close ?? null;
       const volumeRaw = row?.volume ?? null;
+      const lowRaw = row?.low ?? row?.adjclose ?? row?.close ?? null;
       const close = typeof closeRaw === "number" ? closeRaw : closeRaw != null ? Number(closeRaw) : null;
       const volume =
         typeof volumeRaw === "number" ? volumeRaw : volumeRaw != null ? Number(volumeRaw) : null;
+      const low = typeof lowRaw === "number" ? lowRaw : lowRaw != null ? Number(lowRaw) : null;
       if (close == null || volume == null) return null;
       const dateValue = row.date ? new Date(row.date) : null;
       return dateValue && !Number.isNaN(dateValue.valueOf())
@@ -285,6 +318,7 @@ function evaluateSymbol(quotes, category, meta) {
             date: dateValue,
             close,
             volume,
+            low: low ?? close,
           }
         : null;
     })
@@ -298,12 +332,12 @@ function evaluateSymbol(quotes, category, meta) {
   const volumes = cleaned.map((row) => row.volume);
   const ema32 = computeEMA(closes, EMA_PERIOD);
   const volumeMA20 = computeSMA(volumes, VOLUME_MA_PERIOD);
-  const rsi14 = computeRSI(closes, 14);
 
   const startIndex = Math.max(1, cleaned.length - CANDLE_LOOKBACK);
   let hasValidBreakout = false;
   const marketCap = toNumeric(meta?.marketCap);
   let warningFlagged = false;
+  let planPayload = null;
 
   for (let i = startIndex; i < cleaned.length; i++) {
     const price = cleaned[i].close;
@@ -334,42 +368,25 @@ function evaluateSymbol(quotes, category, meta) {
 
     const minDailyValue = MIN_DAILY_VALUE_CONFIG[category] ?? 10_000_000_000;
 
-    const emaAnchorIndex = i - 3;
-    if (emaAnchorIndex < 0 || ema32[emaAnchorIndex] == null) {
-      continue;
-    }
-    const emaAngle = (emaValue - ema32[emaAnchorIndex]) / 3;
-    if (emaAngle <= 0) {
-      continue;
-    }
-
-    const isHigherLow =
-      i >= 5 &&
-      closes[i - 2] != null &&
-      closes[i - 5] != null &&
-      closes[i - 2] > closes[i - 5];
-
-    const rsiValue = rsi14[i];
-    const isBullRSI = typeof rsiValue === "number" && rsiValue > 52;
-    const strongVolume = volume > volumeAvg * 1.3;
-
     if (
       touchBreak &&
       emaSlope != null &&
       emaSlope > 0 &&
-      strongVolume &&
-      isHigherLow &&
-      isBullRSI &&
+      volume > volumeAvg &&
       dailyValue >= minDailyValue
     ) {
       hasValidBreakout = true;
       if (!warningFlagged && shouldFlagWarning(price, volume, marketCap)) {
         warningFlagged = true;
       }
+      if (!planPayload) {
+        const swingLow = findRecentSwingLow(cleaned, i);
+        planPayload = buildTradingPlan({ price, emaValue, swingLow, category });
+      }
     }
   }
 
-  return { isBreakout: hasValidBreakout, isWarning: warningFlagged };
+  return { isBreakout: hasValidBreakout, isWarning: warningFlagged, plan: planPayload };
 }
 
 export async function GET(request, context) {
@@ -449,15 +466,20 @@ export async function GET(request, context) {
       if (evaluation.isBreakout) {
         const existingEntry = existingResultsMap.get(symbol);
         if (existingEntry) {
-          existingResultsMap.set(symbol, {
+          const nextEntry = {
             ...existingEntry,
             is_warning: Boolean(evaluation.isWarning),
-          });
+          };
+          if (!nextEntry.trading_plan && evaluation.plan) {
+            nextEntry.trading_plan = evaluation.plan;
+          }
+          existingResultsMap.set(symbol, nextEntry);
         } else {
           const entry = {
             symbol,
             signal_date: new Date().toISOString(),
             is_warning: Boolean(evaluation.isWarning),
+            trading_plan: evaluation.plan ?? null,
           };
           existingResultsMap.set(symbol, entry);
           batchResults.push(symbol);

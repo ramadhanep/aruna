@@ -313,7 +313,7 @@ function PickItem({ pick, quote }) {
 
   return (
     <Link
-      href={`/chart?symbol=${encodeURIComponent(symbol)}&cycle=normal`}
+      href={`/chart?symbol=${encodeURIComponent(symbol)}&cycle=normal&tab=tradingPlan`}
       className="flex items-center gap-3 py-3 hover:bg-accent/30 transition-colors"
     >
       <div className="flex-1 min-w-0 flex items-center gap-3">
@@ -816,7 +816,7 @@ export default function ExplorePage() {
               return (
                 <Link
                   key={item.symbol}
-                  href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
+                  href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal&tab=tradingPlan`}
                   className="rounded-lg py-4 overflow-hidden border border-transparent hover:border-border/60 transition-colors block"
                 >
                   <div className="flex items-center justify-between gap-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import {
   removeIncompleteYears,
@@ -20,9 +20,10 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar, ReferenceLine } from 'recharts';
@@ -58,7 +59,7 @@ function matchScreeningEntry(results, targetSymbol) {
     if (!candidate) continue;
     if (typeof candidate === 'string') {
       if (candidate.trim().toUpperCase() === normalizedTarget) {
-        return { symbol: candidate, signal_date: null, is_warning: false };
+        return { symbol: candidate, signal_date: null, is_warning: false, trading_plan: null };
       }
       continue;
     }
@@ -71,6 +72,7 @@ function matchScreeningEntry(results, targetSymbol) {
         symbol: candidate.symbol,
         signal_date: candidate.signal_date ?? null,
         is_warning: Boolean(candidate.is_warning),
+        trading_plan: candidate.trading_plan ?? null,
       };
     }
   }
@@ -110,6 +112,36 @@ const NORMAL_TIMEFRAME_OPTIONS = [
 ];
 
 const INTRADAY_TIMEFRAMES = new Set(['15m', '1h', '2h', '4h']);
+
+const BASE_INFO_TABS = [
+  { value: 'keystats', label: 'KEYSTATS' },
+  { value: 'analysis', label: 'ANALYSIS' },
+  { value: 'seasonality', label: 'SEASONALITY' },
+  { value: 'profile', label: 'ABOUT' },
+];
+
+const INFO_TAB_QUERY_LOOKUP = {
+  tradingplan: 'trading-plan',
+  keystats: 'keystats',
+  analysis: 'analysis',
+  seasonality: 'seasonality',
+  profile: 'profile',
+  about: 'profile',
+};
+
+function normalizeInfoTabParam(value) {
+  if (!value) return null;
+  const sanitized = String(value).replace(/[^a-zA-Z]/g, '').toLowerCase();
+  if (!sanitized) return null;
+  return INFO_TAB_QUERY_LOOKUP[sanitized] ?? null;
+}
+
+function infoTabToQueryValue(value) {
+  if (!value) return null;
+  const str = String(value);
+  if (str === 'trading-plan') return 'tradingPlan';
+  return str.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
+}
 
 const EMA_PERIOD = 32;
 const EMA_COLOR = '#0ea5e9';
@@ -278,6 +310,16 @@ function isCryptoTicker(symbol = '') {
   return upper.includes('-USD') || upper.startsWith('CRYPTO:');
 }
 
+function isIdxLotSymbol(symbol = '') {
+  return /\.JK$/i.test(symbol?.trim?.() ?? '');
+}
+
+function toFiniteNumber(value) {
+  if (value === '' || value == null) return null;
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
 function getDefaultCyclesForSymbol() {
   return ['normal'];
 }
@@ -306,7 +348,9 @@ function ElectionCyclePageContent() {
   const isAuthenticated = Boolean(user);
   const symbolParam = searchParams.get('symbol');
   const cycleParam = searchParams.get('cycle');
+  const tabParam = searchParams.get('tab');
   const searchParamsString = searchParams.toString();
+  const requestedInfoTab = normalizeInfoTabParam(tabParam);
   const LAST_SYMBOL_KEY = 'aruna_last_election_symbol';
   const getInitialSymbol = () => {
     if (symbolParam) return symbolParam;
@@ -338,7 +382,11 @@ function ElectionCyclePageContent() {
   const [showLivermoreKey, setShowLivermoreKey] = useState(false);
   const [watchlist, setWatchlist] = useState(() => getDefaultWatchlist());
   const [screeningSignal, setScreeningSignal] = useState(null);
-  const [infoTab, setInfoTab] = useState('keystats');
+  const [infoTab, setInfoTab] = useState(() => requestedInfoTab || 'keystats');
+  const infoTabRef = useRef(infoTab);
+  const [tradingPlanEntryInput, setTradingPlanEntryInput] = useState('');
+  const [tradingPlanSizeInput, setTradingPlanSizeInput] = useState('10');
+  const [tradingPlanSizeMode, setTradingPlanSizeMode] = useState('share');
   const [normalFullscreenOpen, setNormalFullscreenOpen] = useState(false);
   const remoteWatchlistSeedRef = React.useRef(false);
   const remotePortfolioSeedRef = React.useRef(false);
@@ -369,6 +417,16 @@ function ElectionCyclePageContent() {
   const screeningSignalDateLabel = screeningSignal?.signal_date
     ? formatScreeningTimestamp(screeningSignal.signal_date)
     : null;
+  const tradingPlanPayload = screeningSignal?.trading_plan ?? null;
+  const screeningCategory = screeningSignal?.category ?? null;
+  const lotEligible = useMemo(() => isIdxLotSymbol(symbol), [symbol]);
+  const hasTradingPlan = Boolean(tradingPlanPayload);
+  const infoTabs = useMemo(() => {
+    if (hasTradingPlan) {
+      return [{ value: 'trading-plan', label: 'TRADING PLAN' }, ...BASE_INFO_TABS];
+    }
+    return BASE_INFO_TABS;
+  }, [hasTradingPlan]);
 
   const colors = useMemo(() => {
     const isDark = resolvedTheme === 'dark';
@@ -412,20 +470,38 @@ function ElectionCyclePageContent() {
 
   useEffect(() => {
     if (typeof window === 'undefined' || !pathname) return;
-    const normalized = selectedCycles.join(',');
     const params = new URLSearchParams(searchParamsString);
-    const current = params.get('cycle') ?? '';
-    if (normalized) {
-      if (current === normalized) return;
-      params.set('cycle', normalized);
-    } else {
-      if (!current) return;
+    let dirty = false;
+
+    const normalizedCycles = selectedCycles.join(',');
+    const currentCycle = params.get('cycle') ?? '';
+    if (normalizedCycles) {
+      if (currentCycle !== normalizedCycles) {
+        params.set('cycle', normalizedCycles);
+        dirty = true;
+      }
+    } else if (currentCycle) {
       params.delete('cycle');
+      dirty = true;
     }
+
+    const tabQueryValue = infoTabToQueryValue(infoTab);
+    const currentTab = params.get('tab') ?? '';
+    if (tabQueryValue) {
+      if (currentTab !== tabQueryValue) {
+        params.set('tab', tabQueryValue);
+        dirty = true;
+      }
+    } else if (currentTab) {
+      params.delete('tab');
+      dirty = true;
+    }
+
+    if (!dirty) return;
     const query = params.toString();
     const nextUrl = query ? `${pathname}?${query}` : pathname;
     router.replace(nextUrl, { scroll: false });
-  }, [selectedCycles, searchParamsString, pathname, router]);
+  }, [selectedCycles, infoTab, searchParamsString, pathname, router]);
 
   const loadScreeningSignal = useCallback(async () => {
     if (!supabase) {
@@ -485,6 +561,55 @@ function ElectionCyclePageContent() {
   useEffect(() => {
     setScreeningSignal(null);
   }, [symbol]);
+
+  useEffect(() => {
+    infoTabRef.current = infoTab;
+  }, [infoTab]);
+
+  useEffect(() => {
+    if (!requestedInfoTab) {
+      return;
+    }
+    const available = infoTabs.some((tab) => tab.value === requestedInfoTab);
+    if (!available) {
+      return;
+    }
+    if (infoTabRef.current === requestedInfoTab) {
+      return;
+    }
+    setInfoTab(requestedInfoTab);
+  }, [requestedInfoTab, infoTabs]);
+
+  useEffect(() => {
+    const isTabAvailable = infoTabs.some((tab) => tab.value === infoTab);
+    if (isTabAvailable || (requestedInfoTab && requestedInfoTab === infoTab)) {
+      return;
+    }
+    const fallback = infoTabs[0]?.value ?? 'keystats';
+    if (fallback && fallback !== infoTab) {
+      setInfoTab(fallback);
+    }
+  }, [infoTabs, infoTab, requestedInfoTab]);
+
+  useEffect(() => {
+    if (!lotEligible && tradingPlanSizeMode === 'lot') {
+      setTradingPlanSizeMode('share');
+    }
+  }, [lotEligible, tradingPlanSizeMode]);
+
+  useEffect(() => {
+    if (!tradingPlanPayload) {
+      setTradingPlanEntryInput('');
+      setTradingPlanSizeInput('10');
+      setTradingPlanSizeMode(lotEligible ? 'lot' : 'share');
+      return;
+    }
+    setTradingPlanEntryInput(
+      tradingPlanPayload.entry_price != null ? String(tradingPlanPayload.entry_price) : ''
+    );
+    setTradingPlanSizeMode(lotEligible ? 'lot' : 'share');
+    setTradingPlanSizeInput('10');
+  }, [tradingPlanPayload, lotEligible]);
 
   // Persist last viewed symbol
   useEffect(() => {
@@ -1361,18 +1486,11 @@ function ElectionCyclePageContent() {
         time: closest,
         position: 'belowBar',
         shape: 'arrowUp',
-        color: '#059669',
+        color: EMA_COLOR,
         text: 'Buy',
       },
     ];
   }, [filteredNormalChartData, screeningSignal?.signal_date, isNormalView]);
-  const infoTabs = [
-    { value: 'keystats', label: 'KEYSTATS' },
-    { value: 'analysis', label: 'ANALYSIS' },
-    { value: 'seasonality', label: 'SEASONALITY' },
-    { value: 'profile', label: 'ABOUT' },
-  ];
-
   const hasCycleChartData = chartData.chartArray && chartData.chartArray.length > 0;
   const showChartSection =
     !loading &&
@@ -1494,6 +1612,143 @@ function ElectionCyclePageContent() {
     const numeric = Number(value) * 100;
     return `${numeric.toFixed(fractionDigits)}%`;
   }, []);
+
+  const formatPlanCurrencyValue = useCallback((value) => {
+    if (value == null || Number.isNaN(Number(value))) return '—';
+    const formatted = formatDetailedCurrency(value);
+    return currencyCode ? `${formatted} ${currencyCode}` : formatted;
+  }, [currencyCode, formatDetailedCurrency]);
+
+  const formatPlanPriceDelta = useCallback((value) => {
+    if (value == null || Number.isNaN(Number(value))) return '—';
+    const numeric = Number(value);
+    return `${numeric >= 0 ? '+' : '-'}${Math.abs(numeric).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
+  }, []);
+
+  const formatPlanCurrencyDelta = useCallback((value) => {
+    if (value == null || Number.isNaN(Number(value))) return '—';
+    const numeric = Number(value);
+    const formatted = formatDetailedCurrency(Math.abs(numeric));
+    const prefix = numeric >= 0 ? '+' : '-';
+    return currencyCode ? `${prefix}${formatted} ${currencyCode}` : `${prefix}${formatted}`;
+  }, [currencyCode, formatDetailedCurrency]);
+
+  const tradingPlanEntryPrice = useMemo(() => {
+    const manual = toFiniteNumber(tradingPlanEntryInput);
+    if (manual != null && manual > 0) {
+      return manual;
+    }
+    return toFiniteNumber(tradingPlanPayload?.entry_price);
+  }, [tradingPlanEntryInput, tradingPlanPayload]);
+
+  const tradingPlanSizeValue = useMemo(() => {
+    const numeric = toFiniteNumber(tradingPlanSizeInput);
+    if (numeric != null && numeric > 0) {
+      return numeric;
+    }
+    return tradingPlanSizeMode === 'lot' ? 10 : 10;
+  }, [tradingPlanSizeInput, tradingPlanSizeMode]);
+
+  const tradingPlanShareCount = useMemo(() => {
+    if (tradingPlanSizeValue == null || tradingPlanSizeValue <= 0) {
+      return 0;
+    }
+    const multiplier = tradingPlanSizeMode === 'lot' ? 100 : 1;
+    return tradingPlanSizeValue * multiplier;
+  }, [tradingPlanSizeMode, tradingPlanSizeValue]);
+
+  const tradingPlanStopLossPrice = useMemo(() => toFiniteNumber(tradingPlanPayload?.stop_loss), [tradingPlanPayload]);
+
+  const tradingPlanEntryNotional = useMemo(() => {
+    if (tradingPlanEntryPrice == null || tradingPlanShareCount <= 0) {
+      return null;
+    }
+    return tradingPlanEntryPrice * tradingPlanShareCount;
+  }, [tradingPlanEntryPrice, tradingPlanShareCount]);
+
+  const tradingPlanStopLossDiff = useMemo(() => {
+    if (tradingPlanEntryPrice == null || tradingPlanStopLossPrice == null) {
+      return null;
+    }
+    return tradingPlanStopLossPrice - tradingPlanEntryPrice;
+  }, [tradingPlanEntryPrice, tradingPlanStopLossPrice]);
+
+  const tradingPlanStopLossPnl = useMemo(() => {
+    if (
+      tradingPlanEntryPrice == null ||
+      tradingPlanStopLossPrice == null ||
+      tradingPlanShareCount <= 0
+    ) {
+      return null;
+    }
+    return tradingPlanStopLossDiff != null ? tradingPlanStopLossDiff * tradingPlanShareCount : null;
+  }, [tradingPlanEntryPrice, tradingPlanStopLossPrice, tradingPlanShareCount, tradingPlanStopLossDiff]);
+
+  const tradingPlanStopLossPct = useMemo(() => {
+    if (
+      tradingPlanEntryPrice == null ||
+      tradingPlanEntryPrice === 0 ||
+      tradingPlanStopLossPrice == null
+    ) {
+      return null;
+    }
+    return ((tradingPlanStopLossPrice - tradingPlanEntryPrice) / tradingPlanEntryPrice) * 100;
+  }, [tradingPlanEntryPrice, tradingPlanStopLossPrice]);
+
+  const tradingPlanTargets = useMemo(() => {
+    if (!tradingPlanPayload?.tp_targets) {
+      return [];
+    }
+    return tradingPlanPayload.tp_targets
+      .map((target, index) => {
+        const price = toFiniteNumber(target?.price);
+        if (price == null) {
+          return null;
+        }
+        const label = target?.label || `TP${index + 1}`;
+        const diff = tradingPlanEntryPrice != null ? price - tradingPlanEntryPrice : null;
+        const pct =
+          tradingPlanEntryPrice != null && tradingPlanEntryPrice !== 0 && diff != null
+            ? (diff / tradingPlanEntryPrice) * 100
+            : null;
+        const pnl =
+          tradingPlanShareCount > 0 && diff != null ? diff * tradingPlanShareCount : null;
+        return { label, price, diff, pct, pnl };
+      })
+      .filter(Boolean);
+  }, [tradingPlanPayload, tradingPlanEntryPrice, tradingPlanShareCount]);
+
+  const tradingPlanSizeSummary = useMemo(() => {
+    if (tradingPlanShareCount <= 0) {
+      return null;
+    }
+    const shareLabel = tradingPlanShareCount.toLocaleString('en-US', { maximumFractionDigits: 2 });
+    if (tradingPlanSizeMode === 'lot') {
+      const lotsLabel = tradingPlanSizeValue != null
+        ? tradingPlanSizeValue.toLocaleString('en-US', { maximumFractionDigits: 2 })
+        : null;
+      return `${lotsLabel || '—'} lots • ${shareLabel} shares`;
+    }
+    return `${shareLabel} shares`;
+  }, [tradingPlanShareCount, tradingPlanSizeMode, tradingPlanSizeValue]);
+
+  const tradingPlanBasisValues = useMemo(() => {
+    if (!tradingPlanPayload?.basis) {
+      return { swing: null, ema: null };
+    }
+    return {
+      swing: toFiniteNumber(tradingPlanPayload.basis.swing_low),
+      ema: toFiniteNumber(tradingPlanPayload.basis.ema32),
+    };
+  }, [tradingPlanPayload]);
+
+  const tradingPlanCategoryLabel = useMemo(() => {
+    if (!screeningCategory) return null;
+    return screeningCategory.toUpperCase();
+  }, [screeningCategory]);
 
   const quickStats = useMemo(() => {
     if (!fundamentals) return [];
@@ -1971,6 +2226,197 @@ function ElectionCyclePageContent() {
             </CardContent>
           </Card>
         )}
+      </div>
+    );
+  };
+
+  const renderTradingPlanTab = () => {
+    if (!hasTradingPlan) {
+      return (
+        <Card>
+          <CardContent className="text-xs text-muted-foreground">
+            Trading plan unavailable for {symbol}.
+          </CardContent>
+        </Card>
+      );
+    }
+
+    const sizeModeOptions = lotEligible ? ['share', 'lot'] : ['share'];
+
+    return (
+      <div className="space-y-4 text-xs">
+        <Card>
+          {/* <CardHeader className="space-y-1">
+            <CardTitle className="text-sm">Trading Plan</CardTitle>
+            <CardDescription className="text-xs text-muted-foreground">
+              {tradingPlanCategoryLabel ? `${tradingPlanCategoryLabel} Screener` : 'Screener'}
+              {screeningSignalDateLabel ? ` • ${screeningSignalDateLabel}` : ''}
+            </CardDescription>
+          </CardHeader> */}
+          <CardContent className="space-y-5">
+            <div className="grid gap-4">
+              <div className="space-y-1">
+                <label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                  Entry Price
+                </label>
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  step="0.0001"
+                  min="0"
+                  value={tradingPlanEntryInput}
+                  onChange={(event) => setTradingPlanEntryInput(event.target.value)}
+                  className="text-xs"
+                  placeholder="e.g. 125.50"
+                />
+                <p className="text-[11px] text-muted-foreground">
+                  Adjust this price to refresh the TP & SL calculations instantly.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Position Size
+                  </label>
+                  <div className="inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5">
+                    {sizeModeOptions.map((mode) => (
+                      <Button
+                        key={mode}
+                        type="button"
+                        size="xs"
+                        variant={tradingPlanSizeMode === mode ? 'default' : 'ghost'}
+                        className={`px-2 py-1 text-xs rounded-full ${
+                          tradingPlanSizeMode === mode ? 'shadow-sm' : ''
+                        }`}
+                        onClick={() => setTradingPlanSizeMode(mode)}
+                      >
+                        {mode === 'lot' ? 'Lot' : 'Share'}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    inputMode="decimal"
+                    min="0"
+                    step="any"
+                    value={tradingPlanSizeInput}
+                    onChange={(event) => setTradingPlanSizeInput(event.target.value)}
+                    className="text-xs"
+                    placeholder={tradingPlanSizeMode === 'lot' ? '10' : '10'}
+                  />
+                  <div className="rounded-md border border-dashed border-border/60 px-3 py-2 text-[11px] text-muted-foreground">
+                    {tradingPlanSizeMode === 'lot' ? 'Lots' : 'Shares'}
+                  </div>
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  {tradingPlanSizeSummary ||
+                    (tradingPlanSizeMode === 'lot'
+                      ? '1 lot = 100 shares. Enter lots to convert automatically.'
+                      : 'Enter share amount to review notional exposure.')}
+                </p>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Plan Basis</p>
+              <div className="mt-2 grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <p className="text-[11px] text-muted-foreground">Notional</p>
+                  <p className="text-base font-bold">{formatPlanCurrencyValue(tradingPlanEntryNotional)}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] text-muted-foreground">Risk per Share</p>
+                  <p className="text-sm font-semibold">
+                    {tradingPlanStopLossDiff != null ? formatPlanPriceDelta(tradingPlanStopLossDiff) : '—'}
+                    {tradingPlanStopLossPct != null ? (
+                      <span className={`ml-2 ${tradingPlanStopLossPct >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {formatPercentage(tradingPlanStopLossPct)}
+                      </span>
+                    ) : null}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] text-muted-foreground">Swing Low Ref.</p>
+                  <p className="text-sm font-semibold">
+                    {formatPriceValue(tradingPlanBasisValues.swing)}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] text-muted-foreground">EMA Ref.</p>
+                  <p className="text-sm font-semibold">
+                    {formatPriceValue(tradingPlanBasisValues.ema)}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Exit Levels</p>
+              <div className="grid gap-3 md:grid-cols-2">
+                <div className="rounded-lg bg-red-500/5 p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-red-600">
+                      Stop Loss
+                    </span>
+                    <span className="text-base font-bold text-red-600">
+                      {formatPriceValue(tradingPlanStopLossPrice)}
+                    </span>
+                  </div>
+                  <p
+                    className={`mt-1 text-sm font-semibold ${
+                      tradingPlanStopLossPnl != null && tradingPlanStopLossPnl >= 0
+                        ? 'text-emerald-600'
+                        : 'text-red-600'
+                    }`}
+                  >
+                    {formatPlanCurrencyDelta(tradingPlanStopLossPnl)}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {tradingPlanStopLossPct != null && tradingPlanStopLossDiff != null
+                      ? `${formatPlanPriceDelta(tradingPlanStopLossDiff)} • ${formatPercentage(tradingPlanStopLossPct)} vs entry`
+                      : '—'}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2">
+                  {tradingPlanTargets.length > 0 ? (
+                    tradingPlanTargets.map((target) => (
+                      <div
+                        key={target.label}
+                        className="rounded-lg bg-emerald-500/5 p-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-emerald-600">
+                            {target.label}
+                          </span>
+                          <span className="text-base font-bold text-emerald-600">
+                            {formatPriceValue(target.price)}
+                          </span>
+                        </div>
+                        <p
+                          className={`mt-1 text-sm font-semibold ${
+                            target.pnl != null && target.pnl < 0 ? 'text-red-600' : 'text-emerald-600'
+                          }`}
+                        >
+                          {formatPlanCurrencyDelta(target.pnl)}
+                        </p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {target.pct != null && target.diff != null
+                            ? `${formatPlanPriceDelta(target.diff)} • ${formatPercentage(target.pct)} vs entry`
+                            : '—'}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="rounded-lg border border-border/60 p-3 text-[11px] text-muted-foreground">
+                      Take profit targets unavailable.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   };
@@ -2664,13 +3110,13 @@ function ElectionCyclePageContent() {
             <span className="dark:text-white/70 text-xs">🇮🇩</span>
           )}
           {symbol.endsWith('-USD') && (
-            <span className="dark:text-white/70 text-xs flex items-center gap-1"><Bitcoin className="size-4"/> to the moon</span>
+            <span className="dark:text-white/70 text-xs flex items-center gap-1"><Bitcoin className="size-4 text-amber-600"/> to the moon</span>
           )}
           {['QQQ', 'SPY'].some((s) => symbol.endsWith(s)) && (
             <span className="dark:text-white/70 text-xs">🇺🇸 pension fund</span>
           )}
           {['AAPL','MSFT','GOOGL','GOOG','AMZN','META','NVDA','AVGO'].some((s) => symbol.endsWith(s)) && (
-            <span className="dark:text-white/70 text-xs flex items-center gap-1"><Crown className="size-3.5"/> magnificent 7</span>
+            <span className="dark:text-white/70 text-xs flex items-center gap-1">🇺🇸 magnificent 7</span>
           )}
         </div>
         <button
@@ -3154,12 +3600,12 @@ function ElectionCyclePageContent() {
 
           {(fundamentalsLoading || fundamentals || cycleSummary || quarterlyHeatmap.rows.length > 0 || monthlyHeatmap.rows.length > 0) && (
             <div className="mt-4 space-y-4">
-              <div className="flex flex-wrap gap-2 border-b border-border/50 text-xs">
+              <div className="flex gap-2 border-b border-border/50 text-xs overflow-x-auto whitespace-nowrap flex-nowrap pb-1 hide-scrollbar">
                 {infoTabs.map((tab) => (
                   <button
                     key={tab.value}
                     type="button"
-                    className={`px-2 py-2 uppercase font-semibold transition-colors ${
+                    className={`flex-shrink-0 px-2 py-2 uppercase font-semibold transition-colors ${
                       infoTab === tab.value
                         ? 'text-emerald-700 dark:text-emerald-400 border-b-2 border-emerald-700 dark:border-emerald-400'
                         : 'text-muted-foreground'
@@ -3171,6 +3617,7 @@ function ElectionCyclePageContent() {
                 ))}
               </div>
               <div>
+                {infoTab === 'trading-plan' && renderTradingPlanTab()}
                 {infoTab === 'profile' && renderProfileTab()}
                 {infoTab === 'keystats' && renderKeyStatsTab()}
                 {infoTab === 'analysis' && renderAnalysisTab()}
