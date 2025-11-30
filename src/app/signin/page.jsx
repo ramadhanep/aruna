@@ -3,7 +3,6 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { useAuth } from "@/components/auth-provider";
 import { GoogleGlyph } from "@/components/google-glyph";
 import { Loader2, ShieldAlert } from "lucide-react";
@@ -42,51 +41,48 @@ function SignInContent() {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-15rem)]  flex-col justify-center gap-6">
-      <Card>
-        <CardContent className="space-y-6">
-          <div>
-            <h1 className="mt-2 text-base font-semibold">Sign in to continue</h1>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Sync your watchlist and portfolio securely across every device.
-            </p>
-          </div>
-          <div className="space-y-3">
-            <Button
-              type="button"
-              onClick={handleSignIn}
-              disabled={processing || !supabaseConfigured}
-              className="w-full justify-center gap-3 rounded-full border border-white/30 bg-white text-xs font-semibold text-[#3c4043] shadow-sm hover:bg-white/90"
-            >
-              {processing ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Redirecting…
-                </span>
-              ) : (
-                <>
-                  <GoogleGlyph />
-                  <span>Sign in with Google</span>
-                </>
-              )}
-            </Button>
-            {error ? (
-              <div className="rounded-xl border border-red-600/40 bg-red-600/10 p-3 text-xs text-red-100">
-                {error}
-              </div>
-            ) : null}
-            {!supabaseConfigured ? (
-              <div className="flex items-start gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-100">
-                <ShieldAlert className="h-4 w-4 flex-shrink-0" />
-                Provider credentials are not configured. Remote sync will be disabled until you add them.
-              </div>
-            ) : null}
-            <p className="text-[11px] text-muted-foreground">
-              By continuing you agree to our use of Google for authentication. We only use your email to keep your data in sync.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="flex min-h-[calc(100vh-10rem)] flex-col justify-center gap-6">
+      <section className="rounded-3xl bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] px-5 py-6 text-white shadow-[0_10px_30px_rgba(0,0,0,0.45)]">
+        <p className="text-[11px] uppercase tracking-wide text-white/60">Welcome back</p>
+        <h1 className="mt-1 text-sm font-semibold">Sign in to continue</h1>
+        <p className="mt-2 text-[11px] text-white/80">
+          Sync your watchlist and portfolio securely across every device.
+        </p>
+        <div className="mt-5 space-y-3">
+          <Button
+            type="button"
+            onClick={handleSignIn}
+            disabled={processing || !supabaseConfigured}
+            className="w-full justify-center gap-3 rounded-full bg-white text-xs font-semibold text-[#3c4043] shadow-sm hover:bg-white/90"
+          >
+            {processing ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Redirecting…
+              </span>
+            ) : (
+              <>
+                <GoogleGlyph />
+                <span>Sign in with Google</span>
+              </>
+            )}
+          </Button>
+          {error ? (
+            <div className="rounded-2xl bg-red-600/20 px-3 py-2 text-[11px] text-red-100">
+              {error}
+            </div>
+          ) : null}
+          {!supabaseConfigured ? (
+            <div className="flex items-start gap-2 rounded-2xl bg-amber-500/15 px-3 py-2 text-[11px] text-amber-100">
+              <ShieldAlert className="h-4 w-4 flex-shrink-0" />
+              Provider credentials are not configured. Remote sync will be disabled until you add them.
+            </div>
+          ) : null}
+          <p className="text-[11px] text-white/70">
+            By continuing you agree to our use of Google for authentication. We only use your email to keep your data in sync.
+          </p>
+        </div>
+      </section>
       <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={() => router.back()}>
         Go back
       </Button>
