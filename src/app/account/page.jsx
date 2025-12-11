@@ -368,7 +368,7 @@ function AccountContent() {
         </p>
         <div className="mt-2 flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
           <span>Made with</span>
-          <Heart className="h-4 w-4 fill-red-500 text-red-500" />
+          <Heart className="h-4 w-4 fill-red-600 text-red-600 dark:fill-white dark:text-white" />
           <span>by Ramadhan Edy from 🇮🇩</span>
         </div>
       </section>
