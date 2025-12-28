@@ -453,6 +453,7 @@ export async function GET(request, context) {
   let processedCount = 0;
   const batchResults = [];
   const batchEntries = [];
+  const tradingValueMap = new Map(); // Track trading value (volume * price) for trending stocks
 
   while (index < totalCount) {
     if (Date.now() - startedAt >= BATCH_TIME_LIMIT_MS && processedCount > 0) {
@@ -462,6 +463,19 @@ export async function GET(request, context) {
     const symbol = universe[index];
     const { quotes, meta } = await fetchDailySeries(symbol);
     if (quotes) {
+      // Calculate trading value for trending stocks (volume * price on latest day)
+      if (quotes.length > 0) {
+        const latest = quotes[quotes.length - 1];
+        const price = latest?.adjclose ?? latest?.close ?? null;
+        const volume = latest?.volume ?? null;
+        if (price != null && volume != null && price > 0 && volume > 0) {
+          const tradingValue = price * volume;
+          if (Number.isFinite(tradingValue)) {
+            tradingValueMap.set(symbol, tradingValue);
+          }
+        }
+      }
+      
       const evaluation = evaluateSymbol(quotes, category, meta);
       if (evaluation.isBreakout) {
         const existingEntry = existingResultsMap.get(symbol);
@@ -527,6 +541,32 @@ export async function GET(request, context) {
       { mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ error: "Failed to persist screening snapshot", category }) },
       { status: 500 }
     );
+  }
+
+  // Update trending stocks when finished processing all symbols
+  if (finished && tradingValueMap.size > 0) {
+    const trendingLimit = category === 'crypto' ? 3 : 5;
+    const sortedByValue = Array.from(tradingValueMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, trendingLimit)
+      .map(([symbol], order) => ({ symbol, category, order }));
+
+    if (sortedByValue.length > 0) {
+      // Delete old trending stocks for this category
+      await supabase
+        .from("trending_stocks")
+        .delete()
+        .eq("category", category);
+
+      // Insert new trending stocks
+      const { error: trendingError } = await supabase
+        .from("trending_stocks")
+        .insert(sortedByValue);
+
+      if (trendingError) {
+        console.error("Failed to update trending stocks:", trendingError.message);
+      }
+    }
   }
 
   return NextResponse.json({

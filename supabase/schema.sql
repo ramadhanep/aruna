@@ -85,6 +85,25 @@ create policy "Service role maintains screening results" on public.screening_sna
 
 create index if not exists screening_snapshots_updated_at_idx on public.screening_snapshots (updated_at desc);
 
+-- Stores trending stocks by category (IDX, US, CRYPTO) for marquee display
+create table if not exists public.trending_stocks (
+  category text not null,
+  symbol text not null,
+  "order" integer not null default 0,
+  created_at timestamptz default now(),
+  primary key (category, symbol)
+);
+
+alter table public.trending_stocks enable row level security;
+
+create policy "Anyone can view trending stocks" on public.trending_stocks
+  for select using (true);
+
+create policy "Service role maintains trending stocks" on public.trending_stocks
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+create index if not exists trending_stocks_category_order_idx on public.trending_stocks (category, "order");
+
 insert into public.stock_universes (id, idx_stocks, us_stocks, crypto_stocks)
 values (
   1,
