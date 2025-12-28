@@ -3,14 +3,14 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, SquareKanban, ChartPie, UserRound, Send } from "lucide-react";
+import { Star, SquareKanban, ChartPie, UserRound, Send } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   {
-    title: "Home",
-    url: "/",
-    icon: Home,
+    title: "Watchlist",
+    url: "/watchlist",
+    icon: Star,
   },
   {
     title: "Smart Charts",
@@ -19,7 +19,7 @@ const navItems = [
   },
   {
     title: "Explore",
-    url: "/explore",
+    url: "/",
     icon: Send,
   },
   {

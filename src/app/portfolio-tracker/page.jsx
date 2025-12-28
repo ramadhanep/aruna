@@ -1044,8 +1044,6 @@ export default function PortfolioTrackerPage() {
                         <TickerAvatar
                           symbol={entry.symbol}
                           logo={logoMap[entry.symbol]}
-                          sizeClass="h-8 w-8"
-                          backgroundClass="bg-muted"
                         />
                         <div className="flex flex-col justify-start">
                           <p className="font-semibold text-xs truncate">

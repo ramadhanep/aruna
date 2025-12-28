@@ -27,7 +27,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar, ReferenceLine } from 'recharts';
-import { Loader2, Sun, MoonStar, Clock3, Star, Lock, Bitcoin, Crown, ChevronDown, Fullscreen, ArrowLeft } from "lucide-react";
+import { Loader2, Sun, MoonStar, Clock3, Star, Lock, Bitcoin, Crown, ChevronDown, Fullscreen, ArrowLeft, Settings } from "lucide-react";
 import { useTheme } from 'next-themes';
 import { AddAssetModal } from "@/components/add-asset-modal";
 import { SymbolSearchDialog } from "@/components/header-symbol-search";
@@ -36,6 +36,13 @@ import { NormalCandlestickChart } from "@/components/normal-candlestick-chart";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist";
 import { ArunaWatermark } from "@/components/aruna-watermark";
+import { TickerAvatar } from "@/components/ticker-avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const CURRENT_LINE_COLOR = 'oklch(59.6% 0.145 163.225)';
 
@@ -897,6 +904,7 @@ function ElectionCyclePageContent() {
       const isMarketOpen = ['REGULAR', 'OPEN', 'TRADING'].some(state => marketState.includes(state));
 
       setSymbolInfo({
+        logo: data.meta?.logo,
         name: symbolName,
         currentPrice,
         predictedPrice,
@@ -1246,8 +1254,7 @@ function ElectionCyclePageContent() {
     }
     return {
       value: symbolInfo.dailyChange,
-      pct: symbolInfo.dailyChangePct,
-      label: 'Daily change',
+      pct: symbolInfo.dailyChangePct
     };
   }, [symbolInfo?.dailyChange, symbolInfo?.dailyChangePct]);
 
@@ -1386,6 +1393,7 @@ function ElectionCyclePageContent() {
           {option.label}
         </Button>
       ))}
+      {renderChartSettings()}
       {includeFullscreenToggle ? (
         <Button
           type="button"
@@ -1403,36 +1411,59 @@ function ElectionCyclePageContent() {
     </>
   );
 
-  const renderScaleButtons = (className = '') => (
-    <div className={`inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5 ${className}`}>
-      {[
-        { value: 'linear', label: 'Linear' },
-        { value: 'log', label: 'Logarithmic' },
-      ].map((option) => (
+  const renderChartSettings = () => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
         <Button
-          key={option.value}
           type="button"
-          size="xs"
-          variant={scaleChoice === option.value ? 'default' : 'ghost'}
-          className={`px-2 py-1 text-xs rounded-full ${scaleChoice === option.value ? 'shadow-sm' : ''}`}
-          onClick={() => setScaleChoice(option.value)}
+          size="sm"
+          variant="ghost"
+          className="h-6 w-6 rounded-full border border-border/60 p-0 text-muted-foreground shadow-sm"
+          title="Chart Settings"
+          aria-label="Chart settings"
         >
-          {option.label}
+          <Settings className="h-4 w-4" />
         </Button>
-      ))}
-    </div>
-  );
-
-  const renderLivermoreToggle = (className = '') => (
-    <Button
-      type="button"
-      size="xs"
-      variant={showLivermoreKey ? 'default' : 'ghost'}
-      className={`rounded-full px-2 py-1 text-[11px] hover:bg-emerald-700 ${showLivermoreKey ? 'bg-emerald-700 text-white/80 shadow-sm' : 'border border-border/70 dark:text-white bg-muted/40'} ${className}`}
-      onClick={() => setShowLivermoreKey((prev) => !prev)}
-    >
-      Livermore Key
-    </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-48">
+        <DropdownMenuItem
+          className="flex items-center gap-2 cursor-pointer"
+          onSelect={(e) => {
+            e.preventDefault();
+            setScaleChoice(scaleChoice === 'log' ? 'linear' : 'log');
+          }}
+        >
+          <div className={`h-4 w-4 rounded border flex items-center justify-center ${
+            scaleChoice === 'log' ? 'bg-emerald-700 border-emerald-700' : 'border-muted-foreground/30'
+          }`}>
+            {scaleChoice === 'log' && (
+              <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </div>
+          <span className="text-sm">Logarithmic</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="flex items-center gap-2 cursor-pointer"
+          onSelect={(e) => {
+            e.preventDefault();
+            setShowLivermoreKey((prev) => !prev);
+          }}
+        >
+          <div className={`h-4 w-4 rounded border flex items-center justify-center ${
+            showLivermoreKey ? 'bg-emerald-700 border-emerald-700' : 'border-muted-foreground/30'
+          }`}>
+            {showLivermoreKey && (
+              <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </div>
+          <span className="text-sm">Livermore Key</span>
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 
   const stochasticChartData = useMemo(() => {
@@ -3282,6 +3313,7 @@ function ElectionCyclePageContent() {
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-3">
+                  <TickerAvatar symbol={symbol} logo={symbolInfo?.logo} className="w-8 h-8" />
                   <Select
                     className="w-full"
                     value={selectedCycles.join(',')}
@@ -3302,10 +3334,6 @@ function ElectionCyclePageContent() {
                       {/* <SelectItem value="pre,election,mid,post,current">All Cycles</SelectItem> */}
                     </SelectContent>
                   </Select>
-                  {renderScaleButtons()}
-                  <div className="flex flex-wrap justify-end gap-1">
-                    {renderLivermoreToggle()}
-                  </div>
                 </div>
               </div>
             </CardHeader>
@@ -3470,12 +3498,6 @@ function ElectionCyclePageContent() {
                     <span className="text-muted-foreground text-xs">{assetName}</span>
                   </div>
                   <div className="flex flex-col items-center justify-center gap-2">
-                    <div className="flex items-center justify-between gap-2">
-                      {renderScaleButtons()}
-                      <div className="flex flex-wrap gap-1">
-                        {renderLivermoreToggle()}
-                      </div>
-                    </div>
                     <div className="flex flex-wrap justify-center items-center gap-1">{renderTimeframeButtons()}</div>
                   </div>
                   <div>
