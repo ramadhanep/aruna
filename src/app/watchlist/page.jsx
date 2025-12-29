@@ -11,6 +11,7 @@ import { useAuth } from "@/components/auth-provider";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist";
+import { TrendingMarquee } from "@/components/trending-marquee";
 
 function areWatchlistsEqual(a = [], b = []) {
   if (a.length !== b.length) return false;
@@ -98,6 +99,10 @@ function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
   const areaPath = `${linePath} L${coordinates[coordinates.length - 1].x.toFixed(2)},${height} L0,${height} Z`;
   const strokeColor = isPositive ? "#10b981" : "#ef4444";
   const gradientId = `${gradientKey}-fill`;
+  
+  // Calculate baseline at first data point (represents 0% change)
+  const firstValue = data[0];
+  const baselineY = height - ((firstValue - min) / range) * height;
 
   return (
     <svg width={width} height={height} className="overflow-visible">
@@ -107,6 +112,18 @@ function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
           <stop offset="100%" stopColor={strokeColor} stopOpacity="0" />
         </linearGradient>
       </defs>
+      {/* Baseline reference line */}
+      <line
+        x1="0"
+        y1={baselineY}
+        x2={width}
+        y2={baselineY}
+        stroke="currentColor"
+        strokeWidth="0.8"
+        strokeDasharray="2,2"
+        opacity="0.3"
+        className="text-muted-foreground"
+      />
       <path d={areaPath} fill={`url(#${gradientId})`} opacity="0.9" />
       <path
         d={linePath}
@@ -205,6 +222,7 @@ export default function HomePage() {
   const containerRef = useRef(null);
   const remoteDefaultSeedRef = useRef(false);
   const {
+    supabase,
     user,
     loading: authLoading,
     remoteWatchlist,
@@ -397,6 +415,12 @@ export default function HomePage() {
   if (loading) {
     return (
       <div className="flex flex-col gap-4">
+        <Card className="mt-4 border-none">
+          <CardContent className="space-y-3 pt-0">
+            <div className="h-16 w-full rounded-lg shimmer bg-white/20"></div>
+          </CardContent>
+        </Card>
+        
         <Card className="border-none">
           <CardContent className="space-y-3 pt-0">
             <div className="h-3 w-full rounded-full shimmer bg-white/20"></div>
@@ -457,6 +481,8 @@ export default function HomePage() {
           <Loader2 className={`h-6 w-6 text-muted-foreground ${pullDistance > 80 || isRefreshing ? 'animate-spin' : ''}`} />
         </div>
       )}
+
+      <TrendingMarquee supabase={supabase} />
 
       <Card className="border-none bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] text-white shadow-lg p-4">
         <CardContent className="pt-0">
