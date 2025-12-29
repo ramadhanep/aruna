@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useId } from "react";
+import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { TickerAvatar } from "./ticker-avatar";
 import { fetchEncodedJson } from "@/lib/api-client";
@@ -78,6 +78,9 @@ export function TrendingMarquee({ supabase }) {
   const [trendingStocks, setTrendingStocks] = useState([]);
   const [quotes, setQuotes] = useState({});
   const [loading, setLoading] = useState(true);
+  const [isPaused, setIsPaused] = useState(false);
+  const scrollContainerRef = useRef(null);
+  const scrollTimeoutRef = useRef(null);
 
   useEffect(() => {
     async function loadTrending() {
@@ -191,13 +194,47 @@ export function TrendingMarquee({ supabase }) {
     loadTrending();
   }, [supabase]);
 
+  // Handle scroll events to pause/resume marquee
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+      // Pause marquee when user is scrolling
+      setIsPaused(true);
+
+      // Clear existing timeout
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+
+      // Resume marquee after user stops scrolling for 1.5 seconds
+      scrollTimeoutRef.current = setTimeout(() => {
+        setIsPaused(false);
+      }, 1500);
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+      if (scrollTimeoutRef.current) {
+        clearTimeout(scrollTimeoutRef.current);
+      }
+    };
+  }, []);
+
   if (loading || trendingStocks.length === 0) {
     return null;
   }
 
   return (
-    <div className="relative overflow-hidden bg-gradient-to-r from-emerald-50/50 via-sky-50/50 to-amber-50/50 dark:from-emerald-950/20 dark:via-sky-950/20 dark:to-amber-950/20 border-y border-border/50 py-3">
-      <div className="flex animate-marquee whitespace-nowrap">
+    <div 
+      ref={scrollContainerRef}
+      className="relative overflow-x-auto overflow-y-hidden bg-gradient-to-r from-emerald-50/50 via-sky-50/50 to-amber-50/50 dark:from-emerald-950/20 dark:via-sky-950/20 dark:to-amber-950/20 border-y border-border/50 py-3 scrollbar-hide"
+      style={{ WebkitOverflowScrolling: 'touch' }}
+    >
+      <div className={`flex whitespace-nowrap ${isPaused ? '' : 'animate-marquee'}`}>
         {trendingStocks.map((item) => (
           <TrendingItem key={`${item.category}-${item.symbol}`} symbol={item.symbol} quote={quotes[item.symbol]} />
         ))}

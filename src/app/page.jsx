@@ -247,6 +247,10 @@ function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
   const areaPath = `${linePath} L${coordinates[coordinates.length - 1].x.toFixed(2)},${height} L0,${height} Z`;
   const strokeColor = isPositive ? "#10b981" : "#ef4444";
   const gradientId = `${gradientKey}-fill`;
+  
+  // Calculate baseline at first data point (represents 0% change)
+  const firstValue = data[0];
+  const baselineY = height - ((firstValue - min) / range) * height;
 
   return (
     <svg width={width} height={height} className="overflow-visible">
@@ -256,6 +260,18 @@ function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
           <stop offset="100%" stopColor={strokeColor} stopOpacity="0" />
         </linearGradient>
       </defs>
+      {/* Baseline reference line */}
+      <line
+        x1="0"
+        y1={baselineY}
+        x2={width}
+        y2={baselineY}
+        stroke="currentColor"
+        strokeWidth="0.8"
+        strokeDasharray="2,2"
+        opacity="0.3"
+        className="text-muted-foreground"
+      />
       <path d={areaPath} fill={`url(#${gradientId})`} opacity="0.9" />
       <path
         d={linePath}
@@ -759,6 +775,12 @@ export default function ExplorePage() {
 
         <Card className="mt-4 border-none">
           <CardContent className="space-y-3 pt-0">
+            <div className="h-16 w-full rounded-lg shimmer bg-white/20"></div>
+          </CardContent>
+        </Card>
+
+        <Card className="mt-4 border-none">
+          <CardContent className="space-y-3 pt-0">
             <div className="h-3 w-full rounded-full shimmer bg-white/20"></div>
             <div className="h-3 w-5/6 rounded-full shimmer bg-white/20"></div>
           </CardContent>
@@ -856,7 +878,7 @@ export default function ExplorePage() {
                           : "Fetching data"}
                       </p>
                     </div>
-                    <div className={`flex items-center ${isPositive ? "text-emerald-500" : "text-red-600"}`}>
+                    <div className={`flex items-center mr-2 ${isPositive ? "text-emerald-500" : "text-red-600"}`}>
                       <MiniChart
                         data={item.quote?.chartData || []}
                         isPositive={isPositive}
@@ -877,7 +899,7 @@ export default function ExplorePage() {
         <Card className="mt-4 border-none bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] text-white shadow-lg p-4">
           <CardContent className="pt-0">
             <p className="text-xs leading-relaxed text-white/90">
-              ALPHA spotlight unusual stock moves, make sure the story, liquidity, and news support the momentum before acting.
+              We search through historical data looking for anomalous patterns that we would not expect to occur at random.
             </p>
           </CardContent>
         </Card>
@@ -891,7 +913,7 @@ export default function ExplorePage() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                    Alpha in {section.title}
+                    Buy Signals in {section.title}
                   </p>
                   {section.lastScreened && (
                     <p className="text-[11px] text-muted-foreground">
