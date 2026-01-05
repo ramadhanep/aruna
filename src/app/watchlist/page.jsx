@@ -12,6 +12,7 @@ import { fetchEncodedJson } from "@/lib/api-client";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist";
 import { TrendingMarquee } from "@/components/trending-marquee";
+import { formatTickerDisplay } from "@/lib/utils";
 
 function areWatchlistsEqual(a = [], b = []) {
   if (a.length !== b.length) return false;
@@ -161,7 +162,7 @@ function StockItem({ quote }) {
           <TickerAvatar symbol={symbol} logo={logo} />
         </div>
         <div className="min-w-0">
-          <div className="font-semibold text-sm truncate">{quote.symbol}</div>
+          <div className="font-semibold text-sm truncate">{formatTickerDisplay(quote.symbol)}</div>
           <div className="text-xs text-muted-foreground truncate">{quote.name}</div>
         </div>
       </div>

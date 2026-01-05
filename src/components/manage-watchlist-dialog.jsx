@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { fetchEncodedJson } from "@/lib/api-client";
+import { formatTickerDisplay } from "@/lib/utils";
 
 export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave }) {
   const [items, setItems] = useState([]);

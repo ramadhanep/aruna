@@ -8,11 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, MoreVertical, Pencil, Trash2, Loader2, Wallet, Coins, TrendingUp, DollarSign, ArrowUpDown, Check, Eye, EyeOff } from 'lucide-react';
+import { Plus, MoreVertical, Pencil, Trash2, Loader2, Wallet, Coins, TrendingUp, ArrowUpDown, Check, Eye, EyeOff } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth-provider';
 import { fetchEncodedJson } from '@/lib/api-client';
 import { TickerAvatar } from '@/components/ticker-avatar';
+import { formatTickerDisplay } from '@/lib/utils';
 
 // Dynamic chart component to keep page light and avoid SSR issues
 const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { ssr: false });
@@ -1021,8 +1022,8 @@ export default function PortfolioTrackerPage() {
                   >
                     {isCash ? (
                       <div className="flex flex-1 min-w-0 items-center gap-2 px-1 py-2">
-                        <div className="p-2 rounded-full bg-muted">
-                          <DollarSign className="h-4 w-4 text-emerald-800 dark:text-emerald-500" />
+                        <div className="p-1.5 rounded-full bg-muted">
+                          <Coins className="h-4.5 w-4.5 text-emerald-800 dark:text-emerald-500" />
                         </div>
                         <div className="flex flex-col justify-start">
                           <p className="font-semibold text-xs truncate">
@@ -1047,7 +1048,7 @@ export default function PortfolioTrackerPage() {
                         />
                         <div className="flex flex-col justify-start">
                           <p className="font-semibold text-xs truncate">
-                            {entry.symbol}
+                            {formatTickerDisplay(entry.symbol)}
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {isPortfolioHidden ? maskToken : `${entry.amount} ${entry.unit}`}
@@ -1160,7 +1161,7 @@ export default function PortfolioTrackerPage() {
                       onClick={() => setAssetType('cash')}
                       className="flex-1"
                     >
-                      <DollarSign className="h-4 w-4 mr-2" />
+                      <Coins className="h-4 w-4 mr-2" />
                       Cash
                     </Button>
                   </div>

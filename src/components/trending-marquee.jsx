@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { TickerAvatar } from "./ticker-avatar";
 import { fetchEncodedJson } from "@/lib/api-client";
+import { formatTickerDisplay } from "@/lib/utils";
 
 function TrendingItem({ symbol, quote }) {
   if (!quote) return null;
@@ -24,7 +25,7 @@ function TrendingItem({ symbol, quote }) {
     >
       <TickerAvatar symbol={symbol} logo={quote.logo} />
       <div className="flex flex-col">
-        <div className="font-semibold text-sm">{symbol}</div>
+        <div className="font-semibold text-sm">{formatTickerDisplay(symbol)}</div>
         <div className={`text-xs font-medium`}>
           {formattedPrice} <span className={`text-[10px] ${color}`}>{formattedChange}</span>
         </div>

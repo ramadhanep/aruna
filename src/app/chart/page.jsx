@@ -37,6 +37,7 @@ import { fetchEncodedJson } from "@/lib/api-client";
 import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist";
 import { ArunaWatermark } from "@/components/aruna-watermark";
 import { TickerAvatar } from "@/components/ticker-avatar";
+import { formatTickerDisplay } from "@/lib/utils";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -3134,7 +3135,7 @@ function ElectionCyclePageContent() {
               }
             }}
           >
-            {symbol} <ChevronDown className="size-4 dark:text-white/70"/>
+            {formatTickerDisplay(symbol)} <ChevronDown className="size-4 dark:text-white/70"/>
           </h1>
           <span className="text-muted">|</span>
           {symbol.endsWith('.JK') && (
@@ -3493,7 +3494,7 @@ function ElectionCyclePageContent() {
                       <ArrowLeft className="size-6 text-muted-foreground"/>
                     </div>
                     <DialogTitle className="text-sm font-semibold leading-none">
-                      {symbol}
+                      {formatTickerDisplay(symbol)}
                     </DialogTitle>
                     <span className="text-muted-foreground text-xs">{assetName}</span>
                   </div>

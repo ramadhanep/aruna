@@ -9,6 +9,7 @@ import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock } from "lucide-r
 import { fetchEncodedJson } from "@/lib/api-client";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { TrendingMarquee } from "@/components/trending-marquee";
+import { formatTickerDisplay } from "@/lib/utils";
 
 const CATEGORY_LABELS = {
   idx: "IDX 🇮🇩",
@@ -340,7 +341,7 @@ function PickItem({ pick, quote }) {
         </div>
         <div className="min-w-0">
           <div className="font-semibold text-sm truncate flex items-center gap-1">
-            <span>{symbol}</span>
+            <span>{formatTickerDisplay(symbol)}</span>
             {isNewSignal ? (
               <span className="text-[10px] font-semibold tracking-wide text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-[1px] rounded-full">
                 NEW

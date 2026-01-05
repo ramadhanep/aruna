@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { fetchEncodedJson } from '@/lib/api-client';
+import { formatTickerDisplay } from '@/lib/utils';
 
 async function searchSymbols(query) {
   if (!query) return [];
@@ -204,7 +205,7 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
                         onClick={() => handleSelectSymbol(r)}
                         className="w-full text-left px-2 py-1 rounded hover:bg-accent text-xs"
                       >
-                        <span className="font-medium">{r.symbol}</span> <span className="text-muted-foreground">{r.name}</span>
+                        <span className="font-medium">{formatTickerDisplay(r.symbol)}</span> <span className="text-muted-foreground">{r.name}</span>
                       </button>
                     ))}
                   </div>
