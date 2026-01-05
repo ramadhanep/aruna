@@ -25,7 +25,7 @@ export function TickerAvatar({
         <img
           src={logo}
           alt={`${symbol} logo`}
-          className="h-full w-full object-cover hue-rotate-200"
+          className="h-full w-full object-cover"
           onError={() => setFailed(true)}
         />
       ) : (
