@@ -13,6 +13,7 @@ import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth-provider';
 import { fetchEncodedJson } from '@/lib/api-client';
 import { TickerAvatar } from '@/components/ticker-avatar';
+import { formatTickerDisplay } from '@/lib/utils';
 
 // Dynamic chart component to keep page light and avoid SSR issues
 const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { ssr: false });
@@ -1047,7 +1048,7 @@ export default function PortfolioTrackerPage() {
                         />
                         <div className="flex flex-col justify-start">
                           <p className="font-semibold text-xs truncate">
-                            {entry.symbol}
+                            {formatTickerDisplay(entry.symbol)}
                           </p>
                           <p className="text-xs text-muted-foreground mt-0.5">
                             {isPortfolioHidden ? maskToken : `${entry.amount} ${entry.unit}`}

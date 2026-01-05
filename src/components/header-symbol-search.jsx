@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Loader2, Clock, X } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
+import { formatTickerDisplay } from "@/lib/utils";
 
 const SEARCH_HISTORY_KEY = "aruna_header_symbol_history";
 
@@ -168,7 +169,7 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
                       onClick={() => handleSelect(item.symbol)}
                       className="w-full px-4 py-3 text-left hover:bg-accent transition-colors"
                     >
-                      <p className="text-sm font-semibold uppercase">{item.symbol}</p>
+                      <p className="text-sm font-semibold uppercase">{formatTickerDisplay(item.symbol)}</p>
                       {item.name && <p className="text-xs text-muted-foreground line-clamp-1">{item.name}</p>}
                     </button>
                   </li>
@@ -196,7 +197,7 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
                       onClick={() => handleSelect(item)}
                       className="rounded-full border px-3 py-1 text-xs font-medium hover:bg-accent"
                     >
-                      {item}
+                      {formatTickerDisplay(item)}
                     </button>
                   ))}
                 </div>
