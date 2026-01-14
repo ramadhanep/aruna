@@ -42,8 +42,8 @@ const STOP_EMA_BUFFER = 0.98;
 const DEFAULT_STOP_BUFFER = 0.97;
 const SWING_LOOKBACK = 5;
 
-const EMA_PERIOD = 32;
-const VOLUME_MA_PERIOD = 32;
+const EMA_PERIOD = 20;
+const VOLUME_MA_PERIOD = 20;
 const EMA_SLOPE_PERIOD = 5;
 const CANDLE_LOOKBACK = 5;
 const BATCH_TIME_LIMIT_MS = 50000;
@@ -152,7 +152,7 @@ function buildTradingPlan({ price, emaValue, swingLow, category }) {
     tp_targets: tpTargets,
     basis: {
       swing_low: swingLow ?? null,
-      ema32: formatPlanPrice(emaValue) ?? null,
+      ema20: formatPlanPrice(emaValue) ?? null,
     },
   };
 }
@@ -330,7 +330,7 @@ function evaluateSymbol(quotes, category, meta) {
 
   const closes = cleaned.map((row) => row.close);
   const volumes = cleaned.map((row) => row.volume);
-  const ema32 = computeEMA(closes, EMA_PERIOD);
+  const ema20 = computeEMA(closes, EMA_PERIOD);
   const volumeMA20 = computeSMA(volumes, VOLUME_MA_PERIOD);
 
   const startIndex = Math.max(1, cleaned.length - CANDLE_LOOKBACK);
@@ -342,8 +342,8 @@ function evaluateSymbol(quotes, category, meta) {
   for (let i = startIndex; i < cleaned.length; i++) {
     const price = cleaned[i].close;
     const prevPrice = cleaned[i - 1].close;
-    const emaValue = ema32[i];
-    const prevEma = ema32[i - 1];
+    const emaValue = ema20[i];
+    const prevEma = ema20[i - 1];
     const volume = cleaned[i].volume;
     const volumeAvg = volumeMA20[i];
     if (
@@ -360,8 +360,8 @@ function evaluateSymbol(quotes, category, meta) {
     const touchBreak = price >= emaValue && prevPrice < prevEma;
     const slopeSourceIndex = i - EMA_SLOPE_PERIOD;
     let emaSlope = null;
-    if (slopeSourceIndex >= 0 && ema32[slopeSourceIndex] != null) {
-      emaSlope = (emaValue - ema32[slopeSourceIndex]) / EMA_SLOPE_PERIOD;
+    if (slopeSourceIndex >= 0 && ema20[slopeSourceIndex] != null) {
+      emaSlope = (emaValue - ema20[slopeSourceIndex]) / EMA_SLOPE_PERIOD;
     }
 
     const dailyValue = price * volume;
