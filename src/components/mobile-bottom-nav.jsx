@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Star, SquareKanban, ChartPie, UserRound, Send } from "lucide-react";
+import { Star, AlignHorizontalDistributeCenter, ChartPie, UserRound, LayoutGrid } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -13,14 +13,14 @@ const navItems = [
     icon: Star,
   },
   {
-    title: "Smart Charts",
+    title: "Supercharts",
     url: "/chart",
-    icon: SquareKanban,
+    icon: AlignHorizontalDistributeCenter,
   },
   {
     title: "Explore",
     url: "/",
-    icon: Send,
+    icon: LayoutGrid,
   },
   {
     title: "Portfolio",

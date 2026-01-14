@@ -151,7 +151,7 @@ function infoTabToQueryValue(value) {
   return str.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
 }
 
-const EMA_PERIOD = 32;
+const EMA_PERIOD = 20;
 const EMA_COLOR = '#0ea5e9';
 const LIVERMORE_LOOKBACK = 20;
 const LIVERMORE_UPPER_COLOR = '#f97316';
@@ -1168,18 +1168,18 @@ function ElectionCyclePageContent() {
     }
 
     const closingPrices = normalizedPoints.map((point) => point.close);
-    const ema32Series = calculateEMA(closingPrices, EMA_PERIOD);
+    const ema20Series = calculateEMA(closingPrices, EMA_PERIOD);
     const firstClose =
       closingPrices.find((value) => typeof value === 'number' && Number.isFinite(value)) ?? null;
 
     return normalizedPoints.map((point, index) => {
-      const ema32 = Number.isFinite(ema32Series[index]) ? ema32Series[index] : point.close;
+      const ema20 = Number.isFinite(ema20Series[index]) ? ema20Series[index] : point.close;
       const changePct =
         firstClose && firstClose !== 0 ? ((point.close - firstClose) / firstClose) * 100 : null;
       return {
         ...point,
         changePct,
-        ema32,
+        ema20,
       };
     });
   }, [isNormalView, normalSeries]);
@@ -1320,8 +1320,8 @@ function ElectionCyclePageContent() {
           : actualLow;
 
       candles.push({ time, open, high, low, close });
-      if (typeof point.ema32 === 'number' && Number.isFinite(point.ema32)) {
-        ema.push({ time, value: point.ema32 });
+      if (typeof point.ema20 === 'number' && Number.isFinite(point.ema20)) {
+        ema.push({ time, value: point.ema20 });
       } else {
         ema.push({ time, value: close });
       }
@@ -1336,8 +1336,8 @@ function ElectionCyclePageContent() {
         actualHigh,
         actualLow,
         actualClose,
-        ema32:
-          typeof point.ema32 === 'number' && Number.isFinite(point.ema32) ? point.ema32 : close,
+        ema20:
+          typeof point.ema20 === 'number' && Number.isFinite(point.ema20) ? point.ema20 : close,
         livermoreUpper: null,
         livermoreLower: null,
         changePct:
@@ -1773,7 +1773,7 @@ function ElectionCyclePageContent() {
     }
     return {
       swing: toFiniteNumber(tradingPlanPayload.basis.swing_low),
-      ema: toFiniteNumber(tradingPlanPayload.basis.ema32),
+      ema: toFiniteNumber(tradingPlanPayload.basis.ema20),
     };
   }, [tradingPlanPayload]);
 

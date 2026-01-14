@@ -406,9 +406,9 @@ export function NormalCandlestickChart({
               <span className="font-medium">{formatValue(tooltipData.close)}</span>
             </div>
             <div className="col-span-2 flex items-center justify-between gap-2 border-t border-dashed border-border/70 pt-1">
-              <span className="text-[10px] uppercase text-muted-foreground">EMA 32</span>
+              <span className="text-[10px] uppercase text-muted-foreground">EMA 20</span>
               <span className="font-semibold" style={{ color: emaColor }}>
-                {formatValue(tooltipData.ema32)}
+                {formatValue(tooltipData.ema20)}
               </span>
             </div>
             {showLivermoreKey && tooltipData?.livermoreUpper != null ? (
