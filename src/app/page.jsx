@@ -21,9 +21,9 @@ const CATEGORY_ORDER = ["idx", "us", "crypto"];
 
 
 const HIGHLIGHT_SYMBOLS = [
-  { symbol: "^SPX", label: "S&P 500", badge: "500", group: "US", accent: "bg-rose-500", logo: "https://s3-symbol-logo.tradingview.com/indices/s-and-p-500.svg" },
-  { symbol: "^IXIC", label: "Nasdaq 100", badge: "100", group: "US", accent: "bg-sky-500", logo: "https://s3-symbol-logo.tradingview.com/nasdaq.svg" },
-  { symbol: "^JKSE", label: "IDX Composite", badge: "JK", group: "ID", accent: "bg-amber-500", logo: "https://s3-symbol-logo.tradingview.com/indices/jakarta-composite-index.svg" },
+  // { symbol: "^SPX", label: "S&P 500", badge: "500", group: "US", accent: "bg-rose-500", logo: "https://s3-symbol-logo.tradingview.com/indices/s-and-p-500.svg" },
+  // { symbol: "^IXIC", label: "Nasdaq 100", badge: "100", group: "US", accent: "bg-sky-500", logo: "https://s3-symbol-logo.tradingview.com/nasdaq.svg" },
+  { symbol: "^JKSE", label: "IHSG", badge: "JK", group: "ID", accent: "bg-amber-500", logo: "https://s3-symbol-logo.tradingview.com/indices/jakarta-composite-index.svg" },
   { symbol: "BTC-USD", label: "Bitcoin", badge: "BTC", group: "Crypto", accent: "bg-emerald-500" },
 ];
 
@@ -899,7 +899,7 @@ export default function ExplorePage() {
 
         <Card className="mt-4 border-none bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] text-white shadow-lg p-4">
           <CardContent className="pt-0">
-            <p className="text-xs leading-relaxed text-white/90">
+            <p className="text-xs leading-relaxed text-white/90 font-semibold">
               We search through historical data looking for anomalous patterns that we would not expect to occur at random.
             </p>
           </CardContent>
@@ -913,7 +913,7 @@ export default function ExplorePage() {
             <section key={section.category} className="bg-background/70 py-5">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
                     Buy Signals in {section.title}
                   </p>
                   {section.lastScreened && (

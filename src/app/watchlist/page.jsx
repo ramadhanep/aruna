@@ -487,7 +487,7 @@ export default function HomePage() {
 
       <Card className="border-none bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] text-white shadow-lg p-4">
         <CardContent className="pt-0">
-          <p className="text-xs leading-relaxed text-white/90">
+          <p className="text-xs leading-relaxed text-white/90 font-semibold">
             We search through historical data looking for anomalous patterns that we would not expect to occur at random.
           </p>
         </CardContent>

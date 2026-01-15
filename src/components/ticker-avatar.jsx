@@ -19,17 +19,28 @@ export function TickerAvatar({
 
   return (
     <div
-      className={`flex items-center justify-center rounded-full overflow-hidden ${backgroundClass} ${sizeClass} ${className}`.trim()}
+      className={`relative flex items-center justify-center rounded-full overflow-hidden ${backgroundClass} ${sizeClass} ${className}`.trim()}
     >
       {showImage ? (
-        <img
-          src={logo}
-          alt={`${symbol} logo`}
-          className="h-full w-full object-cover"
-          onError={() => setFailed(true)}
-        />
+        <>
+          <img
+            src={logo}
+            alt={`${symbol} logo`}
+            onError={() => setFailed(true)}
+            className="
+              h-full w-full object-cover
+              contrast-125
+              brightness-80
+              saturate-150
+            "
+          />
+          {/* overlay biar makin netral & nyatu sama UI */}
+          <div className="pointer-events-none absolute inset-0 bg-background/10" />
+        </>
       ) : (
-        <span className={`font-semibold uppercase text-muted-foreground ${textClass}`}>
+        <span
+          className={`font-semibold uppercase text-muted-foreground ${textClass}`}
+        >
           {fallbackChar}
         </span>
       )}
