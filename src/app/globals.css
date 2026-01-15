@@ -161,7 +161,7 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-weight: 500;
+    font-weight: 600;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-tap-highlight-color: transparent;
@@ -252,4 +252,8 @@
 }
 button[data-slot="dialog-close"].ring-offset-background {
   display: none;
+}
+
+.font-semibold {
+  font-weight: 600;
 }

@@ -56,7 +56,7 @@ export function MobileBottomNav() {
               )}
             >
               <Icon className={cn("h-5 w-5", isActive && "text-emerald-600")} />
-              <span className="text-[10px] font-medium">{item.title}</span>
+              <span className="text-[10px]">{item.title}</span>
             </Link>
           );
         })}
