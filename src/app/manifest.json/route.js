@@ -56,7 +56,14 @@ export async function GET() {
         name: 'Screeners',
         short_name: 'Explore',
         description: 'Review the latest IDX, US, and crypto signals.',
-        url: '/explore',
+        url: '/',
+        icons: [{ src: '/aruna.png', sizes: '192x192', type: 'image/png' }],
+      },
+      {
+        name: 'MSCI Tracker',
+        short_name: 'MSCI',
+        description: 'Track Indonesian stocks following MSCI indices.',
+        url: '/msci',
         icons: [{ src: '/aruna.png', sizes: '192x192', type: 'image/png' }],
       },
       {

@@ -4,9 +4,7 @@ import { AuthProvider } from "@/components/auth-provider";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { PWARegister } from "@/components/pwa-register";
 import { PWAInstallDialog } from "@/components/pwa-install-dialog";
-import { HeaderSymbolSearch } from "@/components/header-symbol-search";
-import { HeaderAccountMenu } from "@/components/header-account-menu";
-import { AlignEndHorizontal } from "lucide-react";
+import { AppLayoutClient } from "@/components/app-layout-client";
 
 export const viewport = {
   width: 'device-width',
@@ -59,26 +57,9 @@ export default function RootLayout({ children }) {
           <AuthProvider>
             <PWARegister />
             <PWAInstallDialog />
-            <div className="flex flex-col min-h-screen">
-              <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3 px-2">
-                  <HeaderAccountMenu />
-                  <div className="flex flex-1 items-center justify-center gap-1">
-                    <div className="h-4 relative overflow-hidden">
-                      <AlignEndHorizontal className="size-5" />
-                    </div>
-                    <h1 className="text-lg font-bold">aruna</h1>
-                  </div>
-                  <HeaderSymbolSearch />
-                </div>
-              </header>
-              <main className="flex-1 pb-20">
-                <div className="mx-auto max-w-[768px] p-4">
-                  {children}
-                </div>
-              </main>
-              <MobileBottomNav />
-            </div>
+            <AppLayoutClient>
+              {children}
+            </AppLayoutClient>
           </AuthProvider>
         </ThemeProvider>
       </body>

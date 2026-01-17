@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock, Download } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { TrendingMarquee } from "@/components/trending-marquee";
@@ -289,6 +289,59 @@ function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
         fill={strokeColor}
       />
     </svg>
+  );
+}
+
+function InstallAppButton() {
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    // Check if already installed
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || 
+                      window.navigator.standalone === true;
+    setIsStandalone(standalone);
+
+    // Listen for beforeinstallprompt event
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
+  }, []);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    
+    if (outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+    }
+    
+    setDeferredPrompt(null);
+  };
+
+  // Don't show if already installed or if browser doesn't support install
+  if (isStandalone || !deferredPrompt) return null;
+
+  return (
+    <div className="mt-4">
+      <Button
+        onClick={handleInstall}
+        variant="outline"
+        className="w-full justify-center gap-2 rounded-full text-xs bg-emerald-700/10 border-emerald-700/30 hover:bg-emerald-700/20"
+      >
+        <Download className="h-4 w-4" />
+        Install App
+      </Button>
+    </div>
   );
 }
 
@@ -829,7 +882,7 @@ export default function ExplorePage() {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col gap-6 pb-24"
+      className="flex flex-col gap-6 pb-12"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -976,6 +1029,7 @@ export default function ExplorePage() {
               </p>
             </div>
           </div>
+          <InstallAppButton />
           <div className="mt-4 grid grid-cols-3 gap-3">
             {CATEGORY_ORDER.map((category) => {
               const snapshot = snapshots[category];

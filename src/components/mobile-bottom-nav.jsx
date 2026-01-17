@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Star, AlignHorizontalDistributeCenter, ChartPie, UserRound, LayoutGrid } from "lucide-react";
+import { Star, AlignHorizontalDistributeCenter, ChartPie, LayoutGrid, GlassesIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -23,14 +23,14 @@ const navItems = [
     icon: LayoutGrid,
   },
   {
+    title: "MSCI",
+    url: "/msci",
+    icon: GlassesIcon,
+  },
+  {
     title: "Portfolio",
     url: "/portfolio-tracker",
     icon: ChartPie,
-  },
-  {
-    title: "Account",
-    url: "/account",
-    icon: UserRound,
   },
 ];
 
