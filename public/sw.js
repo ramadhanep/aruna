@@ -1,4 +1,4 @@
-const VERSION = '2024-12-06';
+const VERSION = '1.3.42';
 const STATIC_CACHE = `aruna-static-${VERSION}`;
 const PAGE_CACHE = `aruna-pages-${VERSION}`;
 const DATA_CACHE = `aruna-data-${VERSION}`;
@@ -11,6 +11,8 @@ const APP_SHELL = [
   '/?source=pwa',
   '/chart',
   '/explore',
+  '/watchlist',
+  '/msci',
   '/portfolio-tracker',
   '/offline',
   '/manifest.json',

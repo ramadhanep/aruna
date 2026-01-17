@@ -6,14 +6,14 @@ export async function POST(request) {
   const supabaseAdmin = getSupabaseServiceRoleClient();
   if (!supabaseAdmin) {
     return NextResponse.json(
-      { mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ error: "Supabase service role key is not configured" }) },
+      { HIDUP_JOKOWI: encodePayload({ error: "Supabase service role key is not configured" }) },
       { status: 500 }
     );
   }
 
   const { user, error } = await getUserFromRequest(request);
   if (error || !user) {
-    return NextResponse.json({ mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ error: "Unauthorized" }) }, { status: 401 });
+    return NextResponse.json({ HIDUP_JOKOWI: encodePayload({ error: "Unauthorized" }) }, { status: 401 });
   }
 
   try {
@@ -28,11 +28,11 @@ export async function POST(request) {
       throw deleteError;
     }
 
-    return NextResponse.json({ mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ success: true }) });
+    return NextResponse.json({ HIDUP_JOKOWI: encodePayload({ success: true }) });
   } catch (err) {
     console.error("Failed to delete account", err);
     return NextResponse.json(
-      { mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ error: "Failed to delete account" }) },
+      { HIDUP_JOKOWI: encodePayload({ error: "Failed to delete account" }) },
       { status: 500 }
     );
   }

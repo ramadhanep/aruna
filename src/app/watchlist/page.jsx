@@ -465,7 +465,7 @@ export default function HomePage() {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col gap-4"
+      className="flex flex-col gap-4 pb-12"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

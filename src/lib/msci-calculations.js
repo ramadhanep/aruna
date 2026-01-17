@@ -1,0 +1,220 @@
+/**
+ * MSCI Calculations Utility
+ * Handles all MSCI-related calculations including thresholds, progress, and target prices
+ */
+
+// MSCI Thresholds in USD
+export const MSCI_THRESHOLDS = {
+  standard: 2_000_000_000, // $2B USD
+  small_cap: 300_000_000,  // $300M USD
+};
+
+// USD to IDR exchange rate (approximate, should be updated from market data in production)
+export const USD_TO_IDR = 15_800;
+
+/**
+ * Calculate free float market cap
+ * @param {number} marketCap - Total market cap
+ * @param {number} freeFloatPercent - Free float percentage (0-100)
+ * @returns {number} Free float market cap
+ */
+export function calculateFreeFloatMcap(marketCap, freeFloatPercent) {
+  if (!marketCap || !freeFloatPercent) return 0;
+  return marketCap * (freeFloatPercent / 100);
+}
+
+/**
+ * Calculate MSCI threshold in IDR
+ * @param {string} indexType - 'standard' or 'small_cap'
+ * @returns {number} Threshold in IDR
+ */
+export function getMSCIThresholdIDR(indexType) {
+  const thresholdUSD = MSCI_THRESHOLDS[indexType] || MSCI_THRESHOLDS.standard;
+  return thresholdUSD * USD_TO_IDR;
+}
+
+/**
+ * Calculate progress percentage toward MSCI threshold
+ * @param {number} freeFloatMcap - Free float market cap in IDR
+ * @param {string} indexType - 'standard' or 'small_cap'
+ * @returns {number} Progress percentage (0-100+)
+ */
+export function calculateProgress(freeFloatMcap, indexType) {
+  const threshold = getMSCIThresholdIDR(indexType);
+  if (!threshold || !freeFloatMcap) return 0;
+  return Math.min((freeFloatMcap / threshold) * 100, 999);
+}
+
+/**
+ * Calculate target price needed to meet MSCI threshold
+ * @param {number} currentPrice - Current stock price
+ * @param {number} freeFloatMcap - Current free float market cap
+ * @param {string} indexType - 'standard' or 'small_cap'
+ * @returns {number} Target price
+ */
+export function calculateTargetPrice(currentPrice, freeFloatMcap, indexType) {
+  const threshold = getMSCIThresholdIDR(indexType);
+  if (!currentPrice || !freeFloatMcap || freeFloatMcap >= threshold) {
+    return currentPrice;
+  }
+  const multiplier = threshold / freeFloatMcap;
+  return currentPrice * multiplier;
+}
+
+/**
+ * Calculate upside percentage from current price to target price
+ * @param {number} currentPrice - Current stock price
+ * @param {number} targetPrice - Target price for MSCI inclusion
+ * @returns {number} Upside percentage
+ */
+export function calculateUpside(currentPrice, targetPrice) {
+  if (!currentPrice || !targetPrice || currentPrice >= targetPrice) return 0;
+  return ((targetPrice - currentPrice) / currentPrice) * 100;
+}
+
+/**
+ * Determine status badge based on progress
+ * @param {number} progress - Progress percentage
+ * @returns {object} Status object with label and color
+ */
+export function getStatusBadge(progress) {
+  if (progress >= 90) {
+    return {
+      label: 'Possible/Sudah Masuk',
+      color: 'green',
+      variant: 'success'
+    };
+  }
+  if (progress >= 70) {
+    return {
+      label: 'Layak Diperhatikan',
+      color: 'yellow',
+      variant: 'warning'
+    };
+  }
+  return {
+    label: 'Masih Jauh',
+    color: 'red',
+    variant: 'danger'
+  };
+}
+
+/**
+ * Format market cap for display
+ * @param {number} value - Market cap value
+ * @returns {string} Formatted string (e.g., "15.2T", "450B")
+ */
+export function formatMarketCap(value) {
+  if (!value) return '—';
+  
+  const trillion = 1_000_000_000_000;
+  const billion = 1_000_000_000;
+  const million = 1_000_000;
+  
+  if (value >= trillion) {
+    return `${(value / trillion).toFixed(1)}T`;
+  }
+  if (value >= billion) {
+    return `${(value / billion).toFixed(1)}B`;
+  }
+  if (value >= million) {
+    return `${(value / million).toFixed(1)}M`;
+  }
+  return value.toLocaleString('id-ID');
+}
+
+/**
+ * Format price for display
+ * @param {number} value - Price value
+ * @returns {string} Formatted price
+ */
+export function formatPrice(value) {
+  if (!value) return '—';
+  return value.toLocaleString('id-ID', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
+}
+
+/**
+ * Format percentage for display
+ * @param {number} value - Percentage value
+ * @returns {string} Formatted percentage
+ */
+export function formatPercent(value) {
+  if (value == null) return '—';
+  return `${value.toFixed(1)}%`;
+}
+
+/**
+ * Calculate all MSCI metrics for a stock
+ * @param {object} stock - Stock object with price and fundamental data
+ * @returns {object} Complete MSCI metrics
+ */
+export function calculateMSCIMetrics(stock) {
+  const {
+    price,
+    market_cap,
+    free_float_percent,
+    shares_outstanding,
+    msci_index,
+  } = stock;
+
+  // Calculate free float market cap
+  const freeFloatMcap = calculateFreeFloatMcap(market_cap, free_float_percent);
+  
+  // Calculate progress toward threshold
+  const progress = calculateProgress(freeFloatMcap, msci_index);
+  
+  // Calculate target price
+  const targetPrice = calculateTargetPrice(price, freeFloatMcap, msci_index);
+  
+  // Calculate upside
+  const upside = calculateUpside(price, targetPrice);
+  
+  // Get status badge
+  const status = getStatusBadge(progress);
+
+  return {
+    freeFloatMcap,
+    progress,
+    targetPrice,
+    upside,
+    status,
+    thresholdIDR: getMSCIThresholdIDR(msci_index),
+  };
+}
+
+/**
+ * Sort stocks by nearest to inclusion (highest progress)
+ * @param {array} stocks - Array of stock objects with progress
+ * @returns {array} Sorted stocks
+ */
+export function sortByNearestInclusion(stocks) {
+  return [...stocks].sort((a, b) => (b.progress || 0) - (a.progress || 0));
+}
+
+/**
+ * Calculate summary statistics for MSCI stocks
+ * @param {array} stocks - Array of stock objects
+ * @returns {object} Summary statistics
+ */
+export function calculateSummaryStats(stocks) {
+  if (!stocks || stocks.length === 0) {
+    return {
+      totalStocks: 0,
+      nearestProgress: 0,
+      averageFreeFloat: 0,
+    };
+  }
+
+  const totalStocks = stocks.length;
+  const nearestProgress = Math.max(...stocks.map(s => s.progress || 0));
+  const averageFreeFloat = stocks.reduce((sum, s) => sum + (s.free_float_percent || 0), 0) / totalStocks;
+
+  return {
+    totalStocks,
+    nearestProgress,
+    averageFreeFloat,
+  };
+}

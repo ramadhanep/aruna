@@ -7,7 +7,7 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const query = searchParams.get('q');
   if (!query || query.length < 1) {
-    return NextResponse.json({ mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ symbols: [] }) });
+    return NextResponse.json({ HIDUP_JOKOWI: encodePayload({ symbols: [] }) });
   }
 
   try {
@@ -24,12 +24,12 @@ export async function GET(req) {
         type: q.quoteType,
       }));
     return NextResponse.json({
-      mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ symbols, source: { provider: 'yahoo-finance2' } }),
+      HIDUP_JOKOWI: encodePayload({ symbols, source: { provider: 'yahoo-finance2' } }),
     });
   } catch (error) {
     console.error('Symbol search failed', error);
     return NextResponse.json(
-      { mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ error: error?.message || 'Search failed', symbols: [] }) },
+      { HIDUP_JOKOWI: encodePayload({ error: error?.message || 'Search failed', symbols: [] }) },
       { status: 500 }
     );
   }

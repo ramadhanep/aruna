@@ -83,9 +83,6 @@ function SignInContent() {
           </p>
         </div>
       </section>
-      <Button variant="ghost" size="sm" className="text-xs text-muted-foreground" onClick={() => router.back()}>
-        Go back
-      </Button>
     </div>
   );
 }

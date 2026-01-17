@@ -17,7 +17,7 @@ export async function GET(request) {
 
   if (!symbol || !startDate || !endDate) {
     return Response.json(
-      { mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ error: 'Missing required parameters: symbol, startDate, endDate' }) },
+      { HIDUP_JOKOWI: encodePayload({ error: 'Missing required parameters: symbol, startDate, endDate' }) },
       { status: 400 }
     );
   }
@@ -27,7 +27,7 @@ export async function GET(request) {
 
   if (Number.isNaN(start) || Number.isNaN(end)) {
     return Response.json(
-      { mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ error: 'Invalid date parameters; expected Unix timestamps' }) },
+      { HIDUP_JOKOWI: encodePayload({ error: 'Invalid date parameters; expected Unix timestamps' }) },
       { status: 400 }
     );
   }
@@ -36,7 +36,7 @@ export async function GET(request) {
   const validIntervals = ['1m', '2m', '5m', '15m', '30m', '60m', '90m', '1h', '1d', '5d', '1wk', '1mo', '3mo'];
   if (!validIntervals.includes(interval)) {
     return Response.json(
-      { mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ error: `Invalid interval. Must be one of: ${validIntervals.join(', ')}` }) },
+      { HIDUP_JOKOWI: encodePayload({ error: `Invalid interval. Must be one of: ${validIntervals.join(', ')}` }) },
       { status: 400 }
     );
   }
@@ -72,7 +72,7 @@ export async function GET(request) {
     // Handle empty results
     if (!result?.quotes || result.quotes.length === 0) {
       return Response.json(
-        { mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ error: 'No data available for the specified period. Symbol may be invalid or delisted.' }) },
+        { HIDUP_JOKOWI: encodePayload({ error: 'No data available for the specified period. Symbol may be invalid or delisted.' }) },
         { status: 404 }
       );
     }
@@ -120,7 +120,7 @@ export async function GET(request) {
     }
 
     return Response.json({
-      mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({
+      HIDUP_JOKOWI: encodePayload({
         data: prices,
         events: Object.keys(eventsData).length > 0 ? eventsData : undefined,
         meta: {
@@ -163,6 +163,6 @@ export async function GET(request) {
       message = 'Yahoo Finance API session error. Please try again.';
     }
     
-    return Response.json({ mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ error: message }) }, { status });
+    return Response.json({ HIDUP_JOKOWI: encodePayload({ error: message }) }, { status });
   }
 }

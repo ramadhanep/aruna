@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth-provider";
 import { Loader2, UserRound } from "lucide-react";
@@ -17,15 +16,14 @@ function buildInitials(user) {
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
-export function HeaderAccountMenu() {
-  const router = useRouter();
+export function HeaderAccountMenu({ onOpenSidebar }) {
   const { user, loading } = useAuth();
   const initials = user ? buildInitials(user) : null;
   const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null;
 
   const handleClick = () => {
     if (loading) return;
-    router.push("/account");
+    onOpenSidebar?.();
   };
 
   return (
