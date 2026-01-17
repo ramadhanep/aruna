@@ -335,8 +335,7 @@ function InstallAppButton() {
     <div className="mt-4">
       <Button
         onClick={handleInstall}
-        variant="outline"
-        className="w-full justify-center gap-2 rounded-full text-xs bg-emerald-700/10 border-emerald-700/30 hover:bg-emerald-700/20"
+        className="w-full bg-emerald-700 hover:bg-emerald-800 flex items-center gap-2 text-xs text-white/80"
       >
         <Download className="h-4 w-4" />
         Install App

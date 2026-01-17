@@ -98,7 +98,7 @@ export async function GET(request) {
   const symbol = searchParams.get('symbol');
 
   if (!symbol) {
-    return Response.json({ mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({ error: 'Missing symbol parameter' }) }, { status: 400 });
+    return Response.json({ HIDUP_JOKOWI: encodePayload({ error: 'Missing symbol parameter' }) }, { status: 400 });
   }
 
   const symbolKey = symbol.trim().toUpperCase();
@@ -139,7 +139,7 @@ export async function GET(request) {
   if (!quote && !earningsSummary) {
     return Response.json(
       {
-        mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({
+        HIDUP_JOKOWI: encodePayload({
           error: `No fundamentals data found for ${symbolKey}. Symbol may be invalid or not supported.`,
         }),
       },
@@ -273,7 +273,7 @@ export async function GET(request) {
   };
 
   return Response.json({
-    mainnya_kejauhan_adek____jangan_ke_sini_lagi_ya_nanti_dimarahin_mamah_loh: encodePayload({
+    HIDUP_JOKOWI: encodePayload({
       profile,
       price,
       valuations,

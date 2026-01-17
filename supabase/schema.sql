@@ -116,3 +116,64 @@ on conflict (id) do update set
   us_stocks = excluded.us_stocks,
   crypto_stocks = excluded.crypto_stocks,
   updated_at = now();
+
+-- MSCI Tracker Tables
+-- Enum types for MSCI indices and status
+do $$ begin
+  create type msci_index_type as enum ('standard', 'small_cap');
+exception
+  when duplicate_object then null;
+end $$;
+
+do $$ begin
+  create type msci_status_type as enum ('included', 'watchlist', 'potential');
+exception
+  when duplicate_object then null;
+end $$;
+
+-- Main MSCI stocks table
+create table if not exists public.msci_stocks (
+  id uuid primary key default gen_random_uuid(),
+  ticker text unique not null,
+  company_name text not null,
+  msci_index msci_index_type not null,
+  msci_status msci_status_type not null,
+  free_float_percent numeric(5, 2) not null check (free_float_percent >= 0 and free_float_percent <= 100),
+  shares_outstanding bigint not null check (shares_outstanding > 0),
+  "order" integer not null default 0,
+  notes text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+-- MSCI market data snapshot cache
+create table if not exists public.msci_snapshot_cache (
+  ticker text primary key,
+  price numeric(15, 2),
+  market_cap numeric(20, 2),
+  free_float_mcap numeric(20, 2),
+  last_updated_at timestamptz default now()
+);
+
+alter table public.msci_stocks enable row level security;
+alter table public.msci_snapshot_cache enable row level security;
+
+-- Public read access for MSCI data
+create policy "Anyone can view MSCI stocks" on public.msci_stocks
+  for select using (true);
+
+create policy "Anyone can view MSCI cache" on public.msci_snapshot_cache
+  for select using (true);
+
+-- Service role can manage MSCI data
+create policy "Service role maintains MSCI stocks" on public.msci_stocks
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+create policy "Service role maintains MSCI cache" on public.msci_snapshot_cache
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+-- Indexes for performance
+create index if not exists msci_stocks_ticker_idx on public.msci_stocks (ticker);
+create index if not exists msci_stocks_index_status_idx on public.msci_stocks (msci_index, msci_status);
+create index if not exists msci_stocks_order_idx on public.msci_stocks ("order");
+create index if not exists msci_snapshot_cache_updated_idx on public.msci_snapshot_cache (last_updated_at desc);
