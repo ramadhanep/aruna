@@ -420,7 +420,7 @@ export function AccountSidebar({ open, onClose }) {
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-black/50 z-50 transition-opacity duration-300 ${
+        className={`fixed inset-0 bg-black/50 z-90 transition-opacity duration-300 ${
           isAnimating ? "opacity-100" : "opacity-0"
         }`}
         onClick={onClose}
@@ -428,7 +428,7 @@ export function AccountSidebar({ open, onClose }) {
       
       {/* Sidebar */}
       <div 
-        className={`fixed top-0 left-0 bottom-0 w-full max-w-3xl bg-background z-50 shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed top-0 left-0 bottom-0 w-full max-w-3xl bg-background z-90 shadow-2xl transition-transform duration-300 ease-out ${
           isAnimating ? "translate-x-0" : "-translate-x-full"
         }`}
       >
