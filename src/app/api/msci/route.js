@@ -123,7 +123,7 @@ export async function GET(request) {
         ...stock,
         price: quote.price,
         market_cap: quote.marketCap,
-        logo_url: `https://assets.stockbit.com/logos/companies/${idxSymbol}.png`,
+        logo_url: `https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/${idxSymbol}.png`,
       };
 
       const metrics = calculateMSCIMetrics(stockWithMarketData);
