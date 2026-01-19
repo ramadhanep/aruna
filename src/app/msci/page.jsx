@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Loader2, TrendingUp, AlertTriangle, ArrowUpDown, Check } from "lucide-react";
+import { Loader2, TrendingUp, AlertTriangle, ArrowUpDown, Check, Lock } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import {
   formatMarketCap,
@@ -136,14 +137,14 @@ function StatusBadge({ status }) {
   );
 }
 
-function StockCard({ stock }) {
+function StockCard({ stock, isLocked = false }) {
   const progressPercent = Math.min(stock.progress, 100);
   const isNearInclusion = stock.progress >= 90;
   const gradientFrom = statusColorMap[stock.status?.variant]?.cardGradient || statusColorMap.danger.cardGradient;
 
   return (
-    <Card className={`bg-gradient-to-br ${gradientFrom} via-[#111827] to-[#020617] border-border/20 text-white overflow-hidden`}>
-      <CardContent className="p-4 space-y-3">
+    <Card className={`bg-gradient-to-br ${gradientFrom} via-[#111827] to-[#020617] border-border/20 text-white overflow-hidden relative`}>
+      <CardContent className={`p-4 space-y-3 ${isLocked ? "blur-[2px] opacity-60" : ""}`}>
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
@@ -219,6 +220,14 @@ function StockCard({ stock }) {
           </div>
         </div>
       </CardContent>
+      {isLocked && (
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/05 backdrop-blur-xs px-6 text-center pointer-events-none">
+          <Lock className="h-4 w-4 text-white/90" />
+          <p className="text-xs font-semibold text-white/90">
+            Sign in to unlock
+          </p>
+        </div>
+      )}
     </Card>
   );
 }
@@ -277,6 +286,8 @@ function LoadingSkeleton() {
 }
 
 export default function MSCIPage() {
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
   const [selectedIndex, setSelectedIndex] = useState("standard");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -392,8 +403,12 @@ export default function MSCIPage() {
       {/* Stock Cards List */}
       {!loading && !error && sortedStocks.length > 0 && (
         <div className="space-y-3">
-          {sortedStocks.map((stock) => (
-            <StockCard key={stock.id} stock={stock} />
+          {sortedStocks.map((stock, index) => (
+            <StockCard 
+              key={stock.id} 
+              stock={stock} 
+              isLocked={index >= 2 && !isAuthenticated}
+            />
           ))}
         </div>
       )}
