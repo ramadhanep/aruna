@@ -80,20 +80,20 @@ export function calculateUpside(currentPrice, targetPrice) {
 export function getStatusBadge(progress) {
   if (progress >= 90) {
     return {
-      label: 'Possible/Sudah Masuk',
+      label: 'Strong Candidate',
       color: 'green',
       variant: 'success'
     };
   }
   if (progress >= 70) {
     return {
-      label: 'Layak Diperhatikan',
+      label: 'Borderline',
       color: 'yellow',
       variant: 'warning'
     };
   }
   return {
-    label: 'Masih Jauh',
+    label: 'Early Stage',
     color: 'red',
     variant: 'danger'
   };
