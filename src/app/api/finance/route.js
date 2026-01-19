@@ -94,9 +94,9 @@ export async function GET(request) {
     if (!logoUrl) {
       if (quoteMeta.market == 'id_market') {
         const idxSymbol = normalizedSymbol.replace(/\.JK$/i, '');
-        logoUrl = `https://assets.stockbit.com/logos/companies/${idxSymbol}.png`;
+        logoUrl = `https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/${idxSymbol}.png`;
       } else if (quoteMeta.market == 'us_market') {
-        logoUrl = `https://image-cdn.pluang.com/icons/light/global-stocks/${normalizedSymbol.toLowerCase()}.svg`;
+        logoUrl = `https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/us/${normalizedSymbol}.svg`;
       }
     }
 
