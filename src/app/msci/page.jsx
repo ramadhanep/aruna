@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Loader2, TrendingUp, AlertTriangle } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Loader2, TrendingUp, AlertTriangle, ArrowUpDown, Check } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import {
   formatMarketCap,
@@ -13,50 +14,121 @@ import {
 } from "@/lib/msci-calculations";
 import { TickerAvatar } from "@/components/ticker-avatar";
 
-function SegmentControl({ value, onChange }) {
+// Color maps for status-based styling
+const statusColorMap = {
+  success: {
+    badge: "bg-emerald-900/20 text-emerald-500 border-emerald-900/30",
+    cardGradient: "from-emerald-950"
+  },
+  warning: {
+    badge: "bg-yellow-900/20 text-yellow-500 border-yellow-900/30",
+    cardGradient: "from-yellow-950"
+  },
+  danger: {
+    badge: "bg-red-900/20 text-red-500 border-red-900/30",
+    cardGradient: "from-red-950"
+  }
+};
+
+function SegmentControl({ value, onChange, sortBy, onSortChange }) {
   return (
     <div className="sticky top-14 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 -mx-4 px-4 py-3 border-b border-border/40">
-      <div className="flex gap-2 p-1 bg-muted/30 rounded-full">
-        <Button
-          type="button"
-          variant="ghost"
-          className={`flex-1 rounded-full text-xs font-semibold transition-all ${
-            value === "standard"
-              ? "bg-emerald-700 hover:bg-emerald-800"
-              : "hover:bg-muted/50"
-          }`}
-          onClick={() => onChange("standard")}
-        >
-          MSCI Global Standard
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          className={`flex-1 rounded-full text-xs font-semibold transition-all ${
-            value === "small_cap"
-              ? "bg-emerald-700 hover:bg-emerald-800"
-              : "hover:bg-muted/50"
-          }`}
-          onClick={() => onChange("small_cap")}
-        >
-          MSCI Global Small Cap
-        </Button>
+      <div className="flex items-center gap-2">
+        <div className="flex-1 flex gap-2 p-1 bg-muted/30 rounded-full">
+          <Button
+            type="button"
+            variant="ghost"
+            className={`flex-1 rounded-full text-xs font-semibold transition-all ${
+              value === "standard"
+                ? "bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80"
+                : "hover:bg-muted/50"
+            }`}
+            onClick={() => onChange("standard")}
+          >
+            MSCI Global Standard
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            className={`flex-1 rounded-full text-xs font-semibold transition-all ${
+              value === "small_cap"
+                ? "bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80"
+                : "hover:bg-muted/50"
+            }`}
+            onClick={() => onChange("small_cap")}
+          >
+            MSCI Global Small Cap
+          </Button>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 p-0 flex-shrink-0"
+              aria-label="Sort stocks"
+            >
+              <ArrowUpDown className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuItem
+              onClick={() => onSortChange('alpha')}
+              className="text-xs flex items-center gap-2"
+            >
+              <Check
+                className={`h-3 w-3 ${sortBy === 'alpha' ? 'opacity-100' : 'opacity-0'}`}
+              />
+              A to Z
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onSortChange('market')}
+              className="text-xs flex items-center gap-2"
+            >
+              <Check
+                className={`h-3 w-3 ${sortBy === 'market' ? 'opacity-100' : 'opacity-0'}`}
+              />
+              Market Value
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onSortChange('strong')}
+              className="text-xs flex items-center gap-2"
+            >
+              <Check
+                className={`h-3 w-3 ${sortBy === 'strong' ? 'opacity-100' : 'opacity-0'}`}
+              />
+              Strong Candidate
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onSortChange('borderline')}
+              className="text-xs flex items-center gap-2"
+            >
+              <Check
+                className={`h-3 w-3 ${sortBy === 'borderline' ? 'opacity-100' : 'opacity-0'}`}
+              />
+              Borderline
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={() => onSortChange('early')}
+              className="text-xs flex items-center gap-2"
+            >
+              <Check
+                className={`h-3 w-3 ${sortBy === 'early' ? 'opacity-100' : 'opacity-0'}`}
+              />
+              Early Stage
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );
 }
 
 function StatusBadge({ status }) {
-  const colorMap = {
-    success: "bg-emerald-600/20 text-emerald-600 border-emerald-600/30",
-    warning: "bg-yellow-600/20 text-yellow-600 border-yellow-600/30",
-    danger: "bg-red-600/20 text-red-600 border-red-600/30",
-  };
-
   return (
     <span
       className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-        colorMap[status.variant] || colorMap.danger
+        statusColorMap[status.variant]?.badge || statusColorMap.danger.badge
       }`}
     >
       {status.label}
@@ -67,9 +139,10 @@ function StatusBadge({ status }) {
 function StockCard({ stock }) {
   const progressPercent = Math.min(stock.progress, 100);
   const isNearInclusion = stock.progress >= 90;
+  const gradientFrom = statusColorMap[stock.status?.variant]?.cardGradient || statusColorMap.danger.cardGradient;
 
   return (
-    <Card className="bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] border-border/20 text-white overflow-hidden">
+    <Card className={`bg-gradient-to-br ${gradientFrom} via-[#111827] to-[#020617] border-border/20 text-white overflow-hidden`}>
       <CardContent className="p-4 space-y-3">
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -119,10 +192,10 @@ function StockCard({ stock }) {
             <div
               className={`h-full rounded-full transition-all ${
                 isNearInclusion
-                  ? "bg-gradient-to-r from-emerald-500 to-emerald-400"
+                  ? "bg-gradient-to-r from-emerald-800 to-emerald-900"
                   : stock.progress >= 70
-                  ? "bg-gradient-to-r from-yellow-500 to-yellow-400"
-                  : "bg-gradient-to-r from-red-500 to-red-400"
+                  ? "bg-gradient-to-r from-yellow-800 to-yellow-900"
+                  : "bg-gradient-to-r from-red-800 to-red-900"
               }`}
               style={{ width: `${progressPercent}%` }}
             />
@@ -152,17 +225,50 @@ function StockCard({ stock }) {
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {[1, 2, 3].map((i) => (
-        <Card key={i} className="bg-gradient-to-br from-muted/30 to-muted/20">
+        <Card key={i} className="bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] border-border/20">
           <CardContent className="p-4 space-y-3">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-3 w-48" />
-            <div className="grid grid-cols-2 gap-3">
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
+            {/* Header with ticker and badge */}
+            <div className="flex items-start justify-between">
+              <div className="flex-1 min-w-0 space-y-1">
+                <Skeleton className="h-4 w-20 bg-white/10" />
+                <Skeleton className="h-3 w-40 bg-white/10" />
+              </div>
+              <Skeleton className="h-10 w-10 rounded-full bg-white/10" />
             </div>
-            <Skeleton className="h-2 w-full" />
+            {/* Price & Market Cap */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <Skeleton className="h-3 w-12 bg-white/10" />
+                <Skeleton className="h-4 w-20 bg-white/10" />
+              </div>
+              <div className="space-y-1">
+                <Skeleton className="h-3 w-16 bg-white/10" />
+                <Skeleton className="h-4 w-16 bg-white/10" />
+              </div>
+            </div>
+            {/* Free Float */}
+            <Skeleton className="h-8 w-full rounded-lg bg-white/10" />
+            {/* Progress Bar */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-3 w-24 bg-white/10" />
+                <Skeleton className="h-3 w-12 bg-white/10" />
+              </div>
+              <Skeleton className="h-2 w-full rounded-full bg-white/10" />
+            </div>
+            {/* Target Price & Upside */}
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/10">
+              <div className="space-y-1">
+                <Skeleton className="h-3 w-16 bg-white/10" />
+                <Skeleton className="h-3 w-20 bg-white/10" />
+              </div>
+              <div className="space-y-1">
+                <Skeleton className="h-3 w-20 bg-white/10" />
+                <Skeleton className="h-3 w-16 bg-white/10" />
+              </div>
+            </div>
           </CardContent>
         </Card>
       ))}
@@ -175,6 +281,7 @@ export default function MSCIPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [sortBy, setSortBy] = useState('strong');
 
   useEffect(() => {
     async function fetchData() {
@@ -198,19 +305,62 @@ export default function MSCIPage() {
     (s) => s.msci_index === selectedIndex
   ) || [];
 
+  // Sort stocks based on selected sort option
+  const sortedStocks = [...filteredStocks].sort((a, b) => {
+    if (sortBy === 'alpha') {
+      // A to Z alphabetically by ticker
+      const tickerA = a.ticker.replace('.JK', '').toLowerCase();
+      const tickerB = b.ticker.replace('.JK', '').toLowerCase();
+      return tickerA.localeCompare(tickerB);
+    } else if (sortBy === 'market') {
+      // Market Value descending
+      return (b.market_cap || 0) - (a.market_cap || 0);
+    } else if (sortBy === 'strong') {
+      // Strong Candidate priority: Strong Candidate > Borderline > Early Stage
+      const order = { 'Strong Candidate': 0, 'Borderline': 1, 'Early Stage': 2 };
+      const orderA = order[a.status?.label] ?? 999;
+      const orderB = order[b.status?.label] ?? 999;
+      if (orderA !== orderB) return orderA - orderB;
+      // Secondary sort by progress descending
+      return (b.progress || 0) - (a.progress || 0);
+    } else if (sortBy === 'borderline') {
+      // Borderline priority: Borderline > Early Stage > Strong Candidate
+      const order = { 'Borderline': 0, 'Early Stage': 1, 'Strong Candidate': 2 };
+      const orderA = order[a.status?.label] ?? 999;
+      const orderB = order[b.status?.label] ?? 999;
+      if (orderA !== orderB) return orderA - orderB;
+      // Secondary sort by progress descending
+      return (b.progress || 0) - (a.progress || 0);
+    } else if (sortBy === 'early') {
+      // Early Stage priority: Early Stage > Borderline > Strong Candidate
+      const order = { 'Early Stage': 0, 'Borderline': 1, 'Strong Candidate': 2 };
+      const orderA = order[a.status?.label] ?? 999;
+      const orderB = order[b.status?.label] ?? 999;
+      if (orderA !== orderB) return orderA - orderB;
+      // Secondary sort by progress descending
+      return (b.progress || 0) - (a.progress || 0);
+    }
+    return 0;
+  });
+
   return (
     <div className="space-y-4 pb-4">
       {/* Info Card */}
       <Card className="border-none bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] text-white shadow-lg p-4">
         <CardContent className="pt-0">
 					<p className="text-xs leading-relaxed text-white/90 font-semibold">
-						Tracking Indonesian KONGLO stocks chasing MSCI Global & Small Cap inclusion.
+						MSCI Global & Small Cap candidates from Indonesia
 					</p>
         </CardContent>
     </Card>
 
       {/* Segment Control */}
-      <SegmentControl value={selectedIndex} onChange={setSelectedIndex} />
+      <SegmentControl 
+        value={selectedIndex} 
+        onChange={setSelectedIndex}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+      />
 
       {/* Error State */}
       {error && (
@@ -229,7 +379,7 @@ export default function MSCIPage() {
       {loading && !error && <LoadingSkeleton />}
 
       {/* Empty State */}
-      {!loading && !error && filteredStocks.length === 0 && (
+      {!loading && !error && sortedStocks.length === 0 && (
         <Card className="bg-muted/20">
           <CardContent className="p-8 text-center">
             <p className="text-sm text-muted-foreground">
@@ -240,9 +390,9 @@ export default function MSCIPage() {
       )}
 
       {/* Stock Cards List */}
-      {!loading && !error && filteredStocks.length > 0 && (
+      {!loading && !error && sortedStocks.length > 0 && (
         <div className="space-y-3">
-          {filteredStocks.map((stock) => (
+          {sortedStocks.map((stock) => (
             <StockCard key={stock.id} stock={stock} />
           ))}
         </div>
