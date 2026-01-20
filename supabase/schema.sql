@@ -177,3 +177,33 @@ create index if not exists msci_stocks_ticker_idx on public.msci_stocks (ticker)
 create index if not exists msci_stocks_index_status_idx on public.msci_stocks (msci_index, msci_status);
 create index if not exists msci_stocks_order_idx on public.msci_stocks ("order");
 create index if not exists msci_snapshot_cache_updated_idx on public.msci_snapshot_cache (last_updated_at desc);
+
+-- Ajaib stock data table (real-time snapshot from Ajaib API)
+create table if not exists public.ajaib_stocks (
+  code text primary key,
+  name text not null,
+  price numeric(15, 2) not null,
+  icon_url text,
+  market_cap numeric(20, 2),
+  volume bigint,
+  price_1_week_price numeric(15, 2),
+  price_1_week_pct_change numeric(8, 4),
+  price_1_week_price_change numeric(15, 2),
+  price_1_month_price numeric(15, 2),
+  price_1_month_pct_change numeric(8, 4),
+  price_1_month_price_change numeric(15, 2),
+  updated_at timestamptz default now()
+);
+
+alter table public.ajaib_stocks enable row level security;
+
+-- Public read access
+create policy "Anyone can view Ajaib stocks" on public.ajaib_stocks
+  for select using (true);
+
+-- Service role can manage (upsert)
+create policy "Service role maintains Ajaib stocks" on public.ajaib_stocks
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+-- Index for performance
+create index if not exists ajaib_stocks_updated_at_idx on public.ajaib_stocks (updated_at desc);

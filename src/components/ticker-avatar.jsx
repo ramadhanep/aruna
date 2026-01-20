@@ -31,7 +31,7 @@ export function TickerAvatar({
               h-full w-full object-cover
               contrast-125
               brightness-80
-              saturate-150
+              saturate-200
             "
           />
           {/* overlay biar makin netral & nyatu sama UI */}

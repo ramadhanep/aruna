@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { encodePayload } from '@/lib/secure-payload';
-import yahooFinance from '@/lib/yahoo-finance';
 import { calculateMSCIMetrics } from '@/lib/msci-calculations';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -11,53 +10,8 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 /**
- * Fetch real-time quote data from Yahoo Finance
- */
-async function fetchYahooQuote(ticker) {
-  try {
-    const quote = await yahooFinance.quote(ticker);
-    return {
-      ticker,
-      price: quote.regularMarketPrice || 0,
-      marketCap: quote.marketCap || 0,
-      success: true,
-    };
-  } catch (error) {
-    console.error(`Failed to fetch quote for ${ticker}:`, error.message);
-    return {
-      ticker,
-      price: 0,
-      marketCap: 0,
-      success: false,
-    };
-  }
-}
-
-/**
- * Fetch quotes for multiple tickers in batches
- */
-async function fetchMultipleQuotes(tickers, batchSize = 10) {
-  const results = [];
-  
-  for (let i = 0; i < tickers.length; i += batchSize) {
-    const batch = tickers.slice(i, i + batchSize);
-    const batchResults = await Promise.all(
-      batch.map(ticker => fetchYahooQuote(ticker))
-    );
-    results.push(...batchResults);
-    
-    // Small delay between batches to be respectful
-    if (i + batchSize < tickers.length) {
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-  }
-  
-  return results;
-}
-
-/**
  * GET /api/msci
- * Fetches MSCI stocks with real-time data and calculations
+ * Fetches MSCI stocks with real-time data from Ajaib API (via ajaib_stocks table)
  */
 export async function GET(request) {
   try {
@@ -104,26 +58,41 @@ export async function GET(request) {
       });
     }
 
-    // Fetch real-time market data from Yahoo Finance
-    const tickers = msciStocks.map(stock => stock.ticker);
-    const quotes = await fetchMultipleQuotes(tickers);
+    // Fetch real-time market data from ajaib_stocks table
+    const tickers = msciStocks.map(stock => stock.ticker.replace('.JK', ''));
     
-    // Create quote map for easy lookup
-    const quoteMap = {};
-    quotes.forEach(q => {
-      quoteMap[q.ticker] = q;
+    const { data: ajaibStocks, error: ajaibError } = await supabase
+      .from('ajaib_stocks')
+      .select('*')
+      .in('code', tickers);
+
+    if (ajaibError) {
+      console.error('Ajaib data fetch error:', ajaibError);
+      return NextResponse.json(
+        { error: 'Failed to fetch market data' },
+        { status: 500 }
+      );
+    }
+
+    // Create map for easy lookup
+    const ajaibMap = {};
+    (ajaibStocks || []).forEach(stock => {
+      ajaibMap[stock.code] = stock;
     });
 
     // Merge data and calculate MSCI metrics
     const enrichedStocks = msciStocks.map(stock => {
-      const quote = quoteMap[stock.ticker] || { price: 0, marketCap: 0 };
-      const idxSymbol = stock.ticker.replace('.JK', '');
+      const code = stock.ticker.replace('.JK', '');
+      const ajaibData = ajaibMap[code] || {};
       
       const stockWithMarketData = {
         ...stock,
-        price: quote.price,
-        market_cap: quote.marketCap,
-        logo_url: `https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/${idxSymbol}.png`,
+        price: ajaibData.price || 0,
+        market_cap: ajaibData.market_cap || 0,
+        volume: ajaibData.volume || 0,
+        logo_url: `https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/${code}.png`,
+        price_1_week: ajaibData.price_1_week_pct_change || 0,
+        price_1_month: ajaibData.price_1_month_pct_change || 0,
       };
 
       const metrics = calculateMSCIMetrics(stockWithMarketData);
@@ -171,11 +140,16 @@ export async function GET(request) {
       small_cap: calculateStats(smallCapStocks),
     };
 
+    // Get last updated time from ajaib_stocks
+    const lastUpdated = ajaibStocks && ajaibStocks.length > 0
+      ? ajaibStocks[0].updated_at
+      : new Date().toISOString();
+
     return NextResponse.json({
         HIDUP_JOKOWI: encodePayload({
             stocks: enrichedStocks,
             summary,
-            lastUpdated: new Date().toISOString(),
+            lastUpdated,
         })
     });
 
