@@ -10,7 +10,7 @@ const APP_SHELL = [
   '/',
   '/?source=pwa',
   '/chart',
-  '/explore',
+  '/idx-bubbles',
   '/watchlist',
   '/msci',
   '/portfolio-tracker',

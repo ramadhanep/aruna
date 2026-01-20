@@ -7,9 +7,9 @@ import { useState } from "react";
 export function TickerAvatar({
   symbol,
   logo,
-  size = "default", // "sm" | "default"
-  sizeClass = size === "sm" ? "h-6 w-6" : "h-7 w-7",
-  textClass = size === "sm" ? "text-[10px]" : "text-[11px]",
+  size = "default", // "xs" | "sm" | "default"
+  sizeClass = size === "xs" ? "h-5 w-5" : size === "sm" ? "h-6 w-6" : "h-7 w-7",
+  textClass = size === "xs" ? "text-[8px]" : size === "sm" ? "text-[10px]" : "text-[11px]",
   className = "",
   backgroundClass = "bg-muted/20",
 }) {

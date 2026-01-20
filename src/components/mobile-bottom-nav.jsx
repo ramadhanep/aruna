@@ -18,7 +18,7 @@ const navItems = [
     icon: AlignHorizontalDistributeCenter,
   },
   {
-    title: "Explore",
+    title: "Home",
     url: "/",
     icon: LayoutGrid,
   },
