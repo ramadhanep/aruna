@@ -207,3 +207,37 @@ create policy "Service role maintains Ajaib stocks" on public.ajaib_stocks
 
 -- Index for performance
 create index if not exists ajaib_stocks_updated_at_idx on public.ajaib_stocks (updated_at desc);
+
+-- Discussion/Chat Messages Table
+create table if not exists public.discussion_messages (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id) on delete cascade,
+  content text not null check (char_length(content) <= 1000),
+  mentions text[] default '{}',
+  reply_to_id uuid references public.discussion_messages (id) on delete set null,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+alter table public.discussion_messages enable row level security;
+
+-- Anyone can view messages
+create policy "Anyone can view discussion messages" on public.discussion_messages
+  for select using (true);
+
+-- Authenticated users can insert their own messages
+create policy "Users can insert their own messages" on public.discussion_messages
+  for insert with check (auth.uid() = user_id);
+
+-- Users can update their own messages
+create policy "Users can update their own messages" on public.discussion_messages
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+-- Users can delete their own messages
+create policy "Users can delete their own messages" on public.discussion_messages
+  for delete using (auth.uid() = user_id);
+
+-- Indexes for performance
+create index if not exists discussion_messages_created_at_idx on public.discussion_messages (created_at desc);
+create index if not exists discussion_messages_user_id_idx on public.discussion_messages (user_id);
+create index if not exists discussion_messages_reply_to_idx on public.discussion_messages (reply_to_id);

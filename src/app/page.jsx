@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock, Download } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock, Download, Droplets, Axe, Magnet, Ghost, MessageCircleMore } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { TrendingMarquee } from "@/components/trending-marquee";
@@ -949,13 +949,50 @@ export default function ExplorePage() {
 
         <TrendingMarquee supabase={supabase} />
 
-        <Card className="mt-4 border-none bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] text-white shadow-lg p-4">
-          <CardContent className="pt-0">
-            <p className="text-xs leading-relaxed text-white/90 font-semibold">
-              We search through historical data looking for anomalous patterns that we would not expect to occur at random.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="mt-4 relative overflow-x-auto overflow-y-hidden py-3 scrollbar-hide">
+          <div className="flex whitespace-nowrap gap-4">
+            <Link href="/idx-bubbles" class="w-24">
+              <div className="flex flex-col items-center gap-2">
+                  <div className="p-1 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                    <Droplets className="w-6 h-6 text-yellow-700" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">Bubbles</span>
+              </div>
+            </Link>
+            <Link href="/idx-momentum" class="w-24">
+              <div className="flex flex-col items-center gap-2">
+                  <div className="p-1 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                    <Axe className="w-6 h-6 text-yellow-700" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">Analysis</span>
+              </div>
+            </Link>
+            <Link href="/msci" class="w-24">
+              <div className="flex flex-col items-center gap-2">
+                  <div className="p-1 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                    <Magnet className="w-6 h-6 text-yellow-700" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">MSCI</span>
+              </div>
+            </Link>
+            <Link href="/discussion" class="w-24">
+              <div className="flex flex-col items-center gap-2">
+                  <div className="p-1 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                    <MessageCircleMore className="w-6 h-6 text-yellow-700" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">Discussion</span>
+              </div>
+            </Link>
+            <Link href="/discussion" class="w-24">
+              <div className="flex flex-col items-center gap-2">
+                  <div className="p-1 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                    <Ghost className="w-6 h-6 text-yellow-700" />
+                  </div>
+                  <span className="text-xs text-muted-foreground">Info A1</span>
+              </div>
+            </Link>
+          </div>
+        </div>
 
         {orderedCategories.map((section) => {
           const gatedPicks = section.picks.slice(5);
