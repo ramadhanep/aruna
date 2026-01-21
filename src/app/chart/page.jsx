@@ -151,9 +151,9 @@ function infoTabToQueryValue(value) {
   return str.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
 }
 
-const EMA_PERIOD = 20;
+const EMA_PERIOD = 31;
 const EMA_COLOR = '#0ea5e9';
-const LIVERMORE_LOOKBACK = 20;
+const LIVERMORE_LOOKBACK = 31;
 const LIVERMORE_UPPER_COLOR = '#f97316';
 const LIVERMORE_LOWER_COLOR = '#6b7380';
 
@@ -277,7 +277,7 @@ function calculateEMA(values = [], period = 13) {
   });
 }
 
-function computeLivermoreKeyLevels(points = [], lookback = 20) {
+function computeLivermoreKeyLevels(points = [], lookback = 31) {
   if (!Array.isArray(points) || points.length === 0) {
     return { upper: [], lower: [], lookup: {} };
   }

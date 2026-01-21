@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Loader2, ArrowLeft, Download } from "lucide-react";
 import { ArunaWatermark } from "./aruna-watermark";
 import { fetchEncodedJson } from "@/lib/api-client";
 
@@ -11,6 +11,12 @@ export function MarketBubbles({ fullScreen = false }) {
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState("weekly");
   const [dimensions, setDimensions] = useState({ width: 400, height: 800 });
+  const [bubblePositions, setBubblePositions] = useState({});
+  const [isDragging, setIsDragging] = useState(false);
+  const dragInfoRef = useRef(null);
+  const svgRef = useRef(null);
+  const containerRef = useRef(null);
+  const initialPositionsRef = useRef({});
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -29,8 +35,10 @@ export function MarketBubbles({ fullScreen = false }) {
     async function fetchStocks() {
       setLoading(true);
       try {
-        const { data } = await fetchEncodedJson("/api/bubbles");
+        const { data } = await fetchEncodedJson(`/api/bubbles?timeframe=${timeframe}`);
         setStocks(data?.stocks || []);
+        setBubblePositions({});
+        initialPositionsRef.current = {};
       } catch (error) {
         console.error("Failed to fetch stocks:", error);
       } finally {
@@ -39,7 +47,7 @@ export function MarketBubbles({ fullScreen = false }) {
     }
 
     fetchStocks();
-  }, []);
+  }, [timeframe]);
 
   const bubbles = useMemo(() => {
     if (!stocks.length) return [];
@@ -62,72 +70,62 @@ export function MarketBubbles({ fullScreen = false }) {
       })
       .filter(Boolean);
 
-    // Sort by market cap for size assignment
-    const sorted = [...filtered].sort((a, b) => b.marketCap - a.marketCap);
-
-    // Assign sizes based on ranking (larger market cap = larger bubble)
-    const minSize = 28;
-    const maxSize = 85;
-    const totalBubbles = sorted.length;
-
-    return sorted.map((stock, index) => {
-      // Exponential decay for size - top stocks get much bigger bubbles
-      const ratio = 1 - index / totalBubbles;
-      const size = minSize + Math.pow(ratio, 0.6) * (maxSize - minSize);
+    const sorted = [...filtered].sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
+    const maxChange = Math.max(...sorted.map(s => Math.abs(s.change)));
+    const minSize = 24;
+    
+    return sorted.map((stock) => {
+      const changeRatio = Math.abs(stock.change) / maxChange;
+      const size = minSize + Math.pow(changeRatio, 0.5) * (dimensions.width * 0.12);
 
       return {
         ...stock,
         size,
       };
     });
-  }, [stocks, timeframe]);
+  }, [stocks, timeframe, dimensions.width]);
 
-  // Physics-based bubble packing with organic movement
   const packedBubbles = useMemo(() => {
     if (!bubbles.length) return [];
 
     const containerWidth = dimensions.width;
     const containerHeight = dimensions.height;
-    const headerHeight = 55;
-    const padding = 1.5;
+    const headerHeight = 56;
+    const watermarkHeight = 50;
+    const padding = 2;
 
-    // Initialize bubbles with positions using spiral placement
     const packed = bubbles.map((bubble, i) => {
       const angle = i * 0.5;
-      const radius = 15 + i * 2;
+      const radius = 15 + i * 2.5;
       const centerX = containerWidth / 2;
-      const centerY = (containerHeight + headerHeight) / 2;
+      const centerY = (containerHeight + headerHeight) / 2 - 20;
 
       return {
         ...bubble,
-        x: centerX + Math.cos(angle) * Math.min(radius, containerWidth * 0.3),
-        y: centerY + Math.sin(angle) * Math.min(radius, containerHeight * 0.25),
+        x: centerX + Math.cos(angle) * Math.min(radius, containerWidth * 0.35),
+        y: centerY + Math.sin(angle) * Math.min(radius, containerHeight * 0.3),
         vx: 0,
         vy: 0,
       };
     });
 
-    // Force-directed simulation for tight packing
-    const iterations = 150;
+    const iterations = 180;
     const centerX = containerWidth / 2;
-    const centerY = (containerHeight + headerHeight) / 2;
+    const centerY = (containerHeight + headerHeight) / 2 - 20;
 
     for (let iter = 0; iter < iterations; iter++) {
       const alpha = 1 - iter / iterations;
 
       for (let i = 0; i < packed.length; i++) {
         const bubble = packed[i];
-
-        // Center gravity
         const dx = centerX - bubble.x;
         const dy = centerY - bubble.y;
         const dist = Math.sqrt(dx * dx + dy * dy);
         if (dist > 0) {
-          bubble.vx += (dx / dist) * 0.8 * alpha;
-          bubble.vy += (dy / dist) * 0.8 * alpha;
+          bubble.vx += (dx / dist) * 1.0 * alpha;
+          bubble.vy += (dy / dist) * 1.0 * alpha;
         }
 
-        // Collision separation
         for (let j = i + 1; j < packed.length; j++) {
           const other = packed[j];
           const ddx = other.x - bubble.x;
@@ -147,35 +145,229 @@ export function MarketBubbles({ fullScreen = false }) {
           }
         }
 
-        // Boundary constraints
-        const margin = bubble.size / 2 + 5;
-        if (bubble.x < margin) bubble.vx += (margin - bubble.x) * 0.1;
-        if (bubble.x > containerWidth - margin) bubble.vx += (containerWidth - margin - bubble.x) * 0.1;
-        if (bubble.y < headerHeight + margin) bubble.vy += (headerHeight + margin - bubble.y) * 0.1;
-        if (bubble.y > containerHeight - margin) bubble.vy += (containerHeight - margin - bubble.y) * 0.1;
+        const margin = bubble.size / 2 + 3;
+        if (bubble.x < margin) bubble.vx += (margin - bubble.x) * 0.15;
+        if (bubble.x > containerWidth - margin) bubble.vx += (containerWidth - margin - bubble.x) * 0.15;
+        if (bubble.y < headerHeight + margin) bubble.vy += (headerHeight + margin - bubble.y) * 0.15;
+        
+        const watermarkX = containerWidth - 120;
+        const watermarkY = containerHeight - watermarkHeight;
+        if (bubble.x > watermarkX - margin && bubble.y > watermarkY - margin) {
+          bubble.vx -= 0.5;
+          bubble.vy -= 0.5;
+        }
+        
+        if (bubble.y > containerHeight - margin) bubble.vy += (containerHeight - margin - bubble.y) * 0.15;
       }
 
-      // Apply velocities with damping
       for (const bubble of packed) {
-        bubble.x += bubble.vx * 0.3;
-        bubble.y += bubble.vy * 0.3;
-        bubble.vx *= 0.85;
-        bubble.vy *= 0.85;
+        bubble.x += bubble.vx * 0.35;
+        bubble.y += bubble.vy * 0.35;
+        bubble.vx *= 0.82;
+        bubble.vy *= 0.82;
 
-        // Hard boundary clamp
         const margin = bubble.size / 2 + 2;
         bubble.x = Math.max(margin, Math.min(containerWidth - margin, bubble.x));
         bubble.y = Math.max(headerHeight + margin, Math.min(containerHeight - margin, bubble.y));
       }
     }
 
-    // Add animation properties
-    return packed.map((bubble, i) => ({
-      ...bubble,
-      animDelay: Math.random() * 3,
-      animDuration: 4 + Math.random() * 2,
-    }));
-  }, [bubbles, dimensions]);
+    const result = packed.map((bubble) => {
+      const storedPos = bubblePositions[bubble.code];
+      const finalX = storedPos?.x ?? bubble.x;
+      const finalY = storedPos?.y ?? bubble.y;
+      
+      if (!initialPositionsRef.current[bubble.code]) {
+        initialPositionsRef.current[bubble.code] = { x: bubble.x, y: bubble.y };
+      }
+      
+      return {
+        ...bubble,
+        x: finalX,
+        y: finalY,
+        animDelay: Math.random() * 3,
+        animDuration: 4 + Math.random() * 2,
+      };
+    });
+
+    return result;
+  }, [bubbles, dimensions, bubblePositions]);
+
+  const getDistance = (x1, y1, x2, y2) => {
+    return Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
+  };
+
+  const handlePointerDown = (e, bubble) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+    
+    const svg = svgRef.current;
+    if (!svg) return;
+    
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX ?? e.touches?.[0]?.clientX;
+    pt.y = e.clientY ?? e.touches?.[0]?.clientY;
+    const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+    
+    dragInfoRef.current = {
+      code: bubble.code,
+      startX: svgP.x,
+      startY: svgP.y,
+      bubbleStartX: bubble.x,
+      bubbleStartY: bubble.y,
+    };
+  };
+
+  const handlePointerMove = useCallback((e) => {
+    if (!isDragging || !dragInfoRef.current) return;
+    e.preventDefault();
+    
+    const svg = svgRef.current;
+    if (!svg) return;
+    
+    const clientX = e.clientX ?? e.touches?.[0]?.clientX;
+    const clientY = e.clientY ?? e.touches?.[0]?.clientY;
+    
+    if (clientX === undefined || clientY === undefined) return;
+    
+    const pt = svg.createSVGPoint();
+    pt.x = clientX;
+    pt.y = clientY;
+    const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+    
+    const deltaX = svgP.x - dragInfoRef.current.startX;
+    const deltaY = svgP.y - dragInfoRef.current.startY;
+    
+    const newX = dragInfoRef.current.bubbleStartX + deltaX;
+    const newY = dragInfoRef.current.bubbleStartY + deltaY;
+    
+    setBubblePositions(prev => {
+      const newPositions = { ...prev };
+      const draggedCode = dragInfoRef.current.code;
+      
+      newPositions[draggedCode] = { x: newX, y: newY };
+      
+      const draggedBubble = packedBubbles.find(b => b.code === draggedCode);
+      if (!draggedBubble) return newPositions;
+      
+      packedBubbles.forEach(bubble => {
+        if (bubble.code === draggedCode) return;
+        
+        const currentX = newPositions[bubble.code]?.x ?? bubble.x;
+        const currentY = newPositions[bubble.code]?.y ?? bubble.y;
+        
+        const dist = getDistance(newX, newY, currentX, currentY);
+        const minDist = (draggedBubble.size + bubble.size) / 2 + 5;
+        const influenceRadius = minDist * 2.5;
+        
+        if (dist < influenceRadius && dist > 0) {
+          const pushStrength = Math.pow(1 - dist / influenceRadius, 2) * 0.4;
+          const angle = Math.atan2(currentY - newY, currentX - newX);
+          
+          const pushX = Math.cos(angle) * pushStrength * (minDist - dist + 20);
+          const pushY = Math.sin(angle) * pushStrength * (minDist - dist + 20);
+          
+          const margin = bubble.size / 2 + 2;
+          const headerHeight = 56;
+          
+          let finalX = currentX + pushX;
+          let finalY = currentY + pushY;
+          
+          finalX = Math.max(margin, Math.min(dimensions.width - margin, finalX));
+          finalY = Math.max(headerHeight + margin, Math.min(dimensions.height - margin, finalY));
+          
+          newPositions[bubble.code] = { x: finalX, y: finalY };
+        }
+      });
+      
+      return newPositions;
+    });
+  }, [isDragging, packedBubbles, dimensions]);
+
+  const handlePointerUp = useCallback(() => {
+    setIsDragging(false);
+    dragInfoRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      const options = { passive: false };
+      window.addEventListener('pointermove', handlePointerMove, options);
+      window.addEventListener('pointerup', handlePointerUp);
+      window.addEventListener('touchmove', handlePointerMove, options);
+      window.addEventListener('touchend', handlePointerUp);
+      
+      return () => {
+        window.removeEventListener('pointermove', handlePointerMove);
+        window.removeEventListener('pointerup', handlePointerUp);
+        window.removeEventListener('touchmove', handlePointerMove);
+        window.removeEventListener('touchend', handlePointerUp);
+      };
+    }
+  }, [isDragging, handlePointerMove, handlePointerUp]);
+
+  const handleDownload = async () => {
+    const svg = svgRef.current;
+    if (!svg) return;
+
+    try {
+      const svgClone = svg.cloneNode(true);
+      
+      const images = svgClone.querySelectorAll('image');
+      await Promise.all(Array.from(images).map(async (img) => {
+        try {
+          const href = img.getAttribute('href');
+          if (href && href.startsWith('http')) {
+            const response = await fetch(href);
+            const blob = await response.blob();
+            const reader = new FileReader();
+            await new Promise((resolve) => {
+              reader.onload = () => {
+                img.setAttribute('href', reader.result);
+                resolve();
+              };
+              reader.readAsDataURL(blob);
+            });
+          }
+        } catch (e) {
+          img.style.display = 'none';
+        }
+      }));
+
+      const serializer = new XMLSerializer();
+      let svgString = serializer.serializeToString(svgClone);
+      svgString = '<?xml version="1.0" encoding="UTF-8"?>' + svgString;
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = dimensions.width * 2;
+      canvas.height = dimensions.height * 2;
+
+      ctx.fillStyle = '#09090b';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      const img = new Image();
+      const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(svgBlob);
+
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = url;
+      });
+
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+
+      const link = document.createElement('a');
+      link.download = `aruna-bubbles-${timeframe}-${new Date().toISOString().split('T')[0]}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (error) {
+      console.error('Failed to download image:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -187,16 +379,15 @@ export function MarketBubbles({ fullScreen = false }) {
 
   if (fullScreen) {
     return (
-      <div className="w-full h-screen flex flex-col overflow-hidden">
-        {/* Header */}
-        <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3">
-          <Link href="/" className="flex items-center gap-2">
+      <div className="w-full h-screen flex flex-col overflow-hidden" ref={containerRef}>
+        <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 gap-2">
+          <Link href="/" className="flex items-center gap-2 shrink-0">
             <div className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
               <ArrowLeft className="size-6 text-muted-foreground" />
             </div>
           </Link>
 
-          <div className="flex-1 flex gap-2 p-1 bg-muted/30 rounded-full">
+          <div className="flex-1 flex gap-2 p-1 bg-muted/30 rounded-full max-w-[200px]">
             <button
               onClick={() => setTimeframe("weekly")}
               className={`py-2 flex-1 rounded-full text-xs font-semibold transition-all ${
@@ -218,17 +409,26 @@ export function MarketBubbles({ fullScreen = false }) {
               Monthly
             </button>
           </div>
+
+          <button
+            onClick={handleDownload}
+            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors shrink-0"
+            title="Download as image"
+          >
+            <Download className="size-6 text-muted-foreground" />
+          </button>
         </div>
 
-        {/* Bubbles */}
-        <div className="relative w-full h-full overflow-hidden">
+        <div className="relative w-full h-full overflow-hidden touch-none">
           <svg
+            ref={svgRef}
             className="w-full h-full"
             viewBox={`0 0 ${dimensions.width} ${dimensions.height}`}
             preserveAspectRatio="xMidYMid slice"
           >
+            <rect x="0" y="0" width={dimensions.width} height={dimensions.height} fill="#09090b" />
+            
             <defs>
-              {/* Gradient definitions for positive/negative */}
               <radialGradient id="glow-positive" cx="50%" cy="50%" r="50%">
                 <stop offset="0%" stopColor="#10b981" stopOpacity="0.4" />
                 <stop offset="50%" stopColor="#10b981" stopOpacity="0.15" />
@@ -240,7 +440,6 @@ export function MarketBubbles({ fullScreen = false }) {
                 <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
               </radialGradient>
               
-              {/* Inner gradient fills */}
               <radialGradient id="fill-positive" cx="30%" cy="30%" r="70%">
                 <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
                 <stop offset="60%" stopColor="#059669" stopOpacity="0.1" />
@@ -252,7 +451,6 @@ export function MarketBubbles({ fullScreen = false }) {
                 <stop offset="100%" stopColor="#b91c1c" stopOpacity="0.02" />
               </radialGradient>
 
-              {/* Stroke gradients */}
               <linearGradient id="stroke-positive" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#34d399" stopOpacity="1" />
                 <stop offset="50%" stopColor="#10b981" stopOpacity="0.8" />
@@ -268,36 +466,39 @@ export function MarketBubbles({ fullScreen = false }) {
             {packedBubbles.map((bubble, index) => {
               const isPositive = bubble.change >= 0;
               const radius = bubble.size / 2;
-              const strokeWidth = Math.max(1.5, radius * 0.06);
+              const strokeWidth = Math.max(0.8, radius * 0.03);
 
-              // Dynamic sizing based on bubble size
-              const showLogo = radius > 18;
-              const showCode = radius > 14;
-              const showPercent = radius > 16;
+              const showLogo = radius > 16;
+              const showCode = radius > 12;
+              const showPercent = radius > 14;
 
-              // Responsive text and logo sizes
-              const logoSize = Math.min(radius * 0.5, 24);
-              const codeFontSize = Math.max(7, Math.min(radius * 0.22, 11));
-              const percentFontSize = Math.max(6, Math.min(radius * 0.18, 9));
+              const logoSize = Math.min(radius * 0.55, 32);
+              const codeFontSize = Math.max(6, Math.min(radius * 0.24, 14));
+              const percentFontSize = Math.max(5, Math.min(radius * 0.20, 12));
 
-              // Positions
               const logoY = bubble.y - radius * 0.25;
               const codeY = bubble.y + radius * 0.15;
-              const percentY = bubble.y + radius * 0.42;
+              const percentY = bubble.y + radius * 0.45;
 
               const glowId = isPositive ? "glow-positive" : "glow-negative";
               const fillId = isPositive ? "fill-positive" : "fill-negative";
               const strokeId = isPositive ? "stroke-positive" : "stroke-negative";
 
+              const isBeingDragged = isDragging && dragInfoRef.current?.code === bubble.code;
+
               return (
                 <g 
                   key={bubble.code}
                   style={{
-                    animation: `bubble-float-${index % 5} ${bubble.animDuration}s ease-in-out infinite`,
+                    animation: isBeingDragged 
+                      ? 'none' 
+                      : `bubble-float-${index % 5} ${bubble.animDuration}s ease-in-out infinite`,
                     animationDelay: `${bubble.animDelay}s`,
+                    cursor: 'grab',
+                    touchAction: 'none',
+                    transition: isBeingDragged ? 'none' : 'transform 0.1s ease-out',
                   }}
                 >
-                  {/* Outer glow */}
                   <circle
                     cx={bubble.x}
                     cy={bubble.y}
@@ -306,7 +507,6 @@ export function MarketBubbles({ fullScreen = false }) {
                     className="pointer-events-none"
                   />
 
-                  {/* Main bubble */}
                   <circle
                     cx={bubble.x}
                     cy={bubble.y}
@@ -314,15 +514,16 @@ export function MarketBubbles({ fullScreen = false }) {
                     fill={`url(#${fillId})`}
                     stroke={`url(#${strokeId})`}
                     strokeWidth={strokeWidth}
-                    className="cursor-pointer"
+                    className="cursor-grab active:cursor-grabbing"
                     style={{
                       filter: `drop-shadow(0 0 ${strokeWidth * 3}px ${isPositive ? '#10b98155' : '#ef444455'})`,
                     }}
+                    onPointerDown={(e) => handlePointerDown(e, bubble)}
+                    onTouchStart={(e) => handlePointerDown(e, bubble)}
                   >
                     <title>{`${bubble.name}\n${bubble.change > 0 ? "+" : ""}${bubble.change.toFixed(2)}%`}</title>
                   </circle>
 
-                  {/* Logo */}
                   {showLogo && (
                     <image
                       href={`https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/${bubble.code}.png`}
@@ -339,7 +540,6 @@ export function MarketBubbles({ fullScreen = false }) {
                     />
                   )}
 
-                  {/* Stock Code */}
                   {showCode && (
                     <text
                       x={bubble.x}
@@ -355,7 +555,6 @@ export function MarketBubbles({ fullScreen = false }) {
                     </text>
                   )}
 
-                  {/* Percentage */}
                   {showPercent && (
                     <text
                       x={bubble.x}
@@ -373,12 +572,21 @@ export function MarketBubbles({ fullScreen = false }) {
                 </g>
               );
             })}
+
+            <g transform={`translate(${dimensions.width - 100}, ${dimensions.height - 35})`}>
+              <text
+                fill="rgba(255,255,255,0.25)"
+                fontSize="16"
+                fontWeight="bold"
+                fontFamily="system-ui, sans-serif"
+              >
+                aruna
+              </text>
+            </g>
           </svg>
 
-          {/* Watermark */}
-          <ArunaWatermark className="absolute inset-0 flex items-end justify-start bottom-10 left-4" />
+          <ArunaWatermark className="absolute bottom-4 right-4" />
 
-          {/* CSS Animation Keyframes */}
           <style jsx global>{`
             @keyframes bubble-float-0 {
               0%, 100% { transform: translate(0, 0); }
@@ -417,6 +625,5 @@ export function MarketBubbles({ fullScreen = false }) {
     );
   }
 
-  // Non-fullscreen version (for home page preview - not used anymore)
   return null;
 }
