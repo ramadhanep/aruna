@@ -953,7 +953,7 @@ export default function ExplorePage() {
           <div className="flex whitespace-nowrap gap-4">
             <Link href="/idx-momentum" className="w-24">
               <div className="flex flex-col items-center gap-2">
-                  <div className="p-1 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                  <div className="p-2 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
                     <Axe className="w-6 h-6 text-yellow-700" />
                   </div>
                   <span className="text-xs text-muted-foreground">Momentum</span>
@@ -961,7 +961,7 @@ export default function ExplorePage() {
             </Link>
             <Link href="/idx-bubbles" className="w-24">
               <div className="flex flex-col items-center gap-2">
-                  <div className="p-1 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                  <div className="p-2 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
                     <Droplets className="w-6 h-6 text-yellow-700" />
                   </div>
                   <span className="text-xs text-muted-foreground">Bubbles</span>
@@ -969,7 +969,7 @@ export default function ExplorePage() {
             </Link>
             <Link href="/idx-rotation" className="w-24">
               <div className="flex flex-col items-center gap-2">
-                  <div className="p-1 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                  <div className="p-2 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
                     <Rotate3D className="w-6 h-6 text-yellow-700" />
                   </div>
                   <span className="text-xs text-muted-foreground">Rotation</span>
@@ -977,7 +977,7 @@ export default function ExplorePage() {
             </Link>
             <Link href="/msci" className="w-24">
               <div className="flex flex-col items-center gap-2">
-                  <div className="p-1 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                  <div className="p-2 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
                     <Magnet className="w-6 h-6 text-yellow-700" />
                   </div>
                   <span className="text-xs text-muted-foreground">MSCI</span>
@@ -985,7 +985,7 @@ export default function ExplorePage() {
             </Link>
             <Link href="/discussion" className="w-24">
               <div className="flex flex-col items-center gap-2">
-                  <div className="p-1 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                  <div className="p-2 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
                     <MessageCircleMore className="w-6 h-6 text-yellow-700" />
                   </div>
                   <span className="text-xs text-muted-foreground">Discussion</span>

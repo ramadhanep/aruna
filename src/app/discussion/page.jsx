@@ -83,6 +83,17 @@ function MessageBubble({ message, isOwn, onDelete, currentUserId }) {
     router.push(`/chart?symbol=${encodeURIComponent(symbol)}`);
   };
 
+  // System messages have different styling (centered, italic, no bubble)
+  if (message.isSystem) {
+    return (
+      <div className="flex justify-center py-1">
+        <p className="text-[10px] italic text-white/40 text-center">
+          {message.content}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div 
       className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group`}
@@ -362,6 +373,7 @@ export default function DiscussionPage() {
         content: data.content,
         mentions: data.mentions || [],
         replyToId: data.reply_to_id,
+        isSystem: data.is_system || false,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
         userId: data.user_id,
@@ -419,7 +431,7 @@ export default function DiscussionPage() {
 
       {/* Messages area */}
       <div className="flex-1 overflow-y-auto px-3 py-3" style={{ minHeight: 0 }}>
-        {loading ? (
+        {messagesLoading ? (
           <div className="flex justify-center py-8">
             <Loader2 className="w-5 h-5 animate-spin text-white/50" />
           </div>

@@ -485,7 +485,7 @@ export default function HomePage() {
 
       <TrendingMarquee supabase={supabase} />
 
-      <Card className="mt-4 border-none bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80 shadow-lg p-4">
+      <Card className="mt-4 border-none bg-gradient-to-br from-amber-950 via-[#111827] to-[#020617] border-border/20 text-white/80 shadow-lg p-4">
         <CardContent className="pt-0">
           <p className="text-xs leading-relaxed text-white/90 font-semibold">
             We search through historical data looking for anomalous patterns that we would not expect to occur at random.

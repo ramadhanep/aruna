@@ -98,9 +98,32 @@ export function AuthProvider({ children }) {
     };
 
     try {
+      // Check if profile exists
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      const isNewUser = !existingProfile;
+
+      // Upsert profile
       await supabase.from("profiles").upsert(profileData, {
         onConflict: "id",
       });
+
+      // If new user, post welcome message to discussion
+      if (isNewUser) {
+        const userName = profileData.full_name || profileData.email?.split('@')[0] || 'Someone';
+        
+        await supabase
+          .from("discussion_messages")
+          .insert({
+            user_id: user.id,
+            content: `${userName} bergabung dengan Aruna 🎉`,
+            is_system: true,
+          });
+      }
     } catch (error) {
       console.warn("Failed to upsert profile", error);
     }

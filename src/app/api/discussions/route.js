@@ -92,6 +92,7 @@ export async function GET(request) {
         content: msg.content,
         mentions: msg.mentions || [],
         replyToId: msg.reply_to_id,
+        isSystem: msg.is_system || false,
         createdAt: msg.created_at,
         updatedAt: msg.updated_at,
         userId: msg.user_id,

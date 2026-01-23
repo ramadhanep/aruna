@@ -208,6 +208,62 @@ create policy "Service role maintains Ajaib stocks" on public.ajaib_stocks
 -- Index for performance
 create index if not exists ajaib_stocks_updated_at_idx on public.ajaib_stocks (updated_at desc);
 
+-- Bibit stock data table (real-time snapshot from Bibit API)
+create table if not exists public.bibit_stocks (
+  id integer primary key,
+  symbol text unique not null,
+  name text not null,
+  price numeric(15, 2) not null,
+  change numeric(15, 2),
+  percent numeric(8, 4),
+  price_updated_at timestamptz,
+  status text,
+  type text,
+  sub_sector text,
+  is_acceleration boolean,
+  is_buyable boolean,
+  is_sellable boolean,
+  is_stock_e_ipo boolean,
+  is_sharia integer,
+  ipo_date date,
+  market_hours_status text,
+  corp_action_active boolean,
+  corp_action_type text,
+  corp_action_info jsonb,
+  key_stats_open numeric(15, 2),
+  key_stats_high numeric(15, 2),
+  key_stats_low numeric(15, 2),
+  key_stats_pe_annualised text,
+  key_stats_pe_ttm text,
+  key_stats_dividend_ttm text,
+  key_stats_volume text,
+  key_stats_avg_volume text,
+  key_stats_market_cap text,
+  key_stats_pbv_ratio text,
+  key_stats_dividend_yield text,
+  key_stats_net_profit_margin text,
+  key_stats_debt_to_equity text,
+  key_stats_total_debt text,
+  key_stats_total_cash text,
+  company_background text,
+  icon_url text,
+  updated_at timestamptz default now()
+);
+
+alter table public.bibit_stocks enable row level security;
+
+-- Public read access
+create policy "Anyone can view Bibit stocks" on public.bibit_stocks
+  for select using (true);
+
+-- Service role can manage (upsert)
+create policy "Service role maintains Bibit stocks" on public.bibit_stocks
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+-- Index for performance
+create index if not exists bibit_stocks_symbol_idx on public.bibit_stocks (symbol);
+create index if not exists bibit_stocks_updated_at_idx on public.bibit_stocks (updated_at desc);
+
 -- Discussion/Chat Messages Table
 create table if not exists public.discussion_messages (
   id uuid primary key default gen_random_uuid(),
@@ -215,6 +271,7 @@ create table if not exists public.discussion_messages (
   content text not null check (char_length(content) <= 1000),
   mentions text[] default '{}',
   reply_to_id uuid references public.discussion_messages (id) on delete set null,
+  is_system boolean default false,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );

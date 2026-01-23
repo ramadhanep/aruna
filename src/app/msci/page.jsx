@@ -357,10 +357,10 @@ export default function MSCIPage() {
   return (
     <div className="space-y-4 pb-4">
       {/* Info Card */}
-      <Card className="border-none bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] text-white shadow-lg p-4">
+      <Card className="border-none bg-gradient-to-br from-emerald-950 via-[#111827] to-[#020617] text-white shadow-lg p-4">
         <CardContent className="pt-0">
 					<p className="text-xs leading-relaxed text-white/90 font-semibold">
-						MSCI Global & Small Cap candidates from Indonesia
+						Indonesia MSCI Global & Small Cap candidate stocks. Updated automatically every day at 18:00 WIB.
 					</p>
         </CardContent>
     </Card>
