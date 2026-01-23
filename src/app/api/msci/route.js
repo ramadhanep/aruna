@@ -11,7 +11,7 @@ export const revalidate = 0;
 
 /**
  * GET /api/msci
- * Fetches MSCI stocks with real-time data from Ajaib API (via ajaib_stocks table)
+ * Fetches MSCI stocks with real-time data from Bibit API (via bibit_stocks table)
  */
 export async function GET(request) {
   try {
@@ -58,16 +58,16 @@ export async function GET(request) {
       });
     }
 
-    // Fetch real-time market data from ajaib_stocks table
-    const tickers = msciStocks.map(stock => stock.ticker.replace('.JK', ''));
+    // Fetch real-time market data from bibit_stocks table
+    const symbols = msciStocks.map(stock => stock.ticker.replace('.JK', ''));
     
-    const { data: ajaibStocks, error: ajaibError } = await supabase
-      .from('ajaib_stocks')
+    const { data: bibitStocks, error: bibitError } = await supabase
+      .from('bibit_stocks')
       .select('*')
-      .in('code', tickers);
+      .in('symbol', symbols);
 
-    if (ajaibError) {
-      console.error('Ajaib data fetch error:', ajaibError);
+    if (bibitError) {
+      console.error('Bibit data fetch error:', bibitError);
       return NextResponse.json(
         { error: 'Failed to fetch market data' },
         { status: 500 }
@@ -75,24 +75,43 @@ export async function GET(request) {
     }
 
     // Create map for easy lookup
-    const ajaibMap = {};
-    (ajaibStocks || []).forEach(stock => {
-      ajaibMap[stock.code] = stock;
+    const bibitMap = {};
+    (bibitStocks || []).forEach(stock => {
+      bibitMap[stock.symbol] = stock;
     });
+
+    // Helper function to parse market cap string from Bibit (e.g. "92,540 B" -> number in billions)
+    const parseMarketCap = (mcapString) => {
+      if (!mcapString) return 0;
+      
+      // Remove commas and split by space
+      const parts = mcapString.replace(/,/g, '').trim().split(' ');
+      if (parts.length !== 2) return 0;
+      
+      const value = parseFloat(parts[0]);
+      const unit = parts[1].toUpperCase();
+      
+      // Convert to consistent unit (assume in Rupiah billions)
+      if (unit === 'B') return value * 1000000000; // Billions to actual number
+      if (unit === 'T') return value * 1000000000000; // Trillions to actual number
+      if (unit === 'M') return value * 1000000; // Millions to actual number
+      
+      return value;
+    };
 
     // Merge data and calculate MSCI metrics
     const enrichedStocks = msciStocks.map(stock => {
-      const code = stock.ticker.replace('.JK', '');
-      const ajaibData = ajaibMap[code] || {};
+      const symbol = stock.ticker.replace('.JK', '');
+      const bibitData = bibitMap[symbol] || {};
       
       const stockWithMarketData = {
         ...stock,
-        price: ajaibData.price || 0,
-        market_cap: ajaibData.market_cap || 0,
-        volume: ajaibData.volume || 0,
-        logo_url: `https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/${code}.png`,
-        price_1_week: ajaibData.price_1_week_pct_change || 0,
-        price_1_month: ajaibData.price_1_month_pct_change || 0,
+        price: bibitData.price || 0,
+        market_cap: parseMarketCap(bibitData.key_stats_market_cap),
+        volume: bibitData.key_stats_volume || 0,
+        logo_url: bibitData.icon_url || `https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/${symbol}.png`,
+        price_1_week: 0, // Bibit doesn't provide this, set to 0
+        price_1_month: 0, // Bibit doesn't provide this, set to 0
       };
 
       const metrics = calculateMSCIMetrics(stockWithMarketData);
@@ -140,9 +159,9 @@ export async function GET(request) {
       small_cap: calculateStats(smallCapStocks),
     };
 
-    // Get last updated time from ajaib_stocks
-    const lastUpdated = ajaibStocks && ajaibStocks.length > 0
-      ? ajaibStocks[0].updated_at
+    // Get last updated time from bibit_stocks
+    const lastUpdated = bibitStocks && bibitStocks.length > 0
+      ? bibitStocks[0].updated_at
       : new Date().toISOString();
 
     return NextResponse.json({
