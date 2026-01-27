@@ -109,7 +109,7 @@ export async function GET(request) {
         price: bibitData.price || 0,
         market_cap: parseMarketCap(bibitData.key_stats_market_cap),
         volume: bibitData.key_stats_volume || 0,
-        logo_url: bibitData.icon_url || `https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/${symbol}.png`,
+        logo_url: `https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/${symbol}.png` || bibitData.icon_url,
         price_1_week: 0, // Bibit doesn't provide this, set to 0
         price_1_month: 0, // Bibit doesn't provide this, set to 0
       };

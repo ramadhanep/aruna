@@ -572,17 +572,6 @@ export function MarketBubbles({ fullScreen = false }) {
                 </g>
               );
             })}
-
-            <g transform={`translate(${dimensions.width - 100}, ${dimensions.height - 35})`}>
-              <text
-                fill="rgba(255,255,255,0.25)"
-                fontSize="16"
-                fontWeight="bold"
-                fontFamily="system-ui, sans-serif"
-              >
-                aruna
-              </text>
-            </g>
           </svg>
 
           <ArunaWatermark className="absolute bottom-4 right-4" />

@@ -950,43 +950,43 @@ export default function ExplorePage() {
         <TrendingMarquee supabase={supabase} />
 
         <div className="mt-4 relative overflow-x-auto overflow-y-hidden py-3 scrollbar-hide">
-          <div className="flex whitespace-nowrap gap-4">
+          <div className="flex justify-center whitespace-nowrap gap-4">
             <Link href="/idx-momentum" className="w-24">
               <div className="flex flex-col items-center gap-2">
-                  <div className="p-2 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
-                    <Axe className="w-6 h-6 text-yellow-700" />
+                  <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                    <Axe className="w-6 h-6 text-rose-300" />
                   </div>
                   <span className="text-xs text-muted-foreground">Momentum</span>
               </div>
             </Link>
             <Link href="/idx-bubbles" className="w-24">
               <div className="flex flex-col items-center gap-2">
-                  <div className="p-2 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
-                    <Droplets className="w-6 h-6 text-yellow-700" />
+                  <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                    <Droplets className="w-6 h-6 text-indigo-300" />
                   </div>
                   <span className="text-xs text-muted-foreground">Bubbles</span>
               </div>
             </Link>
             <Link href="/idx-rotation" className="w-24">
               <div className="flex flex-col items-center gap-2">
-                  <div className="p-2 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
-                    <Rotate3D className="w-6 h-6 text-yellow-700" />
+                  <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                    <Rotate3D className="w-6 h-6 text-gray-400" />
                   </div>
                   <span className="text-xs text-muted-foreground">Rotation</span>
               </div>
             </Link>
             <Link href="/msci" className="w-24">
               <div className="flex flex-col items-center gap-2">
-                  <div className="p-2 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
-                    <Magnet className="w-6 h-6 text-yellow-700" />
+                  <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                    <Magnet className="w-6 h-6 text-green-400" />
                   </div>
                   <span className="text-xs text-muted-foreground">MSCI</span>
               </div>
             </Link>
             <Link href="/discussion" className="w-24">
               <div className="flex flex-col items-center gap-2">
-                  <div className="p-2 rounded-full bg-gradient-to-br from-amber-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
-                    <MessageCircleMore className="w-6 h-6 text-yellow-700" />
+                  <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                    <MessageCircleMore className="w-6 h-6 text-violet-400" />
                   </div>
                   <span className="text-xs text-muted-foreground">Discussion</span>
               </div>
@@ -1003,7 +1003,7 @@ export default function ExplorePage() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    Buy Signals in {section.title}
+                    Breakout Signals in {section.title}
                   </p>
                   {section.lastScreened && (
                     <p className="text-[11px] text-muted-foreground">
@@ -1012,7 +1012,7 @@ export default function ExplorePage() {
                   )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                  <span>{section.picks.length} signals</span>
+                  <span>{section.picks.length} found</span>
                   <span className="rounded-full border border-muted/80 px-3 py-1 uppercase tracking-wider">
                     {section.snapshot?.status ?? "idle"}
                   </span>
