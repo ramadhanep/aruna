@@ -120,8 +120,8 @@ export function AuthProvider({ children }) {
           .from("discussion_messages")
           .insert({
             user_id: user.id,
-            content: `${userName} bergabung dengan Aruna 🎉`,
-            is_system: true,
+            content: `${userName} joins Aruna`,
+            is_system: false,
           });
       }
     } catch (error) {
