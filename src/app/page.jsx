@@ -248,7 +248,7 @@ function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
   const areaPath = `${linePath} L${coordinates[coordinates.length - 1].x.toFixed(2)},${height} L0,${height} Z`;
   const strokeColor = isPositive ? "#10b981" : "#ef4444";
   const gradientId = `${gradientKey}-fill`;
-  
+
   // Calculate baseline at first data point (represents 0% change)
   const firstValue = data[0];
   const baselineY = height - ((firstValue - min) / range) * height;
@@ -298,8 +298,8 @@ function InstallAppButton() {
 
   useEffect(() => {
     // Check if already installed
-    const standalone = window.matchMedia('(display-mode: standalone)').matches || 
-                      window.navigator.standalone === true;
+    const standalone = window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
     setIsStandalone(standalone);
 
     // Listen for beforeinstallprompt event
@@ -320,11 +320,11 @@ function InstallAppButton() {
 
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    
+
     if (outcome === 'accepted') {
       console.log('User accepted the install prompt');
     }
-    
+
     setDeferredPrompt(null);
   };
 
@@ -473,28 +473,28 @@ export default function ExplorePage() {
           if (!response.ok) return null;
           const series = Array.isArray(data?.data) ? data.data : [];
           const meta = data?.meta || {};
-          
+
           // Filter out null/invalid data points
           const validSeries = series.filter(point => {
             const hasClose = point.adjclose != null || point.close != null;
             return hasClose;
           });
-          
+
           // Use regularMarketPrice and previousClose as fallback for IDX stocks
           let currentRaw = meta.regularMarketPrice;
           let previousRaw = meta.previousClose || meta.chartPreviousClose;
-          
+
           // Try to get from series data if available
           if (validSeries.length >= 2) {
             const current = validSeries[validSeries.length - 1];
             const previous = validSeries[validSeries.length - 2];
-            
+
             if (typeof current?.adjclose === "number") {
               currentRaw = current.adjclose;
             } else if (typeof current?.close === "number") {
               currentRaw = current.close;
             }
-            
+
             if (typeof previous?.adjclose === "number") {
               previousRaw = previous.adjclose;
             } else if (typeof previous?.close === "number") {
@@ -953,42 +953,42 @@ export default function ExplorePage() {
           <div className="flex justify-center whitespace-nowrap gap-4">
             <Link href="/idx-momentum" className="w-24">
               <div className="flex flex-col items-center gap-2">
-                  <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
-                    <Axe className="w-6 h-6 text-rose-300" />
-                  </div>
-                  <span className="text-xs text-muted-foreground">Momentum</span>
+                <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                  <Axe className="w-6 h-6 text-emerald-700" />
+                </div>
+                <span className="text-xs text-muted-foreground">Momentum</span>
               </div>
             </Link>
             <Link href="/idx-bubbles" className="w-24">
               <div className="flex flex-col items-center gap-2">
-                  <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
-                    <Droplets className="w-6 h-6 text-indigo-300" />
-                  </div>
-                  <span className="text-xs text-muted-foreground">Bubbles</span>
+                <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                  <Droplets className="w-6 h-6 text-emerald-700" />
+                </div>
+                <span className="text-xs text-muted-foreground">Bubbles</span>
               </div>
             </Link>
             <Link href="/idx-rotation" className="w-24">
               <div className="flex flex-col items-center gap-2">
-                  <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
-                    <Rotate3D className="w-6 h-6 text-gray-400" />
-                  </div>
-                  <span className="text-xs text-muted-foreground">Rotation</span>
+                <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                  <Rotate3D className="w-6 h-6 text-emerald-700" />
+                </div>
+                <span className="text-xs text-muted-foreground">Rotation</span>
               </div>
             </Link>
             <Link href="/msci" className="w-24">
               <div className="flex flex-col items-center gap-2">
-                  <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
-                    <Magnet className="w-6 h-6 text-green-400" />
-                  </div>
-                  <span className="text-xs text-muted-foreground">MSCI</span>
+                <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                  <Magnet className="w-6 h-6 text-emerald-700" />
+                </div>
+                <span className="text-xs text-muted-foreground">MSCI</span>
               </div>
             </Link>
             <Link href="/discussion" className="w-24">
               <div className="flex flex-col items-center gap-2">
-                  <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
-                    <MessageCircleMore className="w-6 h-6 text-violet-400" />
-                  </div>
-                  <span className="text-xs text-muted-foreground">Discussion</span>
+                <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
+                  <MessageCircleMore className="w-6 h-6 text-emerald-700" />
+                </div>
+                <span className="text-xs text-muted-foreground">Discussion</span>
               </div>
             </Link>
           </div>
