@@ -898,7 +898,7 @@ export default function ExplorePage() {
       )}
 
       <div>
-        <section>
+        <section className="mb-5">
           <div className="grid grid-cols-2 gap-3">
             {highlightClusters.map((item) => {
               const changeValue = item.quote?.change ?? 0;
@@ -953,7 +953,7 @@ export default function ExplorePage() {
           <div className="flex justify-center whitespace-nowrap gap-5">
             <Link href="/idx-momentum" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-700 shadow-lg shadow-teal-500/20">
+                <div className="p-3 rounded-full bg-gradient-to-br from-blue-600 to-emerald-700 shadow-lg shadow-teal-500/20">
                   <Axe className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-[11px] font-medium text-muted-foreground">Momentum</span>
@@ -961,7 +961,7 @@ export default function ExplorePage() {
             </Link>
             <Link href="/idx-bubbles" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-700 shadow-lg shadow-teal-500/20">
+                <div className="p-3 rounded-full bg-gradient-to-br from-sky-600 to-emerald-700 shadow-lg shadow-teal-500/20">
                   <Droplets className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-[11px] font-medium text-muted-foreground">Bubbles</span>
@@ -969,7 +969,7 @@ export default function ExplorePage() {
             </Link>
             <Link href="/idx-rotation" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-700 shadow-lg shadow-teal-500/20">
+                <div className="p-3 rounded-full bg-gradient-to-br from-cyan-600 to-emerald-700 shadow-lg shadow-teal-500/20">
                   <Rotate3D className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-[11px] font-medium text-muted-foreground">Rotation</span>
@@ -977,7 +977,7 @@ export default function ExplorePage() {
             </Link>
             <Link href="/msci" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-700 shadow-lg shadow-teal-500/20">
+                <div className="p-3 rounded-full bg-gradient-to-br from-teal-600 to-emerald-700 shadow-lg shadow-teal-500/20">
                   <Magnet className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-[11px] font-medium text-muted-foreground">MSCI</span>
@@ -985,7 +985,7 @@ export default function ExplorePage() {
             </Link>
             <Link href="/discussion" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-700 shadow-lg shadow-teal-500/20">
+                <div className="p-3 rounded-full bg-gradient-to-br from-emerald-600 to-emerald-700 shadow-lg shadow-teal-500/20">
                   <MessageCircleMore className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-[11px] font-medium text-muted-foreground">Chat</span>

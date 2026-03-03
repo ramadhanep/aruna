@@ -193,9 +193,9 @@ function AccountSidebarContent({ onClose }) {
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-7 pb-12">
         <section className="space-y-3">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Profile</p>
-          <div className="rounded-3xl bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] px-4 py-5 text-white shadow-[0_10px_30px_rgba(0,0,0,0.45)]">
+          <div className="rounded-3xl bg-gradient-to-br from-slate-100 via-slate-50 to-white dark:from-[#0f172a] dark:via-[#111827] dark:to-[#020617] px-4 py-5 text-foreground dark:text-white shadow-[0_10px_30px_rgba(0,0,0,0.1)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.45)]">
             <div className="flex items-center gap-3">
-              <div className="h-14 w-14 overflow-hidden rounded-full border border-white/20 bg-white/10">
+              <div className="h-14 w-14 overflow-hidden rounded-full border border-black/10 dark:border-white/20 bg-black/5 dark:bg-white/10">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
@@ -204,7 +204,7 @@ function AccountSidebarContent({ onClose }) {
                     referrerPolicy="no-referrer"
                   />
                 ) : (
-                  <div className="flex h-full w-full items-center justify-center text-xs text-white/80">
+                  <div className="flex h-full w-full items-center justify-center text-xs text-foreground/80 dark:text-white/80">
                     <UserRound className="h-5 w-5" />
                   </div>
                 )}
@@ -213,30 +213,30 @@ function AccountSidebarContent({ onClose }) {
                 <p className="text-sm font-semibold">
                   {user ? fullName : "You're browsing in guest mode"}
                 </p>
-                <p className="text-[11px] text-white/80 truncate">
+                <p className="text-[11px] text-foreground/80 dark:text-white/80 truncate">
                   {user ? primaryEmail : "Sign in to sync watchlist & portfolio"}
                 </p>
               </div>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-2 text-[11px]">
-              <div className="rounded-2xl bg-white/10 px-3 py-2">
-                <p className="uppercase tracking-wide text-white/60">Mode</p>
-                <p className="text-sm font-semibold text-white">{user ? "Synced" : "Guest"}</p>
+              <div className="rounded-2xl bg-black/5 dark:bg-white/10 px-3 py-2">
+                <p className="uppercase tracking-wide text-foreground/60 dark:text-white/60">Mode</p>
+                <p className="text-sm font-semibold text-foreground dark:text-white">{user ? "Synced" : "Guest"}</p>
               </div>
-              <div className="rounded-2xl bg-white/10 px-3 py-2">
-                <p className="uppercase tracking-wide text-white/60">Server</p>
-                <p className="text-sm font-semibold text-white">
+              <div className="rounded-2xl bg-black/5 dark:bg-white/10 px-3 py-2">
+                <p className="uppercase tracking-wide text-foreground/60 dark:text-white/60">Server</p>
+                <p className="text-sm font-semibold text-foreground dark:text-white">
                   {supabaseConfigured ? "Connected" : "Offline"}
                 </p>
               </div>
             </div>
             {loading ? (
               <div className="mt-4 flex items-center justify-center">
-                <Loader2 className="h-5 w-5 animate-spin text-white/70" />
+                <Loader2 className="h-5 w-5 animate-spin text-foreground/70 dark:text-white/70" />
               </div>
             ) : user ? null : (
-              <div className="mt-4 space-y-3 rounded-2xl bg-white/5 px-4 py-4">
-                <p className="text-[11px] text-white/80">
+              <div className="mt-4 space-y-3 rounded-2xl bg-black/5 dark:bg-white/5 px-4 py-4">
+                <p className="text-[11px] text-foreground/80 dark:text-white/80">
                   Sign in with Google to sync your watchlist and portfolio securely.
                 </p>
                 <Button
