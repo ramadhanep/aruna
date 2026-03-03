@@ -385,7 +385,7 @@ function PickItem({ pick, quote }) {
   return (
     <Link
       href={`/chart?symbol=${encodeURIComponent(symbol)}&cycle=normal&tab=tradingPlan`}
-      className="flex items-center gap-3 py-3.5 px-1 hover:bg-accent/40 transition-all duration-200 rounded-lg -mx-1"
+      className="flex items-center gap-3 py-3.5 px-1 hover:bg-accent/40 transition-all duration-200 rounded-xl -mx-1"
     >
       <div className="flex-1 min-w-0 flex items-center gap-3">
         <div className="flex-shrink-0">
@@ -907,7 +907,7 @@ export default function ExplorePage() {
                 <Link
                   key={item.symbol}
                   href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal&tab=tradingPlan`}
-                  className="rounded-2xl p-3.5 overflow-hidden border border-border/40 hover:border-border/80 transition-all duration-200 block card-hover bg-card"
+                  className="rounded-3xl p-3.5 overflow-hidden border border-border/40 hover:border-border/80 transition-all duration-200 block card-hover bg-card"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -953,7 +953,7 @@ export default function ExplorePage() {
           <div className="flex justify-center whitespace-nowrap gap-5">
             <Link href="/idx-momentum" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-700 shadow-lg shadow-emerald-500/20">
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-700 shadow-lg shadow-teal-500/20">
                   <Axe className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-[11px] font-medium text-muted-foreground">Momentum</span>
@@ -961,7 +961,7 @@ export default function ExplorePage() {
             </Link>
             <Link href="/idx-bubbles" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-sky-600 to-blue-700 shadow-lg shadow-sky-500/20">
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-700 shadow-lg shadow-teal-500/20">
                   <Droplets className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-[11px] font-medium text-muted-foreground">Bubbles</span>
@@ -969,7 +969,7 @@ export default function ExplorePage() {
             </Link>
             <Link href="/idx-rotation" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 shadow-lg shadow-violet-500/20">
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-700 shadow-lg shadow-teal-500/20">
                   <Rotate3D className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-[11px] font-medium text-muted-foreground">Rotation</span>
@@ -977,7 +977,7 @@ export default function ExplorePage() {
             </Link>
             <Link href="/msci" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-600 to-orange-700 shadow-lg shadow-amber-500/20">
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-700 shadow-lg shadow-teal-500/20">
                   <Magnet className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-[11px] font-medium text-muted-foreground">MSCI</span>
@@ -985,7 +985,7 @@ export default function ExplorePage() {
             </Link>
             <Link href="/discussion" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-2xl bg-gradient-to-br from-rose-600 to-pink-700 shadow-lg shadow-rose-500/20">
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-700 shadow-lg shadow-teal-500/20">
                   <MessageCircleMore className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-[11px] font-medium text-muted-foreground">Chat</span>
@@ -1060,7 +1060,7 @@ export default function ExplorePage() {
           );
         })}
 
-        <section className="mt-6 p-4 rounded-2xl bg-card border border-border/40">
+        <section className="mt-6 p-4 rounded-3xl bg-card border border-border/40">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-medium text-muted-foreground">

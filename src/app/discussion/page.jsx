@@ -125,9 +125,9 @@ function MessageBubble({ message, isOwn, onDelete, currentUserId }) {
 
         {/* Message bubble */}
         <div
-          className={`relative px-3.5 py-2.5 rounded-2xl ${isOwn
-              ? 'bg-emerald-900/30 border border-emerald-800/20 rounded-br-md'
-              : 'bg-white/[0.04] border border-white/[0.08] rounded-bl-md'
+          className={`relative px-3.5 py-2.5 rounded-3xl ${isOwn
+            ? 'bg-emerald-900/30 border border-emerald-800/20 rounded-br-lg'
+            : 'bg-white/[0.04] border border-white/[0.08] rounded-bl-lg'
             }`}
         >
           <p className="text-xs leading-relaxed text-white/90 break-words">
@@ -197,7 +197,7 @@ function MessageInput({ onSend, disabled }) {
   };
 
   return (
-    <div className="sticky bottom-0 glass-subtle border-t border-border/30 p-3">
+    <div className="sticky bottom-0 liquid-glass p-3">
       <div className="flex items-end gap-2">
         <textarea
           ref={inputRef}
@@ -208,7 +208,7 @@ function MessageInput({ onSend, disabled }) {
           disabled={disabled || sending}
           maxLength={1000}
           rows={1}
-          className="flex-1 px-3.5 py-2.5 text-xs bg-white/[0.04] border border-white/[0.08] rounded-2xl resize-none focus:outline-none focus:ring-1 focus:ring-emerald-500/40 placeholder:text-white/25 disabled:opacity-50 transition-all"
+          className="flex-1 px-3.5 py-2.5 text-xs bg-white/[0.04] border border-white/[0.08] rounded-3xl resize-none focus:outline-none focus:ring-1 focus:ring-emerald-500/40 placeholder:text-white/25 disabled:opacity-50 transition-all"
           style={{ minHeight: '36px', maxHeight: '100px' }}
         />
         <Button
@@ -416,7 +416,7 @@ export default function DiscussionPage() {
       }}
     >
       {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-3 py-3 glass border-b border-border/30">
+      <div className="flex-shrink-0 flex items-center justify-between px-3 py-3 liquid-glass">
         <button
           onClick={() => router.push('/')}
           className="p-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] transition-colors"

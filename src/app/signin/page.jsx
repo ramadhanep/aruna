@@ -42,7 +42,7 @@ function SignInContent() {
 
   return (
     <div className="flex min-h-[calc(100vh-10rem)] flex-col justify-center gap-6">
-      <section className="rounded-3xl bg-gradient-to-br from-[#0a1628] via-[#0f1f3a] to-[#020617] px-6 py-7 text-white shadow-2xl shadow-black/30">
+      <section className="rounded-[2rem] bg-gradient-to-br from-[#0a1628] via-[#0f1f3a] to-[#020617] px-6 py-7 text-white shadow-2xl shadow-black/30">
         <p className="text-[11px] uppercase tracking-widest text-white/50 font-semibold">Welcome back</p>
         <h1 className="mt-1.5 text-base font-bold">Sign in to continue</h1>
         <p className="mt-2 text-[11px] text-white/70 leading-relaxed">
@@ -53,7 +53,7 @@ function SignInContent() {
             type="button"
             onClick={handleSignIn}
             disabled={processing || !supabaseConfigured}
-            className="w-full justify-center gap-3 rounded-2xl bg-white text-xs font-semibold text-[#3c4043] shadow-sm hover:bg-white/95 h-11"
+            className="w-full justify-center gap-3 rounded-full bg-white text-xs font-semibold text-[#3c4043] shadow-sm hover:bg-white/95 h-11"
           >
             {processing ? (
               <span className="flex items-center gap-2">

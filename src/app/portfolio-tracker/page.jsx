@@ -895,7 +895,7 @@ export default function PortfolioTrackerPage() {
                   View Detail
                 </summary>
                 <div className="space-y-3 p-3 pt-1">
-                  <div className="flex items-start gap-3 p-3 rounded-lg border">
+                  <div className="flex items-start gap-3 p-3 rounded-xl border">
                     <div className="flex-1">
                       <p className="text-sm text-muted-foreground mb-1">Digital Assets</p>
                       <p className="text-base font-semibold">{digitalMarketDisplay.primary}</p>
@@ -914,7 +914,7 @@ export default function PortfolioTrackerPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3 p-3 rounded-lg border">
+                  <div className="flex items-start gap-3 p-3 rounded-xl border">
                     <div className="flex-1">
                       <p className="text-sm text-muted-foreground mb-1">Total Cash</p>
                       <p className="text-base font-semibold">{totalCashDisplay.primary}</p>
@@ -934,7 +934,7 @@ export default function PortfolioTrackerPage() {
                   View Distribution Chart
                 </summary>
                 <div className="space-y-3 p-3 pt-1">
-                  <div className="rounded-lg border p-3">
+                  <div className="rounded-xl border p-3">
                     <PortfolioPie
                       digitalUSD={digitalMarket}
                       cashUSD={totalCash}
@@ -1018,7 +1018,7 @@ export default function PortfolioTrackerPage() {
                 return (
                   <div
                     key={originalIndex}
-                    className="flex items-center gap-3 border-b rounded-lg min-h-16"
+                    className="flex items-center gap-3 border-b rounded-xl min-h-16"
                   >
                     {isCash ? (
                       <div className="flex flex-1 min-w-0 items-center gap-2 px-1 py-2">

@@ -1385,8 +1385,8 @@ function ElectionCyclePageContent() {
           size="sm"
           variant={normalTimeframe === option.value ? 'default' : 'ghost'}
           className={`rounded-sm px-2 min-w-[2.1rem] font-bold py-0 text-[11px] ${normalTimeframe === option.value
-              ? 'bg-emerald-700 text-white/80 shadow-sm'
-              : 'border-border/70 text-muted-foreground'
+            ? 'bg-emerald-700 text-white/80 shadow-sm'
+            : 'border-border/70 text-muted-foreground'
             }`}
           onClick={() => setNormalTimeframe(option.value)}
         >
@@ -2382,7 +2382,7 @@ function ElectionCyclePageContent() {
             <div className="space-y-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Exit Levels</p>
               <div className="grid gap-3 md:grid-cols-2">
-                <div className="rounded-lg bg-red-500/5 p-3">
+                <div className="rounded-xl bg-red-500/5 p-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-semibold uppercase tracking-wide text-red-600">
                       Stop Loss
@@ -2393,8 +2393,8 @@ function ElectionCyclePageContent() {
                   </div>
                   <p
                     className={`mt-1 text-sm font-semibold ${tradingPlanStopLossPnl != null && tradingPlanStopLossPnl >= 0
-                        ? 'text-emerald-600'
-                        : 'text-red-600'
+                      ? 'text-emerald-600'
+                      : 'text-red-600'
                       }`}
                   >
                     {formatPlanCurrencyDelta(tradingPlanStopLossPnl)}
@@ -2410,7 +2410,7 @@ function ElectionCyclePageContent() {
                     tradingPlanTargets.map((target) => (
                       <div
                         key={target.label}
-                        className="rounded-lg bg-emerald-500/5 p-3"
+                        className="rounded-xl bg-emerald-500/5 p-3"
                       >
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-semibold uppercase tracking-wide text-emerald-600">
@@ -2434,7 +2434,7 @@ function ElectionCyclePageContent() {
                       </div>
                     ))
                   ) : (
-                    <div className="rounded-lg border border-border/60 p-3 text-[11px] text-muted-foreground">
+                    <div className="rounded-xl border border-border/60 p-3 text-[11px] text-muted-foreground">
                       Take profit targets unavailable.
                     </div>
                   )}
@@ -2510,8 +2510,8 @@ function ElectionCyclePageContent() {
               <div className="relative">
                 <Card
                   className={`h-full mt-4 ${!isAuthenticated
-                      ? 'pointer-events-none select-none opacity-60 blur-[1.5px]'
-                      : ''
+                    ? 'pointer-events-none select-none opacity-60 blur-[1.5px]'
+                    : ''
                     }`}
                 >
                   <CardHeader className="gap-3">
@@ -2534,8 +2534,8 @@ function ElectionCyclePageContent() {
                         {latestEarningsOutcome ? (
                           <p
                             className={`text-xs font-semibold ${latestEarningsOutcome.tone === 'beat'
-                                ? 'text-emerald-700'
-                                : 'text-red-600'
+                              ? 'text-emerald-700'
+                              : 'text-red-600'
                               }`}
                           >
                             {latestEarningsOutcome.label}
@@ -2609,7 +2609,7 @@ function ElectionCyclePageContent() {
                   </CardContent>
                 </Card>
                 {!isAuthenticated && (
-                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/05 backdrop-blur-xs px-6 text-center">
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
                     <Lock className="h-6 w-6 text-muted-foreground" />
                     <p className="text-xs font-semibold text-muted-foreground">
                       Sign in to explore earnings results
@@ -2623,8 +2623,8 @@ function ElectionCyclePageContent() {
               <div className="relative">
                 <Card
                   className={`h-full ${!isAuthenticated
-                      ? 'pointer-events-none select-none opacity-60 blur-[1.5px]'
-                      : ''
+                    ? 'pointer-events-none select-none opacity-60 blur-[1.5px]'
+                    : ''
                     }`}
                 >
                   <CardHeader className="gap-2">
@@ -2709,7 +2709,7 @@ function ElectionCyclePageContent() {
                   </CardContent>
                 </Card>
                 {!isAuthenticated && (
-                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/05 backdrop-blur-xs px-6 text-center">
+                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
                     <Lock className="h-6 w-6 text-muted-foreground" />
                     <p className="text-xs font-semibold text-muted-foreground">
                       Sign in to compare revenue and earnings
@@ -3032,7 +3032,7 @@ function ElectionCyclePageContent() {
                 </table>
               </div>
               {!isAuthenticated && (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/05 backdrop-blur-xs px-6 text-center">
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
                   <Lock className="h-6 w-6 text-muted-foreground" />
                   <p className="text-xs font-semibold text-muted-foreground">
                     Sign in to explore quarterly returns
@@ -3093,7 +3093,7 @@ function ElectionCyclePageContent() {
                 </table>
               </div>
               {!isAuthenticated && (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/05 backdrop-blur-xs px-6 text-center">
+                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
                   <Lock className="h-6 w-6 text-muted-foreground" />
                   <p className="text-xs font-semibold text-muted-foreground">
                     Sign in to view monthly returns
@@ -3172,7 +3172,7 @@ function ElectionCyclePageContent() {
               </div>
             </CardHeader>
             <CardContent className="px-0 pb-0">
-              <div className="w-full h-[380px] rounded-lg shimmer"></div>
+              <div className="w-full h-[380px] rounded-xl shimmer"></div>
             </CardContent>
           </Card>
 
@@ -3520,8 +3520,8 @@ function ElectionCyclePageContent() {
                 <button
                   key={q}
                   className={`w-16 h-6 text-xs font-semibold rounded-sm border-1.5 transition-colors ${quarterFilter === q
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'
                     }`}
                   onClick={() => setQuarterFilter(q)}
                 >
@@ -3536,8 +3536,8 @@ function ElectionCyclePageContent() {
               <Card className="overflow-hidden border border-border/70">
                 <div
                   className={`flex flex-col gap-3 border-l-4 px-4 py-4 ${portfolioPosition.pnl != null && portfolioPosition.pnl < 0
-                      ? 'border-red-600 bg-red-600/5'
-                      : 'border-emerald-700 bg-emerald-700/5'
+                    ? 'border-red-600 bg-red-600/5'
+                    : 'border-emerald-700 bg-emerald-700/5'
                     }`}
                 >
                   <div className="flex items-center justify-between">
@@ -3613,8 +3613,8 @@ function ElectionCyclePageContent() {
                     key={tab.value}
                     type="button"
                     className={`flex-shrink-0 px-2 py-2 uppercase font-semibold transition-colors ${infoTab === tab.value
-                        ? 'text-emerald-700 dark:text-emerald-400 border-b-2 border-emerald-700 dark:border-emerald-400'
-                        : 'text-muted-foreground'
+                      ? 'text-emerald-700 dark:text-emerald-400 border-b-2 border-emerald-700 dark:border-emerald-400'
+                      : 'text-muted-foreground'
                       }`}
                     onClick={() => setInfoTab(tab.value)}
                   >

@@ -21,7 +21,7 @@ async function ensureUsLogo(normalizedSymbol) {
     }
 
     // 2. Download from Pluang CDN
-    const cdnUrl = `${PLUANG_CDN_BASE}/${normalizedSymbol}.svg`;
+    const cdnUrl = `${PLUANG_CDN_BASE}/${normalizedSymbol.toLowerCase()}.svg`;
     const cdnRes = await fetch(cdnUrl);
     if (!cdnRes.ok) {
       console.warn(`Pluang CDN returned ${cdnRes.status} for ${normalizedSymbol}`);

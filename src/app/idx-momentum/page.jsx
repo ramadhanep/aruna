@@ -5,10 +5,10 @@ import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  Loader2, 
-  TrendingUp, 
-  TrendingDown, 
+import {
+  Loader2,
+  TrendingUp,
+  TrendingDown,
   AlertTriangle,
   Activity,
   Zap,
@@ -72,11 +72,10 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
                 key={tab.key}
                 type="button"
                 variant="ghost"
-                className={`rounded-full text-xs font-semibold transition-all px-4 py-2 h-auto ${
-                  value === tab.key
+                className={`rounded-full text-xs font-semibold transition-all px-4 py-2 h-auto ${value === tab.key
                     ? "bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80"
                     : "hover:bg-muted/50"
-                }`}
+                  }`}
                 onClick={() => onChange(tab.key)}
               >
                 {tab.label}
@@ -134,9 +133,8 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
 function StatusBadge({ status }) {
   return (
     <span
-      className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold border ${
-        statusColorMap[status.variant]?.badge || statusColorMap.danger.badge
-      }`}
+      className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold border ${statusColorMap[status.variant]?.badge || statusColorMap.danger.badge
+        }`}
     >
       {status.label}
     </span>
@@ -144,10 +142,10 @@ function StatusBadge({ status }) {
 }
 
 function SummaryCard({ summary }) {
-  const sentimentColor = summary.marketSentiment === 'Bullish' 
-    ? 'text-emerald-500' 
-    : summary.marketSentiment === 'Bearish' 
-      ? 'text-red-500' 
+  const sentimentColor = summary.marketSentiment === 'Bullish'
+    ? 'text-emerald-500'
+    : summary.marketSentiment === 'Bearish'
+      ? 'text-red-500'
       : 'text-yellow-500';
 
   return (
@@ -166,26 +164,26 @@ function SummaryCard({ summary }) {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-4 gap-2">
-          <div className="text-center p-2 bg-white/5 rounded-lg">
+          <div className="text-center p-2 bg-white/5 rounded-xl">
             <p className="text-xs text-white/50">Total</p>
             <p className="text-xs font-bold">{summary.totalStocks}</p>
           </div>
-          <div className="text-center p-2 bg-emerald-900/20 rounded-lg">
+          <div className="text-center p-2 bg-emerald-900/20 rounded-xl">
             <p className="text-xs text-emerald-500/70">Bullish</p>
             <p className="text-xs font-bold text-emerald-500">{summary.bullishCount}</p>
           </div>
-          <div className="text-center p-2 bg-yellow-900/20 rounded-lg">
+          <div className="text-center p-2 bg-yellow-900/20 rounded-xl">
             <p className="text-xs text-yellow-500/70">Neutral</p>
             <p className="text-xs font-bold text-yellow-500">{summary.neutralCount}</p>
           </div>
-          <div className="text-center p-2 bg-red-900/20 rounded-lg">
+          <div className="text-center p-2 bg-red-900/20 rounded-xl">
             <p className="text-xs text-red-500/70">Bearish</p>
             <p className="text-xs font-bold text-red-500">{summary.bearishCount}</p>
           </div>
         </div>
 
         {/* Avg Momentum */}
-        <div className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
+        <div className="flex items-center justify-between p-2 bg-white/5 rounded-xl">
           <span className="text-xs text-white/70">Avg Momentum Score</span>
           <span className={`text-xs font-bold ${summary.avgMomentum >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
             {summary.avgMomentum > 0 ? '+' : ''}{summary.avgMomentum}
@@ -231,7 +229,7 @@ function StockCard({ stock, isLocked = false }) {
         </div>
 
         {/* Momentum Score */}
-        <div className="flex items-center justify-between p-1.5 bg-white/5 rounded-lg">
+        <div className="flex items-center justify-between p-1.5 bg-white/5 rounded-xl">
           <div className="flex items-center gap-1">
             <Zap className="h-3 w-3 text-white/70" />
             <span className="text-[9px] text-white/70">Momentum Score</span>
@@ -271,9 +269,9 @@ function StockCard({ stock, isLocked = false }) {
 
 function MiniStockCard({ stock }) {
   const isPositive = stock.weekChange >= 0;
-  
+
   return (
-    <div className="flex items-center gap-2 p-2 bg-white/5 rounded-lg min-w-[140px]">
+    <div className="flex items-center gap-2 p-2 bg-white/5 rounded-xl min-w-[140px]">
       <TickerAvatar symbol={`${stock.code}.JK`} logo={stock.logo_url} size="xs" />
       <div className="flex-1 min-w-0">
         <p className="text-xs font-bold truncate">{stock.code}</p>
@@ -362,14 +360,14 @@ export default function MomentumPage() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  
+
   // Infinite scroll state
   const [displayedStocks, setDisplayedStocks] = useState([]);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const observerTarget = useRef(null);
-  
+
   const ITEMS_PER_PAGE = 20;
 
   useEffect(() => {
@@ -379,7 +377,7 @@ export default function MomentumPage() {
       try {
         const result = await fetchEncodedJson(`/api/momentum?filter=${filter}`);
         setData(result.data);
-        
+
         // Sort stocks
         const sorted = result.data?.stocks ? [...result.data.stocks].sort((a, b) => {
           if (sortBy === 'momentum') return b.momentumScore - a.momentumScore;
@@ -388,7 +386,7 @@ export default function MomentumPage() {
           if (sortBy === 'month') return (b.monthChange || 0) - (a.monthChange || 0);
           return 0;
         }) : [];
-        
+
         // Reset pagination and load first page
         setPage(1);
         setDisplayedStocks(sorted.slice(0, ITEMS_PER_PAGE));
@@ -407,9 +405,9 @@ export default function MomentumPage() {
   // Load more items
   const loadMore = useCallback(() => {
     if (loadingMore || !hasMore || !data?.stocks) return;
-    
+
     setLoadingMore(true);
-    
+
     // Simulate a small delay for smooth UX
     setTimeout(() => {
       const sorted = [...data.stocks].sort((a, b) => {
@@ -419,11 +417,11 @@ export default function MomentumPage() {
         if (sortBy === 'month') return (b.monthChange || 0) - (a.monthChange || 0);
         return 0;
       });
-      
+
       const nextPage = page + 1;
       const startIndex = 0;
       const endIndex = nextPage * ITEMS_PER_PAGE;
-      
+
       setDisplayedStocks(sorted.slice(startIndex, endIndex));
       setPage(nextPage);
       setHasMore(endIndex < sorted.length);
@@ -466,8 +464,8 @@ export default function MomentumPage() {
       </Card>
 
       {/* Segment Control */}
-      <SegmentControl 
-        value={filter} 
+      <SegmentControl
+        value={filter}
         onChange={setFilter}
         sortBy={sortBy}
         onSortChange={setSortBy}
@@ -497,9 +495,9 @@ export default function MomentumPage() {
 
           {/* Top Movers - only show on "all" filter */}
           {filter === "all" && (
-            <TopMoversSection 
-              topGainers={data.topGainers} 
-              topLosers={data.topLosers} 
+            <TopMoversSection
+              topGainers={data.topGainers}
+              topLosers={data.topLosers}
             />
           )}
 
@@ -510,25 +508,25 @@ export default function MomentumPage() {
                 Showing {displayedStocks.length} of {data.stocks?.length || 0} stocks
               </p>
               {displayedStocks.map((stock, index) => (
-                <StockCard 
-                  key={stock.code} 
-                  stock={stock} 
+                <StockCard
+                  key={stock.code}
+                  stock={stock}
                   isLocked={index >= 5 && !isAuthenticated}
                 />
               ))}
-              
+
               {/* Loading More Indicator */}
               {loadingMore && (
                 <div className="flex justify-center py-4">
                   <Loader2 className="w-5 h-5 animate-spin text-white/50" />
                 </div>
               )}
-              
+
               {/* Intersection Observer Target */}
               {hasMore && !loadingMore && (
                 <div ref={observerTarget} className="h-4" />
               )}
-              
+
               {/* End of List */}
               {!hasMore && displayedStocks.length > ITEMS_PER_PAGE && (
                 <p className="text-[9px] text-center text-muted-foreground py-4">

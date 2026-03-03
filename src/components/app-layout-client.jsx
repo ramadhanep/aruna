@@ -14,7 +14,7 @@ export function AppLayoutClient({ children }) {
     <>
       <AccountSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex flex-col min-h-screen">
-        <header className="sticky top-0 z-40 glass border-b border-border/50">
+        <header className="sticky top-0 z-40 liquid-glass">
           <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3 px-3">
             <HeaderAccountMenu onOpenSidebar={() => setSidebarOpen(true)} />
             <div className="flex flex-1 items-center justify-center gap-1.5">

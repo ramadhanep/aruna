@@ -155,7 +155,7 @@ function StockItem({ quote }) {
   return (
     <Link
       href={`/chart?symbol=${encodeURIComponent(quote.symbol)}&cycle=normal`}
-      className="flex items-center gap-3 py-3.5 px-1 hover:bg-accent/40 transition-all duration-200 rounded-lg -mx-1"
+      className="flex items-center gap-3 py-3.5 px-1 hover:bg-accent/40 transition-all duration-200 rounded-xl -mx-1"
     >
       <div className="flex-1 min-w-0 flex items-center gap-3">
         <div className="flex-shrink-0">
@@ -485,7 +485,7 @@ export default function HomePage() {
 
       <TrendingMarquee supabase={supabase} />
 
-      <Card className="mt-4 border-none bg-gradient-to-br from-emerald-950 via-[#0f172a] to-[#020617] border-border/20 text-white/90 shadow-xl p-4 rounded-2xl">
+      <Card className="mt-4 border-none bg-gradient-to-br from-emerald-950 via-[#0f172a] to-[#020617] border-border/20 text-white/90 shadow-xl p-4 rounded-3xl">
         <CardContent className="pt-0">
           <p className="text-xs leading-relaxed text-white/90 font-medium">
             We search through historical data looking for anomalous patterns that we would not expect to occur at random.
@@ -527,7 +527,7 @@ export default function HomePage() {
             <CardDescription className="text-xs">How your watchlist is moving today</CardDescription>
           </CardHeader>
           <CardContent className="mt-4 grid gap-3">
-            <div className="flex items-center justify-between rounded-lg">
+            <div className="flex items-center justify-between rounded-xl">
               <div>
                 <p className="text-xs text-muted-foreground">Top Gainer</p>
                 <p className="text-sm font-semibold uppercase">{marketPulse.topGainer.symbol}</p>
@@ -563,7 +563,7 @@ export default function HomePage() {
                 />
               </div>
             </div>
-            <div className="rounded-lg">
+            <div className="rounded-xl">
               <p className="text-xs text-muted-foreground">Average Change</p>
               <p className={`text-sm font-semibold ${marketPulse.averageChange >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                 {marketPulse.averageChange >= 0 ? '+' : ''}{marketPulse.averageChange.toFixed(2)}%

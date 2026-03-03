@@ -19,7 +19,7 @@ export function TickerAvatar({
 
   return (
     <div
-      className={`relative flex items-center justify-center rounded-xl overflow-hidden ring-1 ring-border/50 ${backgroundClass} ${sizeClass} ${className}`.trim()}
+      className={`relative flex items-center justify-center rounded-2xl overflow-hidden ring-1 ring-border/50 ${backgroundClass} ${sizeClass} ${className}`.trim()}
     >
       {showImage ? (
         <>

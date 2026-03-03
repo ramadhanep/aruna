@@ -44,7 +44,7 @@
 }
 
 :root {
-  --radius: 0.75rem;
+  --radius: 1rem;
 
   /* Base */
   --background: oklch(0.98 0 0);
@@ -159,6 +159,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
     font-weight: 500;
@@ -167,55 +168,101 @@
     -webkit-tap-highlight-color: transparent;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
-  
+
   /* Safe area padding for iOS */
   @supports(padding: max(0px)) {
     .pb-safe {
       padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
     }
   }
-  
+
   /* Smooth scrolling */
   html {
     scroll-behavior: smooth;
   }
-  
+
   /* Hide scrollbar but keep functionality */
   .hide-scrollbar::-webkit-scrollbar {
     display: none;
   }
+
   .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
 
-  button, a {
+  button,
+  a {
     cursor: pointer;
   }
 }
 
 @layer utilities {
+
   /* Glassmorphism */
   .glass {
-    background: color-mix(in oklch, var(--background) 70%, transparent);
-    backdrop-filter: blur(20px) saturate(1.8);
-    -webkit-backdrop-filter: blur(20px) saturate(1.8);
+    background: color-mix(in oklch, var(--background) 65%, transparent);
+    backdrop-filter: blur(24px) saturate(1.8);
+    -webkit-backdrop-filter: blur(24px) saturate(1.8);
   }
 
   .glass-subtle {
-    background: color-mix(in oklch, var(--background) 85%, transparent);
-    backdrop-filter: blur(12px) saturate(1.4);
-    -webkit-backdrop-filter: blur(12px) saturate(1.4);
+    background: color-mix(in oklch, var(--background) 80%, transparent);
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+  }
+
+  /* Liquid Glass — frosted translucent effect */
+  .liquid-glass {
+    background: color-mix(in oklch, var(--background) 55%, transparent);
+    backdrop-filter: blur(40px) saturate(2) brightness(1.05);
+    -webkit-backdrop-filter: blur(40px) saturate(2) brightness(1.05);
+    border: 1px solid color-mix(in oklch, var(--foreground) 8%, transparent);
+    box-shadow:
+      0 1px 0 0 color-mix(in oklch, white 15%, transparent) inset,
+      0 -1px 0 0 color-mix(in oklch, var(--foreground) 5%, transparent) inset,
+      0 4px 20px -4px rgba(0, 0, 0, 0.06);
+  }
+
+  .dark .liquid-glass {
+    background: color-mix(in oklch, var(--background) 50%, transparent);
+    border: 1px solid color-mix(in oklch, white 10%, transparent);
+    box-shadow:
+      0 1px 0 0 color-mix(in oklch, white 8%, transparent) inset,
+      0 -1px 0 0 color-mix(in oklch, white 3%, transparent) inset,
+      0 4px 24px -4px rgba(0, 0, 0, 0.25);
+  }
+
+  .liquid-glass-strong {
+    background: color-mix(in oklch, var(--background) 45%, transparent);
+    backdrop-filter: blur(56px) saturate(2.2) brightness(1.08);
+    -webkit-backdrop-filter: blur(56px) saturate(2.2) brightness(1.08);
+    border: 1px solid color-mix(in oklch, var(--foreground) 10%, transparent);
+    box-shadow:
+      0 1px 0 0 color-mix(in oklch, white 20%, transparent) inset,
+      0 -1px 0 0 color-mix(in oklch, var(--foreground) 6%, transparent) inset,
+      0 8px 32px -8px rgba(0, 0, 0, 0.10);
+  }
+
+  .dark .liquid-glass-strong {
+    background: color-mix(in oklch, var(--background) 40%, transparent);
+    border: 1px solid color-mix(in oklch, white 12%, transparent);
+    box-shadow:
+      0 1px 0 0 color-mix(in oklch, white 10%, transparent) inset,
+      0 -1px 0 0 color-mix(in oklch, white 4%, transparent) inset,
+      0 8px 36px -8px rgba(0, 0, 0, 0.35);
   }
 
   /* Card hover effect */
   .card-hover {
     transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   }
+
   .card-hover:hover {
     transform: translateY(-1px);
     box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.08), 0 4px 10px -2px rgba(0, 0, 0, 0.04);
   }
+
   .dark .card-hover:hover {
     box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.3), 0 4px 10px -2px rgba(0, 0, 0, 0.2);
   }
@@ -230,19 +277,18 @@
     position: relative;
     overflow: hidden;
     background-color: color-mix(in oklch, var(--muted) 75%, transparent);
-    border-radius: 8px;
+    border-radius: 12px;
   }
+
   .shimmer::after {
     content: "";
     position: absolute;
     inset: 0;
     transform: translateX(-100%);
-    background-image: linear-gradient(
-      110deg,
-      transparent 20%,
-      color-mix(in oklch, white 40%, transparent) 50%,
-      transparent 80%
-    );
+    background-image: linear-gradient(110deg,
+        transparent 20%,
+        color-mix(in oklch, white 40%, transparent) 50%,
+        transparent 80%);
     animation: shimmer-slide 1.6s ease-in-out infinite;
   }
 
@@ -260,6 +306,7 @@
     opacity: 0;
     transform: translateY(6px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -270,6 +317,7 @@
   0% {
     transform: translateX(-100%);
   }
+
   100% {
     transform: translateX(100%);
   }
@@ -279,6 +327,7 @@
   0% {
     transform: translateX(0);
   }
+
   100% {
     transform: translateX(-50%);
   }
@@ -295,13 +344,16 @@
 
 /* Hide scrollbar for IE, Edge and Firefox */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
 }
 
 #tv-attr-logo {
   display: none !important;
 }
+
 button[data-slot="dialog-close"].ring-offset-background {
   display: none;
 }

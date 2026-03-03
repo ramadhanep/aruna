@@ -232,7 +232,7 @@ export function TrendingMarquee({ supabase }) {
   return (
     <div
       ref={scrollContainerRef}
-      className="relative overflow-x-auto overflow-y-hidden bg-gradient-to-r from-emerald-50/40 via-sky-50/30 to-amber-50/40 dark:from-emerald-950/15 dark:via-sky-950/10 dark:to-amber-950/15 border-y border-border/30 py-2 scrollbar-hide rounded-xl"
+      className="relative overflow-x-auto overflow-y-hidden liquid-glass py-2 scrollbar-hide rounded-2xl"
       style={{ WebkitOverflowScrolling: 'touch' }}
     >
       <div className={`flex whitespace-nowrap ${isPaused ? '' : 'animate-marquee'}`}>
