@@ -623,7 +623,7 @@ function ElectionCyclePageContent() {
   useEffect(() => {
     try {
       localStorage.setItem(LAST_SYMBOL_KEY, symbol);
-    } catch {}
+    } catch { }
   }, [symbol]);
 
   useEffect(() => {
@@ -892,7 +892,7 @@ function ElectionCyclePageContent() {
       };
       const targetKey = cycleKeyMap[currentCycleLabel];
       const benchmarkLine = linesData.find(line => line.key === targetKey);
-      
+
       if (benchmarkLine && benchmarkLine.data.length > 0 && startPrice) {
         const lastPoint = benchmarkLine.data[benchmarkLine.data.length - 1];
         if (scaleChoice === 'linear') {
@@ -918,7 +918,7 @@ function ElectionCyclePageContent() {
 
       const monthlyReturns = calculateMonthlyReturns(rawData);
       const quarterlyReturns = calculateQuarterlyReturns(rawData);
-      
+
       setMonthlyHeatmap(formatMonthlyHeatmap(monthlyReturns, 10));
       setQuarterlyHeatmap(formatQuarterlyHeatmap(quarterlyReturns, 10));
     } catch (error) {
@@ -970,7 +970,7 @@ function ElectionCyclePageContent() {
   const [quarterFilter, setQuarterFilter] = useState('all');
 
   const getQuarterDateRange = (quarter) => {
-    switch(quarter) {
+    switch (quarter) {
       case 'Q1': return [1, 90];
       case 'Q2': return [91, 181];
       case 'Q3': return [182, 273];
@@ -1384,11 +1384,10 @@ function ElectionCyclePageContent() {
           type="button"
           size="sm"
           variant={normalTimeframe === option.value ? 'default' : 'ghost'}
-          className={`rounded-sm px-2 min-w-[2.1rem] font-bold py-0 text-[11px] ${
-            normalTimeframe === option.value
+          className={`rounded-sm px-2 min-w-[2.1rem] font-bold py-0 text-[11px] ${normalTimeframe === option.value
               ? 'bg-emerald-700 text-white/80 shadow-sm'
               : 'border-border/70 text-muted-foreground'
-          }`}
+            }`}
           onClick={() => setNormalTimeframe(option.value)}
         >
           {option.label}
@@ -1434,9 +1433,8 @@ function ElectionCyclePageContent() {
             setScaleChoice(scaleChoice === 'log' ? 'linear' : 'log');
           }}
         >
-          <div className={`h-4 w-4 rounded border flex items-center justify-center ${
-            scaleChoice === 'log' ? 'bg-emerald-700 border-emerald-700' : 'border-muted-foreground/30'
-          }`}>
+          <div className={`h-4 w-4 rounded border flex items-center justify-center ${scaleChoice === 'log' ? 'bg-emerald-700 border-emerald-700' : 'border-muted-foreground/30'
+            }`}>
             {scaleChoice === 'log' && (
               <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -1452,9 +1450,8 @@ function ElectionCyclePageContent() {
             setShowLivermoreKey((prev) => !prev);
           }}
         >
-          <div className={`h-4 w-4 rounded border flex items-center justify-center ${
-            showLivermoreKey ? 'bg-emerald-700 border-emerald-700' : 'border-muted-foreground/30'
-          }`}>
+          <div className={`h-4 w-4 rounded border flex items-center justify-center ${showLivermoreKey ? 'bg-emerald-700 border-emerald-700' : 'border-muted-foreground/30'
+            }`}>
             {showLivermoreKey && (
               <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -1865,12 +1862,12 @@ function ElectionCyclePageContent() {
     const latest = Array.isArray(trend) && trend.length > 0 ? trend[0] : null;
     const breakdown = latest
       ? [
-          { label: 'Strong Buy', value: Number(latest.strongBuy) || 0 },
-          { label: 'Buy', value: Number(latest.buy) || 0 },
-          { label: 'Hold', value: Number(latest.hold) || 0 },
-          { label: 'Sell', value: Number(latest.sell) || 0 },
-          { label: 'Strong Sell', value: Number(latest.strongSell) || 0 },
-        ]
+        { label: 'Strong Buy', value: Number(latest.strongBuy) || 0 },
+        { label: 'Buy', value: Number(latest.buy) || 0 },
+        { label: 'Hold', value: Number(latest.hold) || 0 },
+        { label: 'Sell', value: Number(latest.sell) || 0 },
+        { label: 'Strong Sell', value: Number(latest.strongSell) || 0 },
+      ]
       : [];
     const totalFromBreakdown = breakdown.reduce((sum, item) => sum + (item.value || 0), 0);
     const totalOpinions =
@@ -1903,11 +1900,11 @@ function ElectionCyclePageContent() {
         : null;
     const priceTargets = details
       ? {
-          low: details.targetLowPrice ?? null,
-          average: details.targetMeanPrice ?? null,
-          median: details.targetMedianPrice ?? null,
-          high: details.targetHighPrice ?? null,
-        }
+        low: details.targetLowPrice ?? null,
+        average: details.targetMeanPrice ?? null,
+        median: details.targetMedianPrice ?? null,
+        high: details.targetHighPrice ?? null,
+      }
       : null;
     return {
       breakdown,
@@ -2089,7 +2086,7 @@ function ElectionCyclePageContent() {
     const stateRaw = fundamentals?.profile?.marketState;
     if (!stateRaw) {
       if (symbolInfo?.isMarketOpen) {
-        return { label: 'Market Open', tone: 'text-emerald-700 dark:text-emerald-700', Icon: Sun };
+        return { label: 'Market Open', tone: 'text-emerald-600 dark:text-emerald-400', Icon: Sun };
       }
       return null;
     }
@@ -2128,7 +2125,7 @@ function ElectionCyclePageContent() {
           prev.length > 0 ? Math.max(...prev.map((item) => Number(item.order) || 0)) + 1 : 1;
         next = [...prev, { symbol, order: nextOrder }];
       }
-      syncWatchlist(next).catch(() => {});
+      syncWatchlist(next).catch(() => { });
       return next;
     });
   }, [isAuthenticated, redirectToSignIn, symbol, syncWatchlist]);
@@ -2317,9 +2314,8 @@ function ElectionCyclePageContent() {
                         type="button"
                         size="xs"
                         variant={tradingPlanSizeMode === mode ? 'default' : 'ghost'}
-                        className={`px-2 py-1 text-xs rounded-full ${
-                          tradingPlanSizeMode === mode ? 'shadow-sm' : ''
-                        }`}
+                        className={`px-2 py-1 text-xs rounded-full ${tradingPlanSizeMode === mode ? 'shadow-sm' : ''
+                          }`}
                         onClick={() => setTradingPlanSizeMode(mode)}
                       >
                         {mode === 'lot' ? 'Lot' : 'Share'}
@@ -2396,11 +2392,10 @@ function ElectionCyclePageContent() {
                     </span>
                   </div>
                   <p
-                    className={`mt-1 text-sm font-semibold ${
-                      tradingPlanStopLossPnl != null && tradingPlanStopLossPnl >= 0
+                    className={`mt-1 text-sm font-semibold ${tradingPlanStopLossPnl != null && tradingPlanStopLossPnl >= 0
                         ? 'text-emerald-600'
                         : 'text-red-600'
-                    }`}
+                      }`}
                   >
                     {formatPlanCurrencyDelta(tradingPlanStopLossPnl)}
                   </p>
@@ -2426,9 +2421,8 @@ function ElectionCyclePageContent() {
                           </span>
                         </div>
                         <p
-                          className={`mt-1 text-sm font-semibold ${
-                            target.pnl != null && target.pnl < 0 ? 'text-red-600' : 'text-emerald-600'
-                          }`}
+                          className={`mt-1 text-sm font-semibold ${target.pnl != null && target.pnl < 0 ? 'text-red-600' : 'text-emerald-600'
+                            }`}
                         >
                           {formatPlanCurrencyDelta(target.pnl)}
                         </p>
@@ -2515,11 +2509,10 @@ function ElectionCyclePageContent() {
             {hasEarningsAnalysis && latestEarningsPoint && (
               <div className="relative">
                 <Card
-                  className={`h-full mt-4 ${
-                    !isAuthenticated
+                  className={`h-full mt-4 ${!isAuthenticated
                       ? 'pointer-events-none select-none opacity-60 blur-[1.5px]'
                       : ''
-                  }`}
+                    }`}
                 >
                   <CardHeader className="gap-3">
                     <div className="flex items-start justify-between gap-2">
@@ -2540,11 +2533,10 @@ function ElectionCyclePageContent() {
                         </p>
                         {latestEarningsOutcome ? (
                           <p
-                            className={`text-xs font-semibold ${
-                              latestEarningsOutcome.tone === 'beat'
+                            className={`text-xs font-semibold ${latestEarningsOutcome.tone === 'beat'
                                 ? 'text-emerald-700'
                                 : 'text-red-600'
-                            }`}
+                              }`}
                           >
                             {latestEarningsOutcome.label}
                           </p>
@@ -2630,11 +2622,10 @@ function ElectionCyclePageContent() {
             {hasRevenueAnalysis && (
               <div className="relative">
                 <Card
-                  className={`h-full ${
-                    !isAuthenticated
+                  className={`h-full ${!isAuthenticated
                       ? 'pointer-events-none select-none opacity-60 blur-[1.5px]'
                       : ''
-                  }`}
+                    }`}
                 >
                   <CardHeader className="gap-2">
                     <div className="flex items-center justify-between gap-2">
@@ -2662,9 +2653,8 @@ function ElectionCyclePageContent() {
                             type="button"
                             size="xs"
                             variant={revenuePeriod === option.value ? 'default' : 'ghost'}
-                            className={`px-2 py-1 text-xs rounded-full ${
-                              revenuePeriod === option.value ? 'shadow-sm' : ''
-                            }`}
+                            className={`px-2 py-1 text-xs rounded-full ${revenuePeriod === option.value ? 'shadow-sm' : ''
+                              }`}
                             onClick={() => setRevenuePeriod(option.value)}
                             disabled={option.disabled}
                           >
@@ -2999,9 +2989,8 @@ function ElectionCyclePageContent() {
           <AccordionContent className="pb-4">
             <div className="relative">
               <div
-                className={`overflow-x-auto -mx-4 px-4 ${
-                  !isAuthenticated ? 'pointer-events-none select-none blur-[1.5px] opacity-60' : ''
-                }`}
+                className={`overflow-x-auto -mx-4 px-4 ${!isAuthenticated ? 'pointer-events-none select-none blur-[1.5px] opacity-60' : ''
+                  }`}
               >
                 <table className="w-full text-[10px]">
                   <thead>
@@ -3061,9 +3050,8 @@ function ElectionCyclePageContent() {
           <AccordionContent className="pb-4">
             <div className="relative">
               <div
-                className={`overflow-x-auto ${
-                  !isAuthenticated ? 'pointer-events-none select-none blur-[1.5px] opacity-60' : ''
-                }`}
+                className={`overflow-x-auto ${!isAuthenticated ? 'pointer-events-none select-none blur-[1.5px] opacity-60' : ''
+                  }`}
               >
                 <table className="w-full text-[9px]">
                   <thead>
@@ -3135,19 +3123,19 @@ function ElectionCyclePageContent() {
               }
             }}
           >
-            {formatTickerDisplay(symbol)} <ChevronDown className="size-4 dark:text-white/70"/>
+            {formatTickerDisplay(symbol)} <ChevronDown className="size-4 dark:text-white/70" />
           </h1>
           <span className="text-muted">|</span>
           {symbol.endsWith('.JK') && (
             <span className="dark:text-white/70 text-xs">🇮🇩</span>
           )}
           {symbol.endsWith('-USD') && (
-            <span className="dark:text-white/70 text-xs flex items-center gap-1"><Bitcoin className="size-4 text-amber-600"/> to the moon</span>
+            <span className="dark:text-white/70 text-xs flex items-center gap-1"><Bitcoin className="size-4 text-amber-600" /> to the moon</span>
           )}
           {['QQQ', 'SPY'].some((s) => symbol.endsWith(s)) && (
             <span className="dark:text-white/70 text-xs">🇺🇸 pension fund</span>
           )}
-          {['AAPL','MSFT','GOOGL','GOOG','AMZN','META','NVDA','AVGO'].some((s) => symbol.endsWith(s)) && (
+          {['AAPL', 'MSFT', 'GOOGL', 'GOOG', 'AMZN', 'META', 'NVDA', 'AVGO'].some((s) => symbol.endsWith(s)) && (
             <span className="dark:text-white/70 text-xs flex items-center gap-1">🇺🇸 magnificent 7</span>
           )}
         </div>
@@ -3256,34 +3244,34 @@ function ElectionCyclePageContent() {
           <Card className="bg-transparent border-none rounded-none">
             <CardHeader>
               <div className="flex items-start justify-between gap-4">
-              <div className="flex flex-col gap-2">
-                <CardDescription className="text-xs">{assetName}</CardDescription>
-                {screeningSignal && (
-                  <div className="flex flex-wrap gap-1">
-                    <span className="rounded-full border border-emerald-700/40 bg-emerald-700/10 px-3 py-1 text-[11px] font-semibold text-emerald-600">
-                      BUY SIGNAL
-                    </span>
-                    {screeningSignalDateLabel && (
-                      <span className="rounded-full border border-muted/60 bg-muted/20 px-3 py-1 text-[10px] text-muted-foreground">
-                        Signal {screeningSignalDateLabel}
+                <div className="flex flex-col gap-2">
+                  <CardDescription className="text-xs">{assetName}</CardDescription>
+                  {screeningSignal && (
+                    <div className="flex flex-wrap gap-1">
+                      <span className="rounded-full border border-emerald-700/40 bg-emerald-700/10 px-3 py-1 text-[11px] font-semibold text-emerald-600">
+                        BUY SIGNAL
                       </span>
-                    )}
-                  </div>
-                )}
-                {marketStateInfo ? (
-                  <span className={`flex items-center gap-1 text-[10px] font-medium ${marketStateInfo.tone}`}>
-                    {MarketStateIcon ? <MarketStateIcon className="h-3 w-3" /> : null}
-                    {marketStateInfo.label}
-                  </span>
+                      {screeningSignalDateLabel && (
+                        <span className="rounded-full border border-muted/60 bg-muted/20 px-3 py-1 text-[10px] text-muted-foreground">
+                          Signal {screeningSignalDateLabel}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {marketStateInfo ? (
+                    <span className={`flex items-center gap-1 text-[10px] font-medium ${marketStateInfo.tone}`}>
+                      {MarketStateIcon ? <MarketStateIcon className="h-3 w-3" /> : null}
+                      {marketStateInfo.label}
+                    </span>
                   ) : null}
                   <div className="flex flex-col gap-1">
                     <div className="flex items-baseline gap-2">
                       <span className="text-xl font-bold">
                         {displayedPrice != null
                           ? displayedPrice.toLocaleString('en-US', {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })
                           : '-'}
                       </span>
                       {symbolInfo?.currency && (
@@ -3293,9 +3281,8 @@ function ElectionCyclePageContent() {
                     {displayedChange && (
                       <div className="flex flex-col text-xs">
                         <span
-                          className={`font-medium ${
-                            displayedChange.value >= 0 ? 'text-emerald-600' : 'text-red-600'
-                          }`}
+                          className={`font-medium ${displayedChange.value >= 0 ? 'text-emerald-600' : 'text-red-600'
+                            }`}
                         >
                           {displayedChange.value >= 0 ? '+' : ''}
                           {displayedChange.value.toFixed(2)} (
@@ -3406,65 +3393,65 @@ function ElectionCyclePageContent() {
                 <div className="relative h-[380px]">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
-                    data={filteredChartData}
-                    margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                      data={filteredChartData}
+                      margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
                     >
                       <defs>
-                      {chartData.linesData.map((line) => {
-                        const gradientId = `gradient-${line.key}`;
-                        return (
-                          <linearGradient key={gradientId} id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor={line.color} stopOpacity={0.3} />
-                            <stop offset="100%" stopColor={line.color} stopOpacity={0} />
-                          </linearGradient>
-                        );
-                      })}
+                        {chartData.linesData.map((line) => {
+                          const gradientId = `gradient-${line.key}`;
+                          return (
+                            <linearGradient key={gradientId} id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="0%" stopColor={line.color} stopOpacity={0.3} />
+                              <stop offset="100%" stopColor={line.color} stopOpacity={0} />
+                            </linearGradient>
+                          );
+                        })}
                       </defs>
                       <XAxis
-                      dataKey="dayOfYear"
-                      tickFormatter={formatTick}
-                      ticks={quarterFilter === 'all' ? [1, 91, 182, 274] : undefined}
-                      className="text-[10px]"
-                      height={30}
-                    />
-                      <YAxis
-                      orientation="right"
-                      scale={scaleChoice === 'log' ? 'log' : 'linear'}
-                      domain={scaleChoice === 'log' ? ['auto', 'auto'] : ['auto', 'auto']}
-                      tickFormatter={formatYAxis}
-                      className="text-[10px]"
-                      width={45}
-                      allowDataOverflow={false}
-                    />
-                      <Tooltip
-                      formatter={formatTooltip}
-                      labelFormatter={formatTooltipDate}
-                      contentStyle={{
-                        backgroundColor: 'hsl(var(--background))',
-                        border: '1px solid hsl(var(--border))',
-                        borderRadius: '8px',
-                        fontSize: '12px',
-                      }}
-                    />
-                      {chartData.linesData.length > 0 ? (
-                      <Legend
-                        align="left"
-                        verticalAlign="bottom"
-                        wrapperStyle={{ paddingTop: '10px', fontSize: '11px' }}
+                        dataKey="dayOfYear"
+                        tickFormatter={formatTick}
+                        ticks={quarterFilter === 'all' ? [1, 91, 182, 274] : undefined}
+                        className="text-[10px]"
+                        height={30}
                       />
+                      <YAxis
+                        orientation="right"
+                        scale={scaleChoice === 'log' ? 'log' : 'linear'}
+                        domain={scaleChoice === 'log' ? ['auto', 'auto'] : ['auto', 'auto']}
+                        tickFormatter={formatYAxis}
+                        className="text-[10px]"
+                        width={45}
+                        allowDataOverflow={false}
+                      />
+                      <Tooltip
+                        formatter={formatTooltip}
+                        labelFormatter={formatTooltipDate}
+                        contentStyle={{
+                          backgroundColor: 'hsl(var(--background))',
+                          border: '1px solid hsl(var(--border))',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                        }}
+                      />
+                      {chartData.linesData.length > 0 ? (
+                        <Legend
+                          align="left"
+                          verticalAlign="bottom"
+                          wrapperStyle={{ paddingTop: '10px', fontSize: '11px' }}
+                        />
                       ) : null}
                       {chartData.linesData.map((line) => (
-                      <Area
-                        key={line.key}
-                        type="monotone"
-                        dataKey={line.key}
-                        stroke={line.color}
-                        fill={`url(#gradient-${line.key})`}
-                        fillOpacity={1}
-                        name={line.name}
-                        dot={false}
-                        strokeWidth={1.5}
-                      />
+                        <Area
+                          key={line.key}
+                          type="monotone"
+                          dataKey={line.key}
+                          stroke={line.color}
+                          fill={`url(#gradient-${line.key})`}
+                          fillOpacity={1}
+                          name={line.name}
+                          dot={false}
+                          strokeWidth={1.5}
+                        />
                       ))}
                     </AreaChart>
                   </ResponsiveContainer>
@@ -3491,7 +3478,7 @@ function ElectionCyclePageContent() {
                       className="absolute top-5 left-5"
                       onClick={() => setNormalFullscreenOpen(false)}
                     >
-                      <ArrowLeft className="size-6 text-muted-foreground"/>
+                      <ArrowLeft className="size-6 text-muted-foreground" />
                     </div>
                     <DialogTitle className="text-sm font-semibold leading-none">
                       {formatTickerDisplay(symbol)}
@@ -3532,11 +3519,10 @@ function ElectionCyclePageContent() {
               {['all', 'Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
                 <button
                   key={q}
-                  className={`w-16 h-6 text-xs font-semibold rounded-sm border-1.5 transition-colors ${
-                    quarterFilter === q
+                  className={`w-16 h-6 text-xs font-semibold rounded-sm border-1.5 transition-colors ${quarterFilter === q
                       ? 'border-primary bg-primary text-primary-foreground'
                       : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'
-                  }`}
+                    }`}
                   onClick={() => setQuarterFilter(q)}
                 >
                   {q === 'all' ? 'All' : q}
@@ -3549,11 +3535,10 @@ function ElectionCyclePageContent() {
             {hasPortfolioPosition && (
               <Card className="overflow-hidden border border-border/70">
                 <div
-                  className={`flex flex-col gap-3 border-l-4 px-4 py-4 ${
-                    portfolioPosition.pnl != null && portfolioPosition.pnl < 0
+                  className={`flex flex-col gap-3 border-l-4 px-4 py-4 ${portfolioPosition.pnl != null && portfolioPosition.pnl < 0
                       ? 'border-red-600 bg-red-600/5'
                       : 'border-emerald-700 bg-emerald-700/5'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
@@ -3569,9 +3554,8 @@ function ElectionCyclePageContent() {
                     </div>
                     {portfolioPosition.pnlPct != null && (
                       <span
-                        className={`text-xs font-semibold ${
-                          portfolioPosition.pnlPct >= 0 ? 'text-emerald-600' : 'text-red-600'
-                        }`}
+                        className={`text-xs font-semibold ${portfolioPosition.pnlPct >= 0 ? 'text-emerald-600' : 'text-red-600'
+                          }`}
                       >
                         {formatPercentage(portfolioPosition.pnlPct)}
                       </span>
@@ -3628,11 +3612,10 @@ function ElectionCyclePageContent() {
                   <button
                     key={tab.value}
                     type="button"
-                    className={`flex-shrink-0 px-2 py-2 uppercase font-semibold transition-colors ${
-                      infoTab === tab.value
+                    className={`flex-shrink-0 px-2 py-2 uppercase font-semibold transition-colors ${infoTab === tab.value
                         ? 'text-emerald-700 dark:text-emerald-400 border-b-2 border-emerald-700 dark:border-emerald-400'
                         : 'text-muted-foreground'
-                    }`}
+                      }`}
                     onClick={() => setInfoTab(tab.value)}
                   >
                     {tab.label}
@@ -3652,8 +3635,8 @@ function ElectionCyclePageContent() {
         </>
       )}
 
-      <AddAssetModal 
-        open={portfolioDialogOpen && isAuthenticated} 
+      <AddAssetModal
+        open={portfolioDialogOpen && isAuthenticated}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) {
             setPortfolioDialogOpen(false);

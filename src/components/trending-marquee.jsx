@@ -10,7 +10,7 @@ function TrendingItem({ symbol, quote }) {
   if (!quote) return null;
 
   const isPositive = (quote.change ?? 0) >= 0;
-  const color = isPositive ? "text-emerald-600" : "text-red-600";
+  const color = isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400";
   const formattedPrice = typeof quote.price === "number"
     ? quote.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : "-";
@@ -21,13 +21,13 @@ function TrendingItem({ symbol, quote }) {
   return (
     <Link
       href={`/chart?symbol=${encodeURIComponent(symbol)}&cycle=normal`}
-      className="inline-flex items-center gap-3 px-4 py-3 hover:bg-accent/30 transition-colors rounded-lg"
+      className="inline-flex items-center gap-2.5 px-3.5 py-2.5 hover:bg-accent/40 transition-all duration-200 rounded-xl"
     >
-      <TickerAvatar symbol={symbol} logo={quote.logo} />
+      <TickerAvatar symbol={symbol} logo={quote.logo} size="sm" />
       <div className="flex flex-col">
-        <div className="font-semibold text-sm">{formatTickerDisplay(symbol)}</div>
-        <div className={`text-xs font-medium`}>
-          {formattedPrice} <span className={`text-[10px] ${color}`}>{formattedChange}</span>
+        <div className="font-semibold text-sm tracking-tight">{formatTickerDisplay(symbol)}</div>
+        <div className="text-xs font-medium">
+          {formattedPrice} <span className={`text-[10px] font-semibold ${color}`}>{formattedChange}</span>
         </div>
       </div>
     </Link>
@@ -144,7 +144,7 @@ export function TrendingMarquee({ supabase }) {
                   } else if (current.close != null) {
                     price = current.close;
                   }
-                  
+
                   if (previous.adjclose != null) {
                     previousPrice = previous.adjclose;
                   } else if (previous.close != null) {
@@ -230,9 +230,9 @@ export function TrendingMarquee({ supabase }) {
   }
 
   return (
-    <div 
+    <div
       ref={scrollContainerRef}
-      className="relative overflow-x-auto overflow-y-hidden bg-gradient-to-r from-emerald-50/50 via-sky-50/50 to-amber-50/50 dark:from-emerald-950/20 dark:via-sky-950/20 dark:to-amber-950/20 border-y border-border/50 py-3 scrollbar-hide"
+      className="relative overflow-x-auto overflow-y-hidden bg-gradient-to-r from-emerald-50/40 via-sky-50/30 to-amber-50/40 dark:from-emerald-950/15 dark:via-sky-950/10 dark:to-amber-950/15 border-y border-border/30 py-2 scrollbar-hide rounded-xl"
       style={{ WebkitOverflowScrolling: 'touch' }}
     >
       <div className={`flex whitespace-nowrap ${isPaused ? '' : 'animate-marquee'}`}>

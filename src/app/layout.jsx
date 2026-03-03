@@ -1,4 +1,5 @@
 import "./globals.css";
+import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth-provider";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
@@ -6,14 +7,20 @@ import { PWARegister } from "@/components/pwa-register";
 import { PWAInstallDialog } from "@/components/pwa-install-dialog";
 import { AppLayoutClient } from "@/components/app-layout-client";
 
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#121212' }
+    { media: '(prefers-color-scheme: light)', color: '#f8f9fa' },
+    { media: '(prefers-color-scheme: dark)', color: '#1a1b2e' }
   ],
 };
 
@@ -46,8 +53,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className="antialiased">
+    <html lang="en" suppressHydrationWarning className={inter.variable}>
+      <body className="antialiased font-sans">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

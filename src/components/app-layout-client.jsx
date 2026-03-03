@@ -14,14 +14,14 @@ export function AppLayoutClient({ children }) {
     <>
       <AccountSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       <div className="flex flex-col min-h-screen">
-        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3 px-2">
+        <header className="sticky top-0 z-40 glass border-b border-border/50">
+          <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3 px-3">
             <HeaderAccountMenu onOpenSidebar={() => setSidebarOpen(true)} />
-            <div className="flex flex-1 items-center justify-center gap-1">
+            <div className="flex flex-1 items-center justify-center gap-1.5">
               <div className="h-4 relative overflow-hidden">
                 <AlignEndHorizontal className="size-5" />
               </div>
-              <h1 className="text-lg font-bold">aruna</h1>
+              <h1 className="text-lg font-bold tracking-tight">aruna</h1>
             </div>
             <HeaderSymbolSearch />
           </div>

@@ -33,32 +33,30 @@ const statusColorMap = {
 
 function SegmentControl({ value, onChange, sortBy, onSortChange }) {
   return (
-    <div className="sticky top-14 z-30 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 -mx-4 px-4 py-3 border-b border-border/40">
+    <div className="sticky top-14 z-30 glass border-b border-border/30 -mx-4 px-4 py-3">
       <div className="flex items-center gap-2">
-        <div className="flex-1 flex gap-2 p-1 bg-muted/30 rounded-full">
+        <div className="flex-1 flex gap-1.5 p-1 bg-muted/40 rounded-2xl">
           <Button
             type="button"
             variant="ghost"
-            className={`flex-1 rounded-full text-xs font-semibold transition-all ${
-              value === "standard"
-                ? "bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80"
-                : "hover:bg-muted/50"
-            }`}
+            className={`flex-1 rounded-xl text-xs font-semibold transition-all h-9 ${value === "standard"
+                ? "bg-gradient-to-br from-teal-600 to-emerald-700 text-white shadow-lg shadow-emerald-500/20"
+                : "hover:bg-muted/60"
+              }`}
             onClick={() => onChange("standard")}
           >
-            MSCI Global Standard
+            MSCI Standard
           </Button>
           <Button
             type="button"
             variant="ghost"
-            className={`flex-1 rounded-full text-xs font-semibold transition-all ${
-              value === "small_cap"
-                ? "bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80"
-                : "hover:bg-muted/50"
-            }`}
+            className={`flex-1 rounded-xl text-xs font-semibold transition-all h-9 ${value === "small_cap"
+                ? "bg-gradient-to-br from-teal-600 to-emerald-700 text-white shadow-lg shadow-emerald-500/20"
+                : "hover:bg-muted/60"
+              }`}
             onClick={() => onChange("small_cap")}
           >
-            MSCI Global Small Cap
+            MSCI Small Cap
           </Button>
         </div>
         <DropdownMenu>
@@ -128,9 +126,8 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
 function StatusBadge({ status }) {
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-        statusColorMap[status.variant]?.badge || statusColorMap.danger.badge
-      }`}
+      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusColorMap[status.variant]?.badge || statusColorMap.danger.badge
+        }`}
     >
       {status.label}
     </span>
@@ -143,7 +140,7 @@ function StockCard({ stock, isLocked = false }) {
   const gradientFrom = statusColorMap[stock.status?.variant]?.cardGradient || statusColorMap.danger.cardGradient;
 
   return (
-    <Card className={`bg-gradient-to-br ${gradientFrom} via-[#111827] to-[#020617] border-border/20 text-white overflow-hidden relative`}>
+    <Card className={`bg-gradient-to-br ${gradientFrom} via-[#0f172a] to-[#020617] border-border/20 text-white overflow-hidden relative rounded-2xl shadow-xl`}>
       <CardContent className={`p-4 space-y-3 ${isLocked ? "blur-[2px] opacity-60" : ""}`}>
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -158,7 +155,7 @@ function StockCard({ stock, isLocked = false }) {
           </div>
           {stock.logo_url && (
             <div className="flex-shrink-0 ml-2">
-							<TickerAvatar symbol={stock.ticker} logo={stock.logo_url} />
+              <TickerAvatar symbol={stock.ticker} logo={stock.logo_url} />
             </div>
           )}
         </div>
@@ -191,13 +188,12 @@ function StockCard({ stock, isLocked = false }) {
           </div>
           <div className="h-2 bg-white/10 rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all ${
-                isNearInclusion
+              className={`h-full rounded-full transition-all ${isNearInclusion
                   ? "bg-gradient-to-r from-emerald-800 to-emerald-900"
                   : stock.progress >= 70
-                  ? "bg-gradient-to-r from-yellow-800 to-yellow-900"
-                  : "bg-gradient-to-r from-red-800 to-red-900"
-              }`}
+                    ? "bg-gradient-to-r from-yellow-800 to-yellow-900"
+                    : "bg-gradient-to-r from-red-800 to-red-900"
+                }`}
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -357,17 +353,17 @@ export default function MSCIPage() {
   return (
     <div className="space-y-4 pb-4">
       {/* Info Card */}
-      <Card className="border-none bg-gradient-to-br from-emerald-950 via-[#111827] to-[#020617] text-white shadow-lg p-4">
+      <Card className="border-none bg-gradient-to-br from-emerald-950 via-[#0f172a] to-[#020617] text-white shadow-xl p-4 rounded-2xl">
         <CardContent className="pt-0">
-					<p className="text-xs leading-relaxed text-white/90 font-semibold">
-						Indonesian stocks with potential inclusion in the MSCI Global and Small Cap indices, considering key market criteria.
-					</p>
+          <p className="text-xs leading-relaxed text-white/90 font-medium">
+            Indonesian stocks with potential inclusion in the MSCI Global and Small Cap indices, considering key market criteria.
+          </p>
         </CardContent>
-    </Card>
+      </Card>
 
       {/* Segment Control */}
-      <SegmentControl 
-        value={selectedIndex} 
+      <SegmentControl
+        value={selectedIndex}
         onChange={setSelectedIndex}
         sortBy={sortBy}
         onSortChange={setSortBy}
@@ -404,9 +400,9 @@ export default function MSCIPage() {
       {!loading && !error && sortedStocks.length > 0 && (
         <div className="space-y-3">
           {sortedStocks.map((stock, index) => (
-            <StockCard 
-              key={stock.id} 
-              stock={stock} 
+            <StockCard
+              key={stock.id}
+              stock={stock}
               isLocked={index >= 2 && !isAuthenticated}
             />
           ))}

@@ -8,10 +8,10 @@ export function TickerAvatar({
   symbol,
   logo,
   size = "default", // "xs" | "sm" | "default"
-  sizeClass = size === "xs" ? "h-5 w-5" : size === "sm" ? "h-6 w-6" : "h-7 w-7",
+  sizeClass = size === "xs" ? "h-5 w-5" : size === "sm" ? "h-6 w-6" : "h-8 w-8",
   textClass = size === "xs" ? "text-[8px]" : size === "sm" ? "text-[10px]" : "text-[11px]",
   className = "",
-  backgroundClass = "bg-muted/20",
+  backgroundClass = "bg-muted/30",
 }) {
   const [failed, setFailed] = useState(false);
   const fallbackChar = symbol ? symbol.charAt(0) : "?";
@@ -19,7 +19,7 @@ export function TickerAvatar({
 
   return (
     <div
-      className={`relative flex items-center justify-center rounded-full overflow-hidden ${backgroundClass} ${sizeClass} ${className}`.trim()}
+      className={`relative flex items-center justify-center rounded-xl overflow-hidden ring-1 ring-border/50 ${backgroundClass} ${sizeClass} ${className}`.trim()}
     >
       {showImage ? (
         <>
@@ -29,17 +29,16 @@ export function TickerAvatar({
             onError={() => setFailed(true)}
             className="
               h-full w-full object-cover
-              contrast-125
-              brightness-80
-              saturate-150
+              contrast-110
+              brightness-95
             "
           />
-          {/* overlay biar makin netral & nyatu sama UI */}
-          <div className="pointer-events-none absolute inset-0 bg-background/10" />
+          {/* subtle overlay for UI harmony */}
+          <div className="pointer-events-none absolute inset-0 bg-background/5" />
         </>
       ) : (
         <span
-          className={`font-semibold uppercase text-muted-foreground ${textClass}`}
+          className={`font-bold uppercase text-muted-foreground/80 ${textClass}`}
         >
           {fallbackChar}
         </span>

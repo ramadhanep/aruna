@@ -385,17 +385,17 @@ function PickItem({ pick, quote }) {
   return (
     <Link
       href={`/chart?symbol=${encodeURIComponent(symbol)}&cycle=normal&tab=tradingPlan`}
-      className="flex items-center gap-3 py-3 hover:bg-accent/30 transition-colors"
+      className="flex items-center gap-3 py-3.5 px-1 hover:bg-accent/40 transition-all duration-200 rounded-lg -mx-1"
     >
       <div className="flex-1 min-w-0 flex items-center gap-3">
         <div className="flex-shrink-0">
           <TickerAvatar symbol={symbol} logo={logo} />
         </div>
         <div className="min-w-0">
-          <div className="font-semibold text-sm truncate flex items-center gap-1">
+          <div className="font-semibold text-sm truncate flex items-center gap-1.5">
             <span>{formatTickerDisplay(symbol)}</span>
             {isNewSignal ? (
-              <span className="text-[10px] font-semibold tracking-wide text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-[1px] rounded-full">
+              <span className="text-[9px] font-bold tracking-wide text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-500/15 px-1.5 py-[2px] rounded-md">
                 NEW
               </span>
             ) : null}
@@ -403,14 +403,14 @@ function PickItem({ pick, quote }) {
               <AlertTriangle className="h-3.5 w-3.5 text-amber-500" title="High volume vs market cap" />
             ) : null}
           </div>
-          <div className="text-xs text-muted-foreground truncate">{displayName}</div>
+          <div className="text-xs text-muted-foreground truncate mt-0.5">{displayName}</div>
         </div>
       </div>
       <div className={`flex items-center ${Array.isArray(chartData) ? color : "text-muted-foreground"}`}>
         <MiniChart data={chartData} isPositive={isPositive} chartId={`explore-${symbol}`} />
       </div>
       <div className="flex flex-col items-end">
-        <div className="font-semibold text-sm">{formattedPrice}</div>
+        <div className="font-semibold text-sm tabular-nums">{formattedPrice}</div>
         <div className={`text-xs font-medium flex items-center gap-1 ${color}`}>
           {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
           {isPositive ? "+" : ""}
@@ -898,7 +898,7 @@ export default function ExplorePage() {
       )}
 
       <div>
-        <section className="bg-background/80">
+        <section>
           <div className="grid grid-cols-2 gap-3">
             {highlightClusters.map((item) => {
               const changeValue = item.quote?.change ?? 0;
@@ -907,31 +907,31 @@ export default function ExplorePage() {
                 <Link
                   key={item.symbol}
                   href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal&tab=tradingPlan`}
-                  className="rounded-lg py-4 overflow-hidden border border-transparent hover:border-border/60 transition-colors block"
+                  className="rounded-2xl p-3.5 overflow-hidden border border-border/40 hover:border-border/80 transition-all duration-200 block card-hover bg-card"
                 >
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <TickerAvatar symbol={item.symbol} logo={item.logo ? item.logo : item.quote?.logo} />
                       <div>
-                        <p className="text-base font-semibold text-foreground">{item.label}</p>
+                        <p className="text-sm font-bold text-foreground tracking-tight">{item.label}</p>
                       </div>
                     </div>
-                    <span className="text-[10px] text-muted-foreground mr-3">
-                      {item.quote ? "Live" : "Syncing"}
+                    <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md ${item.quote ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : 'text-muted-foreground bg-muted/50'}`}>
+                      {item.quote ? "Live" : "Sync"}
                     </span>
                   </div>
-                  <div className="mt-4 flex items-end justify-between gap-3">
+                  <div className="mt-3 flex items-end justify-between gap-3">
                     <div>
-                      <p className="text-base font-semibold text-foreground">
+                      <p className="text-base font-bold text-foreground tabular-nums">
                         {item.quote ? formatPrice(item.quote.price) : "—"}
                       </p>
-                      <p className={`text-xs font-semibold ${isPositive ? "text-emerald-500" : "text-red-600"}`}>
+                      <p className={`text-xs font-semibold mt-0.5 ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
                         {item.quote && typeof item.quote.changePercent === "number"
-                          ? `${isPositive ? "+" : ""}${item.quote.changePercent.toFixed(2)}% today`
-                          : "Fetching data"}
+                          ? `${isPositive ? "+" : ""}${item.quote.changePercent.toFixed(2)}%`
+                          : "—"}
                       </p>
                     </div>
-                    <div className={`flex items-center mr-2 ${isPositive ? "text-emerald-500" : "text-red-600"}`}>
+                    <div className={`flex items-center ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
                       <MiniChart
                         data={item.quote?.chartData || []}
                         isPositive={isPositive}
@@ -949,46 +949,46 @@ export default function ExplorePage() {
 
         <TrendingMarquee supabase={supabase} />
 
-        <div className="mt-4 relative overflow-x-auto overflow-y-hidden py-3 scrollbar-hide">
-          <div className="flex justify-center whitespace-nowrap gap-4">
-            <Link href="/idx-momentum" className="w-24">
+        <div className="mt-5 relative overflow-x-auto overflow-y-hidden py-3 scrollbar-hide">
+          <div className="flex justify-center whitespace-nowrap gap-5">
+            <Link href="/idx-momentum" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
-                  <Axe className="w-6 h-6 text-emerald-700" />
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-700 shadow-lg shadow-emerald-500/20">
+                  <Axe className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xs text-muted-foreground">Momentum</span>
+                <span className="text-[11px] font-medium text-muted-foreground">Momentum</span>
               </div>
             </Link>
-            <Link href="/idx-bubbles" className="w-24">
+            <Link href="/idx-bubbles" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
-                  <Droplets className="w-6 h-6 text-emerald-700" />
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-sky-600 to-blue-700 shadow-lg shadow-sky-500/20">
+                  <Droplets className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xs text-muted-foreground">Bubbles</span>
+                <span className="text-[11px] font-medium text-muted-foreground">Bubbles</span>
               </div>
             </Link>
-            <Link href="/idx-rotation" className="w-24">
+            <Link href="/idx-rotation" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
-                  <Rotate3D className="w-6 h-6 text-emerald-700" />
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-600 to-purple-700 shadow-lg shadow-violet-500/20">
+                  <Rotate3D className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xs text-muted-foreground">Rotation</span>
+                <span className="text-[11px] font-medium text-muted-foreground">Rotation</span>
               </div>
             </Link>
-            <Link href="/msci" className="w-24">
+            <Link href="/msci" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
-                  <Magnet className="w-6 h-6 text-emerald-700" />
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-600 to-orange-700 shadow-lg shadow-amber-500/20">
+                  <Magnet className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xs text-muted-foreground">MSCI</span>
+                <span className="text-[11px] font-medium text-muted-foreground">MSCI</span>
               </div>
             </Link>
-            <Link href="/discussion" className="w-24">
+            <Link href="/discussion" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-full bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80">
-                  <MessageCircleMore className="w-6 h-6 text-emerald-700" />
+                <div className="p-3 rounded-2xl bg-gradient-to-br from-rose-600 to-pink-700 shadow-lg shadow-rose-500/20">
+                  <MessageCircleMore className="w-5 h-5 text-white" />
                 </div>
-                <span className="text-xs text-muted-foreground">Discussion</span>
+                <span className="text-[11px] font-medium text-muted-foreground">Chat</span>
               </div>
             </Link>
           </div>
@@ -999,26 +999,29 @@ export default function ExplorePage() {
           const firstPicks = section.picks.slice(0, 5);
           const shouldGate = !isAuthenticated && gatedPicks.length > 0;
           return (
-            <section key={section.category} className="bg-background/70 py-5">
+            <section key={section.category} className="py-5 fade-in">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-[11px] uppercase tracking-wider text-muted-foreground">
-                    Breakout Signals in {section.title}
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
+                      Breakout Signals in {section.title}
+                    </p>
+                  </div>
                   {section.lastScreened && (
-                    <p className="text-[11px] text-muted-foreground">
-                      Last updated {formatTimeAgo(section.lastScreened)}
+                    <p className="text-[11px] text-muted-foreground/70 ml-3.5">
+                      Updated {formatTimeAgo(section.lastScreened)}
                     </p>
                   )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                  <span>{section.picks.length} found</span>
-                  <span className="rounded-full border border-muted/80 px-3 py-1 uppercase tracking-wider">
+                  <span className="tabular-nums font-medium">{section.picks.length} found</span>
+                  <span className="rounded-lg border border-border/60 px-2.5 py-1 uppercase tracking-wider text-[10px] font-semibold bg-muted/30">
                     {section.snapshot?.status ?? "idle"}
                   </span>
                 </div>
               </div>
-              <div className="mt-4 space-y-1 divide-y divide-border/70">
+              <div className="mt-4 space-y-0.5">
                 {firstPicks.map((pick) => (
                   <PickItem key={pick.symbol} pick={pick} quote={quotes[pick.symbol]} />
                 ))}
@@ -1057,11 +1060,11 @@ export default function ExplorePage() {
           );
         })}
 
-        <section className="mt-5 bg-background/80">
+        <section className="mt-6 p-4 rounded-2xl bg-card border border-border/40">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-[11px] text-muted-foreground">
-                Run a fresh pass whenever you need fresh alpha.
+              <p className="text-xs font-medium text-muted-foreground">
+                Run a fresh screening pass for fresh alpha.
               </p>
             </div>
           </div>
@@ -1078,7 +1081,7 @@ export default function ExplorePage() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="w-full rounded-full text-xs border-border/70 bg-background/80"
+                    className="w-full rounded-xl text-xs font-semibold border-border/50 bg-muted/30 hover:bg-muted/60 transition-colors"
                     onClick={() => triggerBatch(category)}
                     disabled={manualLoading[category]}
                   >

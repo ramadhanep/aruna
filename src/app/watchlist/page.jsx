@@ -36,16 +36,16 @@ async function fetchQuote(symbol) {
     }
     const series = data.data || [];
     const meta = data.meta || {};
-    
+
     // Use regularMarketPrice and previousClose as fallback for IDX stocks
     let price = meta.regularMarketPrice;
     let previousPrice = meta.previousClose || meta.chartPreviousClose;
-    
+
     // Try to get from series data if available
     if (series.length >= 2) {
       const current = series[series.length - 1];
       const previous = series[series.length - 2];
-      
+
       if (current.adjclose != null) {
         price = current.adjclose;
       }
@@ -53,15 +53,15 @@ async function fetchQuote(symbol) {
         previousPrice = previous.adjclose;
       }
     }
-    
+
     // If we still don't have price data, return null
     if (price == null || previousPrice == null) return null;
-    
+
     const change = price - previousPrice;
     const changePercent = (change / previousPrice) * 100;
     const name = data.meta?.name || symbol;
     const logo = data.meta?.logo || null;
-   
+
     return {
       symbol,
       name,
@@ -100,7 +100,7 @@ function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
   const areaPath = `${linePath} L${coordinates[coordinates.length - 1].x.toFixed(2)},${height} L0,${height} Z`;
   const strokeColor = isPositive ? "#10b981" : "#ef4444";
   const gradientId = `${gradientKey}-fill`;
-  
+
   // Calculate baseline at first data point (represents 0% change)
   const firstValue = data[0];
   const baselineY = height - ((firstValue - min) / range) * height;
@@ -148,14 +148,14 @@ function StockItem({ quote }) {
   if (!quote) return null;
 
   const isPositive = quote.change >= 0;
-  const color = isPositive ? 'text-emerald-600' : 'text-red-600';
+  const color = isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400';
   const logo = quote.logo;
   const symbol = quote.symbol || '';
 
   return (
     <Link
       href={`/chart?symbol=${encodeURIComponent(quote.symbol)}&cycle=normal`}
-      className="flex items-center gap-3 py-3 hover:bg-accent/30 transition-colors"
+      className="flex items-center gap-3 py-3.5 px-1 hover:bg-accent/40 transition-all duration-200 rounded-lg -mx-1"
     >
       <div className="flex-1 min-w-0 flex items-center gap-3">
         <div className="flex-shrink-0">
@@ -163,7 +163,7 @@ function StockItem({ quote }) {
         </div>
         <div className="min-w-0">
           <div className="font-semibold text-sm truncate">{formatTickerDisplay(quote.symbol)}</div>
-          <div className="text-xs text-muted-foreground truncate">{quote.name}</div>
+          <div className="text-xs text-muted-foreground truncate mt-0.5">{quote.name}</div>
         </div>
       </div>
       <div className={`flex items-center ${color}`}>
@@ -174,7 +174,7 @@ function StockItem({ quote }) {
         />
       </div>
       <div className="flex flex-col items-end">
-        <div className="font-semibold text-sm">{quote.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+        <div className="font-semibold text-sm tabular-nums">{quote.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
         <div className={`text-xs font-medium flex items-center gap-1 ${color}`}>
           {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
           {isPositive ? '+' : ''}{quote.changePercent.toFixed(2)}%
@@ -263,7 +263,7 @@ export default function HomePage() {
     const quotesData = await Promise.all(
       sorted.map(item => fetchQuote(item.symbol))
     );
-    
+
     setQuotes(quotesData.filter(q => q !== null));
   }, [watchlist, watchlistReady]);
 
@@ -336,8 +336,8 @@ export default function HomePage() {
 
   // Check if app is installable
   useEffect(() => {
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
-                         window.navigator.standalone === true;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
     setShowInstallButton(!isStandalone);
 
     const handler = (e) => {
@@ -381,10 +381,10 @@ export default function HomePage() {
       setPullDistance(0);
       return;
     }
-    
+
     const touchY = e.touches[0].clientY;
     const distance = touchY - touchStartY.current;
-    
+
     if (distance > 0) {
       setPullDistance(Math.min(distance, 150));
     }
@@ -404,11 +404,11 @@ export default function HomePage() {
 
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    
+
     if (outcome === 'accepted') {
       console.log('User accepted the install prompt');
     }
-    
+
     setDeferredPrompt(null);
     setShowInstallButton(false);
   };
@@ -421,7 +421,7 @@ export default function HomePage() {
             <div className="h-16 w-full rounded-lg shimmer bg-white/20"></div>
           </CardContent>
         </Card>
-        
+
         <Card className="border-none">
           <CardContent className="space-y-3 pt-0">
             <div className="h-3 w-full rounded-full shimmer bg-white/20"></div>
@@ -485,9 +485,9 @@ export default function HomePage() {
 
       <TrendingMarquee supabase={supabase} />
 
-      <Card className="mt-4 border-none bg-gradient-to-br from-amber-950 via-[#111827] to-[#020617] border-border/20 text-white/80 shadow-lg p-4">
+      <Card className="mt-4 border-none bg-gradient-to-br from-emerald-950 via-[#0f172a] to-[#020617] border-border/20 text-white/90 shadow-xl p-4 rounded-2xl">
         <CardContent className="pt-0">
-          <p className="text-xs leading-relaxed text-white/90 font-semibold">
+          <p className="text-xs leading-relaxed text-white/90 font-medium">
             We search through historical data looking for anomalous patterns that we would not expect to occur at random.
           </p>
         </CardContent>
@@ -495,12 +495,12 @@ export default function HomePage() {
 
       <div className="overflow-hidden">
         <SectionHeader title="Watchlist" />
-        <div className="divide-y">
+        <div>
           {quotes.map(quote => (
             <StockItem key={quote.symbol} quote={quote} />
           ))}
         </div>
-        <div className="border-t py-2">
+        <div className="border-t border-border/40 py-2.5">
           <button
             onClick={() => {
               if (!isAuthenticated) {
@@ -509,20 +509,20 @@ export default function HomePage() {
               }
               setManageDialogOpen(true);
             }}
-            className="w-full flex items-center gap-2 justify-center text-emerald-700 hover:text-emerald-800 transition-colors"
+            className="w-full flex items-center gap-2 justify-center text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors py-1"
           >
             <Edit className="h-4 w-4" />
-            <span className="text-sm font-medium">Edit Watchlist</span>
+            <span className="text-sm font-semibold">Edit Watchlist</span>
           </button>
         </div>
       </div>
 
       {marketPulse && marketPulse.topGainer && marketPulse.topLoser && (
-        <Card>
+        <Card className="border-border/40 rounded-2xl">
           <CardHeader className="pb-0">
             <div className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-muted-foreground" />
-              <CardTitle className="text-sm">Highlights</CardTitle>
+              <CardTitle className="text-sm font-bold">Highlights</CardTitle>
             </div>
             <CardDescription className="text-xs">How your watchlist is moving today</CardDescription>
           </CardHeader>
@@ -574,9 +574,9 @@ export default function HomePage() {
       )}
 
       {showInstallButton && deferredPrompt && (
-        <Button 
+        <Button
           onClick={handleInstall}
-          className="w-full bg-emerald-700 hover:bg-emerald-800 flex items-center gap-2 text-xs text-white/80"
+          className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 flex items-center gap-2 text-xs text-white rounded-xl shadow-lg shadow-emerald-500/20"
         >
           <Download className="h-4 w-4" />
           Install App
@@ -603,7 +603,7 @@ export default function HomePage() {
             return;
           }
           setWatchlist(newWatchlist);
-          syncWatchlist(newWatchlist).catch(() => {});
+          syncWatchlist(newWatchlist).catch(() => { });
         }}
       />
     </div>

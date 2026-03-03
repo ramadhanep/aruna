@@ -1,5 +1,62 @@
 import yahooFinance from '@/lib/yahoo-finance';
 import { encodePayload } from '@/lib/secure-payload';
+import { getSupabaseServiceRoleClient } from '@/lib/supabase-server';
+
+const SUPABASE_STORAGE_BASE = 'https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public';
+const PLUANG_CDN_BASE = 'https://image-cdn.pluang.com/icons/light/global-stocks';
+
+/**
+ * Ensure a US stock logo exists in Supabase storage.
+ * If missing, download from Pluang CDN and upload automatically.
+ * Returns the Supabase public URL (or null on failure).
+ */
+async function ensureUsLogo(normalizedSymbol) {
+  const supabaseUrl = `${SUPABASE_STORAGE_BASE}/us/${normalizedSymbol}.svg`;
+
+  try {
+    // 1. Check if logo already exists in Supabase storage
+    const headRes = await fetch(supabaseUrl, { method: 'HEAD' });
+    if (headRes.ok) {
+      return supabaseUrl; // already exists
+    }
+
+    // 2. Download from Pluang CDN
+    const cdnUrl = `${PLUANG_CDN_BASE}/${normalizedSymbol}.svg`;
+    const cdnRes = await fetch(cdnUrl);
+    if (!cdnRes.ok) {
+      console.warn(`Pluang CDN returned ${cdnRes.status} for ${normalizedSymbol}`);
+      return null;
+    }
+
+    const svgBuffer = Buffer.from(await cdnRes.arrayBuffer());
+
+    // 3. Upload to Supabase storage via service role client
+    const supabase = getSupabaseServiceRoleClient();
+    if (!supabase) {
+      console.warn('Supabase service role client unavailable, skipping logo upload');
+      return null;
+    }
+
+    const { error: uploadError } = await supabase.storage
+      .from('us')
+      .upload(`${normalizedSymbol}.svg`, svgBuffer, {
+        contentType: 'image/svg+xml',
+        cacheControl: '31536000', // 1 year
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.warn(`Failed to upload ${normalizedSymbol}.svg to Supabase:`, uploadError.message);
+      return null;
+    }
+
+    console.log(`Uploaded ${normalizedSymbol}.svg to Supabase storage`);
+    return supabaseUrl;
+  } catch (err) {
+    console.warn(`ensureUsLogo error for ${normalizedSymbol}:`, err.message);
+    return null;
+  }
+}
 
 /**
  * Yahoo Finance API proxy route
@@ -40,7 +97,7 @@ export async function GET(request) {
       { status: 400 }
     );
   }
-  
+
   let quoteMeta = null;
   try {
     quoteMeta = await yahooFinance.quote(symbol, {
@@ -94,9 +151,9 @@ export async function GET(request) {
     if (!logoUrl) {
       if (quoteMeta.market == 'id_market') {
         const idxSymbol = normalizedSymbol.replace(/\.JK$/i, '');
-        logoUrl = `https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/${idxSymbol}.png`;
+        logoUrl = `${SUPABASE_STORAGE_BASE}/idx/${idxSymbol}.png`;
       } else if (quoteMeta.market == 'us_market') {
-        logoUrl = `https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/us/${normalizedSymbol}.svg`;
+        logoUrl = await ensureUsLogo(normalizedSymbol) || `${SUPABASE_STORAGE_BASE}/us/${normalizedSymbol}.svg`;
       }
     }
 
@@ -151,18 +208,18 @@ export async function GET(request) {
     });
   } catch (error) {
     console.error('Error fetching Yahoo Finance chart data:', error);
-    
+
     // Provide more specific error messages
     let message = error?.message || 'Failed to fetch data from Yahoo Finance';
     let status = 500;
-    
+
     if (message.includes('No data found')) {
       message = 'Symbol may be invalid, delisted, or no data available for the requested period';
       status = 404;
     } else if (message.includes('Invalid cookie')) {
       message = 'Yahoo Finance API session error. Please try again.';
     }
-    
+
     return Response.json({ HIDUP_JOKOWI: encodePayload({ error: message }) }, { status });
   }
 }
