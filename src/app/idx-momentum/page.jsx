@@ -23,16 +23,16 @@ import { TickerAvatar } from "@/components/ticker-avatar";
 // Color maps for status-based styling
 const statusColorMap = {
   success: {
-    badge: "bg-emerald-900/20 text-emerald-500 border-emerald-900/30",
-    cardGradient: "from-emerald-950"
+    badge: "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-500 border-emerald-200 dark:border-emerald-900/30",
+    cardGradient: "from-emerald-50 dark:from-emerald-950"
   },
   warning: {
-    badge: "bg-yellow-900/20 text-yellow-500 border-yellow-900/30",
-    cardGradient: "from-yellow-950"
+    badge: "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-500 border-yellow-200 dark:border-yellow-900/30",
+    cardGradient: "from-yellow-50 dark:from-yellow-950"
   },
   danger: {
-    badge: "bg-red-900/20 text-red-500 border-red-900/30",
-    cardGradient: "from-red-950"
+    badge: "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-500 border-red-200 dark:border-red-900/30",
+    cardGradient: "from-red-50 dark:from-red-950"
   }
 };
 
@@ -73,8 +73,8 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
                 type="button"
                 variant="ghost"
                 className={`rounded-full text-xs font-semibold transition-all px-4 py-2 h-auto ${value === tab.key
-                    ? "bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80"
-                    : "hover:bg-muted/50"
+                  ? "bg-gradient-to-br from-emerald-200 via-slate-100 to-slate-50 dark:from-emerald-800 dark:via-[#111827] dark:to-[#020617] border-border/20 text-foreground/80 dark:text-white/80"
+                  : "hover:bg-muted/50"
                   }`}
                 onClick={() => onChange(tab.key)}
               >
@@ -149,13 +149,13 @@ function SummaryCard({ summary }) {
       : 'text-yellow-500';
 
   return (
-    <Card className="border-none bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] text-white shadow-lg">
+    <Card className="border-none bg-gradient-to-br from-slate-100 via-slate-50 to-white dark:from-[#0f172a] dark:via-[#111827] dark:to-[#020617] text-foreground dark:text-white shadow-lg">
       <CardContent className="p-3 space-y-3">
         {/* Market Sentiment */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-white/70" />
-            <span className="text-xs text-white/70">Market Sentiment</span>
+            <Activity className="h-4 w-4 text-muted-foreground dark:text-white/70" />
+            <span className="text-xs text-muted-foreground dark:text-white/70">Market Sentiment</span>
           </div>
           <span className={`text-xs font-bold ${sentimentColor}`}>
             {summary.marketSentiment}
@@ -164,8 +164,8 @@ function SummaryCard({ summary }) {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-4 gap-2">
-          <div className="text-center p-2 bg-white/5 rounded-xl">
-            <p className="text-xs text-white/50">Total</p>
+          <div className="text-center p-2 bg-black/5 dark:bg-white/5 rounded-xl">
+            <p className="text-xs text-muted-foreground dark:text-white/50">Total</p>
             <p className="text-xs font-bold">{summary.totalStocks}</p>
           </div>
           <div className="text-center p-2 bg-emerald-900/20 rounded-xl">
@@ -183,8 +183,8 @@ function SummaryCard({ summary }) {
         </div>
 
         {/* Avg Momentum */}
-        <div className="flex items-center justify-between p-2 bg-white/5 rounded-xl">
-          <span className="text-xs text-white/70">Avg Momentum Score</span>
+        <div className="flex items-center justify-between p-2 bg-black/5 dark:bg-white/5 rounded-xl">
+          <span className="text-xs text-muted-foreground dark:text-white/70">Avg Momentum Score</span>
           <span className={`text-xs font-bold ${summary.avgMomentum >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
             {summary.avgMomentum > 0 ? '+' : ''}{summary.avgMomentum}
           </span>
@@ -198,7 +198,7 @@ function StockCard({ stock, isLocked = false }) {
   const gradientFrom = statusColorMap[stock.status?.variant]?.cardGradient || statusColorMap.danger.cardGradient;
 
   return (
-    <Card className={`bg-gradient-to-br ${gradientFrom} via-[#111827] to-[#020617] border-border/20 text-white overflow-hidden relative`}>
+    <Card className={`bg-gradient-to-br ${gradientFrom} via-slate-100 to-slate-50 dark:via-[#111827] dark:to-[#020617] border-border/20 text-foreground dark:text-white overflow-hidden relative`}>
       <CardContent className={`p-3 space-y-2 ${isLocked ? "blur-[2px] opacity-60" : ""}`}>
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -207,7 +207,7 @@ function StockCard({ stock, isLocked = false }) {
               <h3 className="text-xs font-bold truncate">{stock.code}</h3>
               <StatusBadge status={stock.status} />
             </div>
-            <p className="text-xs text-white/70 truncate">{stock.name}</p>
+            <p className="text-xs text-muted-foreground dark:text-white/70 truncate">{stock.name}</p>
           </div>
           {stock.logo_url && (
             <div className="flex-shrink-0 ml-2">
@@ -219,20 +219,20 @@ function StockCard({ stock, isLocked = false }) {
         {/* Price & Market Cap */}
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-0.5">
-            <p className="text-[9px] text-white/50 uppercase tracking-wide">Price</p>
+            <p className="text-[9px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">Price</p>
             <p className="text-[11px] font-semibold">Rp {formatPrice(stock.price)}</p>
           </div>
           <div className="space-y-0.5">
-            <p className="text-[9px] text-white/50 uppercase tracking-wide">Market Cap</p>
+            <p className="text-[9px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">Market Cap</p>
             <p className="text-[11px] font-semibold">{formatMarketCap(stock.marketCap)}</p>
           </div>
         </div>
 
         {/* Momentum Score */}
-        <div className="flex items-center justify-between p-1.5 bg-white/5 rounded-xl">
+        <div className="flex items-center justify-between p-1.5 bg-black/5 dark:bg-white/5 rounded-xl">
           <div className="flex items-center gap-1">
-            <Zap className="h-3 w-3 text-white/70" />
-            <span className="text-[9px] text-white/70">Momentum Score</span>
+            <Zap className="h-3 w-3 text-muted-foreground dark:text-white/70" />
+            <span className="text-[9px] text-muted-foreground dark:text-white/70">Momentum Score</span>
           </div>
           <span className={`text-[11px] font-bold ${stock.momentumScore >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
             {stock.momentumScore > 0 ? '+' : ''}{stock.momentumScore}
@@ -240,16 +240,16 @@ function StockCard({ stock, isLocked = false }) {
         </div>
 
         {/* Price Changes */}
-        <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-white/10">
+        <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-black/10 dark:border-white/10">
           <div className="space-y-0.5">
-            <p className="text-[9px] text-white/50 uppercase tracking-wide">1 Week</p>
+            <p className="text-[9px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">1 Week</p>
             <p className={`text-[11px] font-semibold flex items-center gap-0.5 ${stock.weekChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {stock.weekChange >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
               {formatPercent(stock.weekChange)}
             </p>
           </div>
           <div className="space-y-0.5">
-            <p className="text-[9px] text-white/50 uppercase tracking-wide">1 Month</p>
+            <p className="text-[9px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">1 Month</p>
             <p className={`text-[11px] font-semibold flex items-center gap-0.5 ${stock.monthChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {stock.monthChange >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
               {formatPercent(stock.monthChange)}
@@ -259,8 +259,8 @@ function StockCard({ stock, isLocked = false }) {
       </CardContent>
       {isLocked && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1.5 rounded-lg bg-background/05 backdrop-blur-xs px-4 text-center pointer-events-none">
-          <Lock className="h-3.5 w-3.5 text-white/90" />
-          <p className="text-xs font-semibold text-white/90">Sign in to unlock</p>
+          <Lock className="h-3.5 w-3.5 text-foreground/90 dark:text-white/90" />
+          <p className="text-xs font-semibold text-foreground/90 dark:text-white/90">Sign in to unlock</p>
         </div>
       )}
     </Card>
@@ -271,7 +271,7 @@ function MiniStockCard({ stock }) {
   const isPositive = stock.weekChange >= 0;
 
   return (
-    <div className="flex items-center gap-2 p-2 bg-white/5 rounded-xl min-w-[140px]">
+    <div className="flex items-center gap-2 p-2 bg-black/5 dark:bg-white/5 rounded-xl min-w-[140px]">
       <TickerAvatar symbol={`${stock.code}.JK`} logo={stock.logo_url} size="xs" />
       <div className="flex-1 min-w-0">
         <p className="text-xs font-bold truncate">{stock.code}</p>
@@ -290,7 +290,7 @@ function TopMoversSection({ topGainers, topLosers }) {
       <div>
         <div className="flex items-center gap-1.5 mb-2">
           <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-          <span className="text-xs font-semibold text-white/80">Top Gainers</span>
+          <span className="text-xs font-semibold text-foreground/80 dark:text-white/80">Top Gainers</span>
         </div>
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
           {topGainers.slice(0, 5).map((stock) => (
@@ -303,7 +303,7 @@ function TopMoversSection({ topGainers, topLosers }) {
       <div>
         <div className="flex items-center gap-1.5 mb-2">
           <TrendingDown className="h-3.5 w-3.5 text-red-500" />
-          <span className="text-xs font-semibold text-white/80">Top Losers</span>
+          <span className="text-xs font-semibold text-foreground/80 dark:text-white/80">Top Losers</span>
         </div>
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
           {topLosers.slice(0, 5).map((stock) => (
@@ -319,12 +319,12 @@ function LoadingSkeleton() {
   return (
     <div className="space-y-3">
       {/* Summary Skeleton */}
-      <Card className="bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] border-border/20">
+      <Card className="bg-gradient-to-br from-slate-100 via-slate-50 to-white dark:from-[#0f172a] dark:via-[#111827] dark:to-[#020617] border-border/20">
         <CardContent className="p-3 space-y-3">
-          <Skeleton className="h-4 w-32 bg-white/10" />
+          <Skeleton className="h-4 w-32 bg-black/10 dark:bg-white/10" />
           <div className="grid grid-cols-4 gap-2">
             {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-12 w-full rounded-lg bg-white/10" />
+              <Skeleton key={i} className="h-12 w-full rounded-lg bg-black/10 dark:bg-white/10" />
             ))}
           </div>
         </CardContent>
@@ -332,18 +332,18 @@ function LoadingSkeleton() {
 
       {/* Cards Skeleton */}
       {[1, 2, 3].map((i) => (
-        <Card key={i} className="bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] border-border/20">
+        <Card key={i} className="bg-gradient-to-br from-slate-100 via-slate-50 to-white dark:from-[#0f172a] dark:via-[#111827] dark:to-[#020617] border-border/20">
           <CardContent className="p-3 space-y-2">
             <div className="flex items-start justify-between">
               <div className="space-y-1">
-                <Skeleton className="h-3 w-16 bg-white/10" />
-                <Skeleton className="h-2.5 w-24 bg-white/10" />
+                <Skeleton className="h-3 w-16 bg-black/10 dark:bg-white/10" />
+                <Skeleton className="h-2.5 w-24 bg-black/10 dark:bg-white/10" />
               </div>
-              <Skeleton className="h-8 w-8 rounded-full bg-white/10" />
+              <Skeleton className="h-8 w-8 rounded-full bg-black/10 dark:bg-white/10" />
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <Skeleton className="h-8 w-full bg-white/10" />
-              <Skeleton className="h-8 w-full bg-white/10" />
+              <Skeleton className="h-8 w-full bg-black/10 dark:bg-white/10" />
+              <Skeleton className="h-8 w-full bg-black/10 dark:bg-white/10" />
             </div>
           </CardContent>
         </Card>
@@ -455,9 +455,9 @@ export default function MomentumPage() {
   return (
     <div className="space-y-3 pb-4">
       {/* Info Card */}
-      <Card className="border-none bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] text-white shadow-lg p-3">
+      <Card className="border-none bg-gradient-to-br from-slate-100 via-slate-50 to-white dark:from-[#0f172a] dark:via-[#111827] dark:to-[#020617] text-foreground dark:text-white shadow-lg p-3">
         <CardContent className="pt-0">
-          <p className="text-xs leading-relaxed text-white/90 font-semibold">
+          <p className="text-xs leading-relaxed text-foreground/90 dark:text-white/90 font-semibold">
             IDX Momentum & Price Trend Analysis
           </p>
         </CardContent>

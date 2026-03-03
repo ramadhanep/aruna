@@ -73,7 +73,7 @@ export function MarketBubbles({ fullScreen = false }) {
     const sorted = [...filtered].sort((a, b) => Math.abs(b.change) - Math.abs(a.change));
     const maxChange = Math.max(...sorted.map(s => Math.abs(s.change)));
     const minSize = 24;
-    
+
     return sorted.map((stock) => {
       const changeRatio = Math.abs(stock.change) / maxChange;
       const size = minSize + Math.pow(changeRatio, 0.5) * (dimensions.width * 0.12);
@@ -149,14 +149,14 @@ export function MarketBubbles({ fullScreen = false }) {
         if (bubble.x < margin) bubble.vx += (margin - bubble.x) * 0.15;
         if (bubble.x > containerWidth - margin) bubble.vx += (containerWidth - margin - bubble.x) * 0.15;
         if (bubble.y < headerHeight + margin) bubble.vy += (headerHeight + margin - bubble.y) * 0.15;
-        
+
         const watermarkX = containerWidth - 120;
         const watermarkY = containerHeight - watermarkHeight;
         if (bubble.x > watermarkX - margin && bubble.y > watermarkY - margin) {
           bubble.vx -= 0.5;
           bubble.vy -= 0.5;
         }
-        
+
         if (bubble.y > containerHeight - margin) bubble.vy += (containerHeight - margin - bubble.y) * 0.15;
       }
 
@@ -176,11 +176,11 @@ export function MarketBubbles({ fullScreen = false }) {
       const storedPos = bubblePositions[bubble.code];
       const finalX = storedPos?.x ?? bubble.x;
       const finalY = storedPos?.y ?? bubble.y;
-      
+
       if (!initialPositionsRef.current[bubble.code]) {
         initialPositionsRef.current[bubble.code] = { x: bubble.x, y: bubble.y };
       }
-      
+
       return {
         ...bubble,
         x: finalX,
@@ -201,15 +201,15 @@ export function MarketBubbles({ fullScreen = false }) {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
-    
+
     const svg = svgRef.current;
     if (!svg) return;
-    
+
     const pt = svg.createSVGPoint();
     pt.x = e.clientX ?? e.touches?.[0]?.clientX;
     pt.y = e.clientY ?? e.touches?.[0]?.clientY;
     const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
-    
+
     dragInfoRef.current = {
       code: bubble.code,
       startX: svgP.x,
@@ -222,65 +222,65 @@ export function MarketBubbles({ fullScreen = false }) {
   const handlePointerMove = useCallback((e) => {
     if (!isDragging || !dragInfoRef.current) return;
     e.preventDefault();
-    
+
     const svg = svgRef.current;
     if (!svg) return;
-    
+
     const clientX = e.clientX ?? e.touches?.[0]?.clientX;
     const clientY = e.clientY ?? e.touches?.[0]?.clientY;
-    
+
     if (clientX === undefined || clientY === undefined) return;
-    
+
     const pt = svg.createSVGPoint();
     pt.x = clientX;
     pt.y = clientY;
     const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
-    
+
     const deltaX = svgP.x - dragInfoRef.current.startX;
     const deltaY = svgP.y - dragInfoRef.current.startY;
-    
+
     const newX = dragInfoRef.current.bubbleStartX + deltaX;
     const newY = dragInfoRef.current.bubbleStartY + deltaY;
-    
+
     setBubblePositions(prev => {
       const newPositions = { ...prev };
       const draggedCode = dragInfoRef.current.code;
-      
+
       newPositions[draggedCode] = { x: newX, y: newY };
-      
+
       const draggedBubble = packedBubbles.find(b => b.code === draggedCode);
       if (!draggedBubble) return newPositions;
-      
+
       packedBubbles.forEach(bubble => {
         if (bubble.code === draggedCode) return;
-        
+
         const currentX = newPositions[bubble.code]?.x ?? bubble.x;
         const currentY = newPositions[bubble.code]?.y ?? bubble.y;
-        
+
         const dist = getDistance(newX, newY, currentX, currentY);
         const minDist = (draggedBubble.size + bubble.size) / 2 + 5;
         const influenceRadius = minDist * 2.5;
-        
+
         if (dist < influenceRadius && dist > 0) {
           const pushStrength = Math.pow(1 - dist / influenceRadius, 2) * 0.4;
           const angle = Math.atan2(currentY - newY, currentX - newX);
-          
+
           const pushX = Math.cos(angle) * pushStrength * (minDist - dist + 20);
           const pushY = Math.sin(angle) * pushStrength * (minDist - dist + 20);
-          
+
           const margin = bubble.size / 2 + 2;
           const headerHeight = 56;
-          
+
           let finalX = currentX + pushX;
           let finalY = currentY + pushY;
-          
+
           finalX = Math.max(margin, Math.min(dimensions.width - margin, finalX));
           finalY = Math.max(headerHeight + margin, Math.min(dimensions.height - margin, finalY));
-          
+
           newPositions[bubble.code] = { x: finalX, y: finalY };
         }
       });
-      
+
       return newPositions;
     });
   }, [isDragging, packedBubbles, dimensions]);
@@ -297,7 +297,7 @@ export function MarketBubbles({ fullScreen = false }) {
       window.addEventListener('pointerup', handlePointerUp);
       window.addEventListener('touchmove', handlePointerMove, options);
       window.addEventListener('touchend', handlePointerUp);
-      
+
       return () => {
         window.removeEventListener('pointermove', handlePointerMove);
         window.removeEventListener('pointerup', handlePointerUp);
@@ -313,7 +313,7 @@ export function MarketBubbles({ fullScreen = false }) {
 
     try {
       const svgClone = svg.cloneNode(true);
-      
+
       const images = svgClone.querySelectorAll('image');
       await Promise.all(Array.from(images).map(async (img) => {
         try {
@@ -390,21 +390,19 @@ export function MarketBubbles({ fullScreen = false }) {
           <div className="flex-1 flex gap-2 p-1 bg-muted/30 rounded-full max-w-[200px]">
             <button
               onClick={() => setTimeframe("weekly")}
-              className={`py-2 flex-1 rounded-full text-xs font-semibold transition-all ${
-                timeframe === "weekly"
-                  ? "bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80"
+              className={`py-2 flex-1 rounded-full text-xs font-semibold transition-all ${timeframe === "weekly"
+                  ? "bg-gradient-to-br from-emerald-200 via-slate-100 to-slate-50 dark:from-emerald-800 dark:via-[#111827] dark:to-[#020617] border-border/20 text-foreground/80 dark:text-white/80"
                   : "hover:bg-muted"
-              }`}
+                }`}
             >
               Weekly
             </button>
             <button
               onClick={() => setTimeframe("monthly")}
-              className={`py-2 flex-1 rounded-full text-xs font-semibold transition-all ${
-                timeframe === "monthly"
-                  ? "bg-gradient-to-br from-emerald-800 via-[#111827] to-[#020617] border-border/20 text-white/80"
+              className={`py-2 flex-1 rounded-full text-xs font-semibold transition-all ${timeframe === "monthly"
+                  ? "bg-gradient-to-br from-emerald-200 via-slate-100 to-slate-50 dark:from-emerald-800 dark:via-[#111827] dark:to-[#020617] border-border/20 text-foreground/80 dark:text-white/80"
                   : "hover:bg-muted"
-              }`}
+                }`}
             >
               Monthly
             </button>
@@ -427,7 +425,7 @@ export function MarketBubbles({ fullScreen = false }) {
             preserveAspectRatio="xMidYMid slice"
           >
             <rect x="0" y="0" width={dimensions.width} height={dimensions.height} fill="#09090b" />
-            
+
             <defs>
               <radialGradient id="glow-positive" cx="50%" cy="50%" r="50%">
                 <stop offset="0%" stopColor="#10b981" stopOpacity="0.4" />
@@ -439,7 +437,7 @@ export function MarketBubbles({ fullScreen = false }) {
                 <stop offset="50%" stopColor="#ef4444" stopOpacity="0.15" />
                 <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
               </radialGradient>
-              
+
               <radialGradient id="fill-positive" cx="30%" cy="30%" r="70%">
                 <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
                 <stop offset="60%" stopColor="#059669" stopOpacity="0.1" />
@@ -487,11 +485,11 @@ export function MarketBubbles({ fullScreen = false }) {
               const isBeingDragged = isDragging && dragInfoRef.current?.code === bubble.code;
 
               return (
-                <g 
+                <g
                   key={bubble.code}
                   style={{
-                    animation: isBeingDragged 
-                      ? 'none' 
+                    animation: isBeingDragged
+                      ? 'none'
                       : `bubble-float-${index % 5} ${bubble.animDuration}s ease-in-out infinite`,
                     animationDelay: `${bubble.animDelay}s`,
                     cursor: 'grab',
