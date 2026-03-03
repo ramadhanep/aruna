@@ -42,18 +42,18 @@ function SignInContent() {
 
   return (
     <div className="flex min-h-[calc(100vh-10rem)] flex-col justify-center gap-6">
-      <section className="rounded-3xl bg-gradient-to-br from-[#0f172a] via-[#111827] to-[#020617] px-5 py-6 text-white shadow-[0_10px_30px_rgba(0,0,0,0.45)]">
-        <p className="text-[11px] uppercase tracking-wide text-white/60">Welcome back</p>
-        <h1 className="mt-1 text-sm font-semibold">Sign in to continue</h1>
-        <p className="mt-2 text-[11px] text-white/80">
+      <section className="rounded-[2rem] bg-gradient-to-br from-[#0a1628] via-[#0f1f3a] to-[#020617] px-6 py-7 text-white shadow-2xl shadow-black/30">
+        <p className="text-[11px] uppercase tracking-widest text-white/50 font-semibold">Welcome back</p>
+        <h1 className="mt-1.5 text-base font-bold">Sign in to continue</h1>
+        <p className="mt-2 text-[11px] text-white/70 leading-relaxed">
           Sync your watchlist and portfolio securely across every device.
         </p>
-        <div className="mt-5 space-y-3">
+        <div className="mt-6 space-y-3">
           <Button
             type="button"
             onClick={handleSignIn}
             disabled={processing || !supabaseConfigured}
-            className="w-full justify-center gap-3 rounded-full bg-white text-xs font-semibold text-[#3c4043] shadow-sm hover:bg-white/90"
+            className="w-full justify-center gap-3 rounded-full bg-white text-xs font-semibold text-[#3c4043] shadow-sm hover:bg-white/95 h-11"
           >
             {processing ? (
               <span className="flex items-center gap-2">
@@ -68,17 +68,17 @@ function SignInContent() {
             )}
           </Button>
           {error ? (
-            <div className="rounded-2xl bg-red-600/20 px-3 py-2 text-[11px] text-red-100">
+            <div className="rounded-2xl bg-red-500/15 px-3 py-2.5 text-[11px] text-red-200">
               {error}
             </div>
           ) : null}
           {!supabaseConfigured ? (
-            <div className="flex items-start gap-2 rounded-2xl bg-amber-500/15 px-3 py-2 text-[11px] text-amber-100">
+            <div className="flex items-start gap-2 rounded-2xl bg-amber-500/10 px-3 py-2.5 text-[11px] text-amber-200">
               <ShieldAlert className="h-4 w-4 flex-shrink-0" />
               Provider credentials are not configured. Remote sync will be disabled until you add them.
             </div>
           ) : null}
-          <p className="text-[11px] text-white/70">
+          <p className="text-[11px] text-white/50 leading-relaxed">
             By continuing you agree to our use of Google for authentication. We only use your email to keep your data in sync.
           </p>
         </div>

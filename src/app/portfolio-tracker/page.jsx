@@ -140,7 +140,7 @@ export default function PortfolioTrackerPage() {
       redirectToSignIn();
     }
   }, [authLoading, isAuthenticated, redirectToSignIn]);
-  
+
   // Fetch latest prices (simple batch sequential)
   const fetchPrice = useCallback(async (symbol) => {
     try {
@@ -191,7 +191,7 @@ export default function PortfolioTrackerPage() {
     if (isRefreshing) return;
     const digitalEntries = entries.filter(e => e.type !== 'cash');
     if (digitalEntries.length === 0) return; // Only refresh if there are digital assets
-    
+
     setIsRefreshing(true);
     try {
       // Fetch FX rate
@@ -235,10 +235,10 @@ export default function PortfolioTrackerPage() {
       setPullDistance(0);
       return;
     }
-    
+
     const touchY = e.touches[0].clientY;
     const distance = touchY - touchStartY.current;
-    
+
     if (distance > 0) {
       setPullDistance(Math.min(distance, 150));
     }
@@ -282,45 +282,45 @@ export default function PortfolioTrackerPage() {
     })();
   }, []);
 
-    useEffect(() => {
-      if (authLoading) {
-        setPortfolioReady(false);
-        return;
-      }
+  useEffect(() => {
+    if (authLoading) {
+      setPortfolioReady(false);
+      return;
+    }
 
-      if (!isAuthenticated) {
-        hydratePortfolioRef.current = true;
-        setEntries([]);
-        setInitialLoading(false);
-        setPortfolioReady(true);
-        return;
-      }
+    if (!isAuthenticated) {
+      hydratePortfolioRef.current = true;
+      setEntries([]);
+      setInitialLoading(false);
+      setPortfolioReady(true);
+      return;
+    }
 
-      if (!portfolioLoaded) {
-        setPortfolioReady(false);
-        return;
-      }
+    if (!portfolioLoaded) {
+      setPortfolioReady(false);
+      return;
+    }
 
-      if (Array.isArray(remotePortfolio)) {
-        hydratePortfolioRef.current = true;
-        setEntries(remotePortfolio);
-        setPortfolioReady(true);
-        return;
-      }
+    if (Array.isArray(remotePortfolio)) {
+      hydratePortfolioRef.current = true;
+      setEntries(remotePortfolio);
+      setPortfolioReady(true);
+      return;
+    }
 
-      if (!remotePortfolioSeedRef.current) {
-        remotePortfolioSeedRef.current = true;
-        const defaults = getDefaultPortfolio();
-        hydratePortfolioRef.current = true;
-        setEntries(defaults);
-        setPortfolioReady(true);
-        syncPortfolio(defaults)
-          .catch(() => null)
-          .finally(() => {
-            remotePortfolioSeedRef.current = false;
-          });
-      }
-    }, [authLoading, isAuthenticated, portfolioLoaded, remotePortfolio, syncPortfolio]);
+    if (!remotePortfolioSeedRef.current) {
+      remotePortfolioSeedRef.current = true;
+      const defaults = getDefaultPortfolio();
+      hydratePortfolioRef.current = true;
+      setEntries(defaults);
+      setPortfolioReady(true);
+      syncPortfolio(defaults)
+        .catch(() => null)
+        .finally(() => {
+          remotePortfolioSeedRef.current = false;
+        });
+    }
+  }, [authLoading, isAuthenticated, portfolioLoaded, remotePortfolio, syncPortfolio]);
 
   // Persist changes and refresh prices when entries mutate
   useEffect(() => {
@@ -331,7 +331,7 @@ export default function PortfolioTrackerPage() {
     if (hydratePortfolioRef.current) {
       hydratePortfolioRef.current = false;
     } else if (isAuthenticated) {
-      syncPortfolio(entries).catch(() => {});
+      syncPortfolio(entries).catch(() => { });
     }
 
     const digitalEntries = entries.filter((e) => e.type !== 'cash');
@@ -618,15 +618,15 @@ export default function PortfolioTrackerPage() {
       const currentValueUSD = isCash
         ? baseValueUSD
         : (livePrice != null
-            ? toUSD(entry.symbol, livePrice) * effectiveAmount
-            : baseValueUSD);
+          ? toUSD(entry.symbol, livePrice) * effectiveAmount
+          : baseValueUSD);
       const pnl = currentValueUSD - baseValueUSD;
       const cashDisplayAmount = isCash
         ? (typeof entry.nativeAmount === 'number'
-            ? entry.nativeAmount
-            : (entry.cashCurrency === 'IDR' && fxRate > 0
-                ? baseValueUSD / fxRate
-                : baseValueUSD))
+          ? entry.nativeAmount
+          : (entry.cashCurrency === 'IDR' && fxRate > 0
+            ? baseValueUSD / fxRate
+            : baseValueUSD))
         : null;
 
       return {
@@ -696,14 +696,14 @@ export default function PortfolioTrackerPage() {
     const effectiveAmount = getEffectiveAmount(e.amount, e.unit);
     return sum + toUSD(e.symbol, e.avgPrice) * effectiveAmount;
   }, 0);
-  
+
   const digitalMarket = digitalAssets.reduce((sum, e) => {
     const live = priceMap[e.symbol];
     const costOrLive = live != null ? live : e.avgPrice;
     const effectiveAmount = getEffectiveAmount(e.amount, e.unit);
     return sum + toUSD(e.symbol, costOrLive) * effectiveAmount;
   }, 0);
-  
+
   const digitalPnL = digitalMarket - digitalCost;
 
   // Calculate total cash (already in USD)
@@ -721,7 +721,7 @@ export default function PortfolioTrackerPage() {
   function formatIDR(v) {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v);
   }
-  
+
   // Convert USD amount to IDR for display
   function usdToIdr(usdAmount) {
     if (idrPerUsd <= 0) return 0;
@@ -741,7 +741,7 @@ export default function PortfolioTrackerPage() {
 
   const maskToken = currency === 'IDR' ? '*********' : '******';
   const getDisplayValue = (usdAmount) => (isPortfolioHidden ? { primary: maskToken, secondary: maskToken } : formatValue(usdAmount));
-  const getPnLColor = (value) => (isPortfolioHidden ? 'text-muted-foreground' : value >= 0 ? 'text-emerald-600' : 'text-red-600');
+  const getPnLColor = (value) => (isPortfolioHidden ? 'text-muted-foreground' : value >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400');
   const totalNetWorthDisplay = getDisplayValue(totalNetWorth);
   const totalPnLDisplay = getDisplayValue(totalPnL);
   const digitalMarketDisplay = getDisplayValue(digitalMarket);
@@ -822,7 +822,7 @@ export default function PortfolioTrackerPage() {
   }
 
   return (
-    <div 
+    <div
       ref={containerRef}
       className="flex flex-col gap-4"
       onTouchStart={handleTouchStart}
@@ -831,9 +831,9 @@ export default function PortfolioTrackerPage() {
     >
       {/* Pull to refresh indicator */}
       {pullDistance > 0 && (
-        <div 
+        <div
           className="flex items-center justify-center transition-all duration-200"
-          style={{ 
+          style={{
             height: `${pullDistance}px`,
             opacity: Math.min(pullDistance / 80, 1)
           }}
@@ -889,13 +889,13 @@ export default function PortfolioTrackerPage() {
           </div>
 
           <div className="flex flex-col gap-2">
-            <div className="rounded-md border">
+            <div className="rounded-xl border border-border/40">
               <details>
-                <summary className="list-none cursor-pointer select-none text-center text-sm text-emerald-700 py-2">
+                <summary className="list-none cursor-pointer select-none text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400 py-2.5">
                   View Detail
                 </summary>
                 <div className="space-y-3 p-3 pt-1">
-                  <div className="flex items-start gap-3 p-3 rounded-lg border">
+                  <div className="flex items-start gap-3 p-3 rounded-xl border">
                     <div className="flex-1">
                       <p className="text-sm text-muted-foreground mb-1">Digital Assets</p>
                       <p className="text-base font-semibold">{digitalMarketDisplay.primary}</p>
@@ -914,7 +914,7 @@ export default function PortfolioTrackerPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-start gap-3 p-3 rounded-lg border">
+                  <div className="flex items-start gap-3 p-3 rounded-xl border">
                     <div className="flex-1">
                       <p className="text-sm text-muted-foreground mb-1">Total Cash</p>
                       <p className="text-base font-semibold">{totalCashDisplay.primary}</p>
@@ -928,13 +928,13 @@ export default function PortfolioTrackerPage() {
               </details>
             </div>
 
-            <div className="rounded-md border">
+            <div className="rounded-xl border border-border/40">
               <details>
-                <summary className="list-none cursor-pointer select-none text-center text-sm text-emerald-700 underline py-2">
+                <summary className="list-none cursor-pointer select-none text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400 py-2.5">
                   View Distribution Chart
                 </summary>
                 <div className="space-y-3 p-3 pt-1">
-                  <div className="rounded-lg border p-3">
+                  <div className="rounded-xl border p-3">
                     <PortfolioPie
                       digitalUSD={digitalMarket}
                       cashUSD={totalCash}
@@ -1018,7 +1018,7 @@ export default function PortfolioTrackerPage() {
                 return (
                   <div
                     key={originalIndex}
-                    className="flex items-center gap-3 border-b rounded-lg min-h-16"
+                    className="flex items-center gap-3 border-b rounded-xl min-h-16"
                   >
                     {isCash ? (
                       <div className="flex flex-1 min-w-0 items-center gap-2 px-1 py-2">
@@ -1131,14 +1131,14 @@ export default function PortfolioTrackerPage() {
           <div className="flex items-center gap-2 p-4 border-b">
             <DialogTitle className="text-base">{editingIndex != null ? 'Edit Asset' : 'Add Asset'}</DialogTitle>
           </div>
-          
+
           <div className="flex-1 overflow-auto">
             <div className="px-4">
               <DialogDescription className="mb-4 text-xs">
-                Record your {assetType === 'cash' ? 'cash' : 'digital asset'} details. 
+                Record your {assetType === 'cash' ? 'cash' : 'digital asset'} details.
                 {assetType === 'digital'}
               </DialogDescription>
-              
+
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                 {/* Asset Type Selection */}
                 <div className="flex flex-col gap-2">

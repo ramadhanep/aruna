@@ -267,9 +267,8 @@ function AccountSidebarContent({ onClose }) {
               <Button
                 type="button"
                 variant={isDark ? "outline" : "default"}
-                className={`flex-1 justify-center gap-2 rounded-2xl text-xs ${
-                  !isDark ? "bg-primary text-primary-foreground" : ""
-                }`}
+                className={`flex-1 justify-center gap-2 rounded-2xl text-xs ${!isDark ? "bg-primary text-primary-foreground" : ""
+                  }`}
                 onClick={() => setTheme("light")}
               >
                 <Sun className="h-4 w-4" />
@@ -278,9 +277,8 @@ function AccountSidebarContent({ onClose }) {
               <Button
                 type="button"
                 variant={isDark ? "default" : "outline"}
-                className={`flex-1 justify-center gap-2 rounded-2xl text-xs ${
-                  isDark ? "bg-primary text-primary-foreground" : ""
-                }`}
+                className={`flex-1 justify-center gap-2 rounded-2xl text-xs ${isDark ? "bg-primary text-primary-foreground" : ""
+                  }`}
                 onClick={() => setTheme("dark")}
               >
                 <Moon className="h-4 w-4" />
@@ -420,17 +418,15 @@ export function AccountSidebar({ open, onClose }) {
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-black/50 z-90 transition-opacity duration-300 ${
-          isAnimating ? "opacity-100" : "opacity-0"
-        }`}
+        className={`fixed inset-0 bg-black/50 z-90 transition-opacity duration-300 ${isAnimating ? "opacity-100" : "opacity-0"
+          }`}
         onClick={onClose}
       />
-      
+
       {/* Sidebar */}
-      <div 
-        className={`fixed top-0 left-0 bottom-0 w-full max-w-3xl bg-background z-90 shadow-2xl transition-transform duration-300 ease-out ${
-          isAnimating ? "translate-x-0" : "-translate-x-full"
-        }`}
+      <div
+        className={`fixed top-0 left-0 bottom-0 w-full max-w-3xl liquid-glass-strong z-90 shadow-2xl transition-transform duration-300 ease-out ${isAnimating ? "translate-x-0" : "-translate-x-full"
+          }`}
       >
         <Suspense
           fallback={

@@ -4,9 +4,9 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
-import { 
-  Loader2, 
-  Send, 
+import {
+  Loader2,
+  Send,
   ArrowLeft,
   Trash2
 } from "lucide-react";
@@ -21,14 +21,14 @@ import Link from "next/link";
  */
 function parseMessageContent(content) {
   if (!content) return null;
-  
+
   const parts = [];
   let lastIndex = 0;
-  
+
   // Combined regex for both US$ and $ mentions
   const mentionRegex = /(US\$[A-Z]{1,5})|(?<!US)(\$[A-Z]{4})/gi;
   let match;
-  
+
   while ((match = mentionRegex.exec(content)) !== null) {
     // Add text before the match
     if (match.index > lastIndex) {
@@ -37,9 +37,9 @@ function parseMessageContent(content) {
         content: content.slice(lastIndex, match.index)
       });
     }
-    
+
     const matchedText = match[0];
-    
+
     if (matchedText.toUpperCase().startsWith('US$')) {
       // US stock
       const code = matchedText.slice(3).toUpperCase();
@@ -59,10 +59,10 @@ function parseMessageContent(content) {
         isUS: false
       });
     }
-    
+
     lastIndex = match.index + matchedText.length;
   }
-  
+
   // Add remaining text
   if (lastIndex < content.length) {
     parts.push({
@@ -70,7 +70,7 @@ function parseMessageContent(content) {
       content: content.slice(lastIndex)
     });
   }
-  
+
   return parts;
 }
 
@@ -78,7 +78,7 @@ function MessageBubble({ message, isOwn, onDelete, currentUserId }) {
   const router = useRouter();
   const parsedContent = parseMessageContent(message.content);
   const [showDelete, setShowDelete] = useState(false);
-  
+
   const handleMentionClick = (symbol) => {
     router.push(`/chart?symbol=${encodeURIComponent(symbol)}`);
   };
@@ -95,7 +95,7 @@ function MessageBubble({ message, isOwn, onDelete, currentUserId }) {
   }
 
   return (
-    <div 
+    <div
       className={`flex ${isOwn ? 'justify-end' : 'justify-start'} group`}
       onMouseEnter={() => setShowDelete(true)}
       onMouseLeave={() => setShowDelete(false)}
@@ -105,9 +105,9 @@ function MessageBubble({ message, isOwn, onDelete, currentUserId }) {
         {!isOwn && (
           <div className="flex items-center gap-1.5 mb-0.5 px-1">
             {message.user?.avatar ? (
-              <img 
-                src={message.user.avatar} 
-                alt="" 
+              <img
+                src={message.user.avatar}
+                alt=""
                 className="w-4 h-4 rounded-full"
               />
             ) : (
@@ -122,14 +122,13 @@ function MessageBubble({ message, isOwn, onDelete, currentUserId }) {
             </span>
           </div>
         )}
-        
+
         {/* Message bubble */}
-        <div 
-          className={`relative px-3 py-2 rounded-2xl ${
-            isOwn 
-              ? 'bg-emerald-900/40 border border-emerald-800/30 rounded-br-md' 
-              : 'bg-white/5 border border-white/10 rounded-bl-md'
-          }`}
+        <div
+          className={`relative px-3.5 py-2.5 rounded-3xl ${isOwn
+            ? 'bg-emerald-900/30 border border-emerald-800/20 rounded-br-lg'
+            : 'bg-white/[0.04] border border-white/[0.08] rounded-bl-lg'
+            }`}
         >
           <p className="text-xs leading-relaxed text-white/90 break-words">
             {parsedContent?.map((part, i) => {
@@ -138,9 +137,8 @@ function MessageBubble({ message, isOwn, onDelete, currentUserId }) {
                   <button
                     key={i}
                     onClick={() => handleMentionClick(part.symbol)}
-                    className={`font-semibold ${
-                      part.isUS ? 'text-blue-400 hover:text-blue-300' : 'text-emerald-400 hover:text-emerald-300'
-                    } transition-colors`}
+                    className={`font-semibold ${part.isUS ? 'text-blue-400 hover:text-blue-300' : 'text-emerald-400 hover:text-emerald-300'
+                      } transition-colors`}
                   >
                     {part.content}
                   </button>
@@ -149,7 +147,7 @@ function MessageBubble({ message, isOwn, onDelete, currentUserId }) {
               return <span key={i}>{part.content}</span>;
             }) || message.content}
           </p>
-          
+
           {/* Timestamp */}
           <p className={`text-[8px] mt-1 ${isOwn ? 'text-emerald-500/50' : 'text-white/30'}`}>
             {new Date(message.createdAt).toLocaleTimeString('id-ID', {
@@ -159,7 +157,7 @@ function MessageBubble({ message, isOwn, onDelete, currentUserId }) {
           </p>
         </div>
       </div>
-      
+
       {/* Delete button */}
       {isOwn && showDelete && (
         <button
@@ -180,7 +178,7 @@ function MessageInput({ onSend, disabled }) {
 
   const handleSend = async () => {
     if (!message.trim() || sending || disabled) return;
-    
+
     setSending(true);
     try {
       await onSend(message.trim());
@@ -199,7 +197,7 @@ function MessageInput({ onSend, disabled }) {
   };
 
   return (
-    <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border/40 p-3">
+    <div className="sticky bottom-0 liquid-glass p-3">
       <div className="flex items-end gap-2">
         <textarea
           ref={inputRef}
@@ -210,14 +208,14 @@ function MessageInput({ onSend, disabled }) {
           disabled={disabled || sending}
           maxLength={1000}
           rows={1}
-          className="flex-1 px-3 py-2.5 text-xs bg-white/5 border border-white/10 rounded-xl resize-none focus:outline-none focus:ring-1 focus:ring-emerald-500/50 placeholder:text-white/30 disabled:opacity-50"
+          className="flex-1 px-3.5 py-2.5 text-xs bg-white/[0.04] border border-white/[0.08] rounded-3xl resize-none focus:outline-none focus:ring-1 focus:ring-emerald-500/40 placeholder:text-white/25 disabled:opacity-50 transition-all"
           style={{ minHeight: '36px', maxHeight: '100px' }}
         />
         <Button
           onClick={handleSend}
           disabled={!message.trim() || sending || disabled}
           size="icon"
-          className="h-10 w-14 rounded-xl bg-emerald-900 hover:bg-emerald-800 border border-emerald-800/30 text-white"
+          className="h-10 w-14 rounded-2xl bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600 border-0 text-white shadow-lg shadow-emerald-500/20"
         >
           {sending ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -273,7 +271,7 @@ export default function DiscussionPage() {
     if (typeof window !== 'undefined' && window.visualViewport) {
       window.visualViewport.addEventListener('resize', handleResize);
       handleResize();
-      
+
       return () => {
         window.visualViewport.removeEventListener('resize', handleResize);
       };
@@ -286,7 +284,7 @@ export default function DiscussionPage() {
     const header = document.querySelector("header");
     const nav = document.querySelector("nav");
     const bottomNav = document.querySelector(".mobile-bottom-nav");
-    
+
     if (header) header.style.display = "none";
     if (nav) nav.style.display = "none";
     if (bottomNav) bottomNav.style.display = "none";
@@ -301,7 +299,7 @@ export default function DiscussionPage() {
 
   const fetchMessages = useCallback(async () => {
     if (!user) return; // Don't fetch if not authenticated
-    
+
     try {
       const { data } = await fetchEncodedJson('/api/discussions?limit=100');
       setMessages(data?.messages || []);
@@ -315,9 +313,9 @@ export default function DiscussionPage() {
 
   useEffect(() => {
     if (!user) return;
-    
+
     fetchMessages();
-    
+
     // Auto-refresh every 10 seconds
     const interval = setInterval(fetchMessages, 10000);
     return () => clearInterval(interval);
@@ -334,7 +332,7 @@ export default function DiscussionPage() {
 
   const handleSendMessage = async (content) => {
     if (!user) return;
-    
+
     try {
       // Extract mentions
       const mentionRegex = /(US\$[A-Z]{1,5})|(?<!US)(\$[A-Z]{4})/gi;
@@ -393,7 +391,7 @@ export default function DiscussionPage() {
 
   const handleDeleteMessage = async (messageId) => {
     if (!confirm('Delete this message?')) return;
-    
+
     try {
       const { error } = await supabase
         .from('discussion_messages')
@@ -410,22 +408,22 @@ export default function DiscussionPage() {
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 w-screen flex flex-col pb-10"
-      style={{ 
+      style={{
         height: keyboardHeight > 0 ? `${window.innerHeight - keyboardHeight}px` : '100vh',
         overflow: 'hidden'
       }}
     >
       {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-3 py-2.5 border-b border-white/5">
+      <div className="flex-shrink-0 flex items-center justify-between px-3 py-3 liquid-glass">
         <button
           onClick={() => router.push('/')}
-          className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+          className="p-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
         >
-          <ArrowLeft className="size-6 text-muted-foreground" />
+          <ArrowLeft className="size-5 text-muted-foreground" />
         </button>
-        <h1 className="text-sm font-bold text-white">Discussion</h1>
+        <h1 className="text-sm font-bold">Discussion</h1>
         <div className="w-8" />
       </div>
 
@@ -454,8 +452,8 @@ export default function DiscussionPage() {
       </div>
 
       {/* Message input */}
-      <MessageInput 
-        onSend={handleSendMessage} 
+      <MessageInput
+        onSend={handleSendMessage}
         disabled={!user}
       />
     </div>

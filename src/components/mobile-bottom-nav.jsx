@@ -38,7 +38,7 @@ export function MobileBottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border pb-safe pb-7">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 liquid-glass pb-safe pb-7">
       <div className="mx-auto max-w-[768px] flex items-center justify-around h-16">
         {navItems.map((item) => {
           const isActive = pathname === item.url;
@@ -49,14 +49,25 @@ export function MobileBottomNav() {
               key={item.url}
               href={item.url}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 flex-1 h-full transition-colors",
-                isActive 
-                  ? "text-emerald-600" 
+                "relative flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all duration-200",
+                isActive
+                  ? "text-emerald-600 dark:text-emerald-400"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <Icon className={cn("h-5 w-5", isActive && "text-emerald-600")} />
-              <span className="text-[10px]">{item.title}</span>
+              {isActive && (
+                <span className="absolute top-1.5 w-5 h-0.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
+              )}
+              <Icon className={cn(
+                "h-5 w-5 transition-transform duration-200",
+                isActive && "scale-105"
+              )} />
+              <span className={cn(
+                "text-[10px] transition-all",
+                isActive ? "font-semibold" : "font-medium"
+              )}>
+                {item.title}
+              </span>
             </Link>
           );
         })}
