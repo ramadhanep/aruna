@@ -3130,28 +3130,50 @@ function ElectionCyclePageContent() {
             <span className="dark:text-white/70 text-xs">🇮🇩</span>
           )}
           {symbol.endsWith('-USD') && (
-            <span className="dark:text-white/70 text-xs flex items-center gap-1"><Bitcoin className="size-4 text-amber-600" /> to the moon</span>
+            <span className="dark:text-white/70 text-xs flex items-center gap-1"><Bitcoin className="size-4 text-amber-600" /></span>
           )}
           {['QQQ', 'SPY'].some((s) => symbol.endsWith(s)) && (
-            <span className="dark:text-white/70 text-xs">🇺🇸 pension fund</span>
+            <span className="dark:text-white/70 text-xs">🇺🇸</span>
           )}
           {['AAPL', 'MSFT', 'GOOGL', 'GOOG', 'AMZN', 'META', 'NVDA', 'AVGO'].some((s) => symbol.endsWith(s)) && (
-            <span className="dark:text-white/70 text-xs flex items-center gap-1">🇺🇸 magnificent 7</span>
+            <span className="dark:text-white/70 text-xs flex items-center gap-1">🇺🇸</span>
           )}
         </div>
-        <button
-          type="button"
-          onClick={toggleFavorite}
-          aria-pressed={isFavorite}
-          aria-label={isFavorite ? `Remove ${symbol} from favorites` : `Add ${symbol} to favorites`}
-          className={`rounded-full p-1 transition-colors ${isFavorite ? 'text-amber-600 hover:text-amber-400' : 'text-muted-foreground hover:text-foreground'}`}
-        >
-          <Star
-            className="size-5"
-            strokeWidth={isFavorite ? 1.2 : 1.5}
-            fill={isFavorite ? 'currentColor' : 'none'}
-          />
-        </button>
+        <div className="flex gap-3">
+          <Select
+            className="w-full"
+            value={selectedCycles.join(',')}
+            onValueChange={(value) => setSelectedCycles(value.split(','))}
+          >
+            <SelectTrigger className="h-3 text-[11px]">
+              <SelectValue placeholder="Select cycles" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem className="text-[11px]" value="normal">
+                Normal
+              </SelectItem>
+              <SelectItem className="text-[11px]" value="all,current">All Years</SelectItem>
+              <SelectItem className="text-[11px]" value="pre,current">Pre-Election</SelectItem>
+              <SelectItem className="text-[11px]" value="election,current">Election</SelectItem>
+              <SelectItem className="text-[11px]" value="post,current">Post-Election</SelectItem>
+              <SelectItem className="text-[11px]" value="mid,current">Mid-Term</SelectItem>
+              {/* <SelectItem value="pre,election,mid,post,current">All Cycles</SelectItem> */}
+            </SelectContent>
+          </Select>
+          <button
+            type="button"
+            onClick={toggleFavorite}
+            aria-pressed={isFavorite}
+            aria-label={isFavorite ? `Remove ${symbol} from favorites` : `Add ${symbol} to favorites`}
+            className={`rounded-full p-1 transition-colors ${isFavorite ? 'text-amber-600 hover:text-amber-400' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            <Star
+              className="size-5.5"
+              strokeWidth={isFavorite ? 1.2 : 1.5}
+              fill={isFavorite ? 'currentColor' : 'none'}
+            />
+          </button>
+        </div>
       </div>
 
       {loading && (
@@ -3300,28 +3322,8 @@ function ElectionCyclePageContent() {
                     )}
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-3">
-                  <TickerAvatar symbol={symbol} logo={symbolInfo?.logo} className="w-8 h-8" />
-                  <Select
-                    className="w-full"
-                    value={selectedCycles.join(',')}
-                    onValueChange={(value) => setSelectedCycles(value.split(','))}
-                  >
-                    <SelectTrigger className="h-3 text-[11px]">
-                      <SelectValue placeholder="Select cycles" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem className="text-[11px]" value="normal">
-                        Normal
-                      </SelectItem>
-                      <SelectItem className="text-[11px]" value="all,current">All Years</SelectItem>
-                      <SelectItem className="text-[11px]" value="pre,current">Pre-Election</SelectItem>
-                      <SelectItem className="text-[11px]" value="election,current">Election</SelectItem>
-                      <SelectItem className="text-[11px]" value="post,current">Post-Election</SelectItem>
-                      <SelectItem className="text-[11px]" value="mid,current">Mid-Term</SelectItem>
-                      {/* <SelectItem value="pre,election,mid,post,current">All Cycles</SelectItem> */}
-                    </SelectContent>
-                  </Select>
+                <div className="flex gap-3">
+                  <TickerAvatar symbol={symbol} logo={symbolInfo?.logo} className="w-10 h-10" />
                 </div>
               </div>
             </CardHeader>
