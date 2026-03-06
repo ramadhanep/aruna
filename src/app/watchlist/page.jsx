@@ -24,56 +24,20 @@ function areWatchlistsEqual(a = [], b = []) {
   return true;
 }
 
-async function fetchQuote(symbol) {
+async function fetchBatchQuotes(symbols) {
   try {
-    const endDate = Math.floor(Date.now() / 1000);
-    const startDate = endDate - 60 * 60 * 24 * 5; // 5 days
-    const { response, data } = await fetchEncodedJson(
-      `/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`
-    );
+    const { response, data } = await fetchEncodedJson('/api/quotes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbols }),
+    });
     if (!response.ok) {
-      throw new Error(data?.error || "Failed to load quote");
+      throw new Error(data?.error || 'Failed to load quotes');
     }
-    const series = data.data || [];
-    const meta = data.meta || {};
-
-    // Use regularMarketPrice and previousClose as fallback for IDX stocks
-    let price = meta.regularMarketPrice;
-    let previousPrice = meta.previousClose || meta.chartPreviousClose;
-
-    // Try to get from series data if available
-    if (series.length >= 2) {
-      const current = series[series.length - 1];
-      const previous = series[series.length - 2];
-
-      if (current.adjclose != null) {
-        price = current.adjclose;
-      }
-      if (previous.adjclose != null) {
-        previousPrice = previous.adjclose;
-      }
-    }
-
-    // If we still don't have price data, return null
-    if (price == null || previousPrice == null) return null;
-
-    const change = price - previousPrice;
-    const changePercent = (change / previousPrice) * 100;
-    const name = data.meta?.name || symbol;
-    const logo = data.meta?.logo || null;
-
-    return {
-      symbol,
-      name,
-      price,
-      change,
-      changePercent,
-      chartData: series.slice(-30).map(d => d.adjclose).filter(v => v != null), // Last 30 points for mini chart
-      logo,
-    };
+    return data?.quotes || {};
   } catch (e) {
-    console.warn(`Failed to fetch ${symbol}`, e);
-    return null;
+    console.warn('Failed to fetch batch quotes', e);
+    return {};
   }
 }
 
@@ -260,11 +224,15 @@ export default function HomePage() {
       return;
     }
     const sorted = [...watchlist].sort((a, b) => a.order - b.order);
-    const quotesData = await Promise.all(
-      sorted.map(item => fetchQuote(item.symbol))
-    );
+    const symbols = sorted.map(item => item.symbol);
+    const quotesMap = await fetchBatchQuotes(symbols);
 
-    setQuotes(quotesData.filter(q => q !== null));
+    // Convert map to ordered array matching watchlist order
+    const quotesData = sorted
+      .map(item => quotesMap[item.symbol.toUpperCase()] || null)
+      .filter(q => q !== null);
+
+    setQuotes(quotesData);
   }, [watchlist, watchlistReady]);
 
   useEffect(() => {

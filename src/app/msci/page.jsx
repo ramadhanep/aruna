@@ -18,16 +18,16 @@ import { TickerAvatar } from "@/components/ticker-avatar";
 // Color maps for status-based styling
 const statusColorMap = {
   success: {
-    badge: "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-500 border-emerald-200 dark:border-emerald-900/30",
-    cardGradient: "from-emerald-50 dark:from-emerald-950"
+    badge: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+    cardGradient: "from-emerald-500/5 dark:from-emerald-500/10"
   },
   warning: {
-    badge: "bg-yellow-100 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-500 border-yellow-200 dark:border-yellow-900/30",
-    cardGradient: "from-yellow-50 dark:from-yellow-950"
+    badge: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+    cardGradient: "from-amber-500/5 dark:from-amber-500/10"
   },
   danger: {
-    badge: "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-500 border-red-200 dark:border-red-900/30",
-    cardGradient: "from-red-50 dark:from-red-950"
+    badge: "bg-red-500/10 text-red-500 border-red-500/20",
+    cardGradient: "from-red-500/5 dark:from-red-500/10"
   }
 };
 
@@ -140,7 +140,7 @@ function StockCard({ stock, isLocked = false }) {
   const gradientFrom = statusColorMap[stock.status?.variant]?.cardGradient || statusColorMap.danger.cardGradient;
 
   return (
-    <Card className={`bg-gradient-to-br ${gradientFrom} via-slate-100 to-slate-50 dark:via-[#0f172a] dark:to-[#020617] border-border/20 text-foreground dark:text-white overflow-hidden relative rounded-2xl shadow-xl`}>
+    <Card className={`bg-gradient-to-br ${gradientFrom} to-transparent border-white/[0.08] dark:border-white/[0.08] text-foreground dark:text-white overflow-hidden relative rounded-2xl shadow-lg`}>
       <CardContent className={`p-4 space-y-3 ${isLocked ? "blur-[2px] opacity-60" : ""}`}>
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -232,7 +232,7 @@ function LoadingSkeleton() {
   return (
     <div className="space-y-3">
       {[1, 2, 3].map((i) => (
-        <Card key={i} className="bg-gradient-to-br from-slate-100 via-slate-50 to-white dark:from-[#0f172a] dark:via-[#111827] dark:to-[#020617] border-border/20">
+        <Card key={i} className="border-white/[0.08] dark:border-white/[0.08] rounded-2xl">
           <CardContent className="p-4 space-y-3">
             {/* Header with ticker and badge */}
             <div className="flex items-start justify-between">
@@ -353,7 +353,7 @@ export default function MSCIPage() {
   return (
     <div className="space-y-4 pb-4">
       {/* Info Card */}
-      <Card className="border-none bg-gradient-to-br from-emerald-950 via-[#0f172a] to-[#020617] text-white shadow-xl p-4 rounded-2xl">
+      <Card className="border-none bg-gradient-to-br from-teal-600/90 to-emerald-800/90 text-white shadow-xl shadow-emerald-900/20 p-4 rounded-2xl">
         <CardContent className="pt-0">
           <p className="text-xs leading-relaxed text-white/90 font-medium">
             Indonesian stocks with potential inclusion in the MSCI Global and Small Cap indices, considering key market criteria.

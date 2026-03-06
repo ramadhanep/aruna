@@ -110,80 +110,30 @@ export function TrendingMarquee({ supabase }) {
 
           setTrendingStocks(ordered);
 
-          // Fetch quotes for all trending symbols
-          const endDate = Math.floor(Date.now() / 1000);
-          const startDate = endDate - 60 * 60 * 24 * 5;
+          // Fetch quotes for all trending symbols in a single batch call
+          const symbols = ordered.map((item) => item.symbol);
 
-          const quoteResults = await Promise.all(
-            ordered.map(async (item) => {
-              try {
-                const url = `/api/finance?symbol=${encodeURIComponent(
-                  item.symbol
-                )}&startDate=${startDate}&endDate=${endDate}`;
-                const { response, data: financeData } = await fetchEncodedJson(url);
-                if (!response.ok) return null;
+          try {
+            const { response, data: quotesData } = await fetchEncodedJson('/api/quotes', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ symbols }),
+            });
 
-                const series = Array.isArray(financeData?.data) ? financeData.data : [];
-                const meta = financeData?.meta || {};
-
-                // Filter out null/invalid data points
-                const validSeries = series.filter(point => {
-                  const hasClose = point.adjclose != null || point.close != null;
-                  return hasClose;
-                });
-
-                let price = meta.regularMarketPrice;
-                let previousPrice = meta.previousClose || meta.chartPreviousClose;
-
-                if (validSeries.length >= 2) {
-                  const current = validSeries[validSeries.length - 1];
-                  const previous = validSeries[validSeries.length - 2];
-
-                  if (current.adjclose != null) {
-                    price = current.adjclose;
-                  } else if (current.close != null) {
-                    price = current.close;
-                  }
-
-                  if (previous.adjclose != null) {
-                    previousPrice = previous.adjclose;
-                  } else if (previous.close != null) {
-                    previousPrice = previous.close;
-                  }
+            if (response.ok && quotesData?.quotes) {
+              const quotesMap = {};
+              // Map batch response (keyed by uppercase symbol) to original symbols
+              ordered.forEach((item) => {
+                const upperSymbol = item.symbol.toUpperCase();
+                if (quotesData.quotes[upperSymbol]) {
+                  quotesMap[item.symbol] = quotesData.quotes[upperSymbol];
                 }
-
-                if (price == null || previousPrice == null) return null;
-
-                const change = price - previousPrice;
-                const changePercent = (change / previousPrice) * 100;
-                const chartData = series
-                  .slice(-30)
-                  .map((d) => d.adjclose)
-                  .filter((v) => v != null);
-
-                return {
-                  symbol: item.symbol,
-                  price,
-                  change,
-                  changePercent,
-                  chartData,
-                  logo: meta.logo || null,
-                };
-              } catch (error) {
-                console.warn(`Failed to fetch quote for ${item.symbol}`, error);
-                return null;
-              }
-            })
-          );
-
-          const quotesMap = {};
-          quoteResults.forEach((quote) => {
-            if (quote) {
-              quotesMap[quote.symbol] = quote;
+              });
+              setQuotes(quotesMap);
             }
-          });
-
-          setQuotes(quotesMap);
+          } catch (error) {
+            console.warn('Failed to fetch batch quotes for trending', error);
+          }
         }
       } catch (error) {
         console.error("Error loading trending stocks:", error);
@@ -235,7 +185,10 @@ export function TrendingMarquee({ supabase }) {
       className="relative overflow-x-auto overflow-y-hidden liquid-glass py-2 scrollbar-hide rounded-2xl"
       style={{ WebkitOverflowScrolling: 'touch' }}
     >
-      <div className={`flex whitespace-nowrap ${isPaused ? '' : 'animate-marquee'}`}>
+      <div
+        className={`flex whitespace-nowrap ${isPaused ? '' : 'animate-marquee'}`}
+        style={{ '--marquee-duration': `5s` }}
+      >
         {trendingStocks.map((item) => (
           <TrendingItem key={`${item.category}-${item.symbol}`} symbol={item.symbol} quote={quotes[item.symbol]} />
         ))}

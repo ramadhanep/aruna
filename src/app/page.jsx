@@ -458,106 +458,41 @@ export default function ExplorePage() {
       return;
     }
 
-    const endDate = Math.floor(Date.now() / 1000);
-    const startDate = endDate - 60 * 60 * 24 * 5;
-
     const symbolsArray = Array.from(symbolSet);
 
-    const quoteResults = await Promise.all(
-      symbolsArray.map(async (symbol) => {
-        try {
-          const url = `/api/finance?symbol=${encodeURIComponent(
-            symbol
-          )}&startDate=${startDate}&endDate=${endDate}`;
-          const { response, data } = await fetchEncodedJson(url);
-          if (!response.ok) return null;
-          const series = Array.isArray(data?.data) ? data.data : [];
-          const meta = data?.meta || {};
-
-          // Filter out null/invalid data points
-          const validSeries = series.filter(point => {
-            const hasClose = point.adjclose != null || point.close != null;
-            return hasClose;
-          });
-
-          // Use regularMarketPrice and previousClose as fallback for IDX stocks
-          let currentRaw = meta.regularMarketPrice;
-          let previousRaw = meta.previousClose || meta.chartPreviousClose;
-
-          // Try to get from series data if available
-          if (validSeries.length >= 2) {
-            const current = validSeries[validSeries.length - 1];
-            const previous = validSeries[validSeries.length - 2];
-
-            if (typeof current?.adjclose === "number") {
-              currentRaw = current.adjclose;
-            } else if (typeof current?.close === "number") {
-              currentRaw = current.close;
-            }
-
-            if (typeof previous?.adjclose === "number") {
-              previousRaw = previous.adjclose;
-            } else if (typeof previous?.close === "number") {
-              previousRaw = previous.close;
-            }
-          }
-
-          if (currentRaw == null || previousRaw == null) {
-            return null;
-          }
-
-          const change = currentRaw - previousRaw;
-          const changePercent = previousRaw === 0 ? 0 : (change / previousRaw) * 100;
-          const chartData = series
-            .slice(-30)
-            .map((row) =>
-              typeof row?.adjclose === "number"
-                ? row.adjclose
-                : typeof row?.close === "number"
-                  ? row.close
-                  : null
-            )
-            .filter((value) => typeof value === "number");
-          const logo = data?.meta?.logo || null;
-
-          return {
-            symbol,
-            name: data?.meta?.name || symbol,
-            price: currentRaw,
-            change,
-            changePercent,
-            chartData,
-            logo,
-          };
-        } catch (error) {
-          console.warn(`Failed to fetch real-time quote for ${symbol}`, error);
-          return null;
-        }
-      })
-    );
-
-    if (quoteRequestRef.current !== requestId) {
-      return;
-    }
-
-    const mappedQuotes = {};
-    quoteResults.forEach((quote) => {
-      if (quote) {
-        mappedQuotes[quote.symbol] = quote;
-      }
-    });
-
-    setQuotes((prev) => {
-      const next = {};
-      symbolsArray.forEach((symbol) => {
-        if (mappedQuotes[symbol]) {
-          next[symbol] = mappedQuotes[symbol];
-        } else if (prev[symbol]) {
-          next[symbol] = prev[symbol];
-        }
+    try {
+      const { response, data } = await fetchEncodedJson('/api/quotes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbols: symbolsArray }),
       });
-      return next;
-    });
+
+      if (quoteRequestRef.current !== requestId) {
+        return;
+      }
+
+      if (!response.ok) {
+        console.warn('Failed to fetch batch quotes:', data?.error);
+        return;
+      }
+
+      const batchQuotes = data?.quotes || {};
+
+      setQuotes((prev) => {
+        const next = {};
+        symbolsArray.forEach((symbol) => {
+          const upperSymbol = symbol.toUpperCase();
+          if (batchQuotes[upperSymbol]) {
+            next[symbol] = batchQuotes[upperSymbol];
+          } else if (prev[symbol]) {
+            next[symbol] = prev[symbol];
+          }
+        });
+        return next;
+      });
+    } catch (error) {
+      console.warn('Failed to fetch batch quotes', error);
+    }
   }, []);
 
   const loadSnapshots = useCallback(async () => {
