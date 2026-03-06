@@ -385,6 +385,7 @@ function ElectionCyclePageContent() {
   const [portfolioEntries, setPortfolioEntries] = useState([]);
   const [fundamentals, setFundamentals] = useState(null);
   const [fundamentalsLoading, setFundamentalsLoading] = useState(false);
+  const fundamentalsCacheRef = useRef({});
   const [revenuePeriod, setRevenuePeriod] = useState('quarterly');
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
   const [showLivermoreKey, setShowLivermoreKey] = useState(false);
@@ -700,8 +701,23 @@ function ElectionCyclePageContent() {
     syncPortfolio,
   ]);
 
+  // Lazy-load fundamentals only when the user switches to a tab that needs them
+  // Cache per symbol so switching tabs back doesn't re-fetch
   useEffect(() => {
     if (!symbol) {
+      return;
+    }
+
+    // Only fetch for tabs that need fundamentals data
+    const needsFundamentals = ['keystats', 'analysis', 'profile'].includes(infoTab);
+    if (!needsFundamentals) {
+      return;
+    }
+
+    // Check cache — skip fetch if we already have data for this symbol
+    if (fundamentalsCacheRef.current[symbol]) {
+      setFundamentals(fundamentalsCacheRef.current[symbol]);
+      setFundamentalsLoading(false);
       return;
     }
 
@@ -720,6 +736,8 @@ function ElectionCyclePageContent() {
         }
         if (!cancelled) {
           setFundamentals(data);
+          // Cache the result for this symbol
+          fundamentalsCacheRef.current[symbol] = data;
         }
       } catch (error) {
         console.warn('Failed to fetch fundamentals', error);
@@ -736,7 +754,7 @@ function ElectionCyclePageContent() {
     return () => {
       cancelled = true;
     };
-  }, [symbol]);
+  }, [symbol, infoTab]);
 
   useEffect(() => {
     if (!fundamentals) return;

@@ -8,7 +8,8 @@ import {
   Loader2,
   Send,
   ArrowLeft,
-  Trash2
+  Trash2,
+  MessageCircle
 } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
@@ -87,7 +88,7 @@ function MessageBubble({ message, isOwn, onDelete, currentUserId }) {
   if (message.isSystem) {
     return (
       <div className="flex justify-center py-1">
-        <p className="text-[10px] italic text-white/40 text-center">
+        <p className="text-[10px] italic text-muted-foreground text-center">
           {message.content}
         </p>
       </div>
@@ -111,13 +112,13 @@ function MessageBubble({ message, isOwn, onDelete, currentUserId }) {
                 className="w-4 h-4 rounded-full"
               />
             ) : (
-              <div className="w-4 h-4 rounded-full bg-emerald-900/50 flex items-center justify-center">
-                <span className="text-[8px] font-bold text-emerald-500">
+              <div className="w-4 h-4 rounded-full bg-teal-900/40 flex items-center justify-center">
+                <span className="text-[8px] font-bold text-teal-400">
                   {message.user?.name?.charAt(0)?.toUpperCase() || '?'}
                 </span>
               </div>
             )}
-            <span className="text-[9px] text-white/50 font-medium">
+            <span className="text-[9px] text-muted-foreground font-medium">
               {message.user?.name || 'Anonymous'}
             </span>
           </div>
@@ -126,18 +127,18 @@ function MessageBubble({ message, isOwn, onDelete, currentUserId }) {
         {/* Message bubble */}
         <div
           className={`relative px-3.5 py-2.5 rounded-3xl ${isOwn
-            ? 'bg-emerald-900/30 border border-emerald-800/20 rounded-br-lg'
+            ? 'bg-gradient-to-br from-teal-700/40 to-emerald-800/30 border border-teal-700/20 rounded-br-lg'
             : 'bg-white/[0.04] border border-white/[0.08] rounded-bl-lg'
             }`}
         >
-          <p className="text-xs leading-relaxed text-white/90 break-words">
+          <p className="text-xs leading-relaxed text-foreground/90 dark:text-white/90 break-words">
             {parsedContent?.map((part, i) => {
               if (part.type === 'mention') {
                 return (
                   <button
                     key={i}
                     onClick={() => handleMentionClick(part.symbol)}
-                    className={`font-semibold ${part.isUS ? 'text-blue-400 hover:text-blue-300' : 'text-emerald-400 hover:text-emerald-300'
+                    className={`font-semibold ${part.isUS ? 'text-blue-400 hover:text-blue-300' : 'text-teal-400 hover:text-teal-300'
                       } transition-colors`}
                   >
                     {part.content}
@@ -149,7 +150,7 @@ function MessageBubble({ message, isOwn, onDelete, currentUserId }) {
           </p>
 
           {/* Timestamp */}
-          <p className={`text-[8px] mt-1 ${isOwn ? 'text-emerald-500/50' : 'text-white/30'}`}>
+          <p className={`text-[8px] mt-1 ${isOwn ? 'text-teal-400/50' : 'text-muted-foreground/50'}`}>
             {new Date(message.createdAt).toLocaleTimeString('id-ID', {
               hour: '2-digit',
               minute: '2-digit'
@@ -197,7 +198,7 @@ function MessageInput({ onSend, disabled }) {
   };
 
   return (
-    <div className="sticky bottom-0 liquid-glass p-3">
+    <div className="flex-shrink-0 liquid-glass p-3" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
       <div className="flex items-end gap-2">
         <textarea
           ref={inputRef}
@@ -208,14 +209,14 @@ function MessageInput({ onSend, disabled }) {
           disabled={disabled || sending}
           maxLength={1000}
           rows={1}
-          className="flex-1 px-3.5 py-2.5 text-xs bg-white/[0.04] border border-white/[0.08] rounded-3xl resize-none focus:outline-none focus:ring-1 focus:ring-emerald-500/40 placeholder:text-white/25 disabled:opacity-50 transition-all"
+          className="flex-1 px-3.5 py-2.5 text-xs bg-white/[0.04] border border-white/[0.08] rounded-3xl resize-none focus:outline-none focus:ring-1 focus:ring-teal-500/40 placeholder:text-muted-foreground/40 disabled:opacity-50 transition-all"
           style={{ minHeight: '36px', maxHeight: '100px' }}
         />
         <Button
           onClick={handleSend}
           disabled={!message.trim() || sending || disabled}
           size="icon"
-          className="h-10 w-14 rounded-2xl bg-gradient-to-r from-emerald-700 to-teal-700 hover:from-emerald-600 hover:to-teal-600 border-0 text-white shadow-lg shadow-emerald-500/20"
+          className="h-10 w-14 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-700 hover:from-teal-500 hover:to-emerald-600 border-0 text-white shadow-lg shadow-teal-500/20"
         >
           {sending ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -230,9 +231,14 @@ function MessageInput({ onSend, disabled }) {
 
 function EmptyState() {
   return (
-    <div className="flex-1 flex flex-col items-center justify-center text-center">
-      <p className="text-xs text-white/40">No messages yet</p>
-      <p className="text-[10px] text-white/30 mt-1">Start the conversation!</p>
+    <div className="flex-1 flex flex-col items-center justify-center text-center gap-3">
+      <div className="w-12 h-12 rounded-2xl bg-teal-900/20 flex items-center justify-center">
+        <MessageCircle className="w-6 h-6 text-teal-500" />
+      </div>
+      <div>
+        <p className="text-xs text-foreground/60 dark:text-white/60 font-medium">No messages yet</p>
+        <p className="text-[10px] text-muted-foreground mt-0.5">Start the conversation!</p>
+      </div>
     </div>
   );
 }
@@ -244,7 +250,6 @@ export default function DiscussionPage() {
   const [messages, setMessages] = useState([]);
   const [messagesLoading, setMessagesLoading] = useState(true);
   const messagesEndRef = useRef(null);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   // Redirect to signin if not authenticated (after auth check completes)
   useEffect(() => {
@@ -255,27 +260,6 @@ export default function DiscussionPage() {
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
-
-  // Handle keyboard appearance on mobile
-  useEffect(() => {
-    const handleResize = () => {
-      if (typeof window !== 'undefined' && window.visualViewport) {
-        const viewportHeight = window.visualViewport.height;
-        const windowHeight = window.innerHeight;
-        const keyboardOpen = windowHeight - viewportHeight;
-        setKeyboardHeight(keyboardOpen > 0 ? keyboardOpen : 0);
-      }
-    };
-
-    if (typeof window !== 'undefined' && window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleResize);
-      handleResize();
-
-      return () => {
-        window.visualViewport.removeEventListener('resize', handleResize);
-      };
-    }
   }, []);
 
   // Hide mobile nav and header
@@ -325,7 +309,7 @@ export default function DiscussionPage() {
   if (authLoading || !user) {
     return (
       <div className="fixed inset-0 w-screen h-screen overflow-hidden flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-white/50" />
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
@@ -409,11 +393,8 @@ export default function DiscussionPage() {
 
   return (
     <div
-      className="fixed inset-0 w-screen flex flex-col pb-10"
-      style={{
-        height: keyboardHeight > 0 ? `${window.innerHeight - keyboardHeight}px` : '100vh',
-        overflow: 'hidden'
-      }}
+      className="fixed inset-0 w-screen flex flex-col"
+      style={{ height: '100dvh' }}
     >
       {/* Header */}
       <div className="flex-shrink-0 flex items-center justify-between px-3 py-3 liquid-glass">
@@ -431,7 +412,7 @@ export default function DiscussionPage() {
       <div className="flex-1 overflow-y-auto px-3 py-3" style={{ minHeight: 0 }}>
         {messagesLoading ? (
           <div className="flex justify-center py-8">
-            <Loader2 className="w-5 h-5 animate-spin text-white/50" />
+            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
         ) : messages.length === 0 ? (
           <EmptyState />
@@ -459,3 +440,4 @@ export default function DiscussionPage() {
     </div>
   );
 }
+

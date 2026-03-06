@@ -27,7 +27,7 @@ export default function IdxRotationPage() {
     const header = document.querySelector("header");
     const nav = document.querySelector("nav");
     const bottomNav = document.querySelector(".mobile-bottom-nav");
-    
+
     if (header) header.style.display = "none";
     if (nav) nav.style.display = "none";
     if (bottomNav) bottomNav.style.display = "none";
@@ -97,7 +97,7 @@ export default function IdxRotationPage() {
       // Scale position to chart coordinates
       const x = chartConfig.centerX + stock.x * chartConfig.xScale;
       const y = chartConfig.centerY - stock.y * chartConfig.yScale; // Inverted Y
-      
+
       // Size based on market cap (relative)
       const maxMarketCap = Math.max(...stocks.map(s => s.marketCap || 0));
       const sizeRatio = (stock.marketCap || 0) / maxMarketCap;
@@ -188,9 +188,9 @@ export default function IdxRotationPage() {
       {/* Summary Stats */}
       <div className="absolute top-14 left-0 right-0 z-40 flex justify-center gap-2 px-3">
         {Object.entries(QUADRANT_COLORS).map(([key, value]) => (
-          <div key={key} className="flex items-center gap-1.5 bg-white/5 rounded-full px-2.5 py-1">
-            <div 
-              className="w-2 h-2 rounded-full" 
+          <div key={key} className="flex items-center gap-1.5 liquid-glass rounded-full px-2.5 py-1">
+            <div
+              className="w-2 h-2 rounded-full"
               style={{ backgroundColor: value.bg }}
             />
             <span className={`text-[10px] font-medium ${value.text}`}>
@@ -359,7 +359,7 @@ export default function IdxRotationPage() {
                 fill={color}
                 opacity={isHovered ? 0.3 : 0.1}
               />
-              
+
               {/* Main dot */}
               <circle
                 cx={stock.cx}
@@ -401,7 +401,7 @@ export default function IdxRotationPage() {
 
       {/* Tooltip for hovered stock */}
       {hoveredStock && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 border border-white/20 rounded-lg px-4 py-2 z-50 pointer-events-none">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 liquid-glass rounded-2xl px-4 py-3 z-50 pointer-events-none shadow-xl">
           {(() => {
             const stock = positionedStocks.find(s => s.code === hoveredStock);
             if (!stock) return null;

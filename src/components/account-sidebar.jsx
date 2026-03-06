@@ -193,7 +193,7 @@ function AccountSidebarContent({ onClose }) {
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-7 pb-12">
         <section className="space-y-3">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Profile</p>
-          <div className="rounded-3xl bg-gradient-to-br from-slate-100 via-slate-50 to-white dark:from-[#0f172a] dark:via-[#111827] dark:to-[#020617] px-4 py-5 text-foreground dark:text-white shadow-[0_10px_30px_rgba(0,0,0,0.1)] dark:shadow-[0_10px_30px_rgba(0,0,0,0.45)]">
+          <div className="rounded-3xl bg-white/[0.04] border border-white/[0.08] dark:bg-white/[0.04] dark:border-white/[0.08] px-4 py-5 text-foreground dark:text-white shadow-lg">
             <div className="flex items-center gap-3">
               <div className="h-14 w-14 overflow-hidden rounded-full border border-black/10 dark:border-white/20 bg-black/5 dark:bg-white/10">
                 {avatarUrl ? (
@@ -259,7 +259,7 @@ function AccountSidebarContent({ onClose }) {
 
         <section className="space-y-3">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Appearance</p>
-          <div className="rounded-3xl bg-muted/30 px-4 py-4">
+          <div className="rounded-3xl bg-white/[0.04] border border-white/[0.08] dark:bg-white/[0.04] dark:border-white/[0.08] px-4 py-4 shadow-lg">
             <p className="text-[11px] text-muted-foreground">
               Pick the look that feels best on your device. Light stays bright, dark saves battery.
             </p>
@@ -290,13 +290,13 @@ function AccountSidebarContent({ onClose }) {
 
         <section className="space-y-3">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Data & Privacy</p>
-          <div className="rounded-3xl bg-muted/30 px-4 py-4 space-y-4">
+          <div className="rounded-3xl bg-white/[0.04] border border-white/[0.08] dark:bg-white/[0.04] dark:border-white/[0.08] px-4 py-4 space-y-4 shadow-lg">
             <ClearDataButton
               onCleared={user ? clearRemoteData : undefined}
               trigger={
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between rounded-2xl bg-background/80 px-3 py-3 text-left text-xs shadow-[0_1px_10px_rgba(0,0,0,0.04)]"
+                  className="flex w-full items-center justify-between rounded-2xl bg-black/5 dark:bg-white/[0.06] px-3 py-3 text-left text-xs"
                 >
                   <div>
                     <p className="font-semibold text-foreground">Clear Data</p>
@@ -375,7 +375,7 @@ function AccountSidebarContent({ onClose }) {
           </div>
         </section>
 
-        <section className="rounded-3xl bg-background/80 px-4 py-5 text-center">
+        <section className="rounded-3xl bg-white/[0.04] border border-white/[0.08] dark:bg-white/[0.04] dark:border-white/[0.08] px-4 py-5 text-center shadow-lg">
           <p className="text-[11px] text-muted-foreground">
             Version {process.env.NEXT_PUBLIC_APP_VERSION || "1.0.0"}
           </p>
