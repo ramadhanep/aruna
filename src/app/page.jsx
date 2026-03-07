@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock, Download, Droplets, Axe, Magnet, Rotate3D, MessageCircleMore } from "lucide-react";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock, Download, Droplets, Axe, Magnet, Rotate3D, MessageCircleMore, Flame } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { TrendingMarquee } from "@/components/trending-marquee";
 import { formatTickerDisplay } from "@/lib/utils";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const CATEGORY_LABELS = {
   idx: "IDX 🇮🇩",
@@ -21,10 +23,10 @@ const CATEGORY_ORDER = ["idx", "us", "crypto"];
 
 
 const HIGHLIGHT_SYMBOLS = [
-  // { symbol: "^SPX", label: "S&P 500", badge: "500", group: "US", accent: "bg-rose-500", logo: "https://s3-symbol-logo.tradingview.com/indices/s-and-p-500.svg" },
-  // { symbol: "^IXIC", label: "Nasdaq 100", badge: "100", group: "US", accent: "bg-sky-500", logo: "https://s3-symbol-logo.tradingview.com/nasdaq.svg" },
   { symbol: "^JKSE", label: "IHSG", badge: "JK", group: "ID", accent: "bg-amber-500", logo: "https://s3-symbol-logo.tradingview.com/indices/jakarta-composite-index.svg" },
   { symbol: "BTC-USD", label: "Bitcoin", badge: "BTC", group: "Crypto", accent: "bg-emerald-500" },
+  { symbol: "^SPX", label: "S&P 500", badge: "500", group: "US", accent: "bg-rose-500", logo: "https://s3-symbol-logo.tradingview.com/country/US.svg" },
+  { symbol: "^IXIC", label: "Nasdaq", badge: "100", group: "US", accent: "bg-sky-500", logo: "https://s3-symbol-logo.tradingview.com/nasdaq.svg" },
 ];
 
 function isWithinMarketHours(timeZone, openHour, openMinute, closeHour, closeMinute) {
@@ -66,6 +68,15 @@ function getCategoryDisplayOrder() {
     return ["us", "idx", "crypto"];
   }
   return CATEGORY_ORDER;
+}
+
+function formatCompactNumber(value) {
+  const numeric = Number(value || 0);
+  if (!Number.isFinite(numeric)) return "0";
+  return new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: 2,
+  }).format(numeric);
 }
 
 function formatPercent(value, digits = 2) {
@@ -421,10 +432,199 @@ function PickItem({ pick, quote }) {
   );
 }
 
+function formatMoneyFlowDelta(value) {
+  const numeric = Number(value || 0) * 100;
+  const sign = numeric >= 0 ? "+" : "";
+  return `${sign}${numeric.toFixed(2)}%`;
+}
+
+function MoneyFlowMiniCard({ report }) {
+  const score = Number(report.money_flow_score || 0);
+  const riskLevel = report?.manipulation_risk?.level || "LOW";
+  const screenerSnapshot = report?.screener_snapshot || null;
+  const logo = screenerSnapshot?.icon_url || null;
+  const isPositive = Number(report?.price_change_1m || 0) >= 0;
+
+  const brokerRows = Array.isArray(report.broker_summary) ? report.broker_summary.slice(0, 6) : [];
+  const inventoryRows = Array.isArray(report.broker_inventory) ? report.broker_inventory.slice(0, 5) : [];
+
+  // Let's decide on card style based on signal
+  let cardGradient = "from-neutral-500/5 dark:from-neutral-500/10";
+  if (report.signal?.includes("Accumulation")) cardGradient = "from-emerald-500/5 dark:from-emerald-500/10";
+  else if (report.signal?.includes("Distribution")) cardGradient = "from-rose-500/5 dark:from-rose-500/10";
+  else if (report.signal === "Neutral") cardGradient = "from-amber-500/5 dark:from-amber-500/10";
+
+  return (
+    <AccordionItem value={`${report.symbol}-${report.report_date}`} className="border-none">
+      <Card className={`bg-gradient-to-br ${cardGradient} to-transparent border-white/[0.08] dark:border-white/[0.08] text-foreground dark:text-white overflow-hidden relative rounded-2xl shadow-lg`}>
+        <AccordionTrigger className="px-3 py-3 hover:no-underline [&[data-state=open]>div>svg]:rotate-180">
+          <div className="flex-1 min-w-0 space-y-2 text-left">
+            {/* Header */}
+            <div className="flex items-start justify-between">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3 className="text-sm font-bold truncate">{report.symbol}</h3>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold border border-emerald-500/20">
+                    {report.signal}
+                  </span>
+                </div>
+                <p className="text-[11px] text-muted-foreground dark:text-white/70 truncate">
+                  {screenerSnapshot?.company_name || screenerSnapshot?.name || report.market_phase || "Indeterminate Phase"}
+                </p>
+              </div>
+              {logo && (
+                <div className="flex-shrink-0 ml-2">
+                  <TickerAvatar symbol={report.symbol} logo={logo} />
+                </div>
+              )}
+            </div>
+
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              <div className="space-y-0.5">
+                <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">Flow Score</p>
+                <p className="text-sm font-semibold flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                  <TrendingUp className="h-3 w-3" />
+                  {score.toFixed(2)}
+                </p>
+              </div>
+              <div className="space-y-0.5">
+                <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">1M Change</p>
+                <p className={`text-sm font-semibold ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
+                  {formatMoneyFlowDelta(report.price_change_1m)}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-1.5 bg-black/5 dark:bg-white/5 rounded-lg mt-1">
+              <span className="text-[10px] text-muted-foreground dark:text-white/70">Top 3 Buy</span>
+              <span className="text-xs font-semibold">{Number(report.top3_percent || 0).toFixed(1)}%</span>
+            </div>
+          </div>
+        </AccordionTrigger>
+        <AccordionContent className="px-3 pb-3">
+          <div className="space-y-3 pt-1 border-t border-black/10 dark:border-white/10">
+            <div className="grid grid-cols-2 gap-2 text-[10px]">
+              <div className="rounded-md border border-border/50 px-2 py-1.5">
+                <p className="text-muted-foreground">Phase</p>
+                <p className="font-semibold">{report.market_phase || "Indeterminate"}</p>
+              </div>
+              <div className="rounded-md border border-border/50 px-2 py-1.5">
+                <p className="text-muted-foreground">Risk</p>
+                <p className={`font-semibold ${riskLevel === "LOW" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-500"}`}>{riskLevel}</p>
+              </div>
+            </div>
+
+            {Array.isArray(report?.manipulation_risk?.reasons) && report.manipulation_risk.reasons.length > 0 && (
+              <Card className="rounded-xl border-border/60 bg-amber-500/5 shadow-none">
+                <CardContent className="p-3">
+                  <p className="text-[11px] font-semibold mb-1">Risk notes</p>
+                  <ul className="text-[11px] text-muted-foreground space-y-1">
+                    {report.manipulation_risk.reasons.map((reason, index) => (
+                      <li key={`${report.symbol}-risk-${index}`}>• {reason}</li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
+
+            {report.analysis_summary && (
+              <Card className="rounded-xl border-border/60 shadow-none">
+                <CardContent className="p-3 space-y-2">
+                  <p className="text-[11px] font-semibold">Smart Money Summary</p>
+                  {String(report.analysis_summary)
+                    .split("\n\n")
+                    .filter(Boolean)
+                    .map((paragraph, index) => (
+                      <p key={`${report.symbol}-summary-${index}`} className="text-[11px] text-muted-foreground leading-relaxed">
+                        {paragraph}
+                      </p>
+                    ))}
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="rounded-xl border border-border/60">
+              <div className="px-3 py-2 border-b border-border/60 flex items-center justify-between">
+                <p className="text-xs font-semibold">Broker Inventory</p>
+                <span className="text-[10px] text-muted-foreground">Estimated net</span>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-[11px]">Broker</TableHead>
+                    <TableHead className="text-[11px] text-right">Position</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {inventoryRows.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={2} className="text-[11px] text-muted-foreground">
+                        Inventory data unavailable.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {inventoryRows.map((row) => (
+                    <TableRow key={`${report.symbol}-${row.broker}`}>
+                      <TableCell className="text-[11px] font-semibold">{row.broker}</TableCell>
+                      <TableCell className="text-[11px] text-right text-emerald-600 dark:text-emerald-400">
+                        {formatCompactNumber(row.position)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="rounded-xl border border-border/60">
+              <div className="px-3 py-2 border-b border-border/60 flex items-center justify-between">
+                <p className="text-xs font-semibold">Broker Summary</p>
+                <span className="text-[10px] text-muted-foreground">Top net buyers</span>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-[11px]">Broker</TableHead>
+                    <TableHead className="text-[11px] text-right">Buy</TableHead>
+                    <TableHead className="text-[11px] text-right">Sell</TableHead>
+                    <TableHead className="text-[11px] text-right">Net</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {brokerRows.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-[11px] text-muted-foreground">
+                        Broker summary unavailable.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {brokerRows.map((row) => (
+                    <TableRow key={`${report.symbol}-${row.broker_code}`}>
+                      <TableCell className="text-[11px] font-semibold">{row.broker_code}</TableCell>
+                      <TableCell className="text-[11px] text-right">{formatCompactNumber(row.buy_value)}</TableCell>
+                      <TableCell className="text-[11px] text-right">{formatCompactNumber(row.sell_value)}</TableCell>
+                      <TableCell className={`text-[11px] text-right font-semibold ${Number(row.net_value || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
+                        {formatCompactNumber(row.net_value)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </AccordionContent>
+      </Card>
+    </AccordionItem>
+  );
+}
+
 export default function ExplorePage() {
   const { supabase, user } = useAuth();
   const [snapshots, setSnapshots] = useState({});
   const [quotes, setQuotes] = useState({});
+  const [moneyFlowReports, setMoneyFlowReports] = useState([]);
+  const [moneyFlowLoading, setMoneyFlowLoading] = useState(true);
+  const [moneyFlowError, setMoneyFlowError] = useState("");
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
@@ -525,9 +725,37 @@ export default function ExplorePage() {
     }
   }, [supabase, loadQuotesForSnapshots]);
 
+  const loadMoneyFlow = useCallback(async () => {
+    setMoneyFlowLoading(true);
+    setMoneyFlowError("");
+    try {
+      const params = new URLSearchParams({
+        timeframe: "weekly",
+        sort: "score",
+        order: "desc",
+        limit: "3",
+      });
+      const { response, data } = await fetchEncodedJson(`/api/money-flow?${params.toString()}`);
+      if (!response.ok || data?.error) {
+        throw new Error(data?.error || "Failed to load money-flow highlights");
+      }
+      setMoneyFlowReports(Array.isArray(data?.reports) ? data.reports : []);
+    } catch (error) {
+      console.warn("Failed to load money-flow highlights", error);
+      setMoneyFlowError(error?.message || "Failed to load money-flow highlights");
+      setMoneyFlowReports([]);
+    } finally {
+      setMoneyFlowLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadSnapshots();
   }, [loadSnapshots]);
+
+  useEffect(() => {
+    loadMoneyFlow();
+  }, [loadMoneyFlow]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -559,12 +787,12 @@ export default function ExplorePage() {
     if (isRefreshing) return;
     setIsRefreshing(true);
     try {
-      await loadSnapshots();
+      await Promise.all([loadSnapshots(), loadMoneyFlow()]);
     } finally {
       setIsRefreshing(false);
       setPullDistance(0);
     }
-  }, [isRefreshing, loadSnapshots]);
+  }, [isRefreshing, loadMoneyFlow, loadSnapshots]);
 
   const handleTouchStart = useCallback((event) => {
     if (containerRef.current && containerRef.current.scrollTop === 0) {
@@ -841,7 +1069,7 @@ export default function ExplorePage() {
               return (
                 <Link
                   key={item.symbol}
-                  href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal&tab=tradingPlan`}
+                  href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
                   className="rounded-3xl p-3.5 overflow-hidden border border-border/40 hover:border-border/80 transition-all duration-200 block card-hover bg-card"
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -888,7 +1116,7 @@ export default function ExplorePage() {
           <div className="flex justify-center whitespace-nowrap gap-5">
             <Link href="/idx-momentum" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-full bg-gradient-to-br from-blue-600 to-emerald-700 shadow-lg shadow-teal-500/20">
+                <div className="p-2.5 rounded-full bg-gradient-to-br from-slate-600 to-emerald-700 shadow-md shadow-emerald-500/15">
                   <Axe className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-[11px] font-medium text-muted-foreground">Momentum</span>
@@ -896,7 +1124,7 @@ export default function ExplorePage() {
             </Link>
             <Link href="/idx-bubbles" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-full bg-gradient-to-br from-sky-600 to-emerald-700 shadow-lg shadow-teal-500/20">
+                <div className="p-2.5 rounded-full bg-gradient-to-br from-slate-600 to-teal-700 shadow-md shadow-teal-500/15">
                   <Droplets className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-[11px] font-medium text-muted-foreground">Bubbles</span>
@@ -904,7 +1132,7 @@ export default function ExplorePage() {
             </Link>
             <Link href="/idx-rotation" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-full bg-gradient-to-br from-cyan-600 to-emerald-700 shadow-lg shadow-teal-500/20">
+                <div className="p-2.5 rounded-full bg-gradient-to-br from-slate-600 to-emerald-700 shadow-md shadow-emerald-500/15">
                   <Rotate3D className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-[11px] font-medium text-muted-foreground">Rotation</span>
@@ -912,7 +1140,7 @@ export default function ExplorePage() {
             </Link>
             <Link href="/msci" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-full bg-gradient-to-br from-teal-600 to-emerald-700 shadow-lg shadow-teal-500/20">
+                <div className="p-2.5 rounded-full bg-gradient-to-br from-slate-600 to-emerald-700 shadow-md shadow-emerald-500/15">
                   <Magnet className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-[11px] font-medium text-muted-foreground">MSCI</span>
@@ -920,7 +1148,7 @@ export default function ExplorePage() {
             </Link>
             <Link href="/discussion" className="w-20">
               <div className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-full bg-gradient-to-br from-emerald-600 to-emerald-700 shadow-lg shadow-teal-500/20">
+                <div className="p-2.5 rounded-full bg-gradient-to-br from-slate-600 to-emerald-700 shadow-md shadow-emerald-500/15">
                   <MessageCircleMore className="w-5 h-5 text-white" />
                 </div>
                 <span className="text-[11px] font-medium text-muted-foreground">Chat</span>
@@ -928,6 +1156,43 @@ export default function ExplorePage() {
             </Link>
           </div>
         </div>
+
+        <section className="mt-4 py-4 fade-in">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
+                Money Flow
+              </p>
+            </div>
+            <Link href="/money-flow" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+              View Detail
+            </Link>
+          </div>
+
+          {moneyFlowLoading && (
+            <div className="mt-3 space-y-2">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="h-16 rounded-2xl shimmer" />
+              ))}
+            </div>
+          )}
+
+          {!moneyFlowLoading && moneyFlowError && (
+            <Card className="mt-3 border border-amber-500/20 bg-amber-500/5">
+              <CardContent className="p-3">
+                <p className="text-xs text-amber-600 dark:text-amber-400">{moneyFlowError}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {!moneyFlowLoading && !moneyFlowError && moneyFlowReports.length > 0 && (
+            <Accordion type="single" collapsible className="mt-3 space-y-3">
+              {moneyFlowReports.map((report) => (
+                <MoneyFlowMiniCard key={`${report.symbol}-${report.report_date}`} report={report} />
+              ))}
+            </Accordion>
+          )}
+        </section>
 
         {orderedCategories.map((section) => {
           const gatedPicks = section.picks.slice(5);

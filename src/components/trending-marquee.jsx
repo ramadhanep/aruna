@@ -75,6 +75,14 @@ function getTrendingOrder() {
   return ["idx", "us", "crypto"];
 }
 
+function SectionHeader({ title }) {
+  return (
+    <div className="py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+      {title}
+    </div>
+  );
+}
+
 export function TrendingMarquee({ supabase }) {
   const [trendingStocks, setTrendingStocks] = useState([]);
   const [quotes, setQuotes] = useState({});
@@ -180,21 +188,24 @@ export function TrendingMarquee({ supabase }) {
   }
 
   return (
-    <div
-      ref={scrollContainerRef}
-      className="relative overflow-x-auto overflow-y-hidden liquid-glass py-2 scrollbar-hide rounded-2xl"
-      style={{ WebkitOverflowScrolling: 'touch' }}
-    >
+    <div className="overflow-hidden">
+      <SectionHeader title="Trending" />
       <div
-        className={`flex whitespace-nowrap ${isPaused ? '' : 'animate-marquee'}`}
-        style={{ '--marquee-duration': `5s` }}
+        ref={scrollContainerRef}
+        className="relative overflow-x-auto overflow-y-hidden liquid-glass py-2 scrollbar-hide rounded-2xl"
+        style={{ WebkitOverflowScrolling: 'touch' }}
       >
-        {trendingStocks.map((item) => (
-          <TrendingItem key={`${item.category}-${item.symbol}`} symbol={item.symbol} quote={quotes[item.symbol]} />
-        ))}
-        {trendingStocks.map((item) => (
-          <TrendingItem key={`${item.category}-${item.symbol}-dup`} symbol={item.symbol} quote={quotes[item.symbol]} />
-        ))}
+        <div
+          className={`flex whitespace-nowrap ${isPaused ? '' : 'animate-marquee'}`}
+          style={{ '--marquee-duration': `5s` }}
+        >
+          {trendingStocks.map((item) => (
+            <TrendingItem key={`${item.category}-${item.symbol}`} symbol={item.symbol} quote={quotes[item.symbol]} />
+          ))}
+          {trendingStocks.map((item) => (
+            <TrendingItem key={`${item.category}-${item.symbol}-dup`} symbol={item.symbol} quote={quotes[item.symbol]} />
+          ))}
+        </div>
       </div>
     </div>
   );
