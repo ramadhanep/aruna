@@ -67,6 +67,13 @@ export async function GET() {
         icons: [{ src: '/aruna.png', sizes: '192x192', type: 'image/png' }],
       },
       {
+        name: 'Money Flow',
+        short_name: 'Flow',
+        description: 'Monitor broker accumulation and weekly top picks.',
+        url: '/money-flow',
+        icons: [{ src: '/aruna.png', sizes: '192x192', type: 'image/png' }],
+      },
+      {
         name: 'Portfolio tracker',
         short_name: 'Portfolio',
         description: 'Update your holdings while offline.',

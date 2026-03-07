@@ -403,7 +403,7 @@ export default function MSCIPage() {
             <StockCard
               key={stock.id}
               stock={stock}
-              isLocked={index >= 2 && !isAuthenticated}
+              isLocked={index >= 5 && !isAuthenticated}
             />
           ))}
         </div>
