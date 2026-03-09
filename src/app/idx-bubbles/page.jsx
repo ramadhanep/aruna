@@ -34,11 +34,6 @@ export default function IdxBubblesPage() {
             <ArrowLeft className="size-6 text-muted-foreground" />
           </div>
         </Link>
-        <div className="flex-1 text-center">
-          <h1 className="text-sm font-semibold text-white/80">Market Bubbles</h1>
-          <p className="text-[10px] text-white/40">IDX Market Cap Visualization</p>
-        </div>
-        <div className="w-9" />
       </div>
       <MarketBubbles fullScreen />
     </div>

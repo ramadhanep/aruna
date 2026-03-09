@@ -161,7 +161,7 @@ export function parseScreenerTemplatePayload(payload) {
     const snapshot = {
       symbol,
       company_name: calc?.company?.name || symbol,
-      icon_url: calc?.company?.icon_url || "",
+      icon_url: `https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/${symbol}.png` || calc?.company?.icon_url || "",
     };
 
     const results = Array.isArray(calc?.results) ? calc.results : [];
@@ -256,6 +256,7 @@ export function processPriceData(chartData) {
     change_5d: pctChange(5),
     change_10d: pctChange(10),
     change_20d: pctChange(20),
+    change_3m: pctChange(60),
     range_10d: current > 0 ? Number((((max10 - min10) / current) * 100).toFixed(2)) : 0,
     price_1m_ago: price1mAgo,
     price_change_1m: priceChange1m,
@@ -793,6 +794,7 @@ export function buildMoneyFlowReport({
     price_change_5d: Number(toNumber(priceData.change_5d, 0).toFixed(2)),
     price_change_10d: Number(toNumber(priceData.change_10d, 0).toFixed(2)),
     price_change_20d: Number(toNumber(priceData.change_20d, 0).toFixed(2)),
+    price_change_3m: Number(toNumber(priceData.change_3m, 0).toFixed(2)),
     price_range_10d: Number(toNumber(priceData.range_10d, 0).toFixed(2)),
     signal,
     score_breakdown: scoreResult.breakdown,
