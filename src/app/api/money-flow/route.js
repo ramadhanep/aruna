@@ -99,9 +99,10 @@ export async function GET(request) {
     const { data, error } = await supabase
       .from("money_flow_reports")
       .select(
-        "id,symbol,report_date,money_flow_score,broker_accdist,top1_percent,top3_percent,top5_percent,total_buyer,total_seller,value,volume,today_volume,avg_volume_20,volume_spike,current_price,price_1m_ago,price_change_1m,price_change_5d,price_change_10d,price_change_20d,price_range_10d,signal,score_breakdown,broker_summary,broker_inventory,broker_cost_analysis,broker_concentration,absorption_strength,accumulation_persistence,market_phase,manipulation_risk,analysis_summary,screener_id,screener_name,screener_snapshot,created_at"
+        "id,symbol,report_date,money_flow_score,broker_accdist,top1_percent,top3_percent,top5_percent,total_buyer,total_seller,value,volume,today_volume,avg_volume_20,volume_spike,current_price,price_1m_ago,price_change_1m,price_change_5d,price_change_10d,price_change_20d,price_change_3m,price_range_10d,signal,score_breakdown,broker_summary,broker_inventory,broker_cost_analysis,broker_concentration,absorption_strength,accumulation_persistence,market_phase,manipulation_risk,analysis_summary,screener_id,screener_name,screener_snapshot,created_at"
       )
       .gte("report_date", startDate)
+      .eq("timeframe", timeframeKey)
       .order("report_date", { ascending: false })
       .limit(5000);
 
@@ -149,10 +150,10 @@ export async function GET(request) {
         latest_weekly_report: latestWeeklyReport || null,
         screener: latestWeeklyReport
           ? {
-              id: latestWeeklyReport.screener_id,
-              name: latestWeeklyReport.screener_name,
-              total_rows: latestWeeklyReport.screener_total_rows,
-            }
+            id: latestWeeklyReport.screener_id,
+            name: latestWeeklyReport.screener_name,
+            total_rows: latestWeeklyReport.screener_total_rows,
+          }
           : null,
         updated_at: new Date().toISOString(),
       }),

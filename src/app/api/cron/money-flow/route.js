@@ -31,24 +31,29 @@ function getWeekStartISO(date = new Date()) {
   return weekStart.toISOString().split("T")[0];
 }
 
-async function fetchStockbitPayload(symbol, headers) {
-  const { from, to } = getStockbitDateRange(90);
+const TIMEFRAMES = [
+  { key: "weekly", days: 7 },
+  { key: "monthly", days: 30 },
+  { key: "quarterly", days: 90 }
+];
 
-  const [netRes, grossRes, chartRes] = await Promise.all([
+async function fetchStockbitChart(symbol, headers) {
+  const chartRes = await fetch(buildChartUrl(symbol), { headers });
+  if (!chartRes.ok) throw new Error(`Chart fetch failed for ${symbol}`);
+  return chartRes.json();
+}
+
+async function fetchStockbitMarketDetector(symbol, headers, days) {
+  const { from, to } = getStockbitDateRange(days);
+  const [netRes, grossRes] = await Promise.all([
     fetch(buildMarketDetectorUrl(symbol, from, to, "TRANSACTION_TYPE_NET"), { headers }),
     fetch(buildMarketDetectorUrl(symbol, from, to, "TRANSACTION_TYPE_GROSS"), { headers }),
-    fetch(buildChartUrl(symbol), { headers }),
   ]);
-
-  if (!netRes.ok || !grossRes.ok || !chartRes.ok) {
-    throw new Error(
-      `Stockbit request failed (${symbol}): net=${netRes.status}, gross=${grossRes.status}, chart=${chartRes.status}`
-    );
+  if (!netRes.ok || !grossRes.ok) {
+    throw new Error(`Stockbit MD failed (${symbol}): net=${netRes.status}, gross=${grossRes.status}`);
   }
-
-  const [netData, grossData, chartData] = await Promise.all([netRes.json(), grossRes.json(), chartRes.json()]);
-
-  return { netData, grossData, chartData };
+  const [netData, grossData] = await Promise.all([netRes.json(), grossRes.json()]);
+  return { netData, grossData };
 }
 
 async function runInBatches(items, worker, concurrency = 4) {
@@ -161,20 +166,22 @@ export async function GET(request) {
     screenerUniverse.symbols,
     async (symbol) => {
       try {
-        const { netData, grossData, chartData } = await fetchStockbitPayload(symbol, headers);
+        const chartData = await fetchStockbitChart(symbol, headers);
 
-        const report = buildMoneyFlowReport({
-          symbol,
-          netData,
-          grossData,
-          chartData,
-          reportDate,
-          screenerSnapshot: screenerUniverse.snapshots[symbol] || null,
-          screenerId: screenerUniverse.metadata.screener_id,
-          screenerName: screenerUniverse.metadata.screen_name,
-        });
-
-        reports.push(report);
+        for (const tf of TIMEFRAMES) {
+          const { netData, grossData } = await fetchStockbitMarketDetector(symbol, headers, tf.days);
+          const report = buildMoneyFlowReport({
+            symbol,
+            netData,
+            grossData,
+            chartData,
+            reportDate,
+            screenerSnapshot: screenerUniverse.snapshots[symbol] || null,
+            screenerId: screenerUniverse.metadata.screener_id,
+            screenerName: screenerUniverse.metadata.screen_name,
+          });
+          reports.push({ ...report, timeframe: tf.key });
+        }
       } catch (error) {
         console.error(`Money-flow cron failed for ${symbol}`, error);
         failures.push({ symbol, error: error?.message || "Unknown error" });
@@ -208,6 +215,7 @@ export async function GET(request) {
     price_change_5d: report.price_change_5d,
     price_change_10d: report.price_change_10d,
     price_change_20d: report.price_change_20d,
+    price_change_3m: report.price_change_3m,
     price_range_10d: report.price_range_10d,
     signal: report.signal,
     score_breakdown: report.score_breakdown,
@@ -220,6 +228,7 @@ export async function GET(request) {
     market_phase: report.market_phase,
     manipulation_risk: report.manipulation_risk,
     analysis_summary: report.analysis_summary,
+    timeframe: report.timeframe,
     screener_id: report.screener_id,
     screener_name: report.screener_name,
     screener_snapshot: report.screener_snapshot,
@@ -227,21 +236,22 @@ export async function GET(request) {
 
   const { error: upsertError } = await supabase
     .from("money_flow_reports")
-    .upsert(rows, { onConflict: "symbol,report_date" });
+    .upsert(rows, { onConflict: "symbol,report_date,timeframe" });
 
   if (upsertError) {
     console.error("Failed to upsert money_flow_reports", upsertError);
     return buildErrorResponse("Failed to persist money-flow reports", 500);
   }
 
-  const topPicks = buildTopPicks(reports, 20);
+  const weeklyReports = reports.filter(r => r.timeframe === "weekly");
+  const topPicks = buildTopPicks(weeklyReports, 20);
   const weekStart = getWeekStartISO(new Date());
 
   const { error: weeklyError } = await supabase.from("weekly_reports").upsert(
     {
       week_start: weekStart,
       top_picks: topPicks,
-      source_count: rows.length,
+      source_count: weeklyReports.length,
       min_score: toNumber(topPicks[topPicks.length - 1]?.score, 0),
       screener_id: toNumber(screenerUniverse.metadata.screener_id, 0),
       screener_name: screenerUniverse.metadata.screen_name || "",

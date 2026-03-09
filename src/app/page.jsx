@@ -443,7 +443,29 @@ function MoneyFlowMiniCard({ report }) {
   const riskLevel = report?.manipulation_risk?.level || "LOW";
   const screenerSnapshot = report?.screener_snapshot || null;
   const logo = screenerSnapshot?.icon_url || null;
-  const isPositive = Number(report?.price_change_1m || 0) >= 0;
+
+  const timeframe = report?.timeframe || "weekly";
+  let changeLabel = "1W Change";
+  let changeValue = report?.price_change_5d;
+  let changeFormatted = "";
+
+  if (timeframe === "monthly") {
+    changeLabel = "1M Change";
+    changeValue = report?.price_change_1m;
+    const numeric = Number(changeValue || 0) * 100;
+    changeFormatted = `${numeric >= 0 ? "+" : ""}${numeric.toFixed(2)}%`;
+  } else if (timeframe === "quarterly") {
+    changeLabel = "3M Change";
+    changeValue = report?.price_change_3m;
+    const numeric = Number(changeValue || 0);
+    changeFormatted = `${numeric >= 0 ? "+" : ""}${numeric.toFixed(2)}%`;
+  } else {
+    // Weekly fallback (price_change_5d is pre-multiplied)
+    const numeric = Number(changeValue || 0);
+    changeFormatted = `${numeric >= 0 ? "+" : ""}${numeric.toFixed(2)}%`;
+  }
+
+  const isPositive = Number(changeValue || 0) >= 0;
 
   const brokerRows = Array.isArray(report.broker_summary) ? report.broker_summary.slice(0, 6) : [];
   const inventoryRows = Array.isArray(report.broker_inventory) ? report.broker_inventory.slice(0, 5) : [];
@@ -480,18 +502,28 @@ function MoneyFlowMiniCard({ report }) {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 gap-2 mt-1">
-              <div className="space-y-0.5">
-                <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">Flow Score</p>
-                <p className="text-sm font-semibold flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                  <TrendingUp className="h-3 w-3" />
-                  {score.toFixed(2)}
-                </p>
+            <div className="grid grid-cols-3 gap-2 mt-1">
+              <div className="space-y-0.5 mt-2">
+                <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">Price</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold">
+                    Rp {Number(report.current_price || 0).toLocaleString("id-ID")}
+                  </p>
+                </div>
               </div>
-              <div className="space-y-0.5">
-                <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">1M Change</p>
-                <p className={`text-sm font-semibold ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
-                  {formatMoneyFlowDelta(report.price_change_1m)}
+              <div className="space-y-0.5 mt-2">
+                <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">Flow Score</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-semibold flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                    <TrendingUp className="h-3 w-3" />
+                    {score.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-0.5 mt-2">
+                <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">{changeLabel}</p>
+                <p className={`text-sm font-semibold flex items-center gap-1 ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
+                  {changeFormatted}
                 </p>
               </div>
             </div>
@@ -547,7 +579,7 @@ function MoneyFlowMiniCard({ report }) {
             <div className="rounded-xl border border-border/60">
               <div className="px-3 py-2 border-b border-border/60 flex items-center justify-between">
                 <p className="text-xs font-semibold">Broker Inventory</p>
-                <span className="text-[10px] text-muted-foreground">Estimated net</span>
+                <span className="text-[10px] text-muted-foreground">Top net buyers</span>
               </div>
               <Table>
                 <TableHeader>
@@ -579,7 +611,7 @@ function MoneyFlowMiniCard({ report }) {
             <div className="rounded-xl border border-border/60">
               <div className="px-3 py-2 border-b border-border/60 flex items-center justify-between">
                 <p className="text-xs font-semibold">Broker Summary</p>
-                <span className="text-[10px] text-muted-foreground">Top net buyers</span>
+                <span className="text-[10px] text-muted-foreground">Gross &amp; Net Activity</span>
               </div>
               <Table>
                 <TableHeader>
@@ -601,8 +633,8 @@ function MoneyFlowMiniCard({ report }) {
                   {brokerRows.map((row) => (
                     <TableRow key={`${report.symbol}-${row.broker_code}`}>
                       <TableCell className="text-[11px] font-semibold">{row.broker_code}</TableCell>
-                      <TableCell className="text-[11px] text-right">{formatCompactNumber(row.buy_value)}</TableCell>
-                      <TableCell className="text-[11px] text-right">{formatCompactNumber(row.sell_value)}</TableCell>
+                      <TableCell className="text-[11px] text-right">{formatCompactNumber(row.gross_buy)}</TableCell>
+                      <TableCell className="text-[11px] text-right">{formatCompactNumber(row.gross_sell)}</TableCell>
                       <TableCell className={`text-[11px] text-right font-semibold ${Number(row.net_value || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
                         {formatCompactNumber(row.net_value)}
                       </TableCell>
@@ -1160,12 +1192,13 @@ export default function ExplorePage() {
         <section className="mt-4 py-4 fade-in">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
                 Money Flow
               </p>
             </div>
-            <Link href="/money-flow" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
-              View Detail
+            <Link href="/money-flow?timeframe=weekly" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
+              View All
             </Link>
           </div>
 
@@ -1205,7 +1238,7 @@ export default function ExplorePage() {
                   <div className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                     <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
-                      Breakout Signals in {section.title}
+                      Technical Breakout in {section.title}
                     </p>
                   </div>
                   {section.lastScreened && (
@@ -1264,7 +1297,7 @@ export default function ExplorePage() {
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-medium text-muted-foreground">
-                Run a fresh screening pass for fresh alpha.
+                Run a fresh screening pass for fresh breakout signals.
               </p>
             </div>
           </div>
