@@ -202,7 +202,7 @@ function StockCard({ stock, isLocked = false }) {
         {/* Target Price & Upside */}
         <div className="grid grid-cols-2 gap-3 pt-2 border-t border-black/10 dark:border-white/10">
           <div className="space-y-0.5">
-            <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">Target Price</p>
+            <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">MSCI Qualification Price</p>
             <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
               Rp {formatPrice(stock.targetPrice)}
             </p>

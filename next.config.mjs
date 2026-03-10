@@ -6,7 +6,7 @@ const nextConfig = {
   /* config options here */
   env: {
     NEXT_PUBLIC_APP_NAME: 'Aruna',
-    NEXT_PUBLIC_APP_VERSION: '1.7.48',
+    NEXT_PUBLIC_APP_VERSION: '1.7.49',
     NEXT_PUBLIC_APP_URL: APP_URL,
     SECURE_PAYLOAD_KEY,
   },

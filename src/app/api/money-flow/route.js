@@ -155,7 +155,7 @@ export async function GET(request) {
             total_rows: latestWeeklyReport.screener_total_rows,
           }
           : null,
-        updated_at: new Date().toISOString(),
+        updated_at: latestWeeklyReport.created_at,
       }),
     });
   } catch (error) {
