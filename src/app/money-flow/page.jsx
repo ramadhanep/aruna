@@ -212,91 +212,95 @@ export default function MoneyFlowPage() {
   );
 
   return (
-    <div className="space-y-4 pb-4">
-      <Card className="border-none bg-gradient-to-br from-emerald-800 via-emerald-900 to-teal-950 text-white shadow-xl shadow-emerald-900/30 rounded-2xl">
-        <CardContent className="p-4 space-y-2">
-          <p className="text-xs text-white/85 leading-relaxed">
-            Smart-money breakdown based on broker flow, market phase, absorption, and screener-synced symbols.
-          </p>
-          {/* {payload?.screener?.name && (
-            <p className="text-[10px] text-white/80">
-              Universe: {payload.screener.name} ({payload.screener.total_rows || 0} stocks)
+    <div className="flex flex-col md:grid md:grid-cols-12 md:gap-6 md:items-start gap-4 pb-4">
+      <div className="md:col-span-12 flex flex-col gap-4">
+        <Card className="border-none bg-gradient-to-br from-emerald-800 via-emerald-900 to-teal-950 text-white shadow-xl shadow-emerald-900/30 rounded-2xl">
+          <CardContent className="p-4 space-y-2">
+            <p className="text-xs text-white/85 leading-relaxed">
+              Smart-money breakdown based on broker flow, market phase, absorption, and screener-synced symbols.
             </p>
-          )} */}
-          {payload?.start_date && <p className="text-[10px] text-white/75">Window start: {payload.start_date}</p>}
-        </CardContent>
-      </Card>
+            {/* {payload?.screener?.name && (
+              <p className="text-[10px] text-white/80">
+                Universe: {payload.screener.name} ({payload.screener.total_rows || 0} stocks)
+              </p>
+            )} */}
+            {payload?.start_date && <p className="text-[10px] text-white/75">Window start: {payload.start_date}</p>}
+          </CardContent>
+        </Card>
 
-      <div className="sticky top-14 z-30 glass border-b border-border/30 -mx-4 px-4 py-3 space-y-2">
-        <div className="flex items-center gap-2">
-          <div className="flex-1 flex gap-1.5 p-1 bg-muted/40 rounded-2xl">
-            {timeframeOptions.map((option) => (
-              <Button
-                key={option.key}
-                type="button"
-                variant="ghost"
-                className={`flex-1 rounded-xl text-xs font-semibold transition-all h-9 ${timeframe === option.key
-                  ? "bg-gradient-to-br from-emerald-700 to-teal-800 text-white shadow-lg shadow-emerald-500/20"
-                  : "hover:bg-muted/60"
-                  }`}
-                onClick={() => setTimeframe(option.key)}
-              >
-                {option.label}
-              </Button>
-            ))}
-          </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 p-0" aria-label="Sort reports">
-                <ArrowUpDown className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              {sortOptions.map((option) => (
-                <DropdownMenuItem
+        <div className="sticky top-14 md:top-0 z-30 glass border-b border-border/30 -mx-4 md:mx-0 px-4 md:px-0 py-3 md:py-0 md:border-none md:bg-transparent md:backdrop-blur-none space-y-2">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 flex gap-1.5 p-1 bg-muted/40 rounded-2xl">
+              {timeframeOptions.map((option) => (
+                <Button
                   key={option.key}
-                  onClick={() => setSortBy(option.key)}
-                  className="text-xs flex items-center gap-2"
+                  type="button"
+                  variant="ghost"
+                  className={`flex-1 rounded-xl text-xs font-semibold transition-all h-9 ${timeframe === option.key
+                    ? "bg-gradient-to-br from-emerald-700 to-teal-800 text-white shadow-lg shadow-emerald-500/20"
+                    : "hover:bg-muted/60"
+                    }`}
+                  onClick={() => setTimeframe(option.key)}
                 >
-                  <Check className={`h-3 w-3 ${sortBy === option.key ? "opacity-100" : "opacity-0"}`} />
                   {option.label}
-                </DropdownMenuItem>
+                </Button>
               ))}
-              <DropdownMenuItem onClick={() => setSortOrder("desc")} className="text-xs flex items-center gap-2">
-                <Check className={`h-3 w-3 ${sortOrder === "desc" ? "opacity-100" : "opacity-0"}`} />
-                Descending
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortOrder("asc")} className="text-xs flex items-center gap-2">
-                <Check className={`h-3 w-3 ${sortOrder === "asc" ? "opacity-100" : "opacity-0"}`} />
-                Ascending
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 p-0" aria-label="Sort reports">
+                  <ArrowUpDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                {sortOptions.map((option) => (
+                  <DropdownMenuItem
+                    key={option.key}
+                    onClick={() => setSortBy(option.key)}
+                    className="text-xs flex items-center gap-2"
+                  >
+                    <Check className={`h-3 w-3 ${sortBy === option.key ? "opacity-100" : "opacity-0"}`} />
+                    {option.label}
+                  </DropdownMenuItem>
+                ))}
+                <DropdownMenuItem onClick={() => setSortOrder("desc")} className="text-xs flex items-center gap-2">
+                  <Check className={`h-3 w-3 ${sortOrder === "desc" ? "opacity-100" : "opacity-0"}`} />
+                  Descending
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortOrder("asc")} className="text-xs flex items-center gap-2">
+                  <Check className={`h-3 w-3 ${sortOrder === "asc" ? "opacity-100" : "opacity-0"}`} />
+                  Ascending
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
-      {error && (
-        <Card className="bg-red-600/10 border-red-600/30 rounded-2xl">
-          <CardContent className="p-4 flex items-center gap-3">
-            <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0" />
-            <div>
-              <p className="text-xs font-semibold text-red-600">Failed to load money-flow data</p>
-              <p className="text-xs text-red-600/80">{error}</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+      <div className="md:col-span-12 max-w-4xl mx-auto w-full">
+        {error && (
+          <Card className="bg-red-600/10 border-red-600/30 rounded-2xl mb-4">
+            <CardContent className="p-4 flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0" />
+              <div>
+                <p className="text-xs font-semibold text-red-600">Failed to load money-flow data</p>
+                <p className="text-xs text-red-600/80">{error}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-      {/* {!error && <ScoreSummary summary={payload?.summary} />} */}
+        {/* {!error && <ScoreSummary summary={payload?.summary} />} */}
 
-      {loading && !error && <LoadingState />}
-      {!loading && !error && <ReportList reports={reports} />}
+        {loading && !error && <LoadingState />}
+        {!loading && !error && <ReportList reports={reports} />}
 
-      {payload?.updated_at && (
-        <p className="text-[10px] text-center text-muted-foreground">
-          Last updated: {new Date(payload.updated_at).toLocaleString()}
-        </p>
-      )}
+        {payload?.updated_at && (
+          <p className="text-[10px] text-center text-muted-foreground mt-4">
+            Last updated: {new Date(payload.updated_at).toLocaleString()}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

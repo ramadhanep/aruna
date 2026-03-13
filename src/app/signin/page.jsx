@@ -41,8 +41,8 @@ function SignInContent() {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-10rem)] flex-col justify-center gap-6">
-      <section className="rounded-[2rem] bg-gradient-to-br from-[#0a1628] via-[#0f1f3a] to-[#020617] px-6 py-7 text-white shadow-2xl shadow-black/30">
+    <div className="flex min-h-[calc(100vh-10rem)] flex-col justify-center gap-6 items-center">
+      <section className="w-full max-w-md rounded-[2rem] bg-gradient-to-br from-[#0a1628] via-[#0f1f3a] to-[#020617] px-6 py-7 text-white shadow-2xl shadow-black/30">
         <p className="text-[11px] uppercase tracking-widest text-white/50 font-semibold">Welcome back</p>
         <h1 className="mt-1.5 text-base font-bold">Sign in to continue</h1>
         <p className="mt-2 text-[11px] text-white/70 leading-relaxed">

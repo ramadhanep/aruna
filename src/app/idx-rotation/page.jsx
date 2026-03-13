@@ -21,22 +21,25 @@ export default function IdxRotationPage() {
   const [hoveredStock, setHoveredStock] = useState(null);
   const svgRef = useRef(null);
 
-  // Hide mobile bottom nav and header on mount
+  // Hide mobile bottom nav, header, and desktop sidebar on mount
   useEffect(() => {
     document.body.style.overflow = "hidden";
     const header = document.querySelector("header");
     const nav = document.querySelector("nav");
     const bottomNav = document.querySelector(".mobile-bottom-nav");
+    const aside = document.querySelector("aside");
 
     if (header) header.style.display = "none";
     if (nav) nav.style.display = "none";
     if (bottomNav) bottomNav.style.display = "none";
+    if (aside) aside.style.display = "none";
 
     return () => {
       document.body.style.overflow = "";
       if (header) header.style.display = "";
       if (nav) nav.style.display = "";
       if (bottomNav) bottomNav.style.display = "";
+      if (aside) aside.style.display = "";
     };
   }, []);
 

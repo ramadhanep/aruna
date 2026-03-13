@@ -433,7 +433,7 @@ export default function HomePage() {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col gap-4 pb-12"
+      className="flex flex-col md:grid md:grid-cols-12 md:content-start gap-4 pb-12"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -441,7 +441,7 @@ export default function HomePage() {
       {/* Pull to refresh indicator */}
       {pullDistance > 0 && (
         <div
-          className="flex items-center justify-center transition-all duration-200"
+          className="flex md:col-span-12 items-center justify-center transition-all duration-200"
           style={{
             height: `${pullDistance}px`,
             opacity: Math.min(pullDistance / 80, 1)
@@ -451,105 +451,115 @@ export default function HomePage() {
         </div>
       )}
 
-      <TrendingMarquee supabase={supabase} />
-
-      <Card className="mt-4 border-none bg-gradient-to-br from-emerald-950 via-[#0f172a] to-[#020617] border-border/20 text-white/90 shadow-xl p-4 rounded-3xl">
-        <CardContent className="pt-0">
-          <p className="text-xs leading-relaxed text-white/90 font-medium">
-            We search through historical data looking for anomalous patterns that we would not expect to occur at random.
-          </p>
-        </CardContent>
-      </Card>
-
-      <div className="overflow-hidden">
-        <SectionHeader title="Watchlist" />
-        <div>
-          {quotes.map(quote => (
-            <StockItem key={quote.symbol} quote={quote} />
-          ))}
-        </div>
-        <div className="border-t border-border/40 py-2.5">
-          <button
-            onClick={() => {
-              if (!isAuthenticated) {
-                redirectToSignIn();
-                return;
-              }
-              setManageDialogOpen(true);
-            }}
-            className="w-full flex items-center gap-2 justify-center text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors py-1"
-          >
-            <Edit className="h-4 w-4" />
-            <span className="text-sm font-semibold">Edit Watchlist</span>
-          </button>
-        </div>
+      <div className="md:col-span-12">
+        <TrendingMarquee supabase={supabase} />
       </div>
 
-      {marketPulse && marketPulse.topGainer && marketPulse.topLoser && (
-        <Card className="border-border/40 rounded-2xl">
-          <CardHeader className="pb-0">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-muted-foreground" />
-              <CardTitle className="text-sm font-bold">Highlights</CardTitle>
-            </div>
-            <CardDescription className="text-xs">How your watchlist is moving today</CardDescription>
-          </CardHeader>
-          <CardContent className="mt-4 grid gap-3">
-            <div className="flex items-center justify-between rounded-xl">
-              <div>
-                <p className="text-xs text-muted-foreground">Top Gainer</p>
-                <p className="text-sm font-semibold uppercase">{marketPulse.topGainer.symbol}</p>
-                <p className={`text-xs font-medium ${marketPulse.topGainer.change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                  {marketPulse.topGainer.change >= 0 ? '+' : ''}{marketPulse.topGainer.change.toFixed(2)} ({marketPulse.topGainer.changePercent.toFixed(2)}%)
-                </p>
-              </div>
-              <div className={`flex items-center ${marketPulse.topGainer.change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                <MiniChart
-                  data={marketPulse.topGainer.chartData}
-                  isPositive={marketPulse.topGainer.change >= 0}
-                  width={110}
-                  height={46}
-                  chartId={`pulse-top-${marketPulse.topGainer.symbol}`}
-                />
-              </div>
-            </div>
-            <div className="flex items-center justify-between rounded-lg">
-              <div>
-                <p className="text-xs text-muted-foreground">Top Loser</p>
-                <p className="text-sm font-semibold uppercase">{marketPulse.topLoser.symbol}</p>
-                <p className={`text-xs font-medium ${marketPulse.topLoser.change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                  {marketPulse.topLoser.change >= 0 ? '+' : ''}{marketPulse.topLoser.change.toFixed(2)} ({marketPulse.topLoser.changePercent.toFixed(2)}%)
-                </p>
-              </div>
-              <div className={`flex items-center ${marketPulse.topLoser.change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                <MiniChart
-                  data={marketPulse.topLoser.chartData}
-                  isPositive={marketPulse.topLoser.change >= 0}
-                  width={110}
-                  height={46}
-                  chartId={`pulse-low-${marketPulse.topLoser.symbol}`}
-                />
-              </div>
-            </div>
-            <div className="rounded-xl">
-              <p className="text-xs text-muted-foreground">Average Change</p>
-              <p className={`text-sm font-semibold ${marketPulse.averageChange >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                {marketPulse.averageChange >= 0 ? '+' : ''}{marketPulse.averageChange.toFixed(2)}%
+      <div className="md:col-span-12 md:grid md:grid-cols-12 md:gap-6">
+        <div className="md:col-span-8 flex flex-col gap-4">
+          <Card className="border-none bg-gradient-to-br from-emerald-950 via-[#0f172a] to-[#020617] border-border/20 text-white/90 shadow-xl p-4 rounded-3xl">
+            <CardContent className="pt-0">
+              <p className="text-xs leading-relaxed text-white/90 font-medium">
+                We search through historical data looking for anomalous patterns that we would not expect to occur at random.
               </p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
 
-      {showInstallButton && deferredPrompt && (
-        <Button
-          onClick={handleInstall}
-          className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 flex items-center gap-2 text-xs text-white rounded-xl shadow-lg shadow-emerald-500/20"
-        >
-          <Download className="h-4 w-4" />
-          Install App
-        </Button>
-      )}
+          <div className="overflow-hidden">
+            <SectionHeader title="Watchlist" />
+            <div className="md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-1">
+              {quotes.map(quote => (
+                <div key={quote.symbol}>
+                  <StockItem quote={quote} />
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-border/40 py-2.5 mt-2">
+              <button
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    redirectToSignIn();
+                    return;
+                  }
+                  setManageDialogOpen(true);
+                }}
+                className="w-full flex items-center gap-2 justify-center text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors py-1"
+              >
+                <Edit className="h-4 w-4" />
+                <span className="text-sm font-semibold">Edit Watchlist</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="md:col-span-4 flex flex-col gap-4 mt-4 md:mt-0">
+          {marketPulse && marketPulse.topGainer && marketPulse.topLoser && (
+            <Card className="border-border/40 rounded-2xl">
+              <CardHeader className="pb-0">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-muted-foreground" />
+                  <CardTitle className="text-sm font-bold">Highlights</CardTitle>
+                </div>
+                <CardDescription className="text-xs">How your watchlist is moving today</CardDescription>
+              </CardHeader>
+              <CardContent className="mt-4 grid gap-3">
+                <div className="flex items-center justify-between rounded-xl">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Top Gainer</p>
+                    <p className="text-sm font-semibold uppercase">{marketPulse.topGainer.symbol}</p>
+                    <p className={`text-xs font-medium ${marketPulse.topGainer.change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                      {marketPulse.topGainer.change >= 0 ? '+' : ''}{marketPulse.topGainer.change.toFixed(2)} ({marketPulse.topGainer.changePercent.toFixed(2)}%)
+                    </p>
+                  </div>
+                  <div className={`flex items-center ${marketPulse.topGainer.change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    <MiniChart
+                      data={marketPulse.topGainer.chartData}
+                      isPositive={marketPulse.topGainer.change >= 0}
+                      width={110}
+                      height={46}
+                      chartId={`pulse-top-${marketPulse.topGainer.symbol}`}
+                    />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between rounded-lg">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Top Loser</p>
+                    <p className="text-sm font-semibold uppercase">{marketPulse.topLoser.symbol}</p>
+                    <p className={`text-xs font-medium ${marketPulse.topLoser.change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                      {marketPulse.topLoser.change >= 0 ? '+' : ''}{marketPulse.topLoser.change.toFixed(2)} ({marketPulse.topLoser.changePercent.toFixed(2)}%)
+                    </p>
+                  </div>
+                  <div className={`flex items-center ${marketPulse.topLoser.change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    <MiniChart
+                      data={marketPulse.topLoser.chartData}
+                      isPositive={marketPulse.topLoser.change >= 0}
+                      width={110}
+                      height={46}
+                      chartId={`pulse-low-${marketPulse.topLoser.symbol}`}
+                    />
+                  </div>
+                </div>
+                <div className="rounded-xl mt-2">
+                  <p className="text-xs text-muted-foreground">Average Change</p>
+                  <p className={`text-sm font-semibold ${marketPulse.averageChange >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {marketPulse.averageChange >= 0 ? '+' : ''}{marketPulse.averageChange.toFixed(2)}%
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {showInstallButton && deferredPrompt && (
+            <Button
+              onClick={handleInstall}
+              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 flex items-center gap-2 text-xs text-white rounded-xl shadow-lg shadow-emerald-500/20"
+            >
+              <Download className="h-4 w-4" />
+              Install App
+            </Button>
+          )}
+        </div>
+      </div>
 
       <ManageWatchlistDialog
         open={manageDialogOpen && isAuthenticated}

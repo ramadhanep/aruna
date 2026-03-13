@@ -453,7 +453,7 @@ export default function MomentumPage() {
   }, [hasMore, loadingMore, loadMore]);
 
   return (
-    <div className="space-y-3 pb-4">
+    <div className="space-y-3 pb-4 max-w-6xl mx-auto w-full">
       {/* Info Card */}
       <Card className="border-none bg-gradient-to-br from-teal-600/90 to-emerald-800/90 text-white shadow-xl shadow-emerald-900/20 p-3 rounded-2xl">
         <CardContent className="pt-0">
@@ -489,66 +489,71 @@ export default function MomentumPage() {
 
       {/* Data Display */}
       {!loading && !error && data && (
-        <div className="space-y-3">
-          {/* Summary */}
-          <SummaryCard summary={data.summary} />
+        <div className="flex flex-col md:grid md:grid-cols-12 md:gap-6 md:items-start space-y-3 md:space-y-0">
+          {/* Summary and Top Movers - Sidebar on Desktop */}
+          <div className="md:col-span-4 flex flex-col gap-4 order-first md:order-last">
+            {/* Summary */}
+            <SummaryCard summary={data.summary} />
 
-          {/* Top Movers - only show on "all" filter */}
-          {filter === "all" && (
-            <TopMoversSection
-              topGainers={data.topGainers}
-              topLosers={data.topLosers}
-            />
-          )}
+            {/* Top Movers - only show on "all" filter */}
+            {filter === "all" && (
+              <TopMoversSection
+                topGainers={data.topGainers}
+                topLosers={data.topLosers}
+              />
+            )}
+          </div>
 
-          {/* Stock Cards */}
-          {displayedStocks.length > 0 ? (
-            <div className="space-y-2">
-              <p className="text-xs text-muted-foreground">
-                Showing {displayedStocks.length} of {data.stocks?.length || 0} stocks
-              </p>
-              {displayedStocks.map((stock, index) => (
-                <StockCard
-                  key={stock.code}
-                  stock={stock}
-                  isLocked={index >= 5 && !isAuthenticated}
-                />
-              ))}
-
-              {/* Loading More Indicator */}
-              {loadingMore && (
-                <div className="flex justify-center py-4">
-                  <Loader2 className="w-5 h-5 animate-spin text-white/50" />
-                </div>
-              )}
-
-              {/* Intersection Observer Target */}
-              {hasMore && !loadingMore && (
-                <div ref={observerTarget} className="h-4" />
-              )}
-
-              {/* End of List */}
-              {!hasMore && displayedStocks.length > ITEMS_PER_PAGE && (
-                <p className="text-[9px] text-center text-muted-foreground py-4">
-                  No more stocks to load
+          {/* Stock Cards - Main Content */}
+          <div className="md:col-span-8 w-full">
+            {displayedStocks.length > 0 ? (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground pb-2">
+                  Showing {displayedStocks.length} of {data.stocks?.length || 0} stocks
                 </p>
-              )}
-            </div>
-          ) : (
-            <Card className="bg-muted/20">
-              <CardContent className="p-6 text-center">
-                <p className="text-xs text-muted-foreground">
-                  No stocks found with this filter.
-                </p>
-              </CardContent>
-            </Card>
-          )}
+                {displayedStocks.map((stock, index) => (
+                  <StockCard
+                    key={stock.code}
+                    stock={stock}
+                    isLocked={index >= 5 && !isAuthenticated}
+                  />
+                ))}
+
+                {/* Loading More Indicator */}
+                {loadingMore && (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="w-5 h-5 animate-spin text-white/50" />
+                  </div>
+                )}
+
+                {/* Intersection Observer Target */}
+                {hasMore && !loadingMore && (
+                  <div ref={observerTarget} className="h-4" />
+                )}
+
+                {/* End of List */}
+                {!hasMore && displayedStocks.length > ITEMS_PER_PAGE && (
+                  <p className="text-[9px] text-center text-muted-foreground py-4">
+                    No more stocks to load
+                  </p>
+                )}
+              </div>
+            ) : (
+              <Card className="bg-muted/20">
+                <CardContent className="p-6 text-center">
+                  <p className="text-xs text-muted-foreground">
+                    No stocks found with this filter.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
       )}
 
       {/* Last Updated */}
       {data?.lastUpdated && (
-        <p className="text-[9px] text-center text-muted-foreground">
+        <p className="text-[9px] text-center text-muted-foreground pt-4">
           Last updated: {new Date(data.lastUpdated).toLocaleTimeString()}
         </p>
       )}

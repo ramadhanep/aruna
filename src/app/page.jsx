@@ -304,57 +304,6 @@ function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
   );
 }
 
-function InstallAppButton() {
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [isStandalone, setIsStandalone] = useState(false);
-
-  useEffect(() => {
-    // Check if already installed
-    const standalone = window.matchMedia('(display-mode: standalone)').matches ||
-      window.navigator.standalone === true;
-    setIsStandalone(standalone);
-
-    // Listen for beforeinstallprompt event
-    const handler = (e) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-
-    window.addEventListener('beforeinstallprompt', handler);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handler);
-    };
-  }, []);
-
-  const handleInstall = async () => {
-    if (!deferredPrompt) return;
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-
-    if (outcome === 'accepted') {
-      console.log('User accepted the install prompt');
-    }
-
-    setDeferredPrompt(null);
-  };
-
-  // Don't show if already installed or if browser doesn't support install
-  if (isStandalone || !deferredPrompt) return null;
-
-  return (
-    <div className="mt-4">
-      <Button
-        onClick={handleInstall}
-        className="w-full bg-emerald-700 hover:bg-emerald-800 flex items-center gap-2 text-xs text-white/80"
-      >
-        <Download className="h-4 w-4" />
-        Install App
-      </Button>
-    </div>
-  );
-}
 
 function PickItem({ pick, quote }) {
   const symbol = typeof pick === "string" ? pick : pick?.symbol;
@@ -449,6 +398,8 @@ export default function ExplorePage() {
   const [moneyFlowUpdatedAt, setMoneyFlowUpdatedAt] = useState(null);
   const [moneyFlowLoading, setMoneyFlowLoading] = useState(true);
   const [moneyFlowError, setMoneyFlowError] = useState("");
+  const [showInstallButton, setShowInstallButton] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
@@ -584,6 +535,38 @@ export default function ExplorePage() {
   useEffect(() => {
     loadMoneyFlow();
   }, [loadMoneyFlow]);
+
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
+    setShowInstallButton(!isStandalone);
+
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallButton(!isStandalone);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
+  }, []);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+
+    if (outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+    }
+
+    setDeferredPrompt(null);
+    setShowInstallButton(false);
+  };
 
   useEffect(() => {
     if (!supabase) return;
@@ -872,14 +855,14 @@ export default function ExplorePage() {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col gap-6 pb-12"
+      className="flex flex-col md:grid md:grid-cols-12 gap-6 pb-12"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
       {pullDistance > 0 && (
         <div
-          className="flex items-center justify-center transition-all duration-200"
+          className="flex md:col-span-12 items-center justify-center transition-all duration-200"
           style={{ height: `${Math.min(pullDistance, 120)}px` }}
         >
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -888,9 +871,9 @@ export default function ExplorePage() {
         </div>
       )}
 
-      <div>
-        <section className="mb-5">
-          <div className="grid grid-cols-2 gap-3">
+      <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-12 gap-6">
+        <section className="md:col-span-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {highlightClusters.map((item) => {
               const changeValue = item.quote?.change ?? 0;
               const isPositive = changeValue >= 0;
@@ -938,9 +921,11 @@ export default function ExplorePage() {
           </div>
         </section>
 
-        <TrendingMarquee supabase={supabase} />
+        <div className="md:col-span-12">
+          <TrendingMarquee supabase={supabase} />
+        </div>
 
-        <div className="mt-5 relative overflow-x-auto overflow-y-hidden py-3 scrollbar-hide">
+        <div className="md:col-span-12 relative overflow-x-auto overflow-y-hidden py-3 scrollbar-hide">
           <div className="flex justify-center whitespace-nowrap gap-5">
             <Link href="/idx-momentum" className="w-20">
               <div className="flex flex-col items-center gap-2">
@@ -984,8 +969,10 @@ export default function ExplorePage() {
             </Link>
           </div>
         </div>
+      </div>
 
-        <section className="mt-4 py-4 fade-in">
+      <div className="md:col-span-4 flex flex-col gap-6">
+        <section>
           <div className="flex items-center justify-between gap-2">
             <div>
               <div className="flex items-center gap-2">
@@ -1029,7 +1016,9 @@ export default function ExplorePage() {
             </Accordion>
           )}
         </section>
+      </div>
 
+      <div className="md:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 content-start">
         {orderedCategories.map((section) => {
           const gatedPicks = section.picks.slice(5);
           const firstPicks = section.picks.slice(0, 5);
@@ -1095,8 +1084,7 @@ export default function ExplorePage() {
             </section>
           );
         })}
-
-        <section className="mt-6 p-4 rounded-3xl bg-card border border-border/40">
+        <section className="p-4 rounded-3xl bg-card border border-border/40">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-medium text-muted-foreground">
@@ -1104,7 +1092,17 @@ export default function ExplorePage() {
               </p>
             </div>
           </div>
-          <InstallAppButton />
+          {showInstallButton && deferredPrompt && (
+            <div className="mt-4">
+              <Button
+                onClick={handleInstall}
+                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 flex items-center gap-2 text-xs text-white rounded-xl shadow-lg shadow-emerald-500/20"
+              >
+                <Download className="h-4 w-4" />
+                Install App
+              </Button>
+            </div>
+          )}
           <div className="mt-4 grid grid-cols-3 gap-3">
             {CATEGORY_ORDER.map((category) => {
               const snapshot = snapshots[category];
@@ -1138,6 +1136,7 @@ export default function ExplorePage() {
           </div>
         </section>
       </div>
+
     </div>
   );
 }

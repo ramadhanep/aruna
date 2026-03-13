@@ -157,6 +157,11 @@ export async function GET(request) {
   }
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+  // Truncate previous data
+  await supabase.from("money_flow_reports").delete().neq("id", 0);
+  await supabase.from("weekly_reports").delete().neq("id", 0);
+
   const reportDate = getISODate(new Date());
 
   const failures = [];

@@ -2482,7 +2482,7 @@ function ElectionCyclePageContent() {
               ))}
             </CardContent>
           </Card>
-          <div className="grid gap-2 md:grid-cols-2">
+          <div className="grid gap-2 grid-cols-2 md:grid-cols-1">
             {[...Array(2)].map((_, idx) => (
               <Card key={idx} className="h-full">
                 <CardHeader>
@@ -2523,7 +2523,7 @@ function ElectionCyclePageContent() {
         </Card>
 
         {(hasEarningsAnalysis || hasRevenueAnalysis) ? (
-          <div className="grid gap-2 md:grid-cols-2">
+          <div className="grid gap-2 grid-cols-2 md:grid-cols-1">
             {hasEarningsAnalysis && latestEarningsPoint && (
               <div className="relative">
                 <Card
@@ -3126,8 +3126,8 @@ function ElectionCyclePageContent() {
   };
 
   return (
-    <div className="flex flex-col gap-2 pb-8">
-      <div className="flex justify-between gap-2">
+    <div className="flex flex-col md:grid md:grid-cols-12 md:gap-6 md:items-start pb-8">
+      <div className="md:col-span-12 flex justify-between gap-2 mb-4 md:mb-0">
         <div className="flex flex-wrap items-center gap-2">
           <h1
             className="text-base font-semibold uppercase cursor-pointer transition-colors hover:text-primary flex items-center gap-1"
@@ -3163,7 +3163,7 @@ function ElectionCyclePageContent() {
             value={selectedCycles.join(',')}
             onValueChange={(value) => setSelectedCycles(value.split(','))}
           >
-            <SelectTrigger className="h-3 text-[11px]">
+            <SelectTrigger className="h-8 text-[11px] w-[140px]">
               <SelectValue placeholder="Select cycles" />
             </SelectTrigger>
             <SelectContent>
@@ -3175,7 +3175,6 @@ function ElectionCyclePageContent() {
               <SelectItem className="text-[11px]" value="election,current">Election</SelectItem>
               <SelectItem className="text-[11px]" value="post,current">Post-Election</SelectItem>
               <SelectItem className="text-[11px]" value="mid,current">Mid-Term</SelectItem>
-              {/* <SelectItem value="pre,election,mid,post,current">All Cycles</SelectItem> */}
             </SelectContent>
           </Select>
           <button
@@ -3194,167 +3193,243 @@ function ElectionCyclePageContent() {
         </div>
       </div>
 
-      {loading && (
-        <>
-          <Card className="bg-transparent border-none rounded-none">
-            <CardHeader>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 space-y-2">
-                  <div className="h-3 w-28 rounded-full shimmer"></div>
-                  <div className="h-8 w-32 rounded-2xl shimmer"></div>
-                  <div className="h-4 w-24 rounded-full shimmer"></div>
-                  <div className="h-4 w-20 rounded-full shimmer"></div>
-                </div>
-                <div className="flex flex-col gap-2">
-                  <div className="h-6 w-40 rounded-full shimmer"></div>
-                  <div className="h-6 w-32 rounded-full shimmer"></div>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="px-0 pb-0">
-              <div className="w-full h-[380px] rounded-xl shimmer"></div>
-            </CardContent>
-          </Card>
-
-          <div className="flex gap-2">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="flex-1 h-7 rounded-full shimmer"></div>
-            ))}
-          </div>
-
-          <div className="h-10 rounded-xl shimmer"></div>
-
-          <div className="mt-4 flex flex-col gap-8">
-            <Card>
+      <div className="md:col-span-8 flex flex-col gap-2">
+        {loading && (
+          <>
+            <Card className="bg-transparent border-none rounded-none">
               <CardHeader>
-                <CardTitle className="text-sm">Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  {[...Array(6)].map((_, idx) => (
-                    <div key={idx} className="space-y-1">
-                      <div className="h-3 w-24 rounded-full shimmer"></div>
-                      <div className="h-4 w-20 rounded-full shimmer"></div>
-                    </div>
-                  ))}
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 space-y-2">
+                    <div className="h-3 w-28 rounded-full shimmer"></div>
+                    <div className="h-8 w-32 rounded-2xl shimmer"></div>
+                    <div className="h-4 w-24 rounded-full shimmer"></div>
+                    <div className="h-4 w-20 rounded-full shimmer"></div>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <div className="h-6 w-40 rounded-full shimmer"></div>
+                    <div className="h-6 w-32 rounded-full shimmer"></div>
+                  </div>
                 </div>
+              </CardHeader>
+              <CardContent className="px-0 pb-0">
+                <div className="w-full h-[380px] md:h-[500px] rounded-xl shimmer"></div>
               </CardContent>
             </Card>
-            <div className="grid gap-2 md:grid-cols-2">
-              <Card>
-                <CardHeader className="gap-1">
-                  <CardTitle className="text-sm">Earnings Results</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[240px] rounded-xl shimmer"></div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader className="gap-1">
-                  <CardTitle className="text-sm">Revenue vs Earnings</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[240px] rounded-xl shimmer"></div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
 
-          <div className="mt-6 border-b border-border/40 pb-2 flex flex-wrap gap-2">
-            {[...Array(4)].map((_, idx) => (
-              <div key={`tab-${idx}`} className="h-8 w-20 rounded-full shimmer" />
-            ))}
-          </div>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">Analysis</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3 text-xs">
-              {[...Array(5)].map((_, idx) => (
-                <div key={`analysis-${idx}`} className="h-3 rounded-full shimmer w-full" />
+            <div className="flex gap-2">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="flex-1 h-7 rounded-full shimmer"></div>
               ))}
-            </CardContent>
-          </Card>
+            </div>
 
-        </>
-      )}
+            <div className="h-10 rounded-xl shimmer"></div>
+          </>
+        )}
 
-      {showChartSection && (
-        <>
-          <Card className="bg-transparent border-none rounded-none">
-            <CardHeader>
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex flex-col gap-2">
-                  <CardDescription className="text-xs">{assetName}</CardDescription>
-                  {screeningSignal && (
-                    <div className="flex flex-wrap gap-1">
-                      <span className="rounded-full border border-emerald-700/40 bg-emerald-700/10 px-3 py-1 text-[11px] font-semibold text-emerald-600">
-                        BUY SIGNAL
-                      </span>
-                      {screeningSignalDateLabel && (
-                        <span className="rounded-full border border-muted/60 bg-muted/20 px-3 py-1 text-[10px] text-muted-foreground">
-                          Signal {screeningSignalDateLabel}
+        {showChartSection && (
+          <>
+            <Card className="bg-transparent border-none rounded-none">
+              <CardHeader>
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex flex-col gap-2">
+                    <CardDescription className="text-xs">{assetName}</CardDescription>
+                    {screeningSignal && (
+                      <div className="flex flex-wrap gap-1">
+                        <span className="rounded-full border border-emerald-700/40 bg-emerald-700/10 px-3 py-1 text-[11px] font-semibold text-emerald-600">
+                          BUY SIGNAL
                         </span>
-                      )}
-                    </div>
-                  )}
-                  {marketStateInfo ? (
-                    <span className={`flex items-center gap-1 text-[10px] font-medium ${marketStateInfo.tone}`}>
-                      {MarketStateIcon ? <MarketStateIcon className="h-3 w-3" /> : null}
-                      {marketStateInfo.label}
-                    </span>
-                  ) : null}
-                  <div className="flex flex-col gap-1">
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-xl font-bold">
-                        {displayedPrice != null
-                          ? displayedPrice.toLocaleString('en-US', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2,
-                          })
-                          : '-'}
-                      </span>
-                      {symbolInfo?.currency && (
-                        <span className="text-xs text-muted-foreground">{symbolInfo.currency}</span>
-                      )}
-                    </div>
-                    {displayedChange && (
-                      <div className="flex flex-col text-xs">
-                        <span
-                          className={`font-medium ${displayedChange.value >= 0 ? 'text-emerald-600' : 'text-red-600'
-                            }`}
-                        >
-                          {displayedChange.value >= 0 ? '+' : ''}
-                          {displayedChange.value.toFixed(2)} (
-                          {displayedChange.pct != null
-                            ? `${displayedChange.pct >= 0 ? '+' : ''}${displayedChange.pct.toFixed(2)}%`
-                            : '—'}
-                          )
-                        </span>
-                        {displayedChange.label && (
-                          <span className="text-[10px] text-muted-foreground">
-                            {displayedChange.label}
+                        {screeningSignalDateLabel && (
+                          <span className="rounded-full border border-muted/60 bg-muted/20 px-3 py-1 text-[10px] text-muted-foreground">
+                            Signal {screeningSignalDateLabel}
                           </span>
                         )}
                       </div>
                     )}
+                    {marketStateInfo ? (
+                      <span className={`flex items-center gap-1 text-[10px] font-medium ${marketStateInfo.tone}`}>
+                        {MarketStateIcon ? <MarketStateIcon className="h-3 w-3" /> : null}
+                        {marketStateInfo.label}
+                      </span>
+                    ) : null}
+                    <div className="flex flex-col gap-1">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-xl font-bold">
+                          {displayedPrice != null
+                            ? displayedPrice.toLocaleString('en-US', {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })
+                            : '-'}
+                        </span>
+                        {symbolInfo?.currency && (
+                          <span className="text-xs text-muted-foreground">{symbolInfo.currency}</span>
+                        )}
+                      </div>
+                      {displayedChange && (
+                        <div className="flex flex-col text-xs">
+                          <span
+                            className={`font-medium ${displayedChange.value >= 0 ? 'text-emerald-600' : 'text-red-600'
+                              }`}
+                          >
+                            {displayedChange.value >= 0 ? '+' : ''}
+                            {displayedChange.value.toFixed(2)} (
+                            {displayedChange.pct != null
+                              ? `${displayedChange.pct >= 0 ? '+' : ''}${displayedChange.pct.toFixed(2)}%`
+                              : '—'}
+                            )
+                          </span>
+                          {displayedChange.label && (
+                            <span className="text-[10px] text-muted-foreground">
+                              {displayedChange.label}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <TickerAvatar symbol={symbol} logo={symbolInfo?.logo} className="w-10 h-10" />
                   </div>
                 </div>
-                <div className="flex gap-3">
-                  <TickerAvatar symbol={symbol} logo={symbolInfo?.logo} className="w-10 h-10" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className={isNormalView ? "px-0 pb-0 -mx-4" : "px-0 pb-0 -mr-4"}>
-              {isNormalView ? (
-                normalSeriesLoading ? (
-                  <div className="flex h-[380px] items-center justify-center gap-2 text-xs text-muted-foreground">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Loading {normalTimeframeLabel} candles…
+              </CardHeader>
+              <CardContent className={isNormalView ? "px-0 pb-0 -mx-4 md:mx-0" : "px-0 pb-0 -mr-4 md:mr-0"}>
+                {isNormalView ? (
+                  normalSeriesLoading ? (
+                    <div className="flex h-[380px] md:h-[500px] items-center justify-center gap-2 text-xs text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading {normalTimeframeLabel} candles…
+                    </div>
+                  ) : filteredNormalChartData.length > 0 ? (
+                    <>
+                      <div className="relative left-1/2 right-1/2 -translate-x-1/2 w-screen max-w-[768px] md:w-full md:max-w-none md:left-auto md:right-auto md:translate-x-0">
+                        <NormalCandlestickChart
+                          candles={normalCandlestickSeries.candles}
+                          ema={normalCandlestickSeries.ema}
+                          meta={normalCandlestickSeries.meta}
+                          markers={buySignalMarkers}
+                          formatTimestamp={formatNormalTimestamp}
+                          currency={symbolInfo?.currency}
+                          formatPrice={formatPriceValue}
+                          isDark={resolvedTheme === 'dark'}
+                          showTimeScale={showIntradayScale}
+                          showSeconds={normalTimeframe === '15m'}
+                          emaColor={EMA_COLOR}
+                          livermoreKey={normalCandlestickSeries.livermore}
+                          showLivermoreKey={showLivermoreKey}
+                          livermoreUpperColor={LIVERMORE_UPPER_COLOR}
+                          livermoreLowerColor={LIVERMORE_LOWER_COLOR}
+                          valueLabelPrefix="HA"
+                          showTooltip={false}
+                          priceScaleType={scaleChoice}
+                          height={450}
+                        />
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex h-[380px] md:h-[500px] items-center justify-center text-xs text-muted-foreground">
+                      {normalSeriesError || `Price data unavailable for the ${normalTimeframeLabel} timeframe.`}
+                    </div>
+                  )
+                ) : (
+                  <div className="relative h-[380px] md:h-[500px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart
+                        data={filteredChartData}
+                        margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
+                      >
+                        <defs>
+                          {chartData.linesData.map((line) => {
+                            const gradientId = `gradient-${line.key}`;
+                            return (
+                              <linearGradient key={gradientId} id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor={line.color} stopOpacity={0.3} />
+                                <stop offset="100%" stopColor={line.color} stopOpacity={0} />
+                              </linearGradient>
+                            );
+                          })}
+                        </defs>
+                        <XAxis
+                          dataKey="dayOfYear"
+                          tickFormatter={formatTick}
+                          ticks={quarterFilter === 'all' ? [1, 91, 182, 274] : undefined}
+                          className="text-[10px]"
+                          height={30}
+                        />
+                        <YAxis
+                          orientation="right"
+                          scale={scaleChoice === 'log' ? 'log' : 'linear'}
+                          domain={scaleChoice === 'log' ? ['auto', 'auto'] : ['auto', 'auto']}
+                          tickFormatter={formatYAxis}
+                          className="text-[10px]"
+                          width={45}
+                          allowDataOverflow={false}
+                        />
+                        <Tooltip
+                          formatter={formatTooltip}
+                          labelFormatter={formatTooltipDate}
+                          contentStyle={{
+                            backgroundColor: 'hsl(var(--background))',
+                            border: '1px solid hsl(var(--border))',
+                            borderRadius: '8px',
+                            fontSize: '12px',
+                          }}
+                        />
+                        {chartData.linesData.length > 0 ? (
+                          <Legend
+                            align="left"
+                            verticalAlign="bottom"
+                            wrapperStyle={{ paddingTop: '10px', fontSize: '11px' }}
+                          />
+                        ) : null}
+                        {chartData.linesData.map((line) => (
+                          <Area
+                            key={line.key}
+                            type="monotone"
+                            dataKey={line.key}
+                            stroke={line.color}
+                            fill={`url(#gradient-${line.key})`}
+                            fillOpacity={1}
+                            name={line.name}
+                            dot={false}
+                            strokeWidth={1.5}
+                          />
+                        ))}
+                      </AreaChart>
+                    </ResponsiveContainer>
+                    <ArunaWatermark className="absolute inset-0 flex items-end justify-start bottom-18 left-4" />
                   </div>
-                ) : filteredNormalChartData.length > 0 ? (
-                  <>
-                    <div className="relative left-1/2 right-1/2 -translate-x-1/2">
+                )}
+              </CardContent>
+            </Card>
+
+            {isNormalView ? (
+              <>
+                <div className="flex flex-wrap justify-center items-center gap-1 mt-4 md:mt-2">
+                  {renderTimeframeButtons({ includeFullscreenToggle: true })}
+                </div>
+                <Dialog open={normalFullscreenOpen} onOpenChange={setNormalFullscreenOpen}>
+                  <DialogContent
+                    className="fixed max-w-none h-screen rounded-none p-0 flex flex-col"
+                    onEscapeKeyDown={(event) => event.preventDefault()}
+                    onPointerDownOutside={(event) => event.preventDefault()}
+                    showCloseButton={false}
+                  >
+                    <div className="flex flex-col gap-1 justify-center items-center border-b py-4 text-center">
+                      <div
+                        className="absolute top-5 left-5 cursor-pointer"
+                        onClick={() => setNormalFullscreenOpen(false)}
+                      >
+                        <ArrowLeft className="size-6 text-muted-foreground" />
+                      </div>
+                      <DialogTitle className="text-sm font-semibold leading-none">
+                        {formatTickerDisplay(symbol)}
+                      </DialogTitle>
+                      <span className="text-muted-foreground text-xs">{assetName}</span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center gap-2 py-2">
+                      <div className="flex flex-wrap justify-center items-center gap-1">{renderTimeframeButtons()}</div>
+                    </div>
+                    <div className="flex-1 min-h-0">
                       <NormalCandlestickChart
                         candles={normalCandlestickSeries.candles}
                         ema={normalCandlestickSeries.ema}
@@ -3374,184 +3449,80 @@ function ElectionCyclePageContent() {
                         valueLabelPrefix="HA"
                         showTooltip={false}
                         priceScaleType={scaleChoice}
-                        height={380}
+                        height={650}
                       />
                     </div>
-                    {/* Stochastic RSI temporarily disabled in the UI
-                    {stochasticChartData.length > 0 ? (
-                      <div className="relative left-1/2 right-1/2 -translate-x-1/2 pb-4">
-                        <div className="mb-2 flex items-center justify-between text-[10px] text-muted-foreground">
-                          <span>Stochastic RSI</span>
-                          <span>14, 14</span>
-                        </div>
-                        <ResponsiveContainer width="100%" height={160}>
-                          <ComposedChart data={stochasticChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                            <CartesianGrid strokeDasharray="3 3" className="stroke-muted/70" />
-                            <XAxis
-                              dataKey="time"
-                              tickFormatter={(value) => formatNormalTimestamp(value * 1000)}
-                              className="text-[10px]"
-                              minTickGap={30}
-                            />
-                            <YAxis domain={[0, 100]} className="text-[10px]" width={30} allowDecimals={false} />
-                            <ReferenceLine y={80} stroke="#f87171" strokeDasharray="4 4" />
-                            <ReferenceLine y={20} stroke="#34d399" strokeDasharray="4 4" />
-                            <Line key="stoch-k" type="monotone" dataKey="k" stroke="#f97316" strokeWidth={1.8} dot={false} isAnimationActive={false} />
-                            <Line key="stoch-d" type="monotone" dataKey="d" stroke="#6366f1" strokeWidth={1.2} dot={false} isAnimationActive={false} />
-                          </ComposedChart>
-                        </ResponsiveContainer>
-                      </div>
-                    ) : null}
-                    */}
-                  </>
-                ) : (
-                  <div className="flex h-[380px] items-center justify-center text-xs text-muted-foreground">
-                    {normalSeriesError || `Price data unavailable for the ${normalTimeframeLabel} timeframe.`}
-                  </div>
-                )
-              ) : (
-                <div className="relative h-[380px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                      data={filteredChartData}
-                      margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
-                    >
-                      <defs>
-                        {chartData.linesData.map((line) => {
-                          const gradientId = `gradient-${line.key}`;
-                          return (
-                            <linearGradient key={gradientId} id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor={line.color} stopOpacity={0.3} />
-                              <stop offset="100%" stopColor={line.color} stopOpacity={0} />
-                            </linearGradient>
-                          );
-                        })}
-                      </defs>
-                      <XAxis
-                        dataKey="dayOfYear"
-                        tickFormatter={formatTick}
-                        ticks={quarterFilter === 'all' ? [1, 91, 182, 274] : undefined}
-                        className="text-[10px]"
-                        height={30}
-                      />
-                      <YAxis
-                        orientation="right"
-                        scale={scaleChoice === 'log' ? 'log' : 'linear'}
-                        domain={scaleChoice === 'log' ? ['auto', 'auto'] : ['auto', 'auto']}
-                        tickFormatter={formatYAxis}
-                        className="text-[10px]"
-                        width={45}
-                        allowDataOverflow={false}
-                      />
-                      <Tooltip
-                        formatter={formatTooltip}
-                        labelFormatter={formatTooltipDate}
-                        contentStyle={{
-                          backgroundColor: 'hsl(var(--background))',
-                          border: '1px solid hsl(var(--border))',
-                          borderRadius: '8px',
-                          fontSize: '12px',
-                        }}
-                      />
-                      {chartData.linesData.length > 0 ? (
-                        <Legend
-                          align="left"
-                          verticalAlign="bottom"
-                          wrapperStyle={{ paddingTop: '10px', fontSize: '11px' }}
-                        />
-                      ) : null}
-                      {chartData.linesData.map((line) => (
-                        <Area
-                          key={line.key}
-                          type="monotone"
-                          dataKey={line.key}
-                          stroke={line.color}
-                          fill={`url(#gradient-${line.key})`}
-                          fillOpacity={1}
-                          name={line.name}
-                          dot={false}
-                          strokeWidth={1.5}
-                        />
-                      ))}
-                    </AreaChart>
-                  </ResponsiveContainer>
-                  <ArunaWatermark className="absolute inset-0 flex items-end justify-start bottom-18 left-4" />
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {isNormalView ? (
-            <>
-              <div className="flex flex-wrap justify-center items-center gap-1">
-                {renderTimeframeButtons({ includeFullscreenToggle: true })}
+                  </DialogContent>
+                </Dialog>
+              </>
+            ) : (
+              <div className="flex items-center justify-center gap-2 mt-4 md:mt-2">
+                {['all', 'Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
+                  <button
+                    key={q}
+                    className={`w-16 h-6 text-xs font-semibold rounded-sm border-1.5 transition-colors ${quarterFilter === q
+                      ? 'border-primary bg-primary text-primary-foreground'
+                      : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'
+                      }`}
+                    onClick={() => setQuarterFilter(q)}
+                  >
+                    {q === 'all' ? 'All' : q}
+                  </button>
+                ))}
               </div>
-              <Dialog open={normalFullscreenOpen} onOpenChange={setNormalFullscreenOpen}>
-                <DialogContent
-                  className="fixed max-w-none h-screen rounded-none p-0 flex flex-col"
-                  onEscapeKeyDown={(event) => event.preventDefault()}
-                  onPointerDownOutside={(event) => event.preventDefault()}
-                  showCloseButton={false}
-                >
-                  <div className="flex flex-col gap-1 justify-center items-center border-b py-4 text-center">
-                    <div
-                      className="absolute top-5 left-5"
-                      onClick={() => setNormalFullscreenOpen(false)}
-                    >
-                      <ArrowLeft className="size-6 text-muted-foreground" />
+            )}
+          </>
+        )}
+      </div>
+
+      <div className="md:col-span-4 flex flex-col gap-4">
+        {loading && (
+          <div className="mt-4 flex flex-col gap-8 md:mt-0">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-3">
+                  {[...Array(6)].map((_, idx) => (
+                    <div key={idx} className="space-y-1">
+                      <div className="h-3 w-24 rounded-full shimmer"></div>
+                      <div className="h-4 w-20 rounded-full shimmer"></div>
                     </div>
-                    <DialogTitle className="text-sm font-semibold leading-none">
-                      {formatTickerDisplay(symbol)}
-                    </DialogTitle>
-                    <span className="text-muted-foreground text-xs">{assetName}</span>
-                  </div>
-                  <div className="flex flex-col items-center justify-center gap-2">
-                    <div className="flex flex-wrap justify-center items-center gap-1">{renderTimeframeButtons()}</div>
-                  </div>
-                  <div>
-                    <NormalCandlestickChart
-                      candles={normalCandlestickSeries.candles}
-                      ema={normalCandlestickSeries.ema}
-                      meta={normalCandlestickSeries.meta}
-                      markers={buySignalMarkers}
-                      formatTimestamp={formatNormalTimestamp}
-                      currency={symbolInfo?.currency}
-                      formatPrice={formatPriceValue}
-                      isDark={resolvedTheme === 'dark'}
-                      showTimeScale={showIntradayScale}
-                      showSeconds={normalTimeframe === '15m'}
-                      emaColor={EMA_COLOR}
-                      livermoreKey={normalCandlestickSeries.livermore}
-                      showLivermoreKey={showLivermoreKey}
-                      livermoreUpperColor={LIVERMORE_UPPER_COLOR}
-                      livermoreLowerColor={LIVERMORE_LOWER_COLOR}
-                      valueLabelPrefix="HA"
-                      showTooltip={false}
-                      priceScaleType={scaleChoice}
-                      height={650}
-                    />
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </>
-          ) : (
-            <div className="flex items-center justify-center gap-2">
-              {['all', 'Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
-                <button
-                  key={q}
-                  className={`w-16 h-6 text-xs font-semibold rounded-sm border-1.5 transition-colors ${quarterFilter === q
-                    ? 'border-primary bg-primary text-primary-foreground'
-                    : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'
-                    }`}
-                  onClick={() => setQuarterFilter(q)}
-                >
-                  {q === 'all' ? 'All' : q}
-                </button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            <div className="grid gap-2">
+              <Card>
+                <CardHeader className="gap-1">
+                  <CardTitle className="text-sm">Earnings Results</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[240px] rounded-xl shimmer"></div>
+                </CardContent>
+              </Card>
+            </div>
+            <div className="border-b border-border/40 pb-2 flex flex-wrap gap-2">
+              {[...Array(4)].map((_, idx) => (
+                <div key={`tab-${idx}`} className="h-8 w-16 rounded-full shimmer" />
               ))}
             </div>
-          )}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm">Analysis</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3 text-xs">
+                {[...Array(5)].map((_, idx) => (
+                  <div key={`analysis-${idx}`} className="h-3 rounded-full shimmer w-full" />
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
-          <div className="mt-4 space-y-3">
+        {showChartSection && (
+          <div className="space-y-4">
             {hasPortfolioPosition && (
               <Card className="overflow-hidden border border-border/70">
                 <div
@@ -3623,37 +3594,36 @@ function ElectionCyclePageContent() {
             >
               Add to Your Portfolio
             </Button>
+
+            {(fundamentalsLoading || fundamentals || cycleSummary || quarterlyHeatmap.rows.length > 0 || monthlyHeatmap.rows.length > 0) && (
+              <div className="space-y-4">
+                <div className="flex gap-2 border-b border-border/50 text-[11px] overflow-x-auto whitespace-nowrap flex-nowrap pb-1 hide-scrollbar">
+                  {infoTabs.map((tab) => (
+                    <button
+                      key={tab.value}
+                      type="button"
+                      className={`flex-shrink-0 px-2 py-2 uppercase font-semibold transition-colors ${infoTab === tab.value
+                        ? 'text-emerald-700 dark:text-emerald-400 border-b-2 border-emerald-700 dark:border-emerald-400'
+                        : 'text-muted-foreground'
+                        }`}
+                      onClick={() => setInfoTab(tab.value)}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+                <div>
+                  {infoTab === 'trading-plan' && renderTradingPlanTab()}
+                  {infoTab === 'profile' && renderProfileTab()}
+                  {infoTab === 'keystats' && renderKeyStatsTab()}
+                  {infoTab === 'analysis' && renderAnalysisTab()}
+                  {infoTab === 'seasonality' && renderSeasonalityTab()}
+                </div>
+              </div>
+            )}
           </div>
-
-          {(fundamentalsLoading || fundamentals || cycleSummary || quarterlyHeatmap.rows.length > 0 || monthlyHeatmap.rows.length > 0) && (
-            <div className="mt-4 space-y-4">
-              <div className="flex gap-2 border-b border-border/50 text-xs overflow-x-auto whitespace-nowrap flex-nowrap pb-1 hide-scrollbar">
-                {infoTabs.map((tab) => (
-                  <button
-                    key={tab.value}
-                    type="button"
-                    className={`flex-shrink-0 px-2 py-2 uppercase font-semibold transition-colors ${infoTab === tab.value
-                      ? 'text-emerald-700 dark:text-emerald-400 border-b-2 border-emerald-700 dark:border-emerald-400'
-                      : 'text-muted-foreground'
-                      }`}
-                    onClick={() => setInfoTab(tab.value)}
-                  >
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
-              <div>
-                {infoTab === 'trading-plan' && renderTradingPlanTab()}
-                {infoTab === 'profile' && renderProfileTab()}
-                {infoTab === 'keystats' && renderKeyStatsTab()}
-                {infoTab === 'analysis' && renderAnalysisTab()}
-                {infoTab === 'seasonality' && renderSeasonalityTab()}
-              </div>
-            </div>
-          )}
-
-        </>
-      )}
+        )}
+      </div>
 
       <AddAssetModal
         open={portfolioDialogOpen && isAuthenticated}

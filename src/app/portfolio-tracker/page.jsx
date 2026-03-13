@@ -824,7 +824,7 @@ export default function PortfolioTrackerPage() {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col gap-4"
+      className="flex flex-col md:grid md:grid-cols-12 md:gap-6 md:items-start gap-4"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -832,7 +832,7 @@ export default function PortfolioTrackerPage() {
       {/* Pull to refresh indicator */}
       {pullDistance > 0 && (
         <div
-          className="flex items-center justify-center transition-all duration-200"
+          className="flex md:col-span-12 items-center justify-center transition-all duration-200"
           style={{
             height: `${pullDistance}px`,
             opacity: Math.min(pullDistance / 80, 1)
@@ -841,278 +841,283 @@ export default function PortfolioTrackerPage() {
           <Loader2 className={`h-6 w-6 text-muted-foreground ${pullDistance > 80 || isRefreshing ? 'animate-spin' : ''}`} />
         </div>
       )}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="font-semibold text-sm">Overview</CardTitle>
-          <div className="flex items-center gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              aria-pressed={isPortfolioHidden}
-              aria-label={isPortfolioHidden ? 'Show portfolio' : 'Hide portfolio'}
-              onClick={() => setIsPortfolioHidden((prev) => !prev)}
-            >
-              {isPortfolioHidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </Button>
-            <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger className="w-[100px] h-8">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="IDR">IDR</SelectItem>
-                <SelectItem value="USD">USD</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {/* Top summary always visible */}
-          <div className="flex items-start gap-3">
-            <div className="flex-1">
-              <p className="text-sm text-muted-foreground mb-1">Total Net Worth</p>
-              <p className="text-lg font-bold">{totalNetWorthDisplay.primary}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{totalNetWorthDisplay.secondary}</p>
-              <div className="mt-1 flex items-center gap-1">
-                <span className={`text-xs font-medium ${getPnLColor(totalPnL)}`}>
-                  {isPortfolioHidden ? maskToken : `${totalPnL >= 0 ? '+' : ''}${totalPnLDisplay.primary}`}
-                </span>
-                <span className="text-[10px] text-muted-foreground">
-                  {isPortfolioHidden ? maskToken : `(${totalPnLDisplay.secondary})`}
-                </span>
+
+      <div className="md:col-span-4 flex flex-col gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="font-semibold text-sm">Overview</CardTitle>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                aria-pressed={isPortfolioHidden}
+                aria-label={isPortfolioHidden ? 'Show portfolio' : 'Hide portfolio'}
+                onClick={() => setIsPortfolioHidden((prev) => !prev)}
+              >
+                {isPortfolioHidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </Button>
+              <Select value={currency} onValueChange={setCurrency}>
+                <SelectTrigger className="w-[100px] h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="IDR">IDR</SelectItem>
+                  <SelectItem value="USD">USD</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {/* Top summary always visible */}
+            <div className="flex items-start gap-3">
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground mb-1">Total Net Worth</p>
+                <p className="text-lg font-bold">{totalNetWorthDisplay.primary}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{totalNetWorthDisplay.secondary}</p>
+                <div className="mt-1 flex items-center gap-1">
+                  <span className={`text-xs font-medium ${getPnLColor(totalPnL)}`}>
+                    {isPortfolioHidden ? maskToken : `${totalPnL >= 0 ? '+' : ''}${totalPnLDisplay.primary}`}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {isPortfolioHidden ? maskToken : `(${totalPnLDisplay.secondary})`}
+                  </span>
+                </div>
+              </div>
+              <div className="p-2 rounded-full bg-primary/10">
+                <Wallet className="h-5 w-5 text-primary" />
               </div>
             </div>
-            <div className="p-2 rounded-full bg-primary/10">
-              <Wallet className="h-5 w-5 text-primary" />
-            </div>
-          </div>
 
-          <div className="flex flex-col gap-2">
-            <div className="rounded-xl border border-border/40">
-              <details>
-                <summary className="list-none cursor-pointer select-none text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400 py-2.5">
-                  View Detail
-                </summary>
-                <div className="space-y-3 p-3 pt-1">
-                  <div className="flex items-start gap-3 p-3 rounded-xl border">
-                    <div className="flex-1">
-                      <p className="text-sm text-muted-foreground mb-1">Digital Assets</p>
-                      <p className="text-base font-semibold">{digitalMarketDisplay.primary}</p>
-                      <p className="text-xs text-muted-foreground">{digitalMarketDisplay.secondary}</p>
-                      <div className="mt-1 flex items-center gap-1">
-                        <span className={`text-xs font-medium ${getPnLColor(digitalPnL)}`}>
-                          {isPortfolioHidden ? maskToken : `${digitalPnL >= 0 ? '+' : ''}${digitalPnLDisplay.primary}`}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground">
-                          {isPortfolioHidden ? maskToken : `(${digitalPnLDisplay.secondary})`}
-                        </span>
+            <div className="flex flex-col gap-2">
+              <div className="rounded-xl border border-border/40">
+                <details>
+                  <summary className="list-none cursor-pointer select-none text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400 py-2.5">
+                    View Detail
+                  </summary>
+                  <div className="space-y-3 p-3 pt-1">
+                    <div className="flex items-start gap-3 p-3 rounded-xl border">
+                      <div className="flex-1">
+                        <p className="text-sm text-muted-foreground mb-1">Digital Assets</p>
+                        <p className="text-base font-semibold">{digitalMarketDisplay.primary}</p>
+                        <p className="text-xs text-muted-foreground">{digitalMarketDisplay.secondary}</p>
+                        <div className="mt-1 flex items-center gap-1">
+                          <span className={`text-xs font-medium ${getPnLColor(digitalPnL)}`}>
+                            {isPortfolioHidden ? maskToken : `${digitalPnL >= 0 ? '+' : ''}${digitalPnLDisplay.primary}`}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground">
+                            {isPortfolioHidden ? maskToken : `(${digitalPnLDisplay.secondary})`}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="p-2 rounded-full bg-blue-500/10">
+                        <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                       </div>
                     </div>
-                    <div className="p-2 rounded-full bg-blue-500/10">
-                      <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                    </div>
-                  </div>
 
-                  <div className="flex items-start gap-3 p-3 rounded-xl border">
-                    <div className="flex-1">
-                      <p className="text-sm text-muted-foreground mb-1">Total Cash</p>
-                      <p className="text-base font-semibold">{totalCashDisplay.primary}</p>
-                      <p className="text-xs text-muted-foreground">{totalCashDisplay.secondary}</p>
-                    </div>
-                    <div className="p-2 rounded-full bg-emerald-700/10">
-                      <Coins className="h-5 w-5 text-emerald-800 dark:text-emerald-500" />
+                    <div className="flex items-start gap-3 p-3 rounded-xl border">
+                      <div className="flex-1">
+                        <p className="text-sm text-muted-foreground mb-1">Total Cash</p>
+                        <p className="text-base font-semibold">{totalCashDisplay.primary}</p>
+                        <p className="text-xs text-muted-foreground">{totalCashDisplay.secondary}</p>
+                      </div>
+                      <div className="p-2 rounded-full bg-emerald-700/10">
+                        <Coins className="h-5 w-5 text-emerald-800 dark:text-emerald-500" />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </details>
+                </details>
+              </div>
+
+              <div className="rounded-xl border border-border/40">
+                <details>
+                  <summary className="list-none cursor-pointer select-none text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400 py-2.5">
+                    View Distribution Chart
+                  </summary>
+                  <div className="space-y-3 p-3 pt-1">
+                    <div className="rounded-xl border p-3">
+                      <PortfolioPie
+                        digitalUSD={digitalMarket}
+                        cashUSD={totalCash}
+                        currency={currency}
+                        idrPerUsd={idrPerUsd}
+                      />
+                    </div>
+                  </div>
+                </details>
+              </div>
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="rounded-xl border border-border/40">
-              <details>
-                <summary className="list-none cursor-pointer select-none text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400 py-2.5">
-                  View Distribution Chart
-                </summary>
-                <div className="space-y-3 p-3 pt-1">
-                  <div className="rounded-xl border p-3">
-                    <PortfolioPie
-                      digitalUSD={digitalMarket}
-                      cashUSD={totalCash}
-                      currency={currency}
-                      idrPerUsd={idrPerUsd}
-                    />
-                  </div>
-                </div>
-              </details>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        <p className="text-[10px] text-muted-foreground text-center">
+          FX Rate: {idrPerUsd > 0 ? formatIDR(idrPerUsd) : 'loading...'} per USD
+        </p>
+      </div>
 
-      <p className="text-[10px] text-muted-foreground text-center">
-        FX Rate: {idrPerUsd > 0 ? formatIDR(idrPerUsd) : 'loading...'} per USD
-      </p>
-
-      <Card>
-        <CardHeader className="flex items-center justify-between">
-          <CardTitle className="text-sm font-semibold">Holdings</CardTitle>
-          {entries.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 p-0"
-                  aria-label="Sort holdings"
-                >
-                  <ArrowUpDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
-                <DropdownMenuItem
-                  onClick={() => setHoldingsSort('alpha')}
-                  className="text-xs flex items-center gap-2"
-                >
-                  <Check
-                    className={`h-3 w-3 ${holdingsSort === 'alpha' ? 'opacity-100' : 'opacity-0'}`}
-                  />
-                  A to Z
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setHoldingsSort('market')}
-                  className="text-xs flex items-center gap-2"
-                >
-                  <Check
-                    className={`h-3 w-3 ${holdingsSort === 'market' ? 'opacity-100' : 'opacity-0'}`}
-                  />
-                  Market Value
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setHoldingsSort('pnl')}
-                  className="text-xs flex items-center gap-2"
-                >
-                  <Check
-                    className={`h-3 w-3 ${holdingsSort === 'pnl' ? 'opacity-100' : 'opacity-0'}`}
-                  />
-                  P&L
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </CardHeader>
-        <CardContent>
-          {entries.length === 0 && (
-            <p className="text-xs text-muted-foreground text-center py-8">
-              Tap the plus button below to add your first asset.
-            </p>
-          )}
-          {entries.length > 0 && (
-            <div className="space-y-2 mb-24">
-              {sortedHoldings.map(({ entry, index: originalIndex, isCash, currentValueUSD, pnl, cashDisplayAmount }) => {
-                const formatted = getDisplayValue(currentValueUSD);
-                const livePnl = isCash ? 0 : pnl;
-                const pnlDisplay = getDisplayValue(Math.abs(livePnl));
-                const pnlText = isPortfolioHidden
-                  ? maskToken
-                  : `${livePnl >= 0 ? '+' : '-'}${pnlDisplay.primary}`;
-                return (
-                  <div
-                    key={originalIndex}
-                    className="flex items-center gap-3 border-b rounded-xl min-h-16"
+      <div className="md:col-span-8">
+        <Card className="h-full">
+          <CardHeader className="flex items-center justify-between">
+            <CardTitle className="text-sm font-semibold">Holdings</CardTitle>
+            {entries.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 p-0"
+                    aria-label="Sort holdings"
                   >
-                    {isCash ? (
-                      <div className="flex flex-1 min-w-0 items-center gap-2 px-1 py-2">
-                        <div className="p-1.5 rounded-full bg-muted">
-                          <Coins className="h-4.5 w-4.5 text-emerald-800 dark:text-emerald-500" />
+                    <ArrowUpDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem
+                    onClick={() => setHoldingsSort('alpha')}
+                    className="text-xs flex items-center gap-2"
+                  >
+                    <Check
+                      className={`h-3 w-3 ${holdingsSort === 'alpha' ? 'opacity-100' : 'opacity-0'}`}
+                    />
+                    A to Z
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setHoldingsSort('market')}
+                    className="text-xs flex items-center gap-2"
+                  >
+                    <Check
+                      className={`h-3 w-3 ${holdingsSort === 'market' ? 'opacity-100' : 'opacity-0'}`}
+                    />
+                    Market Value
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setHoldingsSort('pnl')}
+                    className="text-xs flex items-center gap-2"
+                  >
+                    <Check
+                      className={`h-3 w-3 ${holdingsSort === 'pnl' ? 'opacity-100' : 'opacity-0'}`}
+                    />
+                    P&L
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </CardHeader>
+          <CardContent>
+            {entries.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-8">
+                Tap the plus button below to add your first asset.
+              </p>
+            )}
+            {entries.length > 0 && (
+              <div className="space-y-2 mb-24 md:mb-4">
+                {sortedHoldings.map(({ entry, index: originalIndex, isCash, currentValueUSD, pnl, cashDisplayAmount }) => {
+                  const formatted = getDisplayValue(currentValueUSD);
+                  const livePnl = isCash ? 0 : pnl;
+                  const pnlDisplay = getDisplayValue(Math.abs(livePnl));
+                  const pnlText = isPortfolioHidden
+                    ? maskToken
+                    : `${livePnl >= 0 ? '+' : '-'}${pnlDisplay.primary}`;
+                  return (
+                    <div
+                      key={originalIndex}
+                      className="flex items-center gap-3 border-b border-border/40 hover:bg-muted/30 p-2 rounded-xl min-h-16 transition-colors"
+                    >
+                      {isCash ? (
+                        <div className="flex flex-1 min-w-0 items-center gap-2 px-1 py-2">
+                          <div className="p-1.5 rounded-full bg-muted">
+                            <Coins className="h-4.5 w-4.5 text-emerald-800 dark:text-emerald-500" />
+                          </div>
+                          <div className="flex flex-col justify-start">
+                            <p className="font-semibold text-xs truncate">
+                              {entry.category}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {isPortfolioHidden
+                                ? maskToken
+                                : `${(cashDisplayAmount ?? 0).toLocaleString()} ${entry.cashCurrency}`}
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex flex-col justify-start">
-                          <p className="font-semibold text-xs truncate">
-                            {entry.category}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {isPortfolioHidden
-                              ? maskToken
-                              : `${(cashDisplayAmount ?? 0).toLocaleString()} ${entry.cashCurrency}`}
-                          </p>
+                      ) : (
+                        <button
+                          type="button"
+                          className="flex flex-1 min-w-0 items-center gap-2 rounded-md px-1 py-2 text-left transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2"
+                          onClick={() => navigateToSymbol(entry.symbol)}
+                        >
+                          <TickerAvatar
+                            symbol={entry.symbol}
+                            logo={logoMap[entry.symbol]}
+                          />
+                          <div className="flex flex-col justify-start">
+                            <p className="font-semibold text-xs truncate">
+                              {formatTickerDisplay(entry.symbol)}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                              {isPortfolioHidden ? maskToken : `${entry.amount} ${entry.unit}`}
+                            </p>
+                          </div>
+                        </button>
+                      )}
+                      <div className="flex items-center gap-2" data-holdings-actions="true">
+                        <div className="text-right">
+                          <p className="text-sm font-semibold">{formatted.primary}</p>
+                          <p className="text-[10px] text-muted-foreground">{formatted.secondary}</p>
+                          {!isCash && livePnl !== 0 && (
+                            <p className="text-[10px]">
+                              <span className={getPnLColor(livePnl)}>
+                                {pnlText}
+                              </span>
+                            </p>
+                          )}
                         </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={(event) => event.stopPropagation()}
+                              onKeyDown={(event) => event.stopPropagation()}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onSelect={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                openEdit(originalIndex);
+                              }}
+                              className="text-xs"
+                            >
+                              <Pencil className="mr-1 size-3" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onSelect={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                removeEntry(originalIndex);
+                              }}
+                              className="text-xs text-red-600"
+                            >
+                              <Trash2 className="mr-1 size-3" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                    ) : (
-                      <button
-                        type="button"
-                        className="flex flex-1 min-w-0 items-center gap-2 rounded-md px-1 py-2 text-left transition-colors hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2"
-                        onClick={() => navigateToSymbol(entry.symbol)}
-                      >
-                        <TickerAvatar
-                          symbol={entry.symbol}
-                          logo={logoMap[entry.symbol]}
-                        />
-                        <div className="flex flex-col justify-start">
-                          <p className="font-semibold text-xs truncate">
-                            {formatTickerDisplay(entry.symbol)}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            {isPortfolioHidden ? maskToken : `${entry.amount} ${entry.unit}`}
-                          </p>
-                        </div>
-                      </button>
-                    )}
-                    <div className="flex items-center gap-2" data-holdings-actions="true">
-                      <div className="text-right">
-                        <p className="text-sm font-semibold">{formatted.primary}</p>
-                        <p className="text-[10px] text-muted-foreground">{formatted.secondary}</p>
-                        {!isCash && livePnl !== 0 && (
-                          <p className="text-[10px]">
-                            <span className={getPnLColor(livePnl)}>
-                              {pnlText}
-                            </span>
-                          </p>
-                        )}
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={(event) => event.stopPropagation()}
-                            onKeyDown={(event) => event.stopPropagation()}
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onSelect={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              openEdit(originalIndex);
-                            }}
-                            className="text-xs"
-                          >
-                            <Pencil className="mr-1 size-3" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onSelect={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                              removeEntry(originalIndex);
-                            }}
-                            className="text-xs text-red-600"
-                          >
-                            <Trash2 className="mr-1 size-3" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <Dialog
         open={dialogOpen && isAuthenticated}
@@ -1127,13 +1132,13 @@ export default function PortfolioTrackerPage() {
           setDialogOpen(true);
         }}
       >
-        <DialogContent className="fixed max-w-none m-0 h-screen rounded-none p-0 flex flex-col" closeButtonPosition="right">
+        <DialogContent className="fixed max-w-none m-0 h-[80vh] md:h-auto md:max-h-[85vh] md:w-[500px] md:rounded-2xl md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 rounded-t-2xl p-0 flex flex-col mt-auto" closeButtonPosition="right">
           <div className="flex items-center gap-2 p-4 border-b">
             <DialogTitle className="text-base">{editingIndex != null ? 'Edit Asset' : 'Add Asset'}</DialogTitle>
           </div>
 
           <div className="flex-1 overflow-auto">
-            <div className="px-4">
+            <div className="p-4">
               <DialogDescription className="mb-4 text-xs">
                 Record your {assetType === 'cash' ? 'cash' : 'digital asset'} details.
                 {assetType === 'digital'}
@@ -1302,7 +1307,7 @@ export default function PortfolioTrackerPage() {
 
       <Button
         size="icon"
-        className="fixed bottom-30 right-4 h-14 w-14 rounded-full bg-emerald-700 shadow-lg z-40"
+        className="fixed bottom-30 md:bottom-8 right-4 md:right-8 h-14 w-14 rounded-full bg-emerald-700 shadow-lg z-40"
         onClick={openAdd}
       >
         <Plus className="size-6" />

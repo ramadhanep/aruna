@@ -351,7 +351,7 @@ export default function MSCIPage() {
   });
 
   return (
-    <div className="space-y-4 pb-4">
+    <div className="space-y-4 pb-4 max-w-5xl mx-auto w-full">
       {/* Info Card */}
       <Card className="border-none bg-gradient-to-br from-teal-600/90 to-emerald-800/90 text-white shadow-xl shadow-emerald-900/20 p-4 rounded-2xl">
         <CardContent className="pt-0">
@@ -398,7 +398,7 @@ export default function MSCIPage() {
 
       {/* Stock Cards List */}
       {!loading && !error && sortedStocks.length > 0 && (
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {sortedStocks.map((stock, index) => (
             <StockCard
               key={stock.id}
@@ -411,7 +411,7 @@ export default function MSCIPage() {
 
       {/* Last Updated */}
       {data?.lastUpdated && (
-        <p className="text-[10px] text-center text-muted-foreground">
+        <p className="text-[10px] text-center text-muted-foreground pt-4">
           Last updated: {new Date(data.lastUpdated).toLocaleTimeString()}
         </p>
       )}

@@ -262,22 +262,25 @@ export default function DiscussionPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  // Hide mobile nav and header
+  // Hide mobile nav, header, and desktop sidebar
   useEffect(() => {
     document.body.style.overflow = "hidden";
     const header = document.querySelector("header");
     const nav = document.querySelector("nav");
     const bottomNav = document.querySelector(".mobile-bottom-nav");
+    const aside = document.querySelector("aside");
 
     if (header) header.style.display = "none";
     if (nav) nav.style.display = "none";
     if (bottomNav) bottomNav.style.display = "none";
+    if (aside) aside.style.display = "none";
 
     return () => {
       document.body.style.overflow = "";
       if (header) header.style.display = "";
       if (nav) nav.style.display = "";
       if (bottomNav) bottomNav.style.display = "";
+      if (aside) aside.style.display = "";
     };
   }, []);
 
@@ -393,50 +396,54 @@ export default function DiscussionPage() {
 
   return (
     <div
-      className="fixed inset-0 w-screen flex flex-col"
+      className="fixed inset-0 w-screen flex justify-center bg-background"
       style={{ height: '100dvh' }}
     >
-      {/* Header */}
-      <div className="flex-shrink-0 flex items-center justify-between px-3 py-3 liquid-glass">
-        <button
-          onClick={() => router.push('/')}
-          className="p-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
-        >
-          <ArrowLeft className="size-5 text-muted-foreground" />
-        </button>
-        <h1 className="text-sm font-bold">Discussion</h1>
-        <div className="w-8" />
-      </div>
+      <div className="w-full max-w-3xl flex flex-col h-full md:border-x border-border/50 bg-background relative">
+        {/* Header */}
+        <div className="flex-shrink-0 flex items-center justify-between px-3 py-3 liquid-glass border-b border-border/50">
+          <button
+            onClick={() => router.push('/')}
+            className="p-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
+          >
+            <ArrowLeft className="size-5 text-muted-foreground" />
+          </button>
+          <h1 className="text-sm font-bold">Discussion</h1>
+          <div className="w-8" />
+        </div>
 
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-3 py-3" style={{ minHeight: 0 }}>
-        {messagesLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-          </div>
-        ) : messages.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <div className="space-y-2.5">
-            {messages.map((message) => (
-              <MessageBubble
-                key={message.id}
-                message={message}
-                isOwn={user?.id === message.userId}
-                onDelete={handleDeleteMessage}
-                currentUserId={user?.id}
-              />
-            ))}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
-      </div>
+        {/* Messages area */}
+        <div className="flex-1 overflow-y-auto px-3 py-3" style={{ minHeight: 0 }}>
+          {messagesLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
+            </div>
+          ) : messages.length === 0 ? (
+            <EmptyState />
+          ) : (
+            <div className="space-y-2.5">
+              {messages.map((message) => (
+                <MessageBubble
+                  key={message.id}
+                  message={message}
+                  isOwn={user?.id === message.userId}
+                  onDelete={handleDeleteMessage}
+                  currentUserId={user?.id}
+                />
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+          )}
+        </div>
 
-      {/* Message input */}
-      <MessageInput
-        onSend={handleSendMessage}
-        disabled={!user}
-      />
+        {/* Message input */}
+        <div className="border-t border-border/50">
+          <MessageInput
+            onSend={handleSendMessage}
+            disabled={!user}
+          />
+        </div>
+      </div>
     </div>
   );
 }
