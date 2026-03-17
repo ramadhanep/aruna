@@ -1211,7 +1211,7 @@ export default function PortfolioTrackerPage() {
                               onClick={() => handleSelectSymbol(r)}
                               className="w-full text-left px-2 py-1 rounded hover:bg-accent text-xs"
                             >
-                              <span className="font-medium">{r.symbol}</span> <span className="text-muted-foreground">{r.name}</span>
+                              <span className="font-medium">{formatTickerDisplay(r.symbol)}</span> <span className="text-muted-foreground">{r.name}</span>
                             </button>
                           ))}
                         </div>

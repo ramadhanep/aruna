@@ -14,6 +14,7 @@ import {
   formatPercent,
 } from "@/lib/msci-calculations";
 import { TickerAvatar } from "@/components/ticker-avatar";
+import { formatTickerDisplay } from "@/lib/utils";
 
 // Color maps for status-based styling
 const statusColorMap = {
@@ -146,7 +147,7 @@ function StockCard({ stock, isLocked = false }) {
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <h3 className="text-sm font-bold truncate">{stock.ticker.replace('.JK', '')}</h3>
+              <h3 className="text-sm font-bold truncate">{formatTickerDisplay(stock.ticker)}</h3>
               <StatusBadge status={stock.status} />
             </div>
             <p className="text-[11px] text-muted-foreground dark:text-white/70 truncate">

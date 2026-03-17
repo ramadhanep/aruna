@@ -3163,7 +3163,7 @@ function ElectionCyclePageContent() {
             value={selectedCycles.join(',')}
             onValueChange={(value) => setSelectedCycles(value.split(','))}
           >
-            <SelectTrigger className="h-8 text-[11px] w-[140px]">
+            <SelectTrigger className="h-8 text-[11px]">
               <SelectValue placeholder="Select cycles" />
             </SelectTrigger>
             <SelectContent>
@@ -3288,7 +3288,7 @@ function ElectionCyclePageContent() {
                     </div>
                   </div>
                   <div className="flex gap-3">
-                    <TickerAvatar symbol={symbol} logo={symbolInfo?.logo} className="w-10 h-10" />
+                    <TickerAvatar symbol={symbol} logo={symbolInfo?.logo} className="w-12 h-12" />
                   </div>
                 </div>
               </CardHeader>
@@ -3522,7 +3522,7 @@ function ElectionCyclePageContent() {
         )}
 
         {showChartSection && (
-          <div className="space-y-4">
+          <div className="space-y-4 mt-6 md:mt-0">
             {hasPortfolioPosition && (
               <Card className="overflow-hidden border border-border/70">
                 <div

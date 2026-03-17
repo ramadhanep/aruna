@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TickerAvatar } from "@/components/ticker-avatar";
+import { formatTickerDisplay } from "@/lib/utils";
 
 const signalStyles = {
   "Strong Accumulation": "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
@@ -151,7 +152,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-1">
-                  <h3 className="text-sm font-bold truncate">{report.symbol}</h3>
+                  <h3 className="text-sm font-bold truncate">{formatTickerDisplay(report.symbol)}</h3>
                   <SignalBadge signal={report.signal} />
                 </div>
                 <p className="text-[11px] text-muted-foreground dark:text-white/70 truncate">
@@ -211,7 +212,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-black/10 dark:border-white/10">
+                <div className="grid grid-cols-2 gap-3 pt-2 dark:border-white/10">
                   <div className="space-y-0.5">
                     <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">Manipulation Risk</p>
                     <div className="mt-1">
@@ -237,16 +238,16 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
         </AccordionTrigger>
 
         <AccordionContent className={`px-4 pb-4 ${!isExpandedView && 'px-3 pb-3'}`}>
-          <div className="space-y-3 pt-1 border-t border-black/10 dark:border-white/10">
+          <div className="space-y-3 pt-1">
             {/* Expanded view only extras */}
             {isExpandedView && (
               <div className="grid grid-cols-2 gap-2 text-[11px]">
-                <div className="rounded-lg border border-border/60 px-2 py-1.5">
+                <div className="rounded-lg px-2 py-1.5">
                   <p className="text-muted-foreground">Broker Cost</p>
                   <p className="font-semibold">{formatCompactNumber(report?.broker_cost_analysis?.estimated_cost)}</p>
                   <p className="text-[10px] text-muted-foreground">{report?.broker_cost_analysis?.interpretation || "-"}</p>
                 </div>
-                <div className="rounded-lg border border-border/60 px-2 py-1.5">
+                <div className="rounded-lg px-2 py-1.5">
                   <p className="text-muted-foreground">Concentration</p>
                   <p className="font-semibold">{formatPercent(report?.broker_concentration?.top3_buy_percent)}</p>
                   <p className="text-[10px] text-muted-foreground">{report?.broker_concentration?.interpretation || "-"}</p>
@@ -255,11 +256,11 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             )}
             {!isExpandedView && (
               <div className="grid grid-cols-2 gap-2 text-[10px]">
-                <div className="rounded-md border border-border/50 px-2 py-1.5">
+                <div className="rounded-md px-2 py-1.5">
                   <p className="text-muted-foreground">Phase</p>
                   <p className="font-semibold">{report.market_phase || "Indeterminate"}</p>
                 </div>
-                <div className="rounded-md border border-border/50 px-2 py-1.5">
+                <div className="rounded-md px-2 py-1.5">
                   <p className="text-muted-foreground">Risk</p>
                   <p className={`font-semibold ${riskLevel === "LOW" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-500"}`}>{riskLevel}</p>
                 </div>
@@ -268,7 +269,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
 
             {/* Smart Money Summary */}
             {Array.isArray(report?.manipulation_risk?.reasons) && report.manipulation_risk.reasons.length > 0 && (
-              <Card className="rounded-xl border-border/60 bg-amber-500/5 shadow-none">
+              <Card className="rounded-xl bg-amber-500/5 shadow-none">
                 <CardContent className="p-3">
                   <p className="text-[11px] font-semibold mb-1">Risk notes</p>
                   <ul className="text-[11px] text-muted-foreground space-y-1">
@@ -281,7 +282,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             )}
 
             {report.analysis_summary && (
-              <Card className="rounded-xl border-border/60 shadow-none">
+              <Card className="rounded-xl shadow-none">
                 <CardContent className="p-3 space-y-2">
                   <p className="text-[11px] font-semibold">Smart Money Summary</p>
                   {String(report.analysis_summary)
@@ -298,17 +299,17 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
 
             {isExpandedView && screenerSnapshot && (
               <div className="grid grid-cols-3 gap-2 text-[11px]">
-                <div className="rounded-lg border border-border/60 px-2 py-1.5">
+                <div className="rounded-lg px-2 py-1.5">
                   <p className="text-muted-foreground">Price vs MA20</p>
                   <p className={`font-semibold ${Number(screenerSnapshot?.derived?.price_vs_ma20_pct || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
                     {formatPercent(screenerSnapshot?.derived?.price_vs_ma20_pct)}
                   </p>
                 </div>
-                <div className="rounded-lg border border-border/60 px-2 py-1.5">
+                <div className="rounded-lg px-2 py-1.5">
                   <p className="text-muted-foreground">Volume Ratio</p>
                   <p className="font-semibold">{Number(screenerSnapshot?.derived?.volume_ratio || 0).toFixed(2)}x</p>
                 </div>
-                <div className="rounded-lg border border-border/60 px-2 py-1.5">
+                <div className="rounded-lg px-2 py-1.5">
                   <p className="text-muted-foreground">Bandar Delta</p>
                   <p className={`font-semibold ${Number(screenerSnapshot?.derived?.bandar_delta || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
                     {formatCompactNumber(screenerSnapshot?.derived?.bandar_delta)}
@@ -318,8 +319,8 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             )}
 
             {/* Modern Broker Summary Board */}
-            <div className="rounded-xl border border-border/60 overflow-hidden">
-              <div className="px-3 py-2 border-b border-border/60 flex items-center justify-between bg-black/5 dark:bg-white/5">
+            <div className="rounded-xl overflow-hidden">
+              <div className="px-3 py-2 border-b flex items-center justify-between bg-black/5 dark:bg-white/5">
                 <div className="flex items-center gap-1.5">
                   <p className="text-xs font-semibold">Broker Action</p>
                 </div>

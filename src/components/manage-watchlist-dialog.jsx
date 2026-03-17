@@ -156,7 +156,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
                     className="w-full px-3 py-2 text-left hover:bg-accent transition-colors flex items-center justify-between"
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="font-semibold text-sm">{result.symbol}</div>
+                      <div className="font-semibold text-sm">{formatTickerDisplay(result.symbol)}</div>
                       <div className="text-xs text-muted-foreground truncate">{result.name}</div>
                     </div>
                     <Plus className="h-4 w-4 text-muted-foreground ml-2 flex-shrink-0" />
@@ -175,7 +175,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
                 className="flex items-center gap-3 p-3 border rounded-md bg-card"
               >
                 <div className="flex-1 min-w-0">
-                  <div className="font-semibold text-sm">{item.symbol}</div>
+                  <div className="font-semibold text-sm">{formatTickerDisplay(item.symbol)}</div>
                 </div>
 
                 {/* Up/Down controls (replace drag handle) */}
@@ -203,7 +203,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
                 <button
                   onClick={() => handleRemove(item.symbol)}
                   className="text-red-600 hover:text-red-600 transition-colors"
-                  aria-label={`Remove ${item.symbol}`}
+                  aria-label={`Remove ${formatTickerDisplay(item.symbol)}`}
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

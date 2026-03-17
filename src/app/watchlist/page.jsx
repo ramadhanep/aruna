@@ -506,7 +506,7 @@ export default function HomePage() {
                 <div className="flex items-center justify-between rounded-xl">
                   <div>
                     <p className="text-xs text-muted-foreground">Top Gainer</p>
-                    <p className="text-sm font-semibold uppercase">{marketPulse.topGainer.symbol}</p>
+                    <p className="text-sm font-semibold uppercase">{formatTickerDisplay(marketPulse.topGainer.symbol)}</p>
                     <p className={`text-xs font-medium ${marketPulse.topGainer.change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                       {marketPulse.topGainer.change >= 0 ? '+' : ''}{marketPulse.topGainer.change.toFixed(2)} ({marketPulse.topGainer.changePercent.toFixed(2)}%)
                     </p>
@@ -524,7 +524,7 @@ export default function HomePage() {
                 <div className="flex items-center justify-between rounded-lg">
                   <div>
                     <p className="text-xs text-muted-foreground">Top Loser</p>
-                    <p className="text-sm font-semibold uppercase">{marketPulse.topLoser.symbol}</p>
+                    <p className="text-sm font-semibold uppercase">{formatTickerDisplay(marketPulse.topLoser.symbol)}</p>
                     <p className={`text-xs font-medium ${marketPulse.topLoser.change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                       {marketPulse.topLoser.change >= 0 ? '+' : ''}{marketPulse.topLoser.change.toFixed(2)} ({marketPulse.topLoser.changePercent.toFixed(2)}%)
                     </p>

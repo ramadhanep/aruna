@@ -6,7 +6,7 @@ import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock, Download, Droplets, Axe, Magnet, Rotate3D, MessageCircleMore, Flame } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock, Download, Droplets, Axe, Magnet, Rotate3D, MessageCircleMore, Flame, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { TrendingMarquee } from "@/components/trending-marquee";
@@ -17,7 +17,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 const CATEGORY_LABELS = {
   idx: "IDX 🇮🇩",
   us: "US 🇺🇸",
-  crypto: "Cryptod ⚡",
+  crypto: "Crypto ⚡",
 };
 
 const CATEGORY_ORDER = ["idx", "us", "crypto"];
@@ -28,6 +28,10 @@ const HIGHLIGHT_SYMBOLS = [
   { symbol: "BTC-USD", label: "Bitcoin", badge: "BTC", group: "Crypto", accent: "bg-emerald-500" },
   { symbol: "^SPX", label: "S&P 500", badge: "500", group: "US", accent: "bg-rose-500", logo: "https://s3-symbol-logo.tradingview.com/country/US.svg" },
   { symbol: "^IXIC", label: "Nasdaq", badge: "100", group: "US", accent: "bg-sky-500", logo: "https://s3-symbol-logo.tradingview.com/nasdaq.svg" },
+  { symbol: "^N225", label: "Japan 225", badge: "225", group: "JP", accent: "bg-sky-500", logo: "https://s3-symbol-logo.tradingview.com/country/JP.svg" },
+  { symbol: "^KS11", label: "KOSPI", badge: "KS11", group: "KR", accent: "bg-sky-500", logo: "https://s3-symbol-logo.tradingview.com/country/KR.svg" },
+  { symbol: "DAX", label: "DAX", badge: "DAX", group: "DE", accent: "bg-sky-500", logo: "https://s3-symbol-logo.tradingview.com/country/DE.svg" },
+  { symbol: "GC=F", label: "Gold", badge: "GC", group: "CM", accent: "bg-sky-500", logo: "https://s3-symbol-logo.tradingview.com/metal/gold.svg" },
 ];
 
 function isWithinMarketHours(timeZone, openHour, openMinute, closeHour, closeMinute) {
@@ -399,6 +403,7 @@ export default function ExplorePage() {
   const [moneyFlowLoading, setMoneyFlowLoading] = useState(true);
   const [moneyFlowError, setMoneyFlowError] = useState("");
   const [showInstallButton, setShowInstallButton] = useState(false);
+  const [isHighlightsExpanded, setIsHighlightsExpanded] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -508,7 +513,7 @@ export default function ExplorePage() {
         timeframe: "weekly",
         sort: "score",
         order: "desc",
-        limit: "3",
+        limit: "5",
       });
       const { response, data } = await fetchEncodedJson(`/api/money-flow?${params.toString()}`);
       if (!response.ok || data?.error) {
@@ -779,7 +784,7 @@ export default function ExplorePage() {
       <div className="flex flex-col gap-6">
         <section className="bg-background/80">
           <div className="grid grid-cols-2 gap-3">
-            {HIGHLIGHT_SYMBOLS.map((symbol) => (
+            {HIGHLIGHT_SYMBOLS.slice(0, 4).map((symbol) => (
               <div key={symbol.symbol}>
                 <div className="flex items-center justify-between gap-2">
                   <div className="space-y-2">
@@ -871,61 +876,124 @@ export default function ExplorePage() {
         </div>
       )}
 
-      <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-12 gap-6">
-        <section className="md:col-span-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {highlightClusters.map((item) => {
-              const changeValue = item.quote?.change ?? 0;
-              const isPositive = changeValue >= 0;
-              return (
-                <Link
-                  key={item.symbol}
-                  href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
-                  className="rounded-3xl p-3.5 overflow-hidden border border-border/40 hover:border-border/80 transition-all duration-200 block card-hover bg-card"
-                >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                      <TickerAvatar symbol={item.symbol} logo={item.logo ? item.logo : item.quote?.logo} />
+      <div className="md:col-span-12 grid grid-cols-1">
+
+        <div className="w-full flex flex-col md:flex-col-reverse">
+          <section className="w-full">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {(isHighlightsExpanded ? highlightClusters : highlightClusters.slice(0, 4)).map((item, idx) => {
+                const changeValue = item.quote?.change ?? 0;
+                const isPositive = changeValue >= 0;
+                return (
+                  <Link
+                    key={item.symbol}
+                    href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
+                    className={`rounded-3xl p-3.5 overflow-hidden border border-border/40 hover:border-border/80 transition-all duration-200 block card-hover bg-card ${!isHighlightsExpanded && idx >= 4 ? 'hidden md:block' : ''}`}
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <TickerAvatar symbol={item.symbol} logo={item.logo ? item.logo : item.quote?.logo} />
+                        <div>
+                          <p className="text-sm font-bold text-foreground tracking-tight">{item.label}</p>
+                        </div>
+                      </div>
+                      <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md ${item.quote ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : 'text-muted-foreground bg-muted/50'}`}>
+                        {item.quote ? "Live" : "Sync"}
+                      </span>
+                    </div>
+                    <div className="mt-3 flex items-end justify-between gap-3">
                       <div>
-                        <p className="text-sm font-bold text-foreground tracking-tight">{item.label}</p>
+                        <p className="text-base font-bold text-foreground tabular-nums">
+                          {item.quote ? formatPrice(item.quote.price) : "—"}
+                        </p>
+                        <p className={`text-xs font-semibold mt-0.5 ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                          {item.quote && typeof item.quote.changePercent === "number"
+                            ? `${isPositive ? "+" : ""}${item.quote.changePercent.toFixed(2)}%`
+                            : "—"}
+                        </p>
+                      </div>
+                      <div className={`flex items-center ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
+                        <MiniChart
+                          data={item.quote?.chartData || []}
+                          isPositive={isPositive}
+                          width={80}
+                          height={48}
+                          chartId={`highlight-${item.symbol}`}
+                        />
                       </div>
                     </div>
-                    <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md ${item.quote ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : 'text-muted-foreground bg-muted/50'}`}>
-                      {item.quote ? "Live" : "Sync"}
-                    </span>
-                  </div>
-                  <div className="mt-3 flex items-end justify-between gap-3">
-                    <div>
-                      <p className="text-base font-bold text-foreground tabular-nums">
-                        {item.quote ? formatPrice(item.quote.price) : "—"}
-                      </p>
-                      <p className={`text-xs font-semibold mt-0.5 ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
-                        {item.quote && typeof item.quote.changePercent === "number"
-                          ? `${isPositive ? "+" : ""}${item.quote.changePercent.toFixed(2)}%`
-                          : "—"}
-                      </p>
+                  </Link>
+                );
+              })}
+              {/* Show all on desktop, toggle on mobile */}
+              {!isHighlightsExpanded && highlightClusters.slice(4).map((item) => {
+                const changeValue = item.quote?.change ?? 0;
+                const isPositive = changeValue >= 0;
+                return (
+                  <Link
+                    key={item.symbol}
+                    href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
+                    className="hidden md:block rounded-3xl p-3.5 overflow-hidden border border-border/40 hover:border-border/80 transition-all duration-200 block card-hover bg-card"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <TickerAvatar symbol={item.symbol} logo={item.logo ? item.logo : item.quote?.logo} />
+                        <div>
+                          <p className="text-sm font-bold text-foreground tracking-tight">{item.label}</p>
+                        </div>
+                      </div>
+                      <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md ${item.quote ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : 'text-muted-foreground bg-muted/50'}`}>
+                        {item.quote ? "Live" : "Sync"}
+                      </span>
                     </div>
-                    <div className={`flex items-center ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
-                      <MiniChart
-                        data={item.quote?.chartData || []}
-                        isPositive={isPositive}
-                        width={80}
-                        height={48}
-                        chartId={`highlight-${item.symbol}`}
-                      />
+                    <div className="mt-3 flex items-end justify-between gap-3">
+                      <div>
+                        <p className="text-base font-bold text-foreground tabular-nums">
+                          {item.quote ? formatPrice(item.quote.price) : "—"}
+                        </p>
+                        <p className={`text-xs font-semibold mt-0.5 ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                          {item.quote && typeof item.quote.changePercent === "number"
+                            ? `${isPositive ? "+" : ""}${item.quote.changePercent.toFixed(2)}%`
+                            : "—"}
+                        </p>
+                      </div>
+                      <div className={`flex items-center ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
+                        <MiniChart
+                          data={item.quote?.chartData || []}
+                          isPositive={isPositive}
+                          width={80}
+                          height={48}
+                          chartId={`highlight-${item.symbol}`}
+                        />
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </section>
+                  </Link>
+                );
+              })}
+            </div>
+            {/* Expand/Collapse Button (Mobile Only) */}
+            <div className="mt-4 md:hidden flex justify-center">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsHighlightsExpanded(!isHighlightsExpanded)}
+                className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5 py-1 px-4 rounded-full border border-border/40 text-emerald-600 dark:text-emerald-400 hover:underline"
+              >
+                {isHighlightsExpanded ? (
+                  <>Show Less <ChevronUp className="h-3.5 w-3.5" /></>
+                ) : (
+                  <>Show More <ChevronDown className="h-3.5 w-3.5" /></>
+                )}
+              </Button>
+            </div>
+          </section>
 
-        <div className="md:col-span-12">
-          <TrendingMarquee supabase={supabase} />
+          <div className="w-full">
+            <TrendingMarquee supabase={supabase} />
+          </div>
         </div>
 
-        <div className="md:col-span-12 relative overflow-x-auto overflow-y-hidden py-3 scrollbar-hide">
+        <div className="w-full relative overflow-x-auto overflow-y-hidden py-3 scrollbar-hide">
           <div className="flex justify-center whitespace-nowrap gap-5">
             <Link href="/idx-momentum" className="w-20">
               <div className="flex flex-col items-center gap-2">
@@ -978,7 +1046,7 @@ export default function ExplorePage() {
               <div className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                 <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
-                  Money Flow
+                  IDX Money Flow 🇮🇩
                 </p>
               </div>
               {moneyFlowUpdatedAt && (
@@ -987,9 +1055,6 @@ export default function ExplorePage() {
                 </p>
               )}
             </div>
-            <Link href="/money-flow?timeframe=weekly" className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline">
-              View All
-            </Link>
           </div>
 
           {moneyFlowLoading && (
@@ -1015,6 +1080,16 @@ export default function ExplorePage() {
               ))}
             </Accordion>
           )}
+
+          {/* View All Money Flow (Mobile & Desktop) */}
+          <div className="mt-4 flex justify-center">
+            <Link
+              href="/money-flow?timeframe=weekly"
+              className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5 py-1.5 px-4 rounded-full border border-border/40 w-full justify-center transition-colors hover:bg-muted/30 text-emerald-600 dark:text-emerald-400 hover:underline"
+            >
+              View All Money Flow <ChevronRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
         </section>
       </div>
 
