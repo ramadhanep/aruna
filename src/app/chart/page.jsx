@@ -2482,7 +2482,7 @@ function ElectionCyclePageContent() {
               ))}
             </CardContent>
           </Card>
-          <div className="grid gap-2 grid-cols-2 md:grid-cols-1">
+          <div className="grid gap-2 grid-cols-1">
             {[...Array(2)].map((_, idx) => (
               <Card key={idx} className="h-full">
                 <CardHeader>
@@ -2523,7 +2523,7 @@ function ElectionCyclePageContent() {
         </Card>
 
         {(hasEarningsAnalysis || hasRevenueAnalysis) ? (
-          <div className="grid gap-2 grid-cols-2 md:grid-cols-1">
+          <div className="grid gap-2 grid-cols-1">
             {hasEarningsAnalysis && latestEarningsPoint && (
               <div className="relative">
                 <Card

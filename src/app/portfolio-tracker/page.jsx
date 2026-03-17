@@ -711,6 +711,22 @@ export default function PortfolioTrackerPage() {
     return sum + e.avgPrice * e.amount;
   }, 0);
 
+  // Holdings distribution for chart
+  const holdingsDistribution = useMemo(() => {
+    return holdingsWithMetrics.map((h, i) => {
+      // Use dynamic HSL for more distinct colors for many holdings
+      const hue = (i * 137.5) % 360; 
+      const saturation = 65 + (i % 3) * 10;
+      const lightness = 45 + (i % 2) * 10;
+      
+      return {
+        name: h.isCash ? h.entry.category : formatTickerDisplay(h.entry.symbol),
+        value: h.currentValueUSD,
+        fill: `hsl(${hue}, ${saturation}%, ${lightness}%)`
+      };
+    });
+  }, [holdingsWithMetrics]);
+
   // Total Net Worth
   const totalNetWorth = digitalMarket + totalCash;
   const totalPnL = digitalPnL;
@@ -940,6 +956,7 @@ export default function PortfolioTrackerPage() {
                       <PortfolioPie
                         digitalUSD={digitalMarket}
                         cashUSD={totalCash}
+                        holdingsDistribution={holdingsDistribution}
                         currency={currency}
                         idrPerUsd={idrPerUsd}
                       />
