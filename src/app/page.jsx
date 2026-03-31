@@ -1071,7 +1071,7 @@ export default function ExplorePage() {
               >
                 {cat.emoji ? <span>{cat.emoji}</span> : CatIcon ? <CatIcon className="h-3.5 w-3.5" /> : null}
                 {cat.title}
-                <span className={`ml-1 inline-block h-1.5 w-1.5 rounded-full ${isMarketOpen ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+                // <span className={`ml-1 inline-block h-1.5 w-1.5 rounded-full ${isMarketOpen ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
               </button>
             );
           })}
