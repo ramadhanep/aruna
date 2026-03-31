@@ -325,7 +325,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                   <p className="text-xs font-semibold">Broker Action</p>
                 </div>
 
-                <div className="flex items-center bg-background rounded-lg border border-border/50 p-0.5">
+                <div className="flex items-center bg-background rounded-lg border border-border/30 p-0.5">
                   <button
                     type="button"
                     onClick={() => setIsNetView(false)}
@@ -353,7 +353,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                       <TableHead className="text-[10px] h-8 px-2">BY</TableHead>
                       <TableHead className="text-[10px] h-8 px-2 text-right">B.val</TableHead>
                       <TableHead className="text-[10px] h-8 px-2 text-right">B.avg</TableHead>
-                      <TableHead className="text-[10px] h-8 px-2 text-center border-l border-border/40">SL</TableHead>
+                      <TableHead className="text-[10px] h-8 px-2 text-center border-l border-border/20">SL</TableHead>
                       <TableHead className="text-[10px] h-8 px-2 text-right">S.val</TableHead>
                       <TableHead className="text-[10px] h-8 px-2 text-right">S.avg</TableHead>
                     </TableRow>
@@ -374,7 +374,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                         <TableCell className="text-[11px] text-right px-2 font-medium text-emerald-600 dark:text-emerald-400">{row.bAvg > 0 ? formatPrice(row.bAvg) : '-'}</TableCell>
 
                         {/* Sell Side */}
-                        <TableCell className="text-[11px] font-bold text-center px-2 border-l border-border/40 text-rose-500 dark:text-rose-400">{row.sCode}</TableCell>
+                        <TableCell className="text-[11px] font-bold text-center px-2 border-l border-border/20 text-rose-500 dark:text-rose-400">{row.sCode}</TableCell>
                         <TableCell className="text-[11px] text-right px-2 text-rose-500 dark:text-rose-400">{row.sVal === 0 ? '-' : formatCompactNumber(row.sVal)}</TableCell>
                         <TableCell className="text-[11px] text-right px-2 font-medium text-rose-600 dark:text-rose-400">{row.sAvg > 0 ? formatPrice(row.sAvg) : '-'}</TableCell>
                       </TableRow>

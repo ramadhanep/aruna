@@ -2,7 +2,6 @@ import "./globals.css";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth-provider";
-import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { PWARegister } from "@/components/pwa-register";
 import { PWAInstallDialog } from "@/components/pwa-install-dialog";
 import { AppLayoutClient } from "@/components/app-layout-client";
@@ -19,8 +18,8 @@ export const viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f8f9fa' },
-    { media: '(prefers-color-scheme: dark)', color: '#1a1b2e' }
+    { media: '(prefers-color-scheme: light)', color: '#f9fafb' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a0a0f' }
   ],
 };
 

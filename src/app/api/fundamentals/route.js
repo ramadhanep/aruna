@@ -123,6 +123,8 @@ export async function GET(request) {
         'defaultKeyStatistics',
         'financialData',
         'recommendationTrend',
+        'calendarEvents',
+        'upgradeDowngradeHistory',
       ],
     });
   } catch (error) {
@@ -135,6 +137,8 @@ export async function GET(request) {
   const defaultKeyStatistics = summaryModules?.defaultKeyStatistics ?? null;
   const financialData = summaryModules?.financialData ?? null;
   const recommendationTrend = summaryModules?.recommendationTrend ?? null;
+  const calendarEvents = summaryModules?.calendarEvents ?? null;
+  const upgradeDowngradeHistory = summaryModules?.upgradeDowngradeHistory ?? null;
 
   if (!quote && !earningsSummary) {
     return Response.json(
@@ -272,6 +276,85 @@ export async function GET(request) {
     currency: earningsSummary?.financialCurrency || profile?.currency || null,
   };
 
+  // Calendar events (earnings dates, dividends, etc.)
+  const calendarData = calendarEvents ? {
+    earningsDate: calendarEvents.earnings?.earningsDate
+      ? (Array.isArray(calendarEvents.earnings.earningsDate) 
+          ? calendarEvents.earnings.earningsDate.map(d => d instanceof Date ? d.toISOString() : d)
+          : [calendarEvents.earnings.earningsDate instanceof Date ? calendarEvents.earnings.earningsDate.toISOString() : calendarEvents.earnings.earningsDate])
+      : [],
+    exDividendDate: calendarEvents.exDividendDate instanceof Date 
+      ? calendarEvents.exDividendDate.toISOString() 
+      : calendarEvents.exDividendDate || null,
+    dividendDate: calendarEvents.dividendDate instanceof Date 
+      ? calendarEvents.dividendDate.toISOString() 
+      : calendarEvents.dividendDate || null,
+  } : null;
+
+  // Upgrade/Downgrade History (most recent 10)
+  const upgrades = upgradeDowngradeHistory?.history
+    ? upgradeDowngradeHistory.history.slice(0, 10).map(entry => ({
+        firm: entry.firm || null,
+        toGrade: entry.toGrade || null,
+        fromGrade: entry.fromGrade || null,
+        action: entry.action || null,
+        date: entry.epochGradeDate 
+          ? new Date(entry.epochGradeDate * 1000).toISOString()
+          : (entry.date instanceof Date ? entry.date.toISOString() : entry.date || null),
+      }))
+    : [];
+
+  // Additional financial health metrics
+  const financialHealth = simplifiedFinancialData ? {
+    totalCash: simplifiedFinancialData.totalCash ?? null,
+    totalCashPerShare: simplifiedFinancialData.totalCashPerShare ?? null,
+    totalDebt: simplifiedFinancialData.totalDebt ?? null,
+    debtToEquity: simplifiedFinancialData.debtToEquity ?? null,
+    quickRatio: simplifiedFinancialData.quickRatio ?? null,
+    currentRatio: simplifiedFinancialData.currentRatio ?? null,
+    totalRevenue: simplifiedFinancialData.totalRevenue ?? null,
+    revenuePerShare: simplifiedFinancialData.revenuePerShare ?? null,
+    returnOnAssets: simplifiedFinancialData.returnOnAssets ?? null,
+    returnOnEquity: simplifiedFinancialData.returnOnEquity ?? null,
+    grossMargins: simplifiedFinancialData.grossMargins ?? null,
+    ebitdaMargins: simplifiedFinancialData.ebitdaMargins ?? null,
+    operatingMargins: simplifiedFinancialData.operatingMargins ?? null,
+    profitMargins: simplifiedFinancialData.profitMargins ?? null,
+    freeCashflow: simplifiedFinancialData.freeCashflow ?? null,
+    operatingCashflow: simplifiedFinancialData.operatingCashflow ?? null,
+    earningsGrowth: simplifiedFinancialData.earningsGrowth ?? null,
+    revenueGrowth: simplifiedFinancialData.revenueGrowth ?? null,
+  } : null;
+
+  // Key statistics extras
+  const keyStatsExtras = simplifiedKeyStatistics ? {
+    beta: simplifiedKeyStatistics.beta ?? null,
+    bookValue: simplifiedKeyStatistics.bookValue ?? null,
+    trailingEps: simplifiedKeyStatistics.trailingEps ?? null,
+    forwardEps: simplifiedKeyStatistics.forwardEps ?? null,
+    earningsQuarterlyGrowth: simplifiedKeyStatistics.earningsQuarterlyGrowth ?? null,
+    sharesOutstanding: simplifiedKeyStatistics.sharesOutstanding ?? null,
+    floatShares: simplifiedKeyStatistics.floatShares ?? null,
+    sharesShort: simplifiedKeyStatistics.sharesShort ?? null,
+    shortRatio: simplifiedKeyStatistics.shortRatio ?? null,
+    heldPercentInsiders: simplifiedKeyStatistics.heldPercentInsiders ?? null,
+    heldPercentInstitutions: simplifiedKeyStatistics.heldPercentInstitutions ?? null,
+    lastSplitFactor: simplifiedKeyStatistics.lastSplitFactor ?? null,
+    lastSplitDate: simplifiedKeyStatistics.lastSplitDate ?? null,
+    fiftyTwoWeekChange: simplifiedKeyStatistics['52WeekChange'] ?? null,
+  } : null;
+
+  // Dividend info from summaryDetail
+  const dividendInfo = simplifiedSummaryDetail ? {
+    dividendRate: simplifiedSummaryDetail.dividendRate ?? null,
+    dividendYield: simplifiedSummaryDetail.dividendYield ?? null,
+    exDividendDate: simplifiedSummaryDetail.exDividendDate ?? null,
+    payoutRatio: simplifiedSummaryDetail.payoutRatio ?? null,
+    fiveYearAvgDividendYield: simplifiedSummaryDetail.fiveYearAvgDividendYield ?? null,
+    trailingAnnualDividendRate: simplifiedSummaryDetail.trailingAnnualDividendRate ?? null,
+    trailingAnnualDividendYield: simplifiedSummaryDetail.trailingAnnualDividendYield ?? null,
+  } : null;
+
   return Response.json({
     HIDUP_JOKOWI: encodePayload({
       profile,
@@ -283,6 +366,11 @@ export async function GET(request) {
       keyStatistics: simplifiedKeyStatistics,
       financialData: simplifiedFinancialData,
       recommendations,
+      calendarData,
+      upgrades,
+      financialHealth,
+      keyStatsExtras,
+      dividendInfo,
       source: { provider: 'yahoo-finance2' },
     }),
   });

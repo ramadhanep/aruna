@@ -489,9 +489,9 @@ export default function MomentumPage() {
 
       {/* Data Display */}
       {!loading && !error && data && (
-        <div className="flex flex-col md:grid md:grid-cols-12 md:gap-6 md:items-start space-y-3 md:space-y-0">
+        <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start space-y-3 lg:space-y-0">
           {/* Summary and Top Movers - Sidebar on Desktop */}
-          <div className="md:col-span-4 flex flex-col gap-4 order-first md:order-last">
+          <div className="lg:col-span-4 flex flex-col gap-4 order-first lg:order-last">
             {/* Summary */}
             <SummaryCard summary={data.summary} />
 
@@ -505,7 +505,7 @@ export default function MomentumPage() {
           </div>
 
           {/* Stock Cards - Main Content */}
-          <div className="md:col-span-8 w-full">
+          <div className="lg:col-span-8 w-full">
             {displayedStocks.length > 0 ? (
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground pb-2">

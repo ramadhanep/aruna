@@ -84,7 +84,7 @@ async function promisePool(tasks, limit) {
 async function fetchSymbolQuote(symbol) {
     try {
         const endDate = new Date();
-        const startDate = new Date(endDate.getTime() - 5 * 24 * 60 * 60 * 1000); // 5 days
+        const startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days
 
         const result = await yahooFinance.chart(symbol, {
             period1: startDate,
@@ -198,6 +198,8 @@ async function fetchSymbolQuote(symbol) {
                 previousClose: meta.previousClose,
                 chartPreviousClose: meta.chartPreviousClose,
                 marketState: meta.marketState,
+                fiftyTwoWeekHigh: meta.fiftyTwoWeekHigh ?? null,
+                fiftyTwoWeekLow: meta.fiftyTwoWeekLow ?? null,
             },
         };
     } catch (error) {

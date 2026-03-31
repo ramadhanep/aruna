@@ -193,7 +193,7 @@ function AccountSidebarContent({ onClose }) {
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-7 pb-12">
         <section className="space-y-3">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Profile</p>
-          <div className="rounded-3xl bg-white/[0.04] border border-white/[0.08] dark:bg-white/[0.04] dark:border-white/[0.08] px-4 py-5 text-foreground dark:text-white shadow-lg">
+          <div className="rounded-3xl bg-card border border-border/30 px-4 py-5 text-foreground shadow-sm">
             <div className="flex items-center gap-3">
               <div className="h-14 w-14 overflow-hidden rounded-full border border-black/10 dark:border-white/20 bg-black/5 dark:bg-white/10">
                 {avatarUrl ? (
@@ -259,7 +259,7 @@ function AccountSidebarContent({ onClose }) {
 
         <section className="space-y-3">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Appearance</p>
-          <div className="rounded-3xl bg-white/[0.04] border border-white/[0.08] dark:bg-white/[0.04] dark:border-white/[0.08] px-4 py-4 shadow-lg">
+          <div className="rounded-3xl bg-card border border-border/30 px-4 py-4 shadow-sm">
             <p className="text-[11px] text-muted-foreground">
               Pick the look that feels best on your device. Light stays bright, dark saves battery.
             </p>
@@ -290,7 +290,7 @@ function AccountSidebarContent({ onClose }) {
 
         <section className="space-y-3">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Data & Privacy</p>
-          <div className="rounded-3xl bg-white/[0.04] border border-white/[0.08] dark:bg-white/[0.04] dark:border-white/[0.08] px-4 py-4 space-y-4 shadow-lg">
+          <div className="rounded-3xl bg-card border border-border/30 px-4 py-4 space-y-4 shadow-sm">
             <ClearDataButton
               onCleared={user ? clearRemoteData : undefined}
               trigger={
@@ -375,7 +375,7 @@ function AccountSidebarContent({ onClose }) {
           </div>
         </section>
 
-        <section className="rounded-3xl bg-white/[0.04] border border-white/[0.08] dark:bg-white/[0.04] dark:border-white/[0.08] px-4 py-5 text-center shadow-lg">
+        <section className="rounded-3xl bg-card border border-border/30 px-4 py-5 text-center shadow-sm">
           <p className="text-[11px] text-muted-foreground">
             Version {process.env.NEXT_PUBLIC_APP_VERSION || "1.0.0"}
           </p>
@@ -425,7 +425,7 @@ export function AccountSidebar({ open, onClose }) {
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 bottom-0 w-full max-w-3xl liquid-glass-strong z-90 shadow-2xl transition-transform duration-300 ease-out ${isAnimating ? "translate-x-0" : "-translate-x-full"
+        className={`fixed top-0 left-0 bottom-0 w-full max-w-3xl bg-background z-90 shadow-2xl transition-transform duration-300 ease-out ${isAnimating ? "translate-x-0" : "-translate-x-full"
           }`}
       >
         <Suspense

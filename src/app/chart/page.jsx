@@ -27,7 +27,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar, ReferenceLine } from 'recharts';
-import { Loader2, Sun, MoonStar, Clock3, Star, Lock, Bitcoin, Crown, ChevronDown, Fullscreen, ArrowLeft, Settings } from "lucide-react";
+import { Loader2, Sun, MoonStar, Clock3, Star, Lock, Bitcoin, Crown, ChevronDown, Fullscreen, ArrowLeft, Settings, Target, Calculator, BarChart3, CandlestickChart, LineChart, BarChart2 } from "lucide-react";
 import { useTheme } from 'next-themes';
 import { AddAssetModal } from "@/components/add-asset-modal";
 import { SymbolSearchDialog } from "@/components/header-symbol-search";
@@ -124,6 +124,7 @@ const INTRADAY_TIMEFRAMES = new Set(['15m', '1h', '2h', '4h']);
 const BASE_INFO_TABS = [
   { value: 'keystats', label: 'KEYSTATS' },
   { value: 'analysis', label: 'ANALYSIS' },
+  { value: 'financials', label: 'FINANCIALS' },
   { value: 'seasonality', label: 'SEASONALITY' },
   { value: 'profile', label: 'ABOUT' },
 ];
@@ -132,6 +133,7 @@ const INFO_TAB_QUERY_LOOKUP = {
   tradingplan: 'trading-plan',
   keystats: 'keystats',
   analysis: 'analysis',
+  financials: 'financials',
   seasonality: 'seasonality',
   profile: 'profile',
   about: 'profile',
@@ -389,6 +391,7 @@ function ElectionCyclePageContent() {
   const [revenuePeriod, setRevenuePeriod] = useState('quarterly');
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
   const [showLivermoreKey, setShowLivermoreKey] = useState(false);
+  const [chartDisplayType, setChartDisplayType] = useState('heikinAshi'); // 'candle' | 'heikinAshi' | 'line'
   const [watchlist, setWatchlist] = useState(() => getDefaultWatchlist());
   const [screeningSignal, setScreeningSignal] = useState(null);
   const [infoTab, setInfoTab] = useState(() => requestedInfoTab || 'keystats');
@@ -709,7 +712,7 @@ function ElectionCyclePageContent() {
     }
 
     // Only fetch for tabs that need fundamentals data
-    const needsFundamentals = ['keystats', 'analysis', 'profile'].includes(infoTab);
+    const needsFundamentals = ['keystats', 'analysis', 'profile', 'financials'].includes(infoTab);
     if (!needsFundamentals) {
       return;
     }
@@ -1285,6 +1288,7 @@ function ElectionCyclePageContent() {
         livermore: { upper: [], lower: [] },
         meta: {},
         stochastic: { k: [], d: [] },
+        chartDisplayType,
       };
     }
     const candles = [];
@@ -1320,22 +1324,18 @@ function ElectionCyclePageContent() {
           ? point.low
           : Math.min(actualOpen, actualClose);
 
-      const open =
-        typeof point.heikinOpen === 'number' && Number.isFinite(point.heikinOpen)
-          ? point.heikinOpen
-          : actualOpen;
-      const close =
-        typeof point.heikinClose === 'number' && Number.isFinite(point.heikinClose)
-          ? point.heikinClose
-          : actualClose;
-      const high =
-        typeof point.heikinHigh === 'number' && Number.isFinite(point.heikinHigh)
-          ? point.heikinHigh
-          : actualHigh;
-      const low =
-        typeof point.heikinLow === 'number' && Number.isFinite(point.heikinLow)
-          ? point.heikinLow
-          : actualLow;
+      let open, close, high, low;
+      if (chartDisplayType === 'heikinAshi') {
+        open = typeof point.heikinOpen === 'number' && Number.isFinite(point.heikinOpen) ? point.heikinOpen : actualOpen;
+        close = typeof point.heikinClose === 'number' && Number.isFinite(point.heikinClose) ? point.heikinClose : actualClose;
+        high = typeof point.heikinHigh === 'number' && Number.isFinite(point.heikinHigh) ? point.heikinHigh : actualHigh;
+        low = typeof point.heikinLow === 'number' && Number.isFinite(point.heikinLow) ? point.heikinLow : actualLow;
+      } else {
+        open = actualOpen;
+        close = actualClose;
+        high = actualHigh;
+        low = actualLow;
+      }
 
       candles.push({ time, open, high, low, close });
       if (typeof point.ema20 === 'number' && Number.isFinite(point.ema20)) {
@@ -1389,8 +1389,9 @@ function ElectionCyclePageContent() {
       livermore: { upper: livermoreLevels.upper, lower: livermoreLevels.lower },
       meta,
       stochastic: { k: stochasticK, d: stochasticD },
+      chartDisplayType,
     };
-  }, [filteredNormalChartData, isNormalView]);
+  }, [filteredNormalChartData, isNormalView, chartDisplayType]);
 
   const normalChartReady = normalCandlestickSeries.candles.length > 0;
 
@@ -1404,20 +1405,21 @@ function ElectionCyclePageContent() {
           variant={normalTimeframe === option.value ? 'default' : 'ghost'}
           className={`rounded-sm px-2 min-w-[2.1rem] font-bold py-0 text-[11px] ${normalTimeframe === option.value
             ? 'bg-emerald-700 text-white/80 shadow-sm'
-            : 'border-border/70 text-muted-foreground'
+            : 'border-border/20 text-muted-foreground'
             }`}
           onClick={() => setNormalTimeframe(option.value)}
         >
           {option.label}
         </Button>
       ))}
+      {renderChartTypeSwitcher()}
       {renderChartSettings()}
       {includeFullscreenToggle ? (
         <Button
           type="button"
           size="sm"
           variant="ghost"
-          className="h-6 w-6 rounded-full border border-border/60 p-0 text-muted-foreground shadow-sm"
+          className="h-6 w-6 rounded-full border border-border/30 p-0 text-muted-foreground shadow-sm"
           onClick={() => setNormalFullscreenOpen(true)}
           disabled={normalSeriesLoading || !normalChartReady}
           title={`Fullscreen ${normalTimeframeLabel} candlestick`}
@@ -1429,6 +1431,49 @@ function ElectionCyclePageContent() {
     </>
   );
 
+  const renderChartTypeSwitcher = () => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          className="h-6 rounded-md border border-border/30 px-2 gap-1.5 text-muted-foreground shadow-sm text-[11px] font-semibold"
+          title="Chart Type"
+          aria-label="Chart type"
+        >
+          {chartDisplayType === 'line' ? <LineChart className="h-3.5 w-3.5" /> : <CandlestickChart className="h-3.5 w-3.5" />}
+          <span className="hidden sm:inline">{chartDisplayType === 'heikinAshi' ? 'HA' : chartDisplayType === 'candle' ? 'Candle' : 'Line'}</span>
+          <ChevronDown className="h-3 w-3" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-44">
+        {[
+          { key: 'heikinAshi', label: 'Heikin Ashi', icon: CandlestickChart },
+          { key: 'candle', label: 'Candlestick', icon: BarChart2 },
+          { key: 'line', label: 'Line', icon: LineChart },
+        ].map((opt) => {
+          const Icon = opt.icon;
+          return (
+            <DropdownMenuItem
+              key={opt.key}
+              className="flex items-center gap-2 cursor-pointer"
+              onSelect={() => setChartDisplayType(opt.key)}
+            >
+              <Icon className="h-4 w-4" />
+              <span className="text-sm">{opt.label}</span>
+              {chartDisplayType === opt.key && (
+                <svg className="h-3.5 w-3.5 ml-auto text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </DropdownMenuItem>
+          );
+        })}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   const renderChartSettings = () => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -1436,7 +1481,7 @@ function ElectionCyclePageContent() {
           type="button"
           size="sm"
           variant="ghost"
-          className="h-6 w-6 rounded-full border border-border/60 p-0 text-muted-foreground shadow-sm"
+          className="h-6 w-6 rounded-full border border-border/30 p-0 text-muted-foreground shadow-sm"
           title="Chart Settings"
           aria-label="Chart settings"
         >
@@ -2281,8 +2326,14 @@ function ElectionCyclePageContent() {
     if (!hasTradingPlan) {
       return (
         <Card>
-          <CardContent className="text-xs text-muted-foreground">
-            Trading plan unavailable for {symbol}.
+          <CardContent className="flex flex-col items-center justify-center py-12 gap-3 text-center">
+            <div className="p-3 rounded-full bg-muted/50">
+              <BarChart3 className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-sm font-semibold text-foreground">No Trading Plan Available</p>
+            <p className="text-xs text-muted-foreground max-w-xs">
+              Trading plans are generated when breakout signals are detected. Check back after the next screening run.
+            </p>
           </CardContent>
         </Card>
       );
@@ -2290,21 +2341,147 @@ function ElectionCyclePageContent() {
 
     const sizeModeOptions = lotEligible ? ['share', 'lot'] : ['share'];
 
+    // Calculate risk-reward ratio
+    const bestTarget = tradingPlanTargets.length > 0 ? tradingPlanTargets[tradingPlanTargets.length - 1] : null;
+    const riskReward = (tradingPlanStopLossPct != null && bestTarget?.pct != null && tradingPlanStopLossPct !== 0)
+      ? Math.abs(bestTarget.pct / tradingPlanStopLossPct)
+      : null;
+
     return (
       <div className="space-y-4 text-xs">
+        {/* Summary Banner */}
+        <div className="rounded-2xl bg-gradient-to-r from-primary/5 via-primary/3 to-transparent border border-primary/10 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+                {tradingPlanCategoryLabel ? `${tradingPlanCategoryLabel} Signal` : 'Active Signal'}
+              </span>
+            </div>
+            {screeningSignalDateLabel && (
+              <span className="text-[11px] text-muted-foreground">{screeningSignalDateLabel}</span>
+            )}
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center">
+              <p className="text-[10px] text-muted-foreground mb-0.5">Entry</p>
+              <p className="text-sm font-bold text-foreground">{formatPriceValue(tradingPlanEntryPrice)}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] text-muted-foreground mb-0.5">Stop Loss</p>
+              <p className="text-sm font-bold text-red-600">{formatPriceValue(tradingPlanStopLossPrice)}</p>
+            </div>
+            <div className="text-center">
+              <p className="text-[10px] text-muted-foreground mb-0.5">Risk : Reward</p>
+              <p className="text-sm font-bold text-foreground">{riskReward != null ? `1 : ${riskReward.toFixed(1)}` : '—'}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Visual Price Ladder */}
         <Card>
-          {/* <CardHeader className="space-y-1">
-            <CardTitle className="text-sm">Trading Plan</CardTitle>
-            <CardDescription className="text-xs text-muted-foreground">
-              {tradingPlanCategoryLabel ? `${tradingPlanCategoryLabel} Screener` : 'Screener'}
-              {screeningSignalDateLabel ? ` • ${screeningSignalDateLabel}` : ''}
-            </CardDescription>
-          </CardHeader> */}
-          <CardContent className="space-y-5">
-            <div className="grid gap-4">
-              <div className="space-y-1">
-                <label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                  Entry Price
+          <CardContent className="space-y-4">
+            <p className="text-[11px] uppercase tracking-wide font-semibold text-muted-foreground flex items-center gap-1.5">
+              <Target className="h-3.5 w-3.5" /> Price Targets
+            </p>
+
+            <div className="relative space-y-0">
+              {/* Targets - top to bottom (highest first) */}
+              {[...tradingPlanTargets].reverse().map((target, idx) => {
+                const isLast = idx === tradingPlanTargets.length - 1;
+                return (
+                  <div key={target.label} className="flex items-stretch gap-3">
+                    <div className="flex flex-col items-center w-4">
+                      <div className="w-3 h-3 rounded-full bg-emerald-500 border-2 border-emerald-500/30 z-10 shrink-0" />
+                      <div className="w-0.5 flex-1 bg-gradient-to-b from-emerald-500/40 to-emerald-500/20" />
+                    </div>
+                    <div className="flex-1 pb-3">
+                      <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-3">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">{target.label}</span>
+                            <span className="text-[10px] text-muted-foreground ml-2">Take Profit</span>
+                          </div>
+                          <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">{formatPriceValue(target.price)}</span>
+                        </div>
+                        <div className="mt-1.5 flex items-center gap-3">
+                          <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">{formatPlanCurrencyDelta(target.pnl)}</span>
+                          {target.pct != null && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold">
+                              {target.pct >= 0 ? '+' : ''}{target.pct.toFixed(2)}%
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Entry Price */}
+              <div className="flex items-stretch gap-3">
+                <div className="flex flex-col items-center w-4">
+                  <div className="w-4 h-4 rounded-full bg-primary border-2 border-primary/30 z-10 shrink-0 flex items-center justify-center">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />
+                  </div>
+                  <div className="w-0.5 flex-1 bg-gradient-to-b from-primary/40 to-red-500/20" />
+                </div>
+                <div className="flex-1 pb-3">
+                  <div className="rounded-xl bg-primary/5 border border-primary/15 p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Your Entry</span>
+                        <span className="text-[10px] text-muted-foreground ml-2">Buy zone</span>
+                      </div>
+                      <span className="text-base font-bold text-foreground">{formatPriceValue(tradingPlanEntryPrice)}</span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-1">
+                      Total investment: {formatPlanCurrencyValue(tradingPlanEntryNotional)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Stop Loss */}
+              <div className="flex items-stretch gap-3">
+                <div className="flex flex-col items-center w-4">
+                  <div className="w-3 h-3 rounded-full bg-red-500 border-2 border-red-500/30 z-10 shrink-0" />
+                </div>
+                <div className="flex-1">
+                  <div className="rounded-xl bg-red-500/5 border border-red-500/10 p-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-red-600 dark:text-red-400">Stop Loss</span>
+                        <span className="text-[10px] text-muted-foreground ml-2">Exit if price drops here</span>
+                      </div>
+                      <span className="text-base font-bold text-red-600 dark:text-red-400">{formatPriceValue(tradingPlanStopLossPrice)}</span>
+                    </div>
+                    <div className="mt-1.5 flex items-center gap-3">
+                      <span className="text-[11px] font-semibold text-red-600 dark:text-red-400">{formatPlanCurrencyDelta(tradingPlanStopLossPnl)}</span>
+                      {tradingPlanStopLossPct != null && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-red-500/10 text-red-600 dark:text-red-400 font-semibold">
+                          {tradingPlanStopLossPct.toFixed(2)}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Position Calculator */}
+        <Card>
+          <CardContent className="space-y-4">
+            <p className="text-[11px] uppercase tracking-wide font-semibold text-muted-foreground flex items-center gap-1.5">
+              <Calculator className="h-3.5 w-3.5" /> Position Calculator
+            </p>
+
+            <div className="grid gap-3 lg:grid-cols-2">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-medium text-muted-foreground">
+                  Your Entry Price
                 </label>
                 <Input
                   type="number"
@@ -2314,148 +2491,62 @@ function ElectionCyclePageContent() {
                   value={tradingPlanEntryInput}
                   onChange={(event) => setTradingPlanEntryInput(event.target.value)}
                   className="text-xs"
-                  placeholder="e.g. 125.50"
+                  placeholder={tradingPlanPayload?.entry_price ? `Default: ${tradingPlanPayload.entry_price}` : 'e.g. 125.50'}
                 />
-                <p className="text-[11px] text-muted-foreground">
-                  Adjust this price to refresh the TP & SL calculations instantly.
+                <p className="text-[10px] text-muted-foreground">
+                  Change this to see updated profit/loss numbers
                 </p>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Position Size
+                  <label className="text-[11px] font-medium text-muted-foreground">
+                    How Many?
                   </label>
-                  <div className="inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5">
+                  <div className="inline-flex items-center gap-0.5 rounded-full border bg-muted/40 p-0.5">
                     {sizeModeOptions.map((mode) => (
                       <Button
                         key={mode}
                         type="button"
                         size="xs"
                         variant={tradingPlanSizeMode === mode ? 'default' : 'ghost'}
-                        className={`px-2 py-1 text-xs rounded-full ${tradingPlanSizeMode === mode ? 'shadow-sm' : ''
-                          }`}
+                        className={`px-2.5 py-1 text-[10px] rounded-full ${tradingPlanSizeMode === mode ? 'shadow-sm' : ''}`}
                         onClick={() => setTradingPlanSizeMode(mode)}
                       >
-                        {mode === 'lot' ? 'Lot' : 'Share'}
+                        {mode === 'lot' ? 'Lots' : 'Shares'}
                       </Button>
                     ))}
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    inputMode="decimal"
-                    min="0"
-                    step="any"
-                    value={tradingPlanSizeInput}
-                    onChange={(event) => setTradingPlanSizeInput(event.target.value)}
-                    className="text-xs"
-                    placeholder={tradingPlanSizeMode === 'lot' ? '10' : '10'}
-                  />
-                  <div className="rounded-md border border-dashed border-border/60 px-3 py-2 text-[11px] text-muted-foreground">
-                    {tradingPlanSizeMode === 'lot' ? 'Lots' : 'Shares'}
-                  </div>
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  {tradingPlanSizeSummary ||
-                    (tradingPlanSizeMode === 'lot'
-                      ? '1 lot = 100 shares. Enter lots to convert automatically.'
-                      : 'Enter share amount to review notional exposure.')}
+                <Input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  step="any"
+                  value={tradingPlanSizeInput}
+                  onChange={(event) => setTradingPlanSizeInput(event.target.value)}
+                  className="text-xs"
+                  placeholder={tradingPlanSizeMode === 'lot' ? 'e.g. 10 lots' : 'e.g. 100 shares'}
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  {tradingPlanSizeSummary || (tradingPlanSizeMode === 'lot' ? '1 lot = 100 shares' : 'Enter number of shares')}
                 </p>
               </div>
             </div>
 
-            <div>
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Plan Basis</p>
-              <div className="mt-2 grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <p className="text-[11px] text-muted-foreground">Notional</p>
-                  <p className="text-base font-bold">{formatPlanCurrencyValue(tradingPlanEntryNotional)}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] text-muted-foreground">Risk per Share</p>
-                  <p className="text-sm font-semibold">
-                    {tradingPlanStopLossDiff != null ? formatPlanPriceDelta(tradingPlanStopLossDiff) : '—'}
-                    {tradingPlanStopLossPct != null ? (
-                      <span className={`ml-2 ${tradingPlanStopLossPct >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                        {formatPercentage(tradingPlanStopLossPct)}
-                      </span>
-                    ) : null}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] text-muted-foreground">Swing Low Ref.</p>
-                  <p className="text-sm font-semibold">
-                    {formatPriceValue(tradingPlanBasisValues.swing)}
-                  </p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] text-muted-foreground">EMA Ref.</p>
-                  <p className="text-sm font-semibold">
-                    {formatPriceValue(tradingPlanBasisValues.ema)}
-                  </p>
+            {/* Reference Levels */}
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border/20">
+              <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-muted/30">
+                <div className="w-1 h-6 rounded-full bg-amber-500/50" />
+                <div>
+                  <p className="text-[10px] text-muted-foreground">Swing Low</p>
+                  <p className="text-xs font-semibold">{formatPriceValue(tradingPlanBasisValues.swing)}</p>
                 </div>
               </div>
-            </div>
-            <div className="space-y-2">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Exit Levels</p>
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="rounded-xl bg-red-500/5 p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-red-600">
-                      Stop Loss
-                    </span>
-                    <span className="text-base font-bold text-red-600">
-                      {formatPriceValue(tradingPlanStopLossPrice)}
-                    </span>
-                  </div>
-                  <p
-                    className={`mt-1 text-sm font-semibold ${tradingPlanStopLossPnl != null && tradingPlanStopLossPnl >= 0
-                      ? 'text-emerald-600'
-                      : 'text-red-600'
-                      }`}
-                  >
-                    {formatPlanCurrencyDelta(tradingPlanStopLossPnl)}
-                  </p>
-                  <p className="text-[11px] text-muted-foreground">
-                    {tradingPlanStopLossPct != null && tradingPlanStopLossDiff != null
-                      ? `${formatPlanPriceDelta(tradingPlanStopLossDiff)} • ${formatPercentage(tradingPlanStopLossPct)} vs entry`
-                      : '—'}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-2">
-                  {tradingPlanTargets.length > 0 ? (
-                    tradingPlanTargets.map((target) => (
-                      <div
-                        key={target.label}
-                        className="rounded-xl bg-emerald-500/5 p-3"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold uppercase tracking-wide text-emerald-600">
-                            {target.label}
-                          </span>
-                          <span className="text-base font-bold text-emerald-600">
-                            {formatPriceValue(target.price)}
-                          </span>
-                        </div>
-                        <p
-                          className={`mt-1 text-sm font-semibold ${target.pnl != null && target.pnl < 0 ? 'text-red-600' : 'text-emerald-600'
-                            }`}
-                        >
-                          {formatPlanCurrencyDelta(target.pnl)}
-                        </p>
-                        <p className="text-[11px] text-muted-foreground">
-                          {target.pct != null && target.diff != null
-                            ? `${formatPlanPriceDelta(target.diff)} • ${formatPercentage(target.pct)} vs entry`
-                            : '—'}
-                        </p>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="rounded-xl border border-border/60 p-3 text-[11px] text-muted-foreground">
-                      Take profit targets unavailable.
-                    </div>
-                  )}
+              <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-muted/30">
+                <div className="w-1 h-6 rounded-full bg-sky-500/50" />
+                <div>
+                  <p className="text-[10px] text-muted-foreground">EMA 20</p>
+                  <p className="text-xs font-semibold">{formatPriceValue(tradingPlanBasisValues.ema)}</p>
                 </div>
               </div>
             </div>
@@ -2819,131 +2910,155 @@ function ElectionCyclePageContent() {
       <div className="space-y-4">
         {recommendationData && (
           <Card>
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <CardTitle className="text-sm mb-2">{totalOpinions || 0} Analyst Rating</CardTitle>
-                  <CardDescription className="text-xs text-muted-foreground">
-                    Latest consensus for {symbol}
-                  </CardDescription>
-                </div>
-              </div>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Analyst Rating</CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">
+                Based on {totalOpinions || 0} analyst opinions
+              </CardDescription>
             </CardHeader>
-            <CardContent className="mt-4 space-y-3 text-xs">
-              <div className="flex flex-col justify-center items-center gap-3">
-                <div className={`flex p-3 text-center items-center justify-center rounded-full text-sm tracking-wide ${ratingBgClass}`}>
-                  {(ratingLabel || 'N/A')}
+            <CardContent className="space-y-5 text-xs">
+              {/* Rating Score Gauge */}
+              <div className="flex items-center gap-4">
+                <div className={`flex items-center justify-center w-16 h-16 rounded-2xl text-sm font-bold tracking-wide ${ratingBgClass}`}>
+                  {ratingScore ? ratingScore.toFixed(1) : '—'}
                 </div>
-                {ratingScore && (
-                  <span className="text-xs text-muted-foreground">
-                    Score {ratingScore.toFixed(1)} / 5
-                  </span>
-                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-base font-bold text-foreground">{ratingLabel || 'N/A'}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    Consensus rating score {ratingScore ? `${ratingScore.toFixed(1)} / 5.0` : '—'}
+                  </p>
+                  {/* Mini horizontal gauge 1-5 */}
+                  {ratingScore && (
+                    <div className="mt-2 relative h-2 rounded-full bg-gradient-to-r from-red-500 via-amber-500 to-emerald-500 overflow-hidden">
+                      <div
+                        className="absolute top-0 h-full w-1 bg-white rounded-full shadow-sm ring-1 ring-black/20"
+                        style={{ left: `${Math.min(100, Math.max(0, ((ratingScore - 1) / 4) * 100))}%` }}
+                      />
+                    </div>
+                  )}
+                  {ratingScore && (
+                    <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
+                      <span>Strong Sell</span>
+                      <span>Strong Buy</span>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="flex-1 flex flex-col gap-3">
-                {hasBreakdown ? (
-                  breakdown.map((item) => {
+
+              {/* Breakdown bars */}
+              {hasBreakdown && (
+                <div className="space-y-2">
+                  {breakdown.map((item) => {
                     const percent = totalOpinions
                       ? Math.round((item.value / totalOpinions) * 100)
                       : 0;
-                    const toneClass =
-                      item.label.toLowerCase().includes('sell')
-                        ? 'bg-red-600'
-                        : item.label.toLowerCase().includes('hold')
-                          ? 'bg-amber-600'
-                          : 'bg-emerald-700';
+                    const barColor =
+                      item.label === 'Strong Buy' ? 'bg-emerald-600'
+                        : item.label === 'Buy' ? 'bg-emerald-500/80'
+                          : item.label === 'Hold' ? 'bg-amber-500'
+                            : item.label === 'Sell' ? 'bg-red-500/80'
+                              : 'bg-red-600';
                     return (
-                      <div key={item.label} className="space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium">{item.label}</span>
-                          <span className="text-muted-foreground">{item.value}</span>
-                        </div>
-                        <div className="h-1.5 rounded-full bg-muted">
+                      <div key={item.label} className="flex items-center gap-3">
+                        <span className="w-20 text-right text-xs text-muted-foreground shrink-0">{item.label}</span>
+                        <div className="flex-1 h-2.5 rounded-full bg-muted overflow-hidden">
                           <div
-                            className={`h-full rounded-full ${toneClass}`}
+                            className={`h-full rounded-full transition-all ${barColor}`}
                             style={{ width: `${Math.min(100, percent)}%` }}
                           />
                         </div>
+                        <span className="w-8 text-xs tabular-nums text-muted-foreground">{item.value}</span>
                       </div>
                     );
-                  })
-                ) : (
-                  <p className="text-xs text-muted-foreground">Breakdown unavailable.</p>
-                )}
-              </div>
+                  })}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
 
         {priceTargets && (
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle className="text-sm mb-2">Analyst Price Target</CardTitle>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Price Target</CardTitle>
               <CardDescription className="text-xs text-muted-foreground">
-                Average target{' '}
-                {averageTarget != null
-                  ? `${formatDetailedCurrency(averageTarget)} ${currencyCode}`
-                  : '—'}
+                Analyst price forecast for {symbol}
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4 text-xs">
-              <div className="flex justify-between text-sm font-semibold">
-                <span className="text-xs">
-                  Low{' '}
-                  {lowTarget != null
-                    ? `${formatDetailedCurrency(lowTarget)} ${currencyCode}`
-                    : '—'}
-                </span>
-                <span className="text-xs">
-                  High{' '}
-                  {highTarget != null
-                    ? `${formatDetailedCurrency(highTarget)} ${currencyCode}`
-                    : '—'}
-                </span>
+            <CardContent className="space-y-5 text-xs">
+              {/* Price target summary cards */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-xl bg-red-500/8 p-3 text-center">
+                  <p className="text-[10px] font-semibold text-red-500 uppercase tracking-wider">Low</p>
+                  <p className="text-sm font-bold text-foreground mt-1">
+                    {lowTarget != null ? formatDetailedCurrency(lowTarget) : '—'}
+                  </p>
+                  {lowTarget != null && currentPrice != null && (
+                    <p className={`text-[10px] mt-0.5 font-medium ${lowTarget >= currentPrice ? 'text-emerald-600' : 'text-red-500'}`}>
+                      {lowTarget >= currentPrice ? '+' : ''}{(((lowTarget - currentPrice) / currentPrice) * 100).toFixed(1)}%
+                    </p>
+                  )}
+                </div>
+                <div className="rounded-xl bg-emerald-500/8 p-3 text-center ring-1 ring-emerald-500/20">
+                  <p className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">Average</p>
+                  <p className="text-sm font-bold text-foreground mt-1">
+                    {averageTarget != null ? formatDetailedCurrency(averageTarget) : '—'}
+                  </p>
+                  {averageTarget != null && currentPrice != null && (
+                    <p className={`text-[10px] mt-0.5 font-medium ${averageTarget >= currentPrice ? 'text-emerald-600' : 'text-red-500'}`}>
+                      {averageTarget >= currentPrice ? '+' : ''}{(((averageTarget - currentPrice) / currentPrice) * 100).toFixed(1)}%
+                    </p>
+                  )}
+                </div>
+                <div className="rounded-xl bg-emerald-500/8 p-3 text-center">
+                  <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">High</p>
+                  <p className="text-sm font-bold text-foreground mt-1">
+                    {highTarget != null ? formatDetailedCurrency(highTarget) : '—'}
+                  </p>
+                  {highTarget != null && currentPrice != null && (
+                    <p className={`text-[10px] mt-0.5 font-medium ${highTarget >= currentPrice ? 'text-emerald-600' : 'text-red-500'}`}>
+                      {highTarget >= currentPrice ? '+' : ''}{(((highTarget - currentPrice) / currentPrice) * 100).toFixed(1)}%
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="relative h-2 rounded-full bg-muted mx-1.5">
-                {lowTarget != null && (
-                  <span
-                    className="absolute -top-1 h-4 w-4 -translate-x-1/2 rounded-full border border-border bg-muted-foreground"
-                    style={{ left: getPosition(lowTarget) }}
-                    title="Low"
-                  />
-                )}
-                {highTarget != null && (
-                  <span
-                    className="absolute -top-1 h-4 w-4 -translate-x-1/2 rounded-full border border-border bg-muted-foreground"
-                    style={{ left: getPosition(highTarget) }}
-                    title="High"
-                  />
-                )}
-                {averageTarget != null && (
-                  <span
-                    className="absolute -top-1 h-4 w-4 -translate-x-1/2 rounded-full border-2 border-emerald-600 bg-emerald-600"
-                    style={{ left: getPosition(averageTarget) }}
-                    title="Target"
-                  />
-                )}
-                {currentPrice != null && (
-                  <span
-                    className="absolute -top-1 h-4 w-4 -translate-x-1/2 rounded-full border-2 border-white bg-white"
-                    style={{ left: getPosition(currentPrice) }}
-                    title="Current"
-                  />
-                )}
-              </div>
-              <div className="flex justify-between text-xs text-muted-foreground">
-                <span>
-                  Current{' '}
-                  {currentPrice != null
-                    ? `${formatDetailedCurrency(currentPrice)} ${currencyCode}`
-                    : '—'}
-                </span>
-                <span>
-                  Target{' '}
-                  {averageTarget != null
-                    ? `${formatDetailedCurrency(averageTarget)} ${currencyCode}`
-                    : '—'}
-                </span>
+
+              {/* Visual price range bar */}
+              <div className="space-y-2">
+                <div className="relative h-3 rounded-full bg-gradient-to-r from-red-500/20 via-muted to-emerald-500/20 mx-2">
+                  {/* Filled range from low to high */}
+                  {lowTarget != null && highTarget != null && (
+                    <div
+                      className="absolute top-0 h-full rounded-full bg-gradient-to-r from-red-500/40 to-emerald-500/40"
+                      style={{
+                        left: getPosition(lowTarget),
+                        width: `calc(${getPosition(highTarget)} - ${getPosition(lowTarget)})`,
+                      }}
+                    />
+                  )}
+                  {/* Current price marker */}
+                  {currentPrice != null && (
+                    <div
+                      className="absolute -top-0.5 flex flex-col items-center"
+                      style={{ left: getPosition(currentPrice) }}
+                    >
+                      <div className="w-0.5 h-4 bg-foreground rounded-full -translate-x-1/2" />
+                    </div>
+                  )}
+                  {/* Average target marker */}
+                  {averageTarget != null && (
+                    <div
+                      className="absolute -top-0.5 flex flex-col items-center"
+                      style={{ left: getPosition(averageTarget) }}
+                    >
+                      <div className="w-2 h-4 rounded-full bg-emerald-600 -translate-x-1/2 border-2 border-background" />
+                    </div>
+                  )}
+                </div>
+                <div className="flex justify-between text-[10px] text-muted-foreground px-2">
+                  <span>Current: {currentPrice != null ? `${formatDetailedCurrency(currentPrice)} ${currencyCode}` : '—'}</span>
+                  <span>Target: {averageTarget != null ? `${formatDetailedCurrency(averageTarget)} ${currencyCode}` : '—'}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -2951,43 +3066,334 @@ function ElectionCyclePageContent() {
 
         {consensusRows.length > 0 && (
           <Card>
-            <CardHeader>
-              <CardTitle className="text-sm mb-2">Analyst Consensus Estimate</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Consensus Estimates</CardTitle>
               <CardDescription className="text-xs text-muted-foreground">
-                Based on the latest revenue and earnings projections
+                Revenue and earnings projections
               </CardDescription>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
-              <table className="w-full text-xs min-w-lg">
-                <thead>
-                  <tr className="text-muted-foreground">
-                    <th className="py-2 pr-4 text-left font-medium">Metric</th>
-                    {consensusColumns.map((entry) => (
-                      <th key={entry.period} className="px-2 py-2 text-left font-medium">
-                        {entry.periodLabel}
-                      </th>
+            <CardContent className="space-y-3">
+              {consensusRows.map((row) => (
+                <div key={row.label} className="space-y-2">
+                  <p className="text-xs font-semibold text-muted-foreground">{row.label}</p>
+                  <div className="grid grid-cols-4 gap-2">
+                    {consensusColumns.map((entry, idx) => (
+                      <div key={`${row.label}-${idx}`} className="rounded-xl bg-muted/40 p-2.5 text-center">
+                        <p className="text-[10px] text-muted-foreground font-medium">{entry.periodLabel}</p>
+                        <p className="text-xs font-bold text-foreground mt-1">{row.values[idx]}</p>
+                      </div>
                     ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {consensusRows.map((row) => (
-                    <tr key={row.label} className="border-t border-border/40">
-                      <td className="py-2 pr-4 font-semibold">{row.label}</td>
-                      {row.values.map((value, idx) => (
-                        <td key={`${row.label}-${idx}`} className="px-2 py-2">
-                          {value}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
         )}
       </div>
     );
   };
+
+  const renderFinancialsTab = () => {
+    if (fundamentalsLoading) {
+      return (
+        <div className="space-y-4">
+          {[...Array(3)].map((_, idx) => (
+            <Card key={idx}>
+              <CardContent className="p-4 space-y-3">
+                <div className="h-4 w-32 rounded-full shimmer" />
+                <div className="grid grid-cols-2 gap-3">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="space-y-2">
+                      <div className="h-3 w-20 rounded-full shimmer" />
+                      <div className="h-4 w-24 rounded-full shimmer" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      );
+    }
+
+    const fh = fundamentals?.financialHealth;
+    const kse = fundamentals?.keyStatsExtras;
+    const div = fundamentals?.dividendInfo;
+    const cal = fundamentals?.calendarData;
+    const upgrades = fundamentals?.upgrades;
+
+    const hasFinancialHealth = fh && Object.values(fh).some(v => v != null);
+    const hasKeyStats = kse && Object.values(kse).some(v => v != null);
+    const hasDividends = div && (div.dividendRate != null || div.dividendYield != null);
+    const hasCalendar = cal && (cal.earningsDate?.length > 0 || cal.exDividendDate);
+    const hasUpgrades = upgrades && upgrades.length > 0;
+
+    if (!hasFinancialHealth && !hasKeyStats && !hasDividends && !hasCalendar && !hasUpgrades) {
+      return (
+        <Card>
+          <CardContent className="text-xs text-muted-foreground py-6">
+            Financial details unavailable for {symbol}.
+          </CardContent>
+        </Card>
+      );
+    }
+
+    const formatPct = (v) => v != null ? `${(v * 100).toFixed(2)}%` : '—';
+    const formatNum = (v) => {
+      if (v == null) return '—';
+      if (Math.abs(v) >= 1e12) return `${(v / 1e12).toFixed(2)}T`;
+      if (Math.abs(v) >= 1e9) return `${(v / 1e9).toFixed(2)}B`;
+      if (Math.abs(v) >= 1e6) return `${(v / 1e6).toFixed(2)}M`;
+      if (Math.abs(v) >= 1e3) return `${(v / 1e3).toFixed(2)}K`;
+      return typeof v === 'number' ? v.toFixed(2) : String(v);
+    };
+    const formatDate = (v) => {
+      if (!v) return '—';
+      try {
+        const d = new Date(v);
+        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+      } catch { return '—'; }
+    };
+
+    return (
+      <div className="space-y-4">
+        {/* Upcoming Events */}
+        {hasCalendar && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Upcoming Events</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <dl className="grid grid-cols-1 gap-3">
+                {cal.earningsDate?.length > 0 && (
+                  <div className="flex items-center justify-between py-2 border-b border-border/20">
+                    <dt className="text-xs text-muted-foreground">Next Earnings</dt>
+                    <dd className="text-xs font-medium">{formatDate(cal.earningsDate[0])}</dd>
+                  </div>
+                )}
+                {cal.exDividendDate && (
+                  <div className="flex items-center justify-between py-2 border-b border-border/20">
+                    <dt className="text-xs text-muted-foreground">Ex-Dividend Date</dt>
+                    <dd className="text-xs font-medium">{formatDate(cal.exDividendDate)}</dd>
+                  </div>
+                )}
+                {cal.dividendDate && (
+                  <div className="flex items-center justify-between py-2">
+                    <dt className="text-xs text-muted-foreground">Dividend Pay Date</dt>
+                    <dd className="text-xs font-medium">{formatDate(cal.dividendDate)}</dd>
+                  </div>
+                )}
+              </dl>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Financial Health */}
+        {hasFinancialHealth && (
+          <div className="relative">
+            <Card className={!isAuthenticated ? 'pointer-events-none select-none opacity-60 blur-[1.5px]' : ''}>
+              <CardHeader>
+                <CardTitle className="text-sm">Financial Health</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                  {[
+                    { label: 'Total Revenue', value: formatNum(fh.totalRevenue) },
+                    { label: 'Free Cash Flow', value: formatNum(fh.freeCashflow) },
+                    { label: 'Total Cash', value: formatNum(fh.totalCash) },
+                    { label: 'Total Debt', value: formatNum(fh.totalDebt) },
+                    { label: 'Debt / Equity', value: fh.debtToEquity != null ? fh.debtToEquity.toFixed(2) : '—' },
+                    { label: 'Current Ratio', value: fh.currentRatio != null ? fh.currentRatio.toFixed(2) : '—' },
+                    { label: 'Quick Ratio', value: fh.quickRatio != null ? fh.quickRatio.toFixed(2) : '—' },
+                    { label: 'Revenue / Share', value: fh.revenuePerShare != null ? fh.revenuePerShare.toFixed(2) : '—' },
+                  ].filter(item => item.value !== '—').map((item) => (
+                    <div key={item.label} className="space-y-0.5">
+                      <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
+                      <dd className="text-xs font-semibold">{item.value}</dd>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            {!isAuthenticated && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
+                <Lock className="h-6 w-6 text-muted-foreground" />
+                <p className="text-xs font-semibold text-muted-foreground">Sign in to view financial health</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Margins & Growth */}
+        {hasFinancialHealth && (fh.grossMargins != null || fh.profitMargins != null || fh.earningsGrowth != null) && (
+          <div className="relative">
+            <Card className={!isAuthenticated ? 'pointer-events-none select-none opacity-60 blur-[1.5px]' : ''}>
+              <CardHeader>
+                <CardTitle className="text-sm">Margins & Growth</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {[
+                    { label: 'Gross Margin', value: fh.grossMargins, color: 'bg-emerald-500' },
+                    { label: 'Operating Margin', value: fh.operatingMargins, color: 'bg-sky-500' },
+                    { label: 'Profit Margin', value: fh.profitMargins, color: 'bg-violet-500' },
+                    { label: 'EBITDA Margin', value: fh.ebitdaMargins, color: 'bg-amber-500' },
+                  ].filter(item => item.value != null).map((item) => (
+                    <div key={item.label} className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">{item.label}</span>
+                        <span className="font-semibold">{formatPct(item.value)}</span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-muted">
+                        <div
+                          className={`h-full rounded-full ${item.color}`}
+                          style={{ width: `${Math.min(100, Math.max(0, (item.value || 0) * 100))}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border/20">
+                    {[
+                      { label: 'ROE', value: fh.returnOnEquity },
+                      { label: 'ROA', value: fh.returnOnAssets },
+                      { label: 'Revenue Growth', value: fh.revenueGrowth },
+                      { label: 'Earnings Growth', value: fh.earningsGrowth },
+                    ].filter(item => item.value != null).map((item) => (
+                      <div key={item.label} className="space-y-0.5">
+                        <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
+                        <dd className={`text-xs font-semibold ${item.value >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
+                          {formatPct(item.value)}
+                        </dd>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            {!isAuthenticated && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
+                <Lock className="h-6 w-6 text-muted-foreground" />
+                <p className="text-xs font-semibold text-muted-foreground">Sign in to view margins & growth</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Dividends */}
+        {hasDividends && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Dividend Info</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                {[
+                  { label: 'Dividend Rate', value: div.dividendRate != null ? `${currencyCode} ${div.dividendRate.toFixed(2)}` : null },
+                  { label: 'Dividend Yield', value: div.dividendYield != null ? formatPct(div.dividendYield) : null },
+                  { label: 'Payout Ratio', value: div.payoutRatio != null ? formatPct(div.payoutRatio) : null },
+                  { label: '5Y Avg Yield', value: div.fiveYearAvgDividendYield != null ? `${div.fiveYearAvgDividendYield.toFixed(2)}%` : null },
+                  { label: 'Ex-Dividend', value: div.exDividendDate ? formatDate(div.exDividendDate) : null },
+                ].filter(item => item.value != null).map((item) => (
+                  <div key={item.label} className="space-y-0.5">
+                    <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
+                    <dd className="text-xs font-semibold">{item.value}</dd>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Key Stats Extras */}
+        {hasKeyStats && (
+          <div className="relative">
+            <Card className={!isAuthenticated ? 'pointer-events-none select-none opacity-60 blur-[1.5px]' : ''}>
+              <CardHeader>
+                <CardTitle className="text-sm">Key Statistics</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                  {[
+                    { label: 'Beta', value: kse.beta != null ? kse.beta.toFixed(3) : null },
+                    { label: 'Book Value', value: kse.bookValue != null ? kse.bookValue.toFixed(2) : null },
+                    { label: 'EPS (TTM)', value: kse.trailingEps != null ? kse.trailingEps.toFixed(2) : null },
+                    { label: 'EPS (Fwd)', value: kse.forwardEps != null ? kse.forwardEps.toFixed(2) : null },
+                    { label: 'Earnings Growth (Q)', value: kse.earningsQuarterlyGrowth != null ? formatPct(kse.earningsQuarterlyGrowth) : null },
+                    { label: '52-Week Change', value: kse.fiftyTwoWeekChange != null ? formatPct(kse.fiftyTwoWeekChange) : null },
+                    { label: 'Shares Outstanding', value: kse.sharesOutstanding != null ? formatNum(kse.sharesOutstanding) : null },
+                    { label: 'Float', value: kse.floatShares != null ? formatNum(kse.floatShares) : null },
+                    { label: 'Short Ratio', value: kse.shortRatio != null ? kse.shortRatio.toFixed(2) : null },
+                    { label: '% Held by Insiders', value: kse.heldPercentInsiders != null ? formatPct(kse.heldPercentInsiders) : null },
+                    { label: '% Held by Institutions', value: kse.heldPercentInstitutions != null ? formatPct(kse.heldPercentInstitutions) : null },
+                    { label: 'Last Split', value: kse.lastSplitFactor || null },
+                  ].filter(item => item.value != null).map((item) => (
+                    <div key={item.label} className="space-y-0.5">
+                      <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
+                      <dd className="text-xs font-semibold">{item.value}</dd>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            {!isAuthenticated && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
+                <Lock className="h-6 w-6 text-muted-foreground" />
+                <p className="text-xs font-semibold text-muted-foreground">Sign in to view key statistics</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Analyst Upgrades/Downgrades */}
+        {hasUpgrades && (
+          <div className="relative">
+            <Card className={!isAuthenticated ? 'pointer-events-none select-none opacity-60 blur-[1.5px]' : ''}>
+              <CardHeader>
+                <CardTitle className="text-sm">Recent Upgrades & Downgrades</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {upgrades.map((entry, idx) => {
+                    const actionColor = entry.action === 'up' || entry.action === 'init'
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : entry.action === 'down'
+                        ? 'text-red-500'
+                        : 'text-muted-foreground';
+                    const actionLabel = entry.action === 'up' ? '↑ Upgrade'
+                      : entry.action === 'down' ? '↓ Downgrade'
+                        : entry.action === 'init' ? '● Initiated'
+                          : entry.action === 'main' ? '— Maintained'
+                            : entry.action || '—';
+                    return (
+                      <div key={idx} className="flex items-start gap-3 py-2 border-b border-border/10 last:border-0">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold truncate">{entry.firm || 'Unknown'}</p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {entry.fromGrade ? `${entry.fromGrade} → ` : ''}{entry.toGrade || '—'}
+                          </p>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className={`text-[11px] font-semibold ${actionColor}`}>{actionLabel}</p>
+                          <p className="text-[10px] text-muted-foreground">{formatDate(entry.date)}</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+            {!isAuthenticated && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
+                <Lock className="h-6 w-6 text-muted-foreground" />
+                <p className="text-xs font-semibold text-muted-foreground">Sign in to view analyst upgrades</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderSeasonalityTab = () => {
     if (quarterlyHeatmap.rows.length === 0 && monthlyHeatmap.rows.length === 0) {
       return (
@@ -3126,8 +3532,8 @@ function ElectionCyclePageContent() {
   };
 
   return (
-    <div className="flex flex-col md:grid md:grid-cols-12 md:gap-6 md:items-start pb-8">
-      <div className="md:col-span-12 flex justify-between gap-2 mb-4 md:mb-0">
+    <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start pb-8">
+      <div className="lg:col-span-12 flex justify-between gap-2 mb-4 lg:mb-0">
         <div className="flex flex-wrap items-center gap-2">
           <h1
             className="text-base font-semibold uppercase cursor-pointer transition-colors hover:text-primary flex items-center gap-1"
@@ -3193,7 +3599,7 @@ function ElectionCyclePageContent() {
         </div>
       </div>
 
-      <div className="md:col-span-8 flex flex-col gap-2">
+      <div className="lg:col-span-8 flex flex-col gap-2">
         {loading && (
           <>
             <Card className="bg-transparent border-none rounded-none">
@@ -3212,7 +3618,7 @@ function ElectionCyclePageContent() {
                 </div>
               </CardHeader>
               <CardContent className="px-0 pb-0">
-                <div className="w-full h-[380px] md:h-[500px] rounded-xl shimmer"></div>
+                <div className="w-full h-[380px] lg:h-[500px] rounded-xl shimmer"></div>
               </CardContent>
             </Card>
 
@@ -3292,16 +3698,16 @@ function ElectionCyclePageContent() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className={isNormalView ? "px-0 pb-0 -mx-4 md:mx-0" : "px-0 pb-0 -mr-4 md:mr-0"}>
+              <CardContent className={isNormalView ? "px-0 pb-0 -mx-4 lg:-mx-6 overflow-hidden" : "px-0 pb-0 -mr-4 lg:mr-0"}>
                 {isNormalView ? (
                   normalSeriesLoading ? (
-                    <div className="flex h-[380px] md:h-[500px] items-center justify-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex h-[380px] lg:h-[500px] items-center justify-center gap-2 text-xs text-muted-foreground">
                       <Loader2 className="h-4 w-4 animate-spin" />
                       Loading {normalTimeframeLabel} candles…
                     </div>
                   ) : filteredNormalChartData.length > 0 ? (
                     <>
-                      <div className="relative left-1/2 right-1/2 -translate-x-1/2 w-screen max-w-[768px] md:w-full md:max-w-none md:left-auto md:right-auto md:translate-x-0">
+                      <div className="relative left-1/2 right-1/2 -translate-x-1/2 w-screen max-w-[768px] lg:max-w-[calc(100vw-3rem)]">
                         <NormalCandlestickChart
                           candles={normalCandlestickSeries.candles}
                           ema={normalCandlestickSeries.ema}
@@ -3318,20 +3724,21 @@ function ElectionCyclePageContent() {
                           showLivermoreKey={showLivermoreKey}
                           livermoreUpperColor={LIVERMORE_UPPER_COLOR}
                           livermoreLowerColor={LIVERMORE_LOWER_COLOR}
-                          valueLabelPrefix="HA"
+                          valueLabelPrefix={chartDisplayType === 'heikinAshi' ? "HA" : ""}
                           showTooltip={false}
                           priceScaleType={scaleChoice}
                           height={450}
+                          seriesType={chartDisplayType === 'line' ? 'line' : 'candlestick'}
                         />
                       </div>
                     </>
                   ) : (
-                    <div className="flex h-[380px] md:h-[500px] items-center justify-center text-xs text-muted-foreground">
+                    <div className="flex h-[380px] lg:h-[500px] items-center justify-center text-xs text-muted-foreground">
                       {normalSeriesError || `Price data unavailable for the ${normalTimeframeLabel} timeframe.`}
                     </div>
                   )
                 ) : (
-                  <div className="relative h-[380px] md:h-[500px]">
+                  <div className="relative h-[380px] lg:h-[500px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
                         data={filteredChartData}
@@ -3404,7 +3811,7 @@ function ElectionCyclePageContent() {
 
             {isNormalView ? (
               <>
-                <div className="flex flex-wrap justify-center items-center gap-1 mt-4 md:mt-2">
+                <div className="flex flex-wrap justify-center items-center gap-1 mt-4 lg:mt-2">
                   {renderTimeframeButtons({ includeFullscreenToggle: true })}
                 </div>
                 <Dialog open={normalFullscreenOpen} onOpenChange={setNormalFullscreenOpen}>
@@ -3446,17 +3853,18 @@ function ElectionCyclePageContent() {
                         showLivermoreKey={showLivermoreKey}
                         livermoreUpperColor={LIVERMORE_UPPER_COLOR}
                         livermoreLowerColor={LIVERMORE_LOWER_COLOR}
-                        valueLabelPrefix="HA"
+                        valueLabelPrefix={chartDisplayType === 'heikinAshi' ? "HA" : ""}
                         showTooltip={false}
                         priceScaleType={scaleChoice}
                         height={650}
+                        seriesType={chartDisplayType === 'line' ? 'line' : 'candlestick'}
                       />
                     </div>
                   </DialogContent>
                 </Dialog>
               </>
             ) : (
-              <div className="flex items-center justify-center gap-2 mt-4 md:mt-2">
+              <div className="flex items-center justify-center gap-2 mt-4 lg:mt-2">
                 {['all', 'Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
                   <button
                     key={q}
@@ -3475,9 +3883,9 @@ function ElectionCyclePageContent() {
         )}
       </div>
 
-      <div className="md:col-span-4 flex flex-col gap-4">
+      <div className="lg:col-span-4 flex flex-col gap-4">
         {loading && (
-          <div className="mt-4 flex flex-col gap-8 md:mt-0">
+          <div className="mt-4 flex flex-col gap-8 lg:mt-0">
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm">Summary</CardTitle>
@@ -3503,7 +3911,7 @@ function ElectionCyclePageContent() {
                 </CardContent>
               </Card>
             </div>
-            <div className="border-b border-border/40 pb-2 flex flex-wrap gap-2">
+            <div className="border-b border-border/20 pb-2 flex flex-wrap gap-2">
               {[...Array(4)].map((_, idx) => (
                 <div key={`tab-${idx}`} className="h-8 w-16 rounded-full shimmer" />
               ))}
@@ -3522,9 +3930,9 @@ function ElectionCyclePageContent() {
         )}
 
         {showChartSection && (
-          <div className="space-y-4 mt-6 md:mt-0">
+          <div className="space-y-4 mt-6 lg:mt-0">
             {hasPortfolioPosition && (
-              <Card className="overflow-hidden border border-border/70">
+              <Card className="overflow-hidden border border-border/20">
                 <div
                   className={`flex flex-col gap-3 border-l-4 px-4 py-4 ${portfolioPosition.pnl != null && portfolioPosition.pnl < 0
                     ? 'border-red-600 bg-red-600/5'
@@ -3553,7 +3961,7 @@ function ElectionCyclePageContent() {
                     )}
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4 border-t border-border/50 bg-background px-4 py-3 text-sm font-semibold">
+                <div className="grid grid-cols-2 gap-4 border-t border-border/30 bg-background px-4 py-3 text-sm font-semibold">
                   <div className="space-y-1">
                     <p className="text-[11px] text-muted-foreground">Average Price</p>
                     <p>
@@ -3597,7 +4005,7 @@ function ElectionCyclePageContent() {
 
             {(fundamentalsLoading || fundamentals || cycleSummary || quarterlyHeatmap.rows.length > 0 || monthlyHeatmap.rows.length > 0) && (
               <div className="space-y-4">
-                <div className="flex gap-2 border-b border-border/50 text-[11px] overflow-x-auto whitespace-nowrap flex-nowrap pb-1 hide-scrollbar">
+                <div className="flex gap-2 border-b border-border/30 text-[11px] overflow-x-auto whitespace-nowrap flex-nowrap pb-1 hide-scrollbar">
                   {infoTabs.map((tab) => (
                     <button
                       key={tab.value}
@@ -3617,6 +4025,7 @@ function ElectionCyclePageContent() {
                   {infoTab === 'profile' && renderProfileTab()}
                   {infoTab === 'keystats' && renderKeyStatsTab()}
                   {infoTab === 'analysis' && renderAnalysisTab()}
+                  {infoTab === 'financials' && renderFinancialsTab()}
                   {infoTab === 'seasonality' && renderSeasonalityTab()}
                 </div>
               </div>

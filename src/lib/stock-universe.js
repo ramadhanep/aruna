@@ -854,7 +854,6 @@ export const US_SP500_SYMBOLS = [
   'DRI',
   'DDOG',
   'DVA',
-  'DAY',
   'DECK',
   'DE',
   'DELL',

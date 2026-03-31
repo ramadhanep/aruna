@@ -6,13 +6,12 @@ import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock, Download, Droplets, Axe, Magnet, Rotate3D, MessageCircleMore, Flame, ChevronDown, ChevronUp, ChevronRight } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock, Download, Flame, ChevronDown, ChevronUp, ChevronRight, Clock, Globe, Zap, BarChart3, ArrowUpRight, ArrowDownRight, Gem } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { TrendingMarquee } from "@/components/trending-marquee";
 import { formatTickerDisplay } from "@/lib/utils";
 import { MoneyFlowCard } from "@/components/money-flow-card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const CATEGORY_LABELS = {
   idx: "IDX 🇮🇩",
@@ -33,6 +32,121 @@ const HIGHLIGHT_SYMBOLS = [
   { symbol: "DAX", label: "DAX", badge: "DAX", group: "DE", accent: "bg-sky-500", logo: "https://s3-symbol-logo.tradingview.com/country/DE.svg" },
   { symbol: "GC=F", label: "Gold", badge: "GC", group: "CM", accent: "bg-sky-500", logo: "https://s3-symbol-logo.tradingview.com/metal/gold.svg" },
 ];
+
+const MARKET_CATEGORIES = [
+  {
+    id: "indonesia",
+    title: "Indonesia",
+    emoji: "🇮🇩",
+    icon: null,
+    marketTz: "Asia/Jakarta",
+    marketOpen: [9, 0],
+    marketClose: [15, 15],
+    symbols: [
+      { symbol: "^JKSE", label: "IHSG", logo: "https://s3-symbol-logo.tradingview.com/indices/jakarta-composite-index.svg" },
+      { symbol: "BBCA.JK", label: "BBCA", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/BBCA.png" },
+      { symbol: "BMRI.JK", label: "BMRI", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/BMRI.png" },
+      { symbol: "BBRI.JK", label: "BBRI", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/BBRI.png" },
+      { symbol: "TLKM.JK", label: "TLKM", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/TLKM.png" },
+      { symbol: "ASII.JK", label: "ASII", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/ASII.png" },
+    ],
+  },
+  {
+    id: "global",
+    title: "Global",
+    emoji: null,
+    icon: Globe,
+    marketTz: "America/New_York",
+    marketOpen: [9, 30],
+    marketClose: [16, 0],
+    symbols: [
+      { symbol: "^IXIC", label: "Nasdaq", logo: "https://s3-symbol-logo.tradingview.com/nasdaq.svg" },
+      { symbol: "^SPX", label: "S&P 500", logo: "https://s3-symbol-logo.tradingview.com/country/US.svg" },
+      { symbol: "^DJI", label: "Dow Jones", logo: "https://s3-symbol-logo.tradingview.com/country/US.svg" },
+      { symbol: "^N225", label: "Nikkei 225", logo: "https://s3-symbol-logo.tradingview.com/country/JP.svg" },
+      { symbol: "^KS11", label: "KOSPI", logo: "https://s3-symbol-logo.tradingview.com/country/KR.svg" },
+      { symbol: "^GDAXI", label: "DAX", logo: "https://s3-symbol-logo.tradingview.com/country/DE.svg" },
+    ],
+  },
+  {
+    id: "crypto",
+    title: "Crypto",
+    emoji: null,
+    icon: Zap,
+    marketTz: null,
+    marketOpen: null,
+    marketClose: null,
+    symbols: [
+      { symbol: "BTC-USD", label: "Bitcoin", logo: "https://s3-symbol-logo.tradingview.com/crypto/XTVCBTC.svg" },
+      { symbol: "ETH-USD", label: "Ethereum", logo: "https://s3-symbol-logo.tradingview.com/crypto/XTVCETH.svg" },
+      { symbol: "SOL-USD", label: "Solana", logo: "https://s3-symbol-logo.tradingview.com/crypto/XTVCSOL.svg" },
+      { symbol: "BNB-USD", label: "BNB", logo: "https://s3-symbol-logo.tradingview.com/crypto/XTVCBNB.svg" },
+      { symbol: "XRP-USD", label: "XRP", logo: "https://s3-symbol-logo.tradingview.com/crypto/XTVCXRP.svg" },
+      { symbol: "DOGE-USD", label: "Doge", logo: "https://s3-symbol-logo.tradingview.com/crypto/XTVCDOGE.svg" },
+    ],
+  },
+  {
+    id: "commodities",
+    title: "Commodities",
+    emoji: null,
+    icon: Gem,
+    marketTz: "America/New_York",
+    marketOpen: [9, 30],
+    marketClose: [16, 0],
+    symbols: [
+      { symbol: "CL=F", label: "WTI Oil", logo: "https://s3-symbol-logo.tradingview.com/crude-oil.svg" },
+      { symbol: "BZ=F", label: "Brent", logo: "https://s3-symbol-logo.tradingview.com/crude-oil.svg" },
+      { symbol: "GC=F", label: "Gold", logo: "https://s3-symbol-logo.tradingview.com/metal/gold.svg" },
+      { symbol: "SI=F", label: "Silver", logo: "https://s3-symbol-logo.tradingview.com/metal/silver.svg" },
+      { symbol: "NG=F", label: "Nat Gas", logo: "https://s3-symbol-logo.tradingview.com/natural-gas.svg" },
+      { symbol: "HG=F", label: "Copper", logo: "https://s3-symbol-logo.tradingview.com/metal/copper.svg" },
+    ],
+  },
+];
+
+const MARKET_TIMEFRAMES = ["1D", "1W", "1M", "3M", "YTD", "1Y", "2Y", "5Y", "ATH"];
+
+function getTimeframeChange(quote, timeframe) {
+  if (!quote) return null;
+  const price = quote.price;
+  if (typeof price !== "number" || !Number.isFinite(price)) return null;
+
+  if (timeframe === "ATH") {
+    const high = quote.meta?.fiftyTwoWeekHigh;
+    if (typeof high === "number" && high > 0) {
+      return ((price - high) / high) * 100;
+    }
+    // Fallback: compute from chartData max
+    if (Array.isArray(quote.chartData) && quote.chartData.length > 0) {
+      const maxPrice = Math.max(...quote.chartData);
+      if (maxPrice > 0) return ((price - maxPrice) / maxPrice) * 100;
+    }
+    return null;
+  }
+
+  if (timeframe === "1D") return quote.changePercent ?? null;
+
+  // For timeframes based on chartData history
+  const data = quote.chartData;
+  if (!Array.isArray(data) || data.length < 2) return null;
+
+  let daysBack;
+  switch (timeframe) {
+    case "1W": daysBack = 5; break;
+    case "1M": daysBack = 22; break;
+    case "3M": daysBack = 66; break;
+    case "YTD": daysBack = data.length; break;
+    case "1Y": daysBack = 252; break;
+    case "2Y": daysBack = 504; break;
+    case "5Y": daysBack = 1260; break;
+    default: daysBack = data.length;
+  }
+
+  const idx = Math.max(0, data.length - Math.min(daysBack, data.length));
+  const basePrice = data[idx];
+  if (typeof basePrice !== "number" || basePrice === 0) return null;
+  return ((price - basePrice) / basePrice) * 100;
+}
 
 function isWithinMarketHours(timeZone, openHour, openMinute, closeHour, closeMinute) {
   try {
@@ -403,6 +517,8 @@ export default function ExplorePage() {
   const [moneyFlowLoading, setMoneyFlowLoading] = useState(true);
   const [moneyFlowError, setMoneyFlowError] = useState("");
   const [showInstallButton, setShowInstallButton] = useState(false);
+  const [activeMarketTab, setActiveMarketTab] = useState("indonesia");
+  const [marketTimeframe, setMarketTimeframe] = useState("ATH");
   const [isHighlightsExpanded, setIsHighlightsExpanded] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -430,6 +546,10 @@ export default function ExplorePage() {
       });
     });
     HIGHLIGHT_SYMBOLS.forEach(({ symbol }) => symbolSet.add(symbol));
+    MARKET_CATEGORIES.forEach((cat) => {
+      cat.symbols.forEach(({ symbol }) => symbolSet.add(symbol));
+    });
+    symbolSet.add("USDIDR=X");
 
     if (symbolSet.size === 0) {
       if (quoteRequestRef.current === requestId) {
@@ -763,6 +883,35 @@ export default function ExplorePage() {
     [quotes]
   );
 
+  const marketCategoryData = useMemo(() => {
+    return MARKET_CATEGORIES.map((cat) => ({
+      ...cat,
+      symbols: cat.symbols.map((s) => ({
+        ...s,
+        quote: quotes[s.symbol],
+      })),
+    }));
+  }, [quotes]);
+
+  const activeCategory = useMemo(() => {
+    return marketCategoryData.find((c) => c.id === activeMarketTab) || marketCategoryData[0];
+  }, [marketCategoryData, activeMarketTab]);
+
+  const marketPulse = useMemo(() => {
+    const keySymbols = [
+      { symbol: "^JKSE", label: "IHSG" },
+      { symbol: "^SPX", label: "S&P" },
+      { symbol: "BTC-USD", label: "BTC" },
+      { symbol: "GC=F", label: "Gold" },
+      { symbol: "^IXIC", label: "Nasdaq" },
+      { symbol: "USDIDR=X", label: "USD/IDR" },
+    ];
+    return keySymbols.map((item) => ({
+      ...item,
+      quote: quotes[item.symbol],
+    }));
+  }, [quotes]);
+
   const categoriesWithSignals = breakoutInsights.categories;
   const orderedCategories = useMemo(() => {
     if (!Array.isArray(categoriesWithSignals)) {
@@ -860,14 +1009,14 @@ export default function ExplorePage() {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col md:grid md:grid-cols-12 gap-6 pb-12"
+      className="flex flex-col gap-6 pb-12"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
       {pullDistance > 0 && (
         <div
-          className="flex md:col-span-12 items-center justify-center transition-all duration-200"
+          className="flex items-center justify-center transition-all duration-200"
           style={{ height: `${Math.min(pullDistance, 120)}px` }}
         >
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -876,340 +1025,319 @@ export default function ExplorePage() {
         </div>
       )}
 
-      <div className="md:col-span-12 grid grid-cols-1">
-
-        <div className="w-full flex flex-col md:flex-col-reverse">
-          <section className="w-full">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {(isHighlightsExpanded ? highlightClusters : highlightClusters.slice(0, 4)).map((item, idx) => {
-                const changeValue = item.quote?.change ?? 0;
-                const isPositive = changeValue >= 0;
-                return (
-                  <Link
-                    key={item.symbol}
-                    href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
-                    className={`rounded-3xl p-3.5 overflow-hidden border border-border/40 hover:border-border/80 transition-all duration-200 block card-hover bg-card ${!isHighlightsExpanded && idx >= 4 ? 'hidden md:block' : ''}`}
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <TickerAvatar symbol={item.symbol} logo={item.logo ? item.logo : item.quote?.logo} />
-                        <div>
-                          <p className="text-sm font-bold text-foreground tracking-tight">{item.label}</p>
-                        </div>
-                      </div>
-                      <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md ${item.quote ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : 'text-muted-foreground bg-muted/50'}`}>
-                        {item.quote ? "Live" : "Sync"}
-                      </span>
-                    </div>
-                    <div className="mt-3 flex items-end justify-between gap-3">
-                      <div>
-                        <p className="text-base font-bold text-foreground tabular-nums">
-                          {item.quote ? formatPrice(item.quote.price) : "—"}
-                        </p>
-                        <p className={`text-xs font-semibold mt-0.5 ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
-                          {item.quote && typeof item.quote.changePercent === "number"
-                            ? `${isPositive ? "+" : ""}${item.quote.changePercent.toFixed(2)}%`
-                            : "—"}
-                        </p>
-                      </div>
-                      <div className={`flex items-center ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
-                        <MiniChart
-                          data={item.quote?.chartData || []}
-                          isPositive={isPositive}
-                          width={80}
-                          height={48}
-                          chartId={`highlight-${item.symbol}`}
-                        />
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-              {/* Show all on desktop, toggle on mobile */}
-              {!isHighlightsExpanded && highlightClusters.slice(4).map((item) => {
-                const changeValue = item.quote?.change ?? 0;
-                const isPositive = changeValue >= 0;
-                return (
-                  <Link
-                    key={item.symbol}
-                    href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
-                    className="hidden md:block rounded-3xl p-3.5 overflow-hidden border border-border/40 hover:border-border/80 transition-all duration-200 block card-hover bg-card"
-                  >
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2">
-                        <TickerAvatar symbol={item.symbol} logo={item.logo ? item.logo : item.quote?.logo} />
-                        <div>
-                          <p className="text-sm font-bold text-foreground tracking-tight">{item.label}</p>
-                        </div>
-                      </div>
-                      <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-md ${item.quote ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-500/10' : 'text-muted-foreground bg-muted/50'}`}>
-                        {item.quote ? "Live" : "Sync"}
-                      </span>
-                    </div>
-                    <div className="mt-3 flex items-end justify-between gap-3">
-                      <div>
-                        <p className="text-base font-bold text-foreground tabular-nums">
-                          {item.quote ? formatPrice(item.quote.price) : "—"}
-                        </p>
-                        <p className={`text-xs font-semibold mt-0.5 ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
-                          {item.quote && typeof item.quote.changePercent === "number"
-                            ? `${isPositive ? "+" : ""}${item.quote.changePercent.toFixed(2)}%`
-                            : "—"}
-                        </p>
-                      </div>
-                      <div className={`flex items-center ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
-                        <MiniChart
-                          data={item.quote?.chartData || []}
-                          isPositive={isPositive}
-                          width={80}
-                          height={48}
-                          chartId={`highlight-${item.symbol}`}
-                        />
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-            {/* Expand/Collapse Button (Mobile Only) */}
-            <div className="mt-4 md:hidden flex justify-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsHighlightsExpanded(!isHighlightsExpanded)}
-                className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5 py-1 px-4 rounded-full border border-border/40 text-emerald-600 dark:text-emerald-400 hover:underline"
+      {/* ───── Market Pulse Ticker Strip ───── */}
+      <section className="w-full overflow-x-auto scrollbar-hide -mx-1 px-1">
+        <div className="flex items-center gap-3 min-w-max">
+          {marketPulse.map((item) => {
+            const q = item.quote;
+            const isPos = (q?.change ?? 0) >= 0;
+            return (
+              <Link
+                key={item.symbol}
+                href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted/40 transition-colors"
               >
-                {isHighlightsExpanded ? (
-                  <>Show Less <ChevronUp className="h-3.5 w-3.5" /></>
-                ) : (
-                  <>Show More <ChevronDown className="h-3.5 w-3.5" /></>
+                <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
+                <span className="text-xs font-bold tabular-nums">{q ? formatPrice(q.price) : "—"}</span>
+                {q && typeof q.changePercent === "number" ? (
+                  <span className={`text-[11px] font-semibold flex items-center gap-0.5 ${isPos ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                    {isPos ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                    {isPos ? "+" : ""}{q.changePercent.toFixed(2)}%
+                  </span>
+                ) : null}
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ───── Market Categories (Tabbed) ───── */}
+      <section className="w-full">
+        <div className="flex items-center gap-2 mb-4 overflow-x-auto scrollbar-hide">
+          {MARKET_CATEGORIES.map((cat) => {
+            const CatIcon = cat.icon;
+            const isMarketOpen = cat.marketTz
+              ? isWithinMarketHours(cat.marketTz, cat.marketOpen[0], cat.marketOpen[1], cat.marketClose[0], cat.marketClose[1])
+              : true;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setActiveMarketTab(cat.id)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-150 whitespace-nowrap ${
+                  activeMarketTab === cat.id
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                {cat.emoji ? <span>{cat.emoji}</span> : CatIcon ? <CatIcon className="h-3.5 w-3.5" /> : null}
+                {cat.title}
+                <span className={`ml-1 inline-block h-1.5 w-1.5 rounded-full ${isMarketOpen ? "bg-emerald-500" : "bg-muted-foreground/40"}`} />
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Timeframe Selector */}
+        <div className="flex items-center gap-1.5 mb-4 overflow-x-auto scrollbar-hide">
+          {MARKET_TIMEFRAMES.map((tf) => (
+            <button
+              key={tf}
+              onClick={() => setMarketTimeframe(tf)}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all duration-150 whitespace-nowrap ${
+                marketTimeframe === tf
+                  ? "bg-foreground text-background shadow-sm"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              }`}
+            >
+              {tf}
+            </button>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+          {activeCategory.symbols.map((item) => {
+            const q = item.quote;
+            const tfChange = getTimeframeChange(q, marketTimeframe);
+            const changeValue = tfChange ?? (q?.change ?? 0);
+            const isPositive = changeValue >= 0;
+            const isAtATH = marketTimeframe === "ATH" && tfChange !== null && Math.abs(tfChange) < 0.5;
+            return (
+              <Link
+                key={item.symbol}
+                href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
+                className={`rounded-2xl p-3.5 border transition-all duration-200 block card-hover bg-card ${
+                  isAtATH
+                    ? "border-amber-500/40 bg-gradient-to-br from-amber-500/5 to-orange-500/5 ring-1 ring-amber-500/20"
+                    : "border-border/20 hover:border-border/40"
+                }`}
+              >
+                <div className="flex items-center gap-2.5">
+                  <TickerAvatar symbol={item.symbol} logo={item.logo || q?.logo} />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <p className="text-sm font-bold text-foreground tracking-tight truncate">{item.label}</p>
+                      {isAtATH && <Flame className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground truncate">{formatTickerDisplay(item.symbol)}</p>
+                  </div>
+                </div>
+                <div className="mt-3 flex items-end justify-between gap-2">
+                  <div>
+                    <p className="text-base font-bold text-foreground tabular-nums">
+                      {q ? formatPrice(q.price) : "—"}
+                    </p>
+                    <p className={`text-xs font-semibold mt-0.5 ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                      {tfChange !== null
+                        ? `${isPositive ? "+" : ""}${tfChange.toFixed(2)}%`
+                        : q && typeof q.changePercent === "number"
+                          ? `${q.changePercent >= 0 ? "+" : ""}${q.changePercent.toFixed(2)}%`
+                          : "—"}
+                      {marketTimeframe !== "1D" && tfChange !== null && (
+                        <span className="text-muted-foreground font-normal ml-1">({marketTimeframe})</span>
+                      )}
+                    </p>
+                  </div>
+                  <div className={`flex items-center ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
+                    <MiniChart
+                      data={q?.chartData || []}
+                      isPositive={isPositive}
+                      width={72}
+                      height={40}
+                      chartId={`market-${item.symbol}`}
+                    />
+                  </div>
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ───── Trending Marquee ───── */}
+      <div className="w-full">
+        <TrendingMarquee supabase={supabase} />
+      </div>
+
+      {/* ───── Main Content Grid ───── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        {/* ───── Left: Money Flow ───── */}
+        <div className="lg:col-span-4 flex flex-col gap-6">
+          <section>
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
+                    IDX Money Flow 🇮🇩
+                  </p>
+                </div>
+                {moneyFlowUpdatedAt && (
+                  <p className="text-[11px] text-muted-foreground/70 ml-3.5 mt-0.5">
+                    Updated {formatTimeAgo(moneyFlowUpdatedAt)}
+                  </p>
                 )}
-              </Button>
+              </div>
+            </div>
+
+            {moneyFlowLoading && (
+              <div className="mt-3 space-y-2">
+                {[1, 2, 3].map((item) => (
+                  <div key={item} className="h-16 rounded-2xl shimmer" />
+                ))}
+              </div>
+            )}
+
+            {!moneyFlowLoading && moneyFlowError && (
+              <Card className="mt-3 border border-amber-500/20 bg-amber-500/5">
+                <CardContent className="p-3">
+                  <p className="text-xs text-amber-600 dark:text-amber-400">{moneyFlowError}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {!moneyFlowLoading && !moneyFlowError && moneyFlowReports.length > 0 && (
+              <Accordion type="single" collapsible className="mt-3 space-y-3">
+                {moneyFlowReports.map((report) => (
+                  <MoneyFlowCard key={`${report.symbol}-${report.report_date}`} report={report} />
+                ))}
+              </Accordion>
+            )}
+
+            <div className="mt-4 flex justify-center">
+              <Link
+                href="/money-flow?timeframe=weekly"
+                className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5 py-1.5 px-4 rounded-full border border-border/20 w-full justify-center transition-colors hover:bg-muted/30 text-emerald-600 dark:text-emerald-400 hover:underline"
+              >
+                View All Money Flow <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </section>
+        </div>
+
+        {/* ───── Right: Breakout Signals ───── */}
+        <div className="lg:col-span-8 grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-2 content-start">
+          {orderedCategories.map((section) => {
+            const gatedPicks = section.picks.slice(5);
+            const firstPicks = section.picks.slice(0, 5);
+            const shouldGate = !isAuthenticated && gatedPicks.length > 0;
+            return (
+              <section key={section.category} className="py-5 fade-in">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
+                        Technical Breakout in {section.title}
+                      </p>
+                    </div>
+                    {section.lastScreened && (
+                      <p className="text-[11px] text-muted-foreground/70 ml-3.5">
+                        Updated {formatTimeAgo(section.lastScreened)}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                    <span className="tabular-nums font-medium">{section.picks.length} found</span>
+                    <span className="rounded-lg border border-border/30 px-2.5 py-1 uppercase tracking-wider text-[10px] font-semibold bg-muted/30">
+                      {section.snapshot?.status ?? "idle"}
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-4 space-y-0.5">
+                  {firstPicks.map((pick) => (
+                    <PickItem key={pick.symbol} pick={pick} quote={quotes[pick.symbol]} />
+                  ))}
+                </div>
+                {gatedPicks.length > 0 && (
+                  <div className="mt-1 relative">
+                    <div
+                      className={`space-y-1 divide-y divide-border/20 border-t border-border/20 pt-1 ${shouldGate ? "pointer-events-none select-none blur-[2px] opacity-60" : ""}`}
+                    >
+                      {gatedPicks.map((pick) => (
+                        <PickItem key={pick.symbol} pick={pick} quote={quotes[pick.symbol]} />
+                      ))}
+                    </div>
+                    {shouldGate && (
+                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg px-6 text-center">
+                        <Lock className="h-4 w-4 text-muted-foreground" />
+                        <p className="text-[11px] font-semibold text-muted-foreground">
+                          Sign in to explore all signals
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+                  {typeof section.averageChange === "number" ? (
+                    <span>Average move {formatPercent(section.averageChange)}</span>
+                  ) : null}
+                  {section.snapshot?.metadata?.batchProcessed != null && (
+                    <span>Batch {section.snapshot.metadata.batchProcessed} symbols</span>
+                  )}
+                  {section.snapshot?.metadata?.lastBatchDurationMs != null && (
+                    <span>Last run {(section.snapshot.metadata.lastBatchDurationMs / 1000).toFixed(1)}s</span>
+                  )}
+                </div>
+              </section>
+            );
+          })}
+
+          {/* ───── Screener Triggers ───── */}
+          <section className="p-4 rounded-2xl bg-card border border-border/20">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">
+                  Run a fresh screening pass for fresh breakout signals.
+                </p>
+              </div>
+            </div>
+            {showInstallButton && deferredPrompt && (
+              <div className="mt-4">
+                <Button
+                  onClick={handleInstall}
+                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 flex items-center gap-2 text-xs text-white rounded-xl shadow-lg shadow-emerald-500/20"
+                >
+                  <Download className="h-4 w-4" />
+                  Install App
+                </Button>
+              </div>
+            )}
+            <div className="mt-4 grid grid-cols-3 gap-3">
+              {CATEGORY_ORDER.map((category) => {
+                const snapshot = snapshots[category];
+                const lastScreened = snapshot?.updated_at ? new Date(snapshot.updated_at) : null;
+                const screenedToday = isSameCalendarDay(lastScreened);
+                const label = category.toUpperCase();
+                return (
+                  <div key={category} className="space-y-1 text-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full rounded-xl text-xs font-semibold border-border/30 bg-muted/30 hover:bg-muted/60 transition-colors"
+                      onClick={() => triggerBatch(category)}
+                      disabled={manualLoading[category]}
+                    >
+                      {manualLoading[category] ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        label
+                      )}
+                    </Button>
+                    <p className="text-[10px] text-muted-foreground">
+                      {lastScreened
+                        ? `Last ${screenedToday ? "today" : formatLocalDateTimeLabel(lastScreened)}`
+                        : "Never screened"}
+                    </p>
+                  </div>
+                );
+              })}
             </div>
           </section>
 
-          <div className="w-full">
-            <TrendingMarquee supabase={supabase} />
-          </div>
+
         </div>
-
-        <div className="w-full relative overflow-x-auto overflow-y-hidden py-3 scrollbar-hide">
-          <div className="flex justify-center whitespace-nowrap gap-5">
-            <Link href="/idx-momentum" className="w-20">
-              <div className="flex flex-col items-center gap-2">
-                <div className="p-2.5 rounded-full bg-gradient-to-br from-slate-600 to-emerald-700 shadow-md shadow-emerald-500/15">
-                  <Axe className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-[11px] font-medium text-muted-foreground">Momentum</span>
-              </div>
-            </Link>
-            <Link href="/idx-bubbles" className="w-20">
-              <div className="flex flex-col items-center gap-2">
-                <div className="p-2.5 rounded-full bg-gradient-to-br from-slate-600 to-teal-700 shadow-md shadow-teal-500/15">
-                  <Droplets className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-[11px] font-medium text-muted-foreground">Bubbles</span>
-              </div>
-            </Link>
-            <Link href="/idx-rotation" className="w-20">
-              <div className="flex flex-col items-center gap-2">
-                <div className="p-2.5 rounded-full bg-gradient-to-br from-slate-600 to-emerald-700 shadow-md shadow-emerald-500/15">
-                  <Rotate3D className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-[11px] font-medium text-muted-foreground">Rotation</span>
-              </div>
-            </Link>
-            <Link href="/msci" className="w-20">
-              <div className="flex flex-col items-center gap-2">
-                <div className="p-2.5 rounded-full bg-gradient-to-br from-slate-600 to-emerald-700 shadow-md shadow-emerald-500/15">
-                  <Magnet className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-[11px] font-medium text-muted-foreground">MSCI</span>
-              </div>
-            </Link>
-            <Link href="/discussion" className="w-20">
-              <div className="flex flex-col items-center gap-2">
-                <div className="p-2.5 rounded-full bg-gradient-to-br from-slate-600 to-emerald-700 shadow-md shadow-emerald-500/15">
-                  <MessageCircleMore className="w-5 h-5 text-white" />
-                </div>
-                <span className="text-[11px] font-medium text-muted-foreground">Chat</span>
-              </div>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      <div className="md:col-span-4 flex flex-col gap-6">
-        <section>
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
-                  IDX Money Flow 🇮🇩
-                </p>
-              </div>
-              {moneyFlowUpdatedAt && (
-                <p className="text-[11px] text-muted-foreground/70 ml-3.5 mt-0.5">
-                  Updated {formatTimeAgo(moneyFlowUpdatedAt)}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {moneyFlowLoading && (
-            <div className="mt-3 space-y-2">
-              {[1, 2, 3].map((item) => (
-                <div key={item} className="h-16 rounded-2xl shimmer" />
-              ))}
-            </div>
-          )}
-
-          {!moneyFlowLoading && moneyFlowError && (
-            <Card className="mt-3 border border-amber-500/20 bg-amber-500/5">
-              <CardContent className="p-3">
-                <p className="text-xs text-amber-600 dark:text-amber-400">{moneyFlowError}</p>
-              </CardContent>
-            </Card>
-          )}
-
-          {!moneyFlowLoading && !moneyFlowError && moneyFlowReports.length > 0 && (
-            <Accordion type="single" collapsible className="mt-3 space-y-3">
-              {moneyFlowReports.map((report) => (
-                <MoneyFlowCard key={`${report.symbol}-${report.report_date}`} report={report} />
-              ))}
-            </Accordion>
-          )}
-
-          {/* View All Money Flow (Mobile & Desktop) */}
-          <div className="mt-4 flex justify-center">
-            <Link
-              href="/money-flow?timeframe=weekly"
-              className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5 py-1.5 px-4 rounded-full border border-border/40 w-full justify-center transition-colors hover:bg-muted/30 text-emerald-600 dark:text-emerald-400 hover:underline"
-            >
-              View All Money Flow <ChevronRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
-        </section>
-      </div>
-
-      <div className="md:col-span-8 grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 content-start">
-        {orderedCategories.map((section) => {
-          const gatedPicks = section.picks.slice(5);
-          const firstPicks = section.picks.slice(0, 5);
-          const shouldGate = !isAuthenticated && gatedPicks.length > 0;
-          return (
-            <section key={section.category} className="py-5 fade-in">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                    <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
-                      Technical Breakout in {section.title}
-                    </p>
-                  </div>
-                  {section.lastScreened && (
-                    <p className="text-[11px] text-muted-foreground/70 ml-3.5">
-                      Updated {formatTimeAgo(section.lastScreened)}
-                    </p>
-                  )}
-                </div>
-                <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
-                  <span className="tabular-nums font-medium">{section.picks.length} found</span>
-                  <span className="rounded-lg border border-border/60 px-2.5 py-1 uppercase tracking-wider text-[10px] font-semibold bg-muted/30">
-                    {section.snapshot?.status ?? "idle"}
-                  </span>
-                </div>
-              </div>
-              <div className="mt-4 space-y-0.5">
-                {firstPicks.map((pick) => (
-                  <PickItem key={pick.symbol} pick={pick} quote={quotes[pick.symbol]} />
-                ))}
-              </div>
-              {gatedPicks.length > 0 && (
-                <div className="mt-1 relative">
-                  <div
-                    className={`space-y-1 divide-y divide-border/70 border-t border-border/70 pt-1 ${shouldGate ? "pointer-events-none select-none blur-[2px] opacity-60" : ""}`}
-                  >
-                    {gatedPicks.map((pick) => (
-                      <PickItem key={pick.symbol} pick={pick} quote={quotes[pick.symbol]} />
-                    ))}
-                  </div>
-                  {shouldGate && (
-                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg px-6 text-center">
-                      <Lock className="h-4 w-4 text-muted-foreground" />
-                      <p className="text-[11px] font-semibold text-muted-foreground">
-                        Sign in to explore all signals
-                      </p>
-                    </div>
-                  )}
-                </div>
-              )}
-              <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
-                {typeof section.averageChange === "number" ? (
-                  <span>Average move {formatPercent(section.averageChange)}</span>
-                ) : null}
-                {section.snapshot?.metadata?.batchProcessed != null && (
-                  <span>Batch {section.snapshot.metadata.batchProcessed} symbols</span>
-                )}
-                {section.snapshot?.metadata?.lastBatchDurationMs != null && (
-                  <span>Last run {(section.snapshot.metadata.lastBatchDurationMs / 1000).toFixed(1)}s</span>
-                )}
-              </div>
-            </section>
-          );
-        })}
-        <section className="p-4 rounded-3xl bg-card border border-border/40">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground">
-                Run a fresh screening pass for fresh breakout signals.
-              </p>
-            </div>
-          </div>
-          {showInstallButton && deferredPrompt && (
-            <div className="mt-4">
-              <Button
-                onClick={handleInstall}
-                className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 flex items-center gap-2 text-xs text-white rounded-xl shadow-lg shadow-emerald-500/20"
-              >
-                <Download className="h-4 w-4" />
-                Install App
-              </Button>
-            </div>
-          )}
-          <div className="mt-4 grid grid-cols-3 gap-3">
-            {CATEGORY_ORDER.map((category) => {
-              const snapshot = snapshots[category];
-              const lastScreened = snapshot?.updated_at ? new Date(snapshot.updated_at) : null;
-              const screenedToday = isSameCalendarDay(lastScreened);
-              const label = category.toUpperCase();
-              return (
-                <div key={category} className="space-y-1 text-center">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="w-full rounded-xl text-xs font-semibold border-border/50 bg-muted/30 hover:bg-muted/60 transition-colors"
-                    onClick={() => triggerBatch(category)}
-                    disabled={manualLoading[category]}
-                  >
-                    {manualLoading[category] ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      label
-                    )}
-                  </Button>
-                  <p className="text-[10px] text-muted-foreground">
-                    {lastScreened
-                      ? `Last ${screenedToday ? "today" : formatLocalDateTimeLabel(lastScreened)}`
-                      : "Never screened"}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
-        </section>
       </div>
 
     </div>

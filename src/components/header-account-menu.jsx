@@ -29,9 +29,9 @@ export function HeaderAccountMenu({ onOpenSidebar }) {
   return (
     <Button
       type="button"
-      variant="outline"
+      variant="ghost"
       size="icon"
-      className="h-9 w-9 rounded-full border border-border/60 bg-background/80"
+      className="h-9 w-9 rounded-full bg-muted/50"
       aria-label="Open account"
       disabled={loading}
       onClick={handleClick}

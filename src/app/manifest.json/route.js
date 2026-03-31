@@ -26,8 +26,8 @@ export async function GET() {
     launch_handler: { client_mode: 'auto' },
     handle_links: 'preferred',
     orientation: 'portrait-primary',
-    background_color: '#ffffff',
-    theme_color: '#0f172a',
+    background_color: '#0a0a0f',
+    theme_color: '#0a0a0f',
     categories: ['finance', 'productivity', 'business'],
     prefer_related_applications: false,
     icons: [

@@ -1,4 +1,4 @@
-import { AlignEndHorizontal } from "lucide-react";
+
 
 export function ArunaWatermark({ className = "", labelClassName = "" }) {
   const wrapperClass = [
@@ -19,9 +19,7 @@ export function ArunaWatermark({ className = "", labelClassName = "" }) {
   return (
     <div className={wrapperClass} aria-hidden="true">
       <div className={labelClasses}>
-        <div className="h-4 relative overflow-hidden">
-          <AlignEndHorizontal className="size-5" />
-        </div>
+        <img src="/aruna.png" alt="aruna" className="size-5 opacity-30" />
         <span>aruna</span>
       </div>
     </div>

@@ -840,7 +840,7 @@ export default function PortfolioTrackerPage() {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col md:grid md:grid-cols-12 md:gap-6 md:items-start gap-4"
+      className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start gap-4"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -848,7 +848,7 @@ export default function PortfolioTrackerPage() {
       {/* Pull to refresh indicator */}
       {pullDistance > 0 && (
         <div
-          className="flex md:col-span-12 items-center justify-center transition-all duration-200"
+          className="flex lg:col-span-12 items-center justify-center transition-all duration-200"
           style={{
             height: `${pullDistance}px`,
             opacity: Math.min(pullDistance / 80, 1)
@@ -858,7 +858,7 @@ export default function PortfolioTrackerPage() {
         </div>
       )}
 
-      <div className="md:col-span-4 flex flex-col gap-4">
+      <div className="lg:col-span-4 flex flex-col gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="font-semibold text-sm">Overview</CardTitle>
@@ -907,7 +907,7 @@ export default function PortfolioTrackerPage() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <div className="rounded-xl border border-border/40">
+              <div className="rounded-xl border border-border/20">
                 <details>
                   <summary className="list-none cursor-pointer select-none text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400 py-2.5">
                     View Detail
@@ -946,7 +946,7 @@ export default function PortfolioTrackerPage() {
                 </details>
               </div>
 
-              <div className="rounded-xl border border-border/40">
+              <div className="rounded-xl border border-border/20">
                 <details>
                   <summary className="list-none cursor-pointer select-none text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400 py-2.5">
                     View Distribution Chart
@@ -973,7 +973,7 @@ export default function PortfolioTrackerPage() {
         </p>
       </div>
 
-      <div className="md:col-span-8">
+      <div className="lg:col-span-8">
         <Card className="h-full">
           <CardHeader className="flex items-center justify-between">
             <CardTitle className="text-sm font-semibold">Holdings</CardTitle>
@@ -1028,7 +1028,7 @@ export default function PortfolioTrackerPage() {
               </p>
             )}
             {entries.length > 0 && (
-              <div className="space-y-2 mb-24 md:mb-4">
+              <div className="space-y-2 mb-24 lg:mb-4">
                 {sortedHoldings.map(({ entry, index: originalIndex, isCash, currentValueUSD, pnl, cashDisplayAmount }) => {
                   const formatted = getDisplayValue(currentValueUSD);
                   const livePnl = isCash ? 0 : pnl;
@@ -1039,7 +1039,7 @@ export default function PortfolioTrackerPage() {
                   return (
                     <div
                       key={originalIndex}
-                      className="flex items-center gap-3 border-b border-border/40 hover:bg-muted/30 p-2 rounded-xl min-h-16 transition-colors"
+                      className="flex items-center gap-3 border-b border-border/20 hover:bg-muted/30 p-2 rounded-xl min-h-16 transition-colors"
                     >
                       {isCash ? (
                         <div className="flex flex-1 min-w-0 items-center gap-2 px-1 py-2">
@@ -1149,7 +1149,7 @@ export default function PortfolioTrackerPage() {
           setDialogOpen(true);
         }}
       >
-        <DialogContent className="fixed max-w-none m-0 h-[80vh] md:h-auto md:max-h-[85vh] md:w-[500px] md:rounded-2xl md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 rounded-t-2xl p-0 flex flex-col mt-auto" closeButtonPosition="right">
+        <DialogContent className="fixed max-w-none m-0 h-[80vh] lg:h-auto lg:max-h-[85vh] lg:w-[500px] lg:rounded-2xl lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 rounded-t-2xl p-0 flex flex-col mt-auto" closeButtonPosition="right">
           <div className="flex items-center gap-2 p-4 border-b">
             <DialogTitle className="text-base">{editingIndex != null ? 'Edit Asset' : 'Add Asset'}</DialogTitle>
           </div>
@@ -1324,7 +1324,7 @@ export default function PortfolioTrackerPage() {
 
       <Button
         size="icon"
-        className="fixed bottom-30 md:bottom-8 right-4 md:right-8 h-14 w-14 rounded-full bg-emerald-700 shadow-lg z-40"
+        className="fixed bottom-30 lg:bottom-8 right-4 lg:right-8 h-14 w-14 rounded-full bg-emerald-700 shadow-lg z-40"
         onClick={openAdd}
       >
         <Plus className="size-6" />

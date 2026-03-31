@@ -433,7 +433,7 @@ export default function HomePage() {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col md:grid md:grid-cols-12 md:content-start gap-4 pb-12"
+      className="flex flex-col lg:grid lg:grid-cols-12 lg:content-start gap-4 pb-12"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -441,7 +441,7 @@ export default function HomePage() {
       {/* Pull to refresh indicator */}
       {pullDistance > 0 && (
         <div
-          className="flex md:col-span-12 items-center justify-center transition-all duration-200"
+          className="flex lg:col-span-12 items-center justify-center transition-all duration-200"
           style={{
             height: `${pullDistance}px`,
             opacity: Math.min(pullDistance / 80, 1)
@@ -451,12 +451,12 @@ export default function HomePage() {
         </div>
       )}
 
-      <div className="md:col-span-12">
+      <div className="lg:col-span-12">
         <TrendingMarquee supabase={supabase} />
       </div>
 
-      <div className="md:col-span-12 md:grid md:grid-cols-12 md:gap-6">
-        <div className="md:col-span-8 flex flex-col gap-4">
+      <div className="lg:col-span-12 lg:grid lg:grid-cols-12 lg:gap-6">
+        <div className="lg:col-span-8 flex flex-col gap-4">
           <Card className="border-none bg-gradient-to-br from-emerald-950 via-[#0f172a] to-[#020617] border-border/20 text-white/90 shadow-xl p-4 rounded-3xl">
             <CardContent className="pt-0">
               <p className="text-xs leading-relaxed text-white/90 font-medium">
@@ -467,14 +467,14 @@ export default function HomePage() {
 
           <div className="overflow-hidden">
             <SectionHeader title="Watchlist" />
-            <div className="md:grid md:grid-cols-2 md:gap-x-8 md:gap-y-1">
+            <div className="lg:grid lg:grid-cols-2 lg:gap-x-8 lg:gap-y-1">
               {quotes.map(quote => (
                 <div key={quote.symbol}>
                   <StockItem quote={quote} />
                 </div>
               ))}
             </div>
-            <div className="border-t border-border/40 py-2.5 mt-2">
+            <div className="border-t border-border/20 py-2.5 mt-2">
               <button
                 onClick={() => {
                   if (!isAuthenticated) {
@@ -492,9 +492,9 @@ export default function HomePage() {
           </div>
         </div>
 
-        <div className="md:col-span-4 flex flex-col gap-4 mt-4 md:mt-0">
+        <div className="lg:col-span-4 flex flex-col gap-4 mt-4 lg:mt-0">
           {marketPulse && marketPulse.topGainer && marketPulse.topLoser && (
-            <Card className="border-border/40 rounded-2xl">
+            <Card className="border-border/20 rounded-2xl">
               <CardHeader className="pb-0">
                 <div className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-muted-foreground" />

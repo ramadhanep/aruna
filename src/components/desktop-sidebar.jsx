@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Star, AlignHorizontalDistributeCenter, ChartPie, LayoutGrid, Workflow, AlignEndHorizontal, UserRound } from "lucide-react";
+import { Star, AlignHorizontalDistributeCenter, ChartPie, LayoutGrid, Workflow, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HeaderSymbolSearch } from "@/components/header-symbol-search";
 
@@ -39,11 +39,11 @@ export function DesktopSidebar({ onOpenAccountSidebar }) {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden md:flex flex-col w-64 border-r border-border/50 h-screen fixed top-0 left-0 bg-background/50 backdrop-blur-xl z-40">
-      <div className="flex h-14 items-center gap-3 px-4 border-b border-border/50">
+    <aside className="hidden flex-col w-64 border-r border-border/30 h-screen fixed top-0 left-0 bg-background/50 backdrop-blur-xl z-40">
+      <div className="flex h-14 items-center gap-3 px-4 border-b border-border/30">
         <div className="flex flex-1 items-center justify-center gap-2">
           <div className="h-4 relative overflow-hidden">
-            <AlignEndHorizontal className="size-5" />
+            <img src="/aruna.png" alt="aruna" className="size-5" />
           </div>
           <h1 className="text-lg font-bold tracking-tight">aruna</h1>
         </div>
@@ -78,7 +78,7 @@ export function DesktopSidebar({ onOpenAccountSidebar }) {
         })}
       </nav>
 
-      <div className="p-4 border-t border-border/50">
+      <div className="p-4 border-t border-border/30">
         <button
           onClick={onOpenAccountSidebar}
           className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-all duration-200 text-muted-foreground hover:bg-muted/50 hover:text-foreground font-medium"

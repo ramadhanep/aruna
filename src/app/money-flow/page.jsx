@@ -22,7 +22,7 @@ function LoadingState() {
   return (
     <div className="space-y-3">
       {[1, 2, 3, 4].map((key) => (
-        <Card key={key} className="rounded-2xl border-border/50">
+        <Card key={key} className="rounded-2xl border-border/30">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="space-y-1.5">
@@ -135,7 +135,7 @@ function formatCurrency(value) {
 function ReportList({ reports }) {
   if (!reports.length) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-center rounded-2xl border border-border/50 bg-black/5 dark:bg-white/5">
+      <div className="flex flex-col items-center justify-center p-8 text-center rounded-2xl border border-border/30 bg-black/5 dark:bg-white/5">
         <div className="h-12 w-12 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center mb-4">
           <FilterX className="h-6 w-6 text-muted-foreground" />
         </div>
@@ -212,8 +212,8 @@ export default function MoneyFlowPage() {
   );
 
   return (
-    <div className="flex flex-col md:grid md:grid-cols-12 md:gap-6 md:items-start gap-4 pb-4">
-      <div className="md:col-span-12 flex flex-col gap-4">
+    <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start gap-4 pb-4">
+      <div className="lg:col-span-12 flex flex-col gap-4">
         <Card className="border-none bg-gradient-to-br from-emerald-800 via-emerald-900 to-teal-950 text-white shadow-xl shadow-emerald-900/30 rounded-2xl">
           <CardContent className="p-4 space-y-2">
             <p className="text-xs text-white/85 leading-relaxed">
@@ -228,7 +228,7 @@ export default function MoneyFlowPage() {
           </CardContent>
         </Card>
 
-        <div className="sticky top-14 md:top-0 z-30 glass border-b border-border/30 -mx-4 md:mx-0 px-4 md:px-0 py-3 md:py-0 md:border-none md:bg-transparent md:backdrop-blur-none space-y-2">
+        <div className="sticky top-14 z-30 glass border-b border-border/30 -mx-4 lg:mx-0 px-4 lg:px-0 py-3 lg:py-3 lg:border-none lg:bg-transparent lg:backdrop-blur-none space-y-2">
           <div className="flex items-center gap-2">
             <div className="flex-1 flex gap-1.5 p-1 bg-muted/40 rounded-2xl">
               {timeframeOptions.map((option) => (
@@ -277,7 +277,7 @@ export default function MoneyFlowPage() {
         </div>
       </div>
 
-      <div className="md:col-span-12 max-w-4xl mx-auto w-full">
+      <div className="lg:col-span-12 max-w-4xl mx-auto w-full">
         {error && (
           <Card className="bg-red-600/10 border-red-600/30 rounded-2xl mb-4">
             <CardContent className="p-4 flex items-center gap-3">

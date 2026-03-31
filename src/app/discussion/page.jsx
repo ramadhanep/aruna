@@ -399,9 +399,9 @@ export default function DiscussionPage() {
       className="fixed inset-0 w-screen flex justify-center bg-background"
       style={{ height: '100dvh' }}
     >
-      <div className="w-full max-w-3xl flex flex-col h-full md:border-x border-border/50 bg-background relative">
+      <div className="w-full max-w-3xl flex flex-col h-full lg:border-x border-border/30 bg-background relative">
         {/* Header */}
-        <div className="flex-shrink-0 flex items-center justify-between px-3 py-3 liquid-glass border-b border-border/50">
+        <div className="flex-shrink-0 flex items-center justify-between px-3 py-3 liquid-glass border-b border-border/30">
           <button
             onClick={() => router.push('/')}
             className="p-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
@@ -437,7 +437,7 @@ export default function DiscussionPage() {
         </div>
 
         {/* Message input */}
-        <div className="border-t border-border/50">
+        <div className="border-t border-border/30">
           <MessageInput
             onSend={handleSendMessage}
             disabled={!user}

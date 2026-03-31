@@ -24,6 +24,7 @@ export function NormalCandlestickChart({
   valueLabelPrefix = "",
   showTooltip = true,
   priceScaleType = "linear",
+  seriesType = "candlestick", // 'candlestick' | 'line'
 }) {
   const containerRef = useRef(null);
   const chartRef = useRef(null);
@@ -173,14 +174,28 @@ export function NormalCandlestickChart({
         },
       });
 
-        const candlestickSeries = chart.addSeries(CandlestickSeries, {
-          upColor: "#10b981",
-          borderUpColor: "#10b981",
-          wickUpColor: "#10b981",
-          downColor: "#ef4444",
-          borderDownColor: "#ef4444",
-          wickDownColor: "#ef4444",
-        });
+        const isLineMode = seriesType === 'line';
+
+        let candlestickSeries;
+        if (isLineMode) {
+          candlestickSeries = chart.addSeries(LineSeries, {
+            color: "#10b981",
+            lineWidth: 2,
+            priceLineVisible: true,
+            lastValueVisible: true,
+            crosshairMarkerVisible: true,
+            crosshairMarkerRadius: 4,
+          });
+        } else {
+          candlestickSeries = chart.addSeries(CandlestickSeries, {
+            upColor: "#10b981",
+            borderUpColor: "#10b981",
+            wickUpColor: "#10b981",
+            downColor: "#ef4444",
+            borderDownColor: "#ef4444",
+            wickDownColor: "#ef4444",
+          });
+        }
 
         const emaSeries = chart.addSeries(LineSeries, {
           color: emaColor,
@@ -217,7 +232,12 @@ export function NormalCandlestickChart({
         markersPluginRef.current = null;
         chartRef.current = chart;
         if (Array.isArray(candlesRef.current) && candlesRef.current.length > 0) {
-          candlestickSeries.setData(candlesRef.current);
+          if (isLineMode) {
+            const lineData = candlesRef.current.map(c => ({ time: c.time, value: c.close }));
+            candlestickSeries.setData(lineData);
+          } else {
+            candlestickSeries.setData(candlesRef.current);
+          }
           chart.timeScale().resetTimeScale();
         }
         if (typeof candlestickSeries.setMarkers === "function") {
@@ -306,8 +326,7 @@ export function NormalCandlestickChart({
     showTimeScale,
     emaColor,
     livermoreUpperColor,
-    livermoreLowerColor,
-  ]);
+    livermoreLowerColor,    seriesType,  ]);
 
   useEffect(() => {
     priceScaleTypeRef.current = priceScaleType;
@@ -405,14 +424,14 @@ export function NormalCandlestickChart({
               </span>
               <span className="font-medium">{formatValue(tooltipData.close)}</span>
             </div>
-            <div className="col-span-2 flex items-center justify-between gap-2 border-t border-dashed border-border/70 pt-1">
+            <div className="col-span-2 flex items-center justify-between gap-2 border-t border-dashed border-border/20 pt-1">
               <span className="text-[10px] uppercase text-muted-foreground">EMA 31</span>
               <span className="font-semibold" style={{ color: emaColor }}>
                 {formatValue(tooltipData.ema31)}
               </span>
             </div>
             {showLivermoreKey && tooltipData?.livermoreUpper != null ? (
-              <div className="col-span-2 flex items-center justify-between gap-2 border-t border-dashed border-border/70 pt-1">
+              <div className="col-span-2 flex items-center justify-between gap-2 border-t border-dashed border-border/20 pt-1">
                 <span className="text-[10px] uppercase text-muted-foreground">Livermore Upper</span>
                 <span className="font-semibold" style={{ color: livermoreUpperColor }}>
                   {formatValue(tooltipData.livermoreUpper)}
@@ -420,7 +439,7 @@ export function NormalCandlestickChart({
               </div>
             ) : null}
             {showLivermoreKey && tooltipData?.livermoreLower != null ? (
-              <div className="col-span-2 flex items-center justify-between gap-2 border-t border-dashed border-border/70 pt-1">
+              <div className="col-span-2 flex items-center justify-between gap-2 border-t border-dashed border-border/20 pt-1">
                 <span className="text-[10px] uppercase text-muted-foreground">Livermore Lower</span>
                 <span className="font-semibold" style={{ color: livermoreLowerColor }}>
                   {formatValue(tooltipData.livermoreLower)}

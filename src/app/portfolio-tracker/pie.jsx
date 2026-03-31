@@ -90,7 +90,7 @@ export function PortfolioPie({ digitalUSD, cashUSD, holdingsDistribution = [], c
         </div>
       </div>
 
-      <div className="w-full border-t border-border/40" />
+      <div className="w-full border-t border-border/20" />
 
       {/* Holdings Chart */}
       <div className="w-full flex flex-col items-center">

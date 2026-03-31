@@ -399,7 +399,7 @@ export default function MSCIPage() {
 
       {/* Stock Cards List */}
       {!loading && !error && sortedStocks.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {sortedStocks.map((stock, index) => (
             <StockCard
               key={stock.id}
