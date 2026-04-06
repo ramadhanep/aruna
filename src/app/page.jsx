@@ -518,7 +518,7 @@ export default function ExplorePage() {
   const [moneyFlowError, setMoneyFlowError] = useState("");
   const [showInstallButton, setShowInstallButton] = useState(false);
   const [activeMarketTab, setActiveMarketTab] = useState("indonesia");
-  const [marketTimeframe, setMarketTimeframe] = useState("ATH");
+  const [marketTimeframe, setMarketTimeframe] = useState("1D");
   const [isHighlightsExpanded, setIsHighlightsExpanded] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -1053,44 +1053,46 @@ export default function ExplorePage() {
 
       {/* ───── Market Categories (Tabbed) ───── */}
       <section className="w-full">
-        <div className="flex items-center gap-2 mb-4 overflow-x-auto scrollbar-hide">
-          {MARKET_CATEGORIES.map((cat) => {
-            const CatIcon = cat.icon;
-            const isMarketOpen = cat.marketTz
-              ? isWithinMarketHours(cat.marketTz, cat.marketOpen[0], cat.marketOpen[1], cat.marketClose[0], cat.marketClose[1])
-              : true;
-            return (
+        <div className="flex flex-col md:flex-row justify-between items-center gap-2 w-full">
+          <div className="flex items-center gap-2 mb-4 overflow-x-auto scrollbar-hide w-full">
+            {MARKET_CATEGORIES.map((cat) => {
+              const CatIcon = cat.icon;
+              const isMarketOpen = cat.marketTz
+                ? isWithinMarketHours(cat.marketTz, cat.marketOpen[0], cat.marketOpen[1], cat.marketClose[0], cat.marketClose[1])
+                : true;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveMarketTab(cat.id)}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-150 whitespace-nowrap ${
+                    activeMarketTab === cat.id
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  {cat.emoji ? <span>{cat.emoji}</span> : CatIcon ? <CatIcon className="h-3.5 w-3.5" /> : null}
+                  {cat.title}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Timeframe Selector */}
+          <div className="flex items-center gap-1.5 mb-4 overflow-x-auto scrollbar-hide">
+            {MARKET_TIMEFRAMES.map((tf) => (
               <button
-                key={cat.id}
-                onClick={() => setActiveMarketTab(cat.id)}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-150 whitespace-nowrap ${
-                  activeMarketTab === cat.id
-                    ? "bg-primary text-primary-foreground shadow-sm"
-                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                key={tf}
+                onClick={() => setMarketTimeframe(tf)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all duration-150 whitespace-nowrap ${
+                  marketTimeframe === tf
+                    ? "bg-foreground text-background shadow-sm"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                 }`}
               >
-                {cat.emoji ? <span>{cat.emoji}</span> : CatIcon ? <CatIcon className="h-3.5 w-3.5" /> : null}
-                {cat.title}
+                {tf}
               </button>
-            );
-          })}
-        </div>
-
-        {/* Timeframe Selector */}
-        <div className="flex items-center gap-1.5 mb-4 overflow-x-auto scrollbar-hide">
-          {MARKET_TIMEFRAMES.map((tf) => (
-            <button
-              key={tf}
-              onClick={() => setMarketTimeframe(tf)}
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all duration-150 whitespace-nowrap ${
-                marketTimeframe === tf
-                  ? "bg-foreground text-background shadow-sm"
-                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
-              }`}
-            >
-              {tf}
-            </button>
-          ))}
+            ))}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">

@@ -61,9 +61,7 @@ export function PWAInstallDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-sm" closeButtonPosition="right">
         <div className="flex flex-col items-center gap-4 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-700/30">
-            <img src="/aruna.png" alt="aruna" className="h-8 w-8" />
-          </div>
+            <img src="/aruna.png" alt="aruna" className="h-12 w-12" />
           <DialogTitle className="text-sm font-bold">Install Aruna</DialogTitle>
           <DialogDescription className="text-sm">
             Install aruna on your device for quick access and a better experience. No app store needed!

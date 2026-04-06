@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, MoreVertical, Pencil, Trash2, Loader2, Wallet, Coins, TrendingUp, ArrowUpDown, Check, Eye, EyeOff } from 'lucide-react';
+import { Plus, MoreVertical, Pencil, Trash2, Loader2, Wallet, Coins, TrendingUp, ArrowUpDown, Check, Eye, EyeClosed } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth-provider';
 import { fetchEncodedJson } from '@/lib/api-client';
@@ -21,6 +21,28 @@ const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { 
 // LocalStorage key for currency preference
 const PORTFOLIO_CURRENCY_KEY = 'portfolio_currency';
 const PORTFOLIO_VISIBILITY_KEY = 'portfolio_visibility_hidden';
+const MOBILE_BREAKPOINT = 1024;
+const CURRENCY_META = {
+  IDR: {
+    code: 'IDR',
+    flag: '🇮🇩',
+    label: 'Indonesian Rupiah',
+    description: 'Mata uang resmi Indonesia.',
+  },
+  USD: {
+    code: 'USD',
+    flag: '🇺🇸',
+    label: 'United States Dollar',
+    description: 'Mata uang resmi Amerika Serikat.',
+  },
+  SGD: {
+    code: 'SGD',
+    flag: '🇸🇬',
+    label: 'Singapore Dollar',
+    description: 'Mata uang resmi Singapura.',
+  },
+};
+const SUPPORTED_CURRENCIES = Object.keys(CURRENCY_META);
 const DEFAULT_PORTFOLIO_ENTRIES = [
   { symbol: 'BTC-USD', name: 'Bitcoin', amount: 1, unit: 'share', avgPrice: 65000, type: 'digital' },
   { symbol: 'NVDA', name: 'NVIDIA Corporation', amount: 100, unit: 'share', avgPrice: 120, type: 'digital' },
@@ -52,7 +74,7 @@ function loadCurrencyPreference() {
   if (typeof window === 'undefined') return 'IDR';
   try {
     const raw = localStorage.getItem(PORTFOLIO_CURRENCY_KEY);
-    if (raw === 'USD' || raw === 'IDR') {
+    if (SUPPORTED_CURRENCIES.includes(raw)) {
       return raw;
     }
     return 'IDR';
@@ -102,11 +124,13 @@ export default function PortfolioTrackerPage() {
   const [initialLoading, setInitialLoading] = useState(true);
   const [fxRate, setFxRate] = useState(0); // USD per IDR (e.g., 1/16500 = 0.0000606)
   const [idrPerUsd, setIdrPerUsd] = useState(0); // IDR per USD (e.g., 16500)
+  const [sgdPerUsd, setSgdPerUsd] = useState(0); // SGD per USD (e.g., 1.34)
   const justSelectedRef = React.useRef(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
   const [isPortfolioHidden, setIsPortfolioHidden] = useState(() => loadPortfolioVisibility());
   const [portfolioReady, setPortfolioReady] = useState(false);
+  const [isMobileExperience, setIsMobileExperience] = useState(false);
   const touchStartY = React.useRef(0);
   const containerRef = React.useRef(null);
   const remotePortfolioSeedRef = React.useRef(false);
@@ -186,6 +210,42 @@ export default function PortfolioTrackerPage() {
   }, [fetchPrice]);
   const [loadingSearch, setLoadingSearch] = useState(false);
 
+  const refreshFxRates = useCallback(async () => {
+    const endDate = Math.floor(Date.now() / 1000);
+    const startDate = endDate - 60 * 60 * 24 * 5;
+
+    const [idrResponse, sgdResponse] = await Promise.all([
+      fetchEncodedJson(`/api/finance?symbol=IDR=X&startDate=${startDate}&endDate=${endDate}`),
+      fetchEncodedJson(`/api/finance?symbol=SGD=X&startDate=${startDate}&endDate=${endDate}`),
+    ]);
+
+    const idrSeries = idrResponse.data?.data || [];
+    if (idrResponse.response.ok && idrSeries.length > 0) {
+      const idrLast = idrSeries[idrSeries.length - 1]?.adjclose;
+      if (idrLast) {
+        setIdrPerUsd(idrLast);
+        setFxRate(1 / idrLast);
+      }
+    }
+
+    const sgdSeries = sgdResponse.data?.data || [];
+    if (sgdResponse.response.ok && sgdSeries.length > 0) {
+      const sgdLast = sgdSeries[sgdSeries.length - 1]?.adjclose;
+      if (sgdLast) {
+        setSgdPerUsd(sgdLast);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const media = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
+    const updateMode = () => setIsMobileExperience(media.matches);
+    updateMode();
+    media.addEventListener('change', updateMode);
+    return () => media.removeEventListener('change', updateMode);
+  }, []);
+
   // Pull to refresh handler
   const handleRefresh = useCallback(async () => {
     if (isRefreshing) return;
@@ -194,23 +254,7 @@ export default function PortfolioTrackerPage() {
 
     setIsRefreshing(true);
     try {
-      // Fetch FX rate
-      const endDate = Math.floor(Date.now() / 1000);
-      const startDate = endDate - 60 * 60 * 24 * 5;
-      const { response, data } = await fetchEncodedJson(
-        `/api/finance?symbol=IDR=X&startDate=${startDate}&endDate=${endDate}`
-      );
-      if (response.ok) {
-        const series = data.data || [];
-        if (series.length > 0) {
-          const last = series[series.length - 1];
-          const idrPerUsdVal = last.adjclose;
-          if (idrPerUsdVal) {
-            setIdrPerUsd(idrPerUsdVal);
-            setFxRate(1 / idrPerUsdVal);
-          }
-        }
-      }
+      await refreshFxRates();
       // Refresh prices only for digital assets
       await refreshPrices(digitalEntries);
     } catch (e) {
@@ -219,16 +263,18 @@ export default function PortfolioTrackerPage() {
       setIsRefreshing(false);
       setPullDistance(0);
     }
-  }, [isRefreshing, entries, refreshPrices]);
+  }, [isRefreshing, entries, refreshFxRates, refreshPrices]);
 
   // Pull to refresh touch handlers
   const handleTouchStart = useCallback((e) => {
+    if (!isMobileExperience) return;
     if (containerRef.current && containerRef.current.scrollTop === 0) {
       touchStartY.current = e.touches[0].clientY;
     }
-  }, []);
+  }, [isMobileExperience]);
 
   const handleTouchMove = useCallback((e) => {
+    if (!isMobileExperience) return;
     if (isRefreshing || touchStartY.current === 0 || !containerRef.current) return;
     if (containerRef.current.scrollTop > 0) {
       touchStartY.current = 0;
@@ -242,45 +288,30 @@ export default function PortfolioTrackerPage() {
     if (distance > 0) {
       setPullDistance(Math.min(distance, 150));
     }
-  }, [isRefreshing]);
+  }, [isMobileExperience, isRefreshing]);
 
   const handleTouchEnd = useCallback(() => {
+    if (!isMobileExperience) return;
     if (pullDistance > 80) {
       handleRefresh();
     } else {
       setPullDistance(0);
     }
     touchStartY.current = 0;
-  }, [pullDistance, handleRefresh]);
+  }, [isMobileExperience, pullDistance, handleRefresh]);
 
   // Initial load handled by lazy initializer above
 
-  // Fetch FX rate IDR=X (IDR per 1 USD) once on mount
+  // Fetch FX rates once on mount
   useEffect(() => {
     (async () => {
       try {
-        // Fetch IDR=X from Yahoo Finance to get USD per IDR
-        const endDate = Math.floor(Date.now() / 1000);
-        const startDate = endDate - 60 * 60 * 24 * 5;
-        const { response, data } = await fetchEncodedJson(
-          `/api/finance?symbol=IDR=X&startDate=${startDate}&endDate=${endDate}`
-        );
-        if (response.ok) {
-          const series = data.data || [];
-          if (series.length > 0) {
-            const last = series[series.length - 1];
-            const idrPerUsdVal = last.adjclose;
-            if (idrPerUsdVal) {
-              setIdrPerUsd(idrPerUsdVal);
-              setFxRate(1 / idrPerUsdVal);
-            }
-          }
-        }
+        await refreshFxRates();
       } catch (e) {
         console.warn('FX rate fetch failed', e);
       }
     })();
-  }, []);
+  }, [refreshFxRates]);
 
   useEffect(() => {
     if (authLoading) {
@@ -435,11 +466,9 @@ export default function PortfolioTrackerPage() {
         cashAmountDisplay = String(e.nativeAmount);
       } else {
         const usdValue = e.avgPrice * e.amount;
-        if (e.cashCurrency === 'IDR' && fxRate > 0) {
-          cashAmountDisplay = String(usdValue / fxRate);
-        } else {
-          cashAmountDisplay = String(usdValue);
-        }
+        if (e.cashCurrency === 'IDR' && fxRate > 0) cashAmountDisplay = String(usdValue / fxRate);
+        else if (e.cashCurrency === 'SGD' && sgdPerUsd > 0) cashAmountDisplay = String(usdValue * sgdPerUsd);
+        else cashAmountDisplay = String(usdValue);
       }
     }
     setForm({
@@ -483,10 +512,16 @@ export default function PortfolioTrackerPage() {
       let totalUSD = nativeAmount;
       if (form.cashCurrency === 'IDR') {
         if (fxRate <= 0) {
-          alert('FX rate unavailable. Please refresh to update rates.');
+          alert('IDR FX rate unavailable. Please refresh to update rates.');
           return;
         }
         totalUSD = nativeAmount * fxRate; // IDR * (USD per IDR) = USD
+      } else if (form.cashCurrency === 'SGD') {
+        if (sgdPerUsd <= 0) {
+          alert('SGD FX rate unavailable. Please refresh to update rates.');
+          return;
+        }
+        totalUSD = nativeAmount / sgdPerUsd; // SGD / (SGD per USD) = USD
       }
 
       const entry = {
@@ -626,7 +661,9 @@ export default function PortfolioTrackerPage() {
           ? entry.nativeAmount
           : (entry.cashCurrency === 'IDR' && fxRate > 0
             ? baseValueUSD / fxRate
-            : baseValueUSD))
+            : (entry.cashCurrency === 'SGD' && sgdPerUsd > 0
+              ? baseValueUSD * sgdPerUsd
+              : baseValueUSD)))
         : null;
 
       return {
@@ -640,7 +677,7 @@ export default function PortfolioTrackerPage() {
         cashDisplayAmount,
       };
     });
-  }, [entries, priceMap, fxRate, getEffectiveAmount, toUSD]);
+  }, [entries, priceMap, fxRate, sgdPerUsd, getEffectiveAmount, toUSD]);
 
   const sortedHoldings = useMemo(() => {
     const digital = holdingsWithMetrics.filter((item) => !item.isCash);
@@ -737,32 +774,80 @@ export default function PortfolioTrackerPage() {
   function formatIDR(v) {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v);
   }
+  function formatSGD(v) {
+    return new Intl.NumberFormat('en-SG', { style: 'currency', currency: 'SGD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
+  }
 
   // Convert USD amount to IDR for display
   function usdToIdr(usdAmount) {
     if (idrPerUsd <= 0) return 0;
     return usdAmount * idrPerUsd;
   }
+  function usdToSgd(usdAmount) {
+    if (sgdPerUsd <= 0) return 0;
+    return usdAmount * sgdPerUsd;
+  }
+
+  function formatByCurrency(code, amount) {
+    if (code === 'IDR') return formatIDR(amount);
+    if (code === 'SGD') return formatSGD(amount);
+    return formatUSD(amount);
+  }
 
   // Format value based on selected currency
   function formatValue(usdAmount) {
+    const idrAmount = usdToIdr(usdAmount);
+    const sgdAmount = usdToSgd(usdAmount);
     if (currency === 'IDR') {
-      const idrAmount = usdToIdr(usdAmount);
-      return { primary: formatIDR(idrAmount), secondary: formatUSD(usdAmount) };
-    } else {
-      const idrAmount = usdToIdr(usdAmount);
-      return { primary: formatUSD(usdAmount), secondary: formatIDR(idrAmount) };
+      if (idrPerUsd <= 0) {
+        return {
+          primary: formatUSD(usdAmount),
+          secondary: 'IDR FX unavailable',
+          tertiary: formatSGD(sgdAmount),
+        };
+      }
+      return {
+        primary: formatIDR(idrAmount),
+        secondary: formatUSD(usdAmount),
+        tertiary: formatSGD(sgdAmount),
+      };
     }
+    if (currency === 'SGD') {
+      if (sgdPerUsd <= 0) {
+        return {
+          primary: formatUSD(usdAmount),
+          secondary: 'SGD FX unavailable',
+          tertiary: formatIDR(idrAmount),
+        };
+      }
+      return {
+        primary: formatSGD(sgdAmount),
+        secondary: formatUSD(usdAmount),
+        tertiary: formatIDR(idrAmount),
+      };
+    }
+    return {
+      primary: formatUSD(usdAmount),
+      secondary: formatIDR(idrAmount),
+      tertiary: formatSGD(sgdAmount),
+    };
   }
 
-  const maskToken = currency === 'IDR' ? '*********' : '******';
-  const getDisplayValue = (usdAmount) => (isPortfolioHidden ? { primary: maskToken, secondary: maskToken } : formatValue(usdAmount));
+  const hiddenPrimaryToken = '••••••';
+  const hiddenSecondaryToken = 'Hidden';
+  const getDisplayValue = (usdAmount) =>
+    (isPortfolioHidden
+      ? { primary: hiddenPrimaryToken, secondary: hiddenSecondaryToken, tertiary: hiddenSecondaryToken }
+      : formatValue(usdAmount));
   const getPnLColor = (value) => (isPortfolioHidden ? 'text-muted-foreground' : value >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400');
   const totalNetWorthDisplay = getDisplayValue(totalNetWorth);
   const totalPnLDisplay = getDisplayValue(totalPnL);
   const digitalMarketDisplay = getDisplayValue(digitalMarket);
   const digitalPnLDisplay = getDisplayValue(digitalPnL);
   const totalCashDisplay = getDisplayValue(totalCash);
+  const selectedCurrencyMeta = CURRENCY_META[currency] || CURRENCY_META.IDR;
+  const sgdFxDisplay = sgdPerUsd > 0 ? formatSGD(sgdPerUsd) : 'loading...';
+  const idrFxDisplay = idrPerUsd > 0 ? formatIDR(idrPerUsd) : 'loading...';
 
   if (authLoading) {
     return (
@@ -778,61 +863,42 @@ export default function PortfolioTrackerPage() {
 
   if (initialLoading) {
     return (
-      <div className="flex flex-col gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <div>
-              <div className="h-4 w-20 rounded-full shimmer" />
-              <div className="h-3 w-28 rounded-full shimmer mt-2" />
+      <div className={`flex flex-col gap-4 ${isMobileExperience ? 'pb-28' : ''}`}>
+        <div className={`rounded-3xl border border-border/40 bg-gradient-to-br from-background to-muted/30 p-4 ${isMobileExperience ? '' : 'shadow-sm'}`}>
+          <div className="flex items-center justify-between">
+            <div className="space-y-2">
+              <div className="h-4 w-24 shimmer" />
+              <div className="h-3 w-40 shimmer" />
             </div>
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full shimmer" />
-              <div className="h-8 w-20 rounded-full shimmer" />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div>
-              <div className="h-3 w-24 rounded-full shimmer" />
-              <div className="h-6 w-36 rounded-full shimmer mt-2" />
-              <div className="h-3 w-28 rounded-full shimmer mt-1" />
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              {[...Array(2)].map((_, idx) => (
-                <div key={`overview-${idx}`} className="h-20 rounded-xl shimmer" />
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+            <div className="h-9 w-24 shimmer rounded-full" />
+          </div>
+          <div className="mt-5 h-10 w-44 shimmer" />
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <div className="h-20 shimmer" />
+            <div className="h-20 shimmer" />
+          </div>
+        </div>
 
-        <p className="text-[10px] text-muted-foreground text-center">
-          <span className="inline-block h-3 w-24 rounded-full shimmer" />
-        </p>
-
-        <Card>
-          <CardHeader className="flex items-center justify-between">
-            <div className="h-4 w-24 rounded-full shimmer" />
-            <div className="h-6 w-6 rounded-full shimmer" />
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {[...Array(3)].map((_, idx) => (
-              <div key={`holding-${idx}`} className="flex items-center justify-between gap-3">
+        <div className={`rounded-3xl border border-border/40 p-4 ${isMobileExperience ? '' : 'shadow-sm'}`}>
+          <div className="h-4 w-24 shimmer mb-4" />
+          <div className="space-y-3">
+            {[...Array(isMobileExperience ? 4 : 5)].map((_, idx) => (
+              <div key={`holding-${idx}`} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-full shimmer" />
-                  <div>
-                    <div className="h-3 w-20 rounded-full shimmer" />
-                    <div className="h-3 w-16 rounded-full shimmer mt-1" />
+                  <div className="h-10 w-10 rounded-full shimmer" />
+                  <div className="space-y-1.5">
+                    <div className="h-3 w-24 shimmer" />
+                    <div className="h-3 w-18 shimmer" />
                   </div>
                 </div>
-                <div className="text-right">
-                  <div className="h-3 w-16 rounded-full shimmer ml-auto" />
-                  <div className="h-3 w-12 rounded-full shimmer mt-1 ml-auto" />
+                <div className="space-y-1.5">
+                  <div className="h-3 w-20 shimmer ml-auto" />
+                  <div className="h-3 w-16 shimmer ml-auto" />
                 </div>
               </div>
             ))}
-          </CardContent>
-        </Card>
-
-        <div className="h-12 rounded-full shimmer" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -840,7 +906,7 @@ export default function PortfolioTrackerPage() {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start gap-4"
+      className={`flex flex-col gap-4 ${isMobileExperience ? 'pb-28' : 'lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start'}`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -858,29 +924,30 @@ export default function PortfolioTrackerPage() {
         </div>
       )}
 
-      <div className="lg:col-span-4 flex flex-col gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
+      <div className={`${isMobileExperience ? '' : 'lg:col-span-4'} flex flex-col gap-4`}>
+        <Card className={isMobileExperience ? 'rounded-3xl border-border/50 bg-gradient-to-b from-background to-muted/20' : ''}>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 gap-2">
             <CardTitle className="font-semibold text-sm">Overview</CardTitle>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-8 w-8 rounded-full bg-muted/40"
                 aria-pressed={isPortfolioHidden}
                 aria-label={isPortfolioHidden ? 'Show portfolio' : 'Hide portfolio'}
                 onClick={() => setIsPortfolioHidden((prev) => !prev)}
               >
-                {isPortfolioHidden ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {isPortfolioHidden ? <EyeClosed className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="w-[100px] h-8">
+                <SelectTrigger className="w-[132px] h-8">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="IDR">IDR</SelectItem>
-                  <SelectItem value="USD">USD</SelectItem>
+                  <SelectItem value="IDR">🇮🇩 IDR</SelectItem>
+                  <SelectItem value="USD">🇺🇸 USD</SelectItem>
+                  <SelectItem value="SGD">🇸🇬 SGD</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -890,14 +957,15 @@ export default function PortfolioTrackerPage() {
             <div className="flex items-start gap-3">
               <div className="flex-1">
                 <p className="text-sm text-muted-foreground mb-1">Total Net Worth</p>
-                <p className="text-lg font-bold">{totalNetWorthDisplay.primary}</p>
+                <p className="text-xl font-bold tracking-tight">{totalNetWorthDisplay.primary}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{totalNetWorthDisplay.secondary}</p>
+                {/* {!isPortfolioHidden && <p className="text-[10px] text-muted-foreground mt-0.5">{totalNetWorthDisplay.tertiary}</p>} */}
                 <div className="mt-1 flex items-center gap-1">
                   <span className={`text-xs font-medium ${getPnLColor(totalPnL)}`}>
-                    {isPortfolioHidden ? maskToken : `${totalPnL >= 0 ? '+' : ''}${totalPnLDisplay.primary}`}
+                    {isPortfolioHidden ? hiddenSecondaryToken : `${totalPnL >= 0 ? '+' : ''}${totalPnLDisplay.primary}`}
                   </span>
                   <span className="text-[10px] text-muted-foreground">
-                    {isPortfolioHidden ? maskToken : `(${totalPnLDisplay.secondary})`}
+                    {isPortfolioHidden ? hiddenSecondaryToken : `(${totalPnLDisplay.secondary})`}
                   </span>
                 </div>
               </div>
@@ -905,6 +973,22 @@ export default function PortfolioTrackerPage() {
                 <Wallet className="h-5 w-5 text-primary" />
               </div>
             </div>
+
+            {/* <div className="rounded-2xl border border-border/40 bg-muted/20 p-3">
+              <div className="flex items-start gap-2">
+                <div>
+                  <p className="text-xs font-medium">{selectedCurrencyMeta.flag} {selectedCurrencyMeta.code} · {selectedCurrencyMeta.label}</p>
+                  <p className="text-[11px] text-muted-foreground">{selectedCurrencyMeta.description}</p>
+                </div>
+              </div>
+              <div className="mt-2 grid grid-cols-1 gap-1.5">
+                {SUPPORTED_CURRENCIES.map((code) => (
+                  <p key={code} className="text-[10px] text-muted-foreground">
+                    {CURRENCY_META[code].flag} {CURRENCY_META[code].code}: {CURRENCY_META[code].label}
+                  </p>
+                ))}
+              </div>
+            </div> */}
 
             <div className="flex flex-col gap-2">
               <div className="rounded-xl border border-border/20">
@@ -920,10 +1004,10 @@ export default function PortfolioTrackerPage() {
                         <p className="text-xs text-muted-foreground">{digitalMarketDisplay.secondary}</p>
                         <div className="mt-1 flex items-center gap-1">
                           <span className={`text-xs font-medium ${getPnLColor(digitalPnL)}`}>
-                            {isPortfolioHidden ? maskToken : `${digitalPnL >= 0 ? '+' : ''}${digitalPnLDisplay.primary}`}
+                            {isPortfolioHidden ? hiddenSecondaryToken : `${digitalPnL >= 0 ? '+' : ''}${digitalPnLDisplay.primary}`}
                           </span>
                           <span className="text-[10px] text-muted-foreground">
-                            {isPortfolioHidden ? maskToken : `(${digitalPnLDisplay.secondary})`}
+                            {isPortfolioHidden ? hiddenSecondaryToken : `(${digitalPnLDisplay.secondary})`}
                           </span>
                         </div>
                       </div>
@@ -959,6 +1043,7 @@ export default function PortfolioTrackerPage() {
                         holdingsDistribution={holdingsDistribution}
                         currency={currency}
                         idrPerUsd={idrPerUsd}
+                        sgdPerUsd={sgdPerUsd}
                       />
                     </div>
                   </div>
@@ -968,15 +1053,19 @@ export default function PortfolioTrackerPage() {
           </CardContent>
         </Card>
 
-        <p className="text-[10px] text-muted-foreground text-center">
-          FX Rate: {idrPerUsd > 0 ? formatIDR(idrPerUsd) : 'loading...'} per USD
-        </p>
+        <div className="rounded-xl border border-border/40 bg-muted/20 px-3 py-2">
+          <p className="text-[10px] text-muted-foreground text-center">
+            FX (1 USD): {idrFxDisplay} | {sgdFxDisplay}
+          </p>
+        </div>
       </div>
 
-      <div className="lg:col-span-8">
-        <Card className="h-full">
+      <div className={`${isMobileExperience ? '' : 'lg:col-span-8'}`}>
+        <Card className={`h-full ${isMobileExperience ? 'rounded-3xl border-border/50 bg-gradient-to-b from-background to-muted/20' : ''}`}>
           <CardHeader className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold">Holdings</CardTitle>
+            <CardTitle className="text-sm font-semibold flex items-center gap-2">
+              Holdings
+            </CardTitle>
             {entries.length > 0 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -1024,22 +1113,22 @@ export default function PortfolioTrackerPage() {
           <CardContent>
             {entries.length === 0 && (
               <p className="text-xs text-muted-foreground text-center py-8">
-                Tap the plus button below to add your first asset.
+                Tap the plus button to add your first asset.
               </p>
             )}
             {entries.length > 0 && (
-              <div className="space-y-2 mb-24 lg:mb-4">
+              <div className={`space-y-2 ${isMobileExperience ? 'mb-20' : 'mb-4'}`}>
                 {sortedHoldings.map(({ entry, index: originalIndex, isCash, currentValueUSD, pnl, cashDisplayAmount }) => {
                   const formatted = getDisplayValue(currentValueUSD);
                   const livePnl = isCash ? 0 : pnl;
                   const pnlDisplay = getDisplayValue(Math.abs(livePnl));
                   const pnlText = isPortfolioHidden
-                    ? maskToken
+                    ? hiddenSecondaryToken
                     : `${livePnl >= 0 ? '+' : '-'}${pnlDisplay.primary}`;
                   return (
                     <div
                       key={originalIndex}
-                      className="flex items-center gap-3 border-b border-border/20 hover:bg-muted/30 p-2 rounded-xl min-h-16 transition-colors"
+                      className={`flex items-center gap-3 p-2 rounded-2xl min-h-16 transition-colors border ${isMobileExperience ? 'bg-background/80 border-border/40 shadow-sm' : 'border-border/20 hover:bg-muted/30'}`}
                     >
                       {isCash ? (
                         <div className="flex flex-1 min-w-0 items-center gap-2 px-1 py-2">
@@ -1052,8 +1141,8 @@ export default function PortfolioTrackerPage() {
                             </p>
                             <p className="text-xs text-muted-foreground mt-0.5">
                               {isPortfolioHidden
-                                ? maskToken
-                                : `${(cashDisplayAmount ?? 0).toLocaleString()} ${entry.cashCurrency}`}
+                                ? hiddenPrimaryToken
+                                : formatByCurrency(entry.cashCurrency || 'USD', cashDisplayAmount ?? 0)}
                             </p>
                           </div>
                         </div>
@@ -1072,7 +1161,7 @@ export default function PortfolioTrackerPage() {
                               {formatTickerDisplay(entry.symbol)}
                             </p>
                             <p className="text-xs text-muted-foreground mt-0.5">
-                              {isPortfolioHidden ? maskToken : `${entry.amount} ${entry.unit}`}
+                              {isPortfolioHidden ? hiddenPrimaryToken : `${entry.amount} ${entry.unit}`}
                             </p>
                           </div>
                         </button>
@@ -1149,7 +1238,7 @@ export default function PortfolioTrackerPage() {
           setDialogOpen(true);
         }}
       >
-        <DialogContent className="fixed max-w-none m-0 h-[80vh] lg:h-auto lg:max-h-[85vh] lg:w-[500px] lg:rounded-2xl lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 rounded-t-2xl p-0 flex flex-col mt-auto" closeButtonPosition="right">
+        <DialogContent className="fixed max-w-none m-0 h-[86vh] lg:h-auto lg:max-h-[85vh] lg:w-[540px] lg:rounded-3xl lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 rounded-t-3xl p-0 flex flex-col mt-auto" closeButtonPosition="right">
           <div className="flex items-center gap-2 p-4 border-b">
             <DialogTitle className="text-base">{editingIndex != null ? 'Edit Asset' : 'Add Asset'}</DialogTitle>
           </div>
@@ -1158,7 +1247,6 @@ export default function PortfolioTrackerPage() {
             <div className="p-4">
               <DialogDescription className="mb-4 text-xs">
                 Record your {assetType === 'cash' ? 'cash' : 'digital asset'} details.
-                {assetType === 'digital'}
               </DialogDescription>
 
               <form onSubmit={handleSubmit} className="flex flex-col gap-4">
@@ -1301,8 +1389,9 @@ export default function PortfolioTrackerPage() {
                             <SelectValue placeholder="Select currency" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="IDR">IDR</SelectItem>
-                            <SelectItem value="USD">USD</SelectItem>
+                            <SelectItem value="IDR">🇮🇩 IDR</SelectItem>
+                            <SelectItem value="USD">🇺🇸 USD</SelectItem>
+                            <SelectItem value="SGD">🇸🇬 SGD</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -1324,7 +1413,7 @@ export default function PortfolioTrackerPage() {
 
       <Button
         size="icon"
-        className="fixed bottom-30 lg:bottom-8 right-4 lg:right-8 h-14 w-14 rounded-full bg-emerald-700 shadow-lg z-40"
+        className={`fixed ${isMobileExperience ? 'bottom-24 right-4' : 'bottom-8 right-8'} h-14 w-14 rounded-full bg-emerald-700 shadow-lg z-40`}
         onClick={openAdd}
       >
         <Plus className="size-6" />

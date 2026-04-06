@@ -1442,9 +1442,13 @@ function ElectionCyclePageContent() {
           title="Chart Type"
           aria-label="Chart type"
         >
-          {chartDisplayType === 'line' ? <LineChart className="h-3.5 w-3.5" /> : <CandlestickChart className="h-3.5 w-3.5" />}
-          <span className="hidden sm:inline">{chartDisplayType === 'heikinAshi' ? 'HA' : chartDisplayType === 'candle' ? 'Candle' : 'Line'}</span>
-          <ChevronDown className="h-3 w-3" />
+          {chartDisplayType === 'line' ? (
+            <LineChart className="h-3.5 w-3.5" />
+          ) : chartDisplayType === 'candle' ? (
+            <BarChart2 className="h-3.5 w-3.5" />
+          ) : (
+            <CandlestickChart className="h-3.5 w-3.5" />
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44">
@@ -3698,7 +3702,7 @@ function ElectionCyclePageContent() {
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className={isNormalView ? "px-0 pb-0 -mx-4 lg:-mx-6 overflow-hidden" : "px-0 pb-0 -mr-4 lg:mr-0"}>
+              <CardContent className={isNormalView ? "px-0 pb-0 overflow-hidden" : "px-0 pb-0 -mr-4 lg:mr-0"}>
                 {isNormalView ? (
                   normalSeriesLoading ? (
                     <div className="flex h-[380px] lg:h-[500px] items-center justify-center gap-2 text-xs text-muted-foreground">

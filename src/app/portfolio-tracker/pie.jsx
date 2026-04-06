@@ -5,13 +5,14 @@ import { Pie, PieChart, Cell } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { useTheme } from 'next-themes';
 
-export function PortfolioPie({ digitalUSD, cashUSD, holdingsDistribution = [], currency = 'USD', idrPerUsd = 0 }) {
+export function PortfolioPie({ digitalUSD, cashUSD, holdingsDistribution = [], currency = 'USD', idrPerUsd = 0, sgdPerUsd = 0 }) {
   const toDisplay = (usd) => {
     if (currency === 'IDR' && idrPerUsd > 0) return usd * idrPerUsd;
+    if (currency === 'SGD' && sgdPerUsd > 0) return usd * sgdPerUsd;
     return usd;
   };
 
-  const displaySuffix = currency === 'IDR' ? 'IDR' : 'USD';
+  const displaySuffix = currency === 'IDR' ? 'IDR' : currency === 'SGD' ? 'SGD' : 'USD';
   const digital = Math.max(digitalUSD, 0);
   const cash = Math.max(cashUSD, 0);
 
