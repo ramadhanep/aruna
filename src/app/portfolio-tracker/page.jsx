@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useId } from 'react';
 import { useRouter } from 'next/navigation';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, MoreVertical, Pencil, Trash2, Loader2, Wallet, Coins, TrendingUp, ArrowUpDown, Check, Eye, EyeClosed } from 'lucide-react';
+import { Plus, MoreVertical, Pencil, Trash2, Loader2, Landmark, TrendingUp, ArrowUpDown, Check, Eye, EyeClosed } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth-provider';
 import { fetchEncodedJson } from '@/lib/api-client';
@@ -108,6 +108,77 @@ function savePortfolioVisibility(hidden) {
   }
 }
 
+function PortfolioMiniChart({ data, isPositive, width = 92, height = 44, chartId, fullWidth = false, className = '' }) {
+  const generatedId = useId();
+  const gradientKey = chartId ?? generatedId;
+  if (!Array.isArray(data) || data.length < 2) {
+    return <div style={{ width, height }} className="rounded-full bg-muted/40" />;
+  }
+
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+  const baseWidth = fullWidth ? 100 : width;
+  const baseHeight = height;
+  const coordinates = data.map((value, index) => {
+    const x = (index / (data.length - 1)) * baseWidth;
+    const y = baseHeight - ((value - min) / range) * baseHeight;
+    return { x, y };
+  });
+
+  const linePath = coordinates
+    .map((point, idx) => `${idx === 0 ? 'M' : 'L'}${point.x.toFixed(2)},${point.y.toFixed(2)}`)
+    .join(' ');
+  const areaPath = `${linePath} L${coordinates[coordinates.length - 1].x.toFixed(2)},${baseHeight} L0,${baseHeight} Z`;
+  const strokeColor = isPositive ? '#10b981' : '#ef4444';
+  const gradientId = `${gradientKey}-fill`;
+  const firstValue = data[0];
+  const baselineY = baseHeight - ((firstValue - min) / range) * baseHeight;
+
+  return (
+    <svg
+      width={fullWidth ? '100%' : width}
+      height={fullWidth ? '100%' : height}
+      viewBox={`0 0 ${baseWidth} ${baseHeight}`}
+      preserveAspectRatio={fullWidth ? 'none' : 'xMidYMid meet'}
+      className={`overflow-visible ${className}`}
+    >
+      <defs>
+        <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={strokeColor} stopOpacity="0.45" />
+          <stop offset="100%" stopColor={strokeColor} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <line
+        x1="0"
+        y1={baselineY}
+        x2={baseWidth}
+        y2={baselineY}
+        stroke="currentColor"
+        strokeWidth="0.8"
+        strokeDasharray="2,2"
+        opacity="0.25"
+        className="text-muted-foreground"
+      />
+      <path d={areaPath} fill={`url(#${gradientId})`} opacity="0.9" />
+      <path
+        d={linePath}
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth={1.8}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle
+        cx={coordinates[coordinates.length - 1].x}
+        cy={coordinates[coordinates.length - 1].y}
+        r={2.2}
+        fill={strokeColor}
+      />
+    </svg>
+  );
+}
+
 export default function PortfolioTrackerPage() {
   const router = useRouter();
   const [entries, setEntries] = useState([]);
@@ -131,6 +202,8 @@ export default function PortfolioTrackerPage() {
   const [isPortfolioHidden, setIsPortfolioHidden] = useState(() => loadPortfolioVisibility());
   const [portfolioReady, setPortfolioReady] = useState(false);
   const [isMobileExperience, setIsMobileExperience] = useState(false);
+  const [portfolioMiniSeries, setPortfolioMiniSeries] = useState([]);
+  const [portfolioMiniLoading, setPortfolioMiniLoading] = useState(false);
   const touchStartY = React.useRef(0);
   const containerRef = React.useRef(null);
   const remotePortfolioSeedRef = React.useRef(false);
@@ -638,6 +711,104 @@ export default function PortfolioTrackerPage() {
     return isLot(unit) ? amount * 100 : amount;
   }, [isLot]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const buildMiniSeries = async () => {
+      const digital = entries.filter((entry) => entry.type !== 'cash');
+      const cashTotalUSD = entries
+        .filter((entry) => entry.type === 'cash')
+        .reduce((sum, entry) => sum + (entry.avgPrice * entry.amount), 0);
+
+      if (digital.length === 0) {
+        setPortfolioMiniSeries(cashTotalUSD > 0 ? [cashTotalUSD, cashTotalUSD] : []);
+        return;
+      }
+
+      setPortfolioMiniLoading(true);
+      try {
+        const endDate = Math.floor(Date.now() / 1000);
+        const startDate = endDate - 60 * 60 * 24 * 45;
+        const uniqueSymbols = [...new Set(digital.map((entry) => entry.symbol))];
+
+        const responses = await Promise.all(
+          uniqueSymbols.map((symbol) =>
+            fetchEncodedJson(
+              `/api/finance?symbol=${encodeURIComponent(symbol)}&startDate=${startDate}&endDate=${endDate}`
+            )
+          )
+        );
+
+        const seriesBySymbol = {};
+        const allDatesSet = new Set();
+        uniqueSymbols.forEach((symbol, idx) => {
+          const payload = responses[idx];
+          const points = (payload?.data?.data || [])
+            .filter((row) => row?.date && typeof row?.adjclose === 'number')
+            .map((row) => ({ date: row.date.slice(0, 10), price: row.adjclose }));
+          if (points.length > 0) {
+            seriesBySymbol[symbol] = points;
+            points.forEach((row) => allDatesSet.add(row.date));
+          }
+        });
+
+        const orderedDates = [...allDatesSet].sort((a, b) => a.localeCompare(b));
+        if (orderedDates.length === 0) {
+          setPortfolioMiniSeries([]);
+          return;
+        }
+
+        const lastKnownPriceBySymbol = {};
+        const mapByDateBySymbol = {};
+        uniqueSymbols.forEach((symbol) => {
+          const rows = seriesBySymbol[symbol] || [];
+          mapByDateBySymbol[symbol] = new Map(rows.map((row) => [row.date, row.price]));
+          if (rows.length > 0) {
+            lastKnownPriceBySymbol[symbol] = rows[0].price;
+          }
+        });
+
+        const values = orderedDates.map((dateKey) => {
+          let dailyValue = cashTotalUSD;
+
+          digital.forEach((entry) => {
+            const dateMap = mapByDateBySymbol[entry.symbol];
+            if (!dateMap) return;
+            const nextPrice = dateMap.get(dateKey);
+            if (typeof nextPrice === 'number') {
+              lastKnownPriceBySymbol[entry.symbol] = nextPrice;
+            }
+            const activePrice = lastKnownPriceBySymbol[entry.symbol];
+            if (typeof activePrice !== 'number') return;
+            const priceInUSD = isIDR(entry.symbol) && fxRate > 0 ? activePrice * fxRate : activePrice;
+            const effectiveAmount = getEffectiveAmount(entry.amount, entry.unit);
+            dailyValue += priceInUSD * effectiveAmount;
+          });
+
+          return dailyValue;
+        });
+
+        if (!cancelled) {
+          setPortfolioMiniSeries(values.slice(-30));
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.warn('Failed to build portfolio mini chart series', error);
+          setPortfolioMiniSeries([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setPortfolioMiniLoading(false);
+        }
+      }
+    };
+
+    buildMiniSeries();
+    return () => {
+      cancelled = true;
+    };
+  }, [entries, fxRate, getEffectiveAmount, isIDR]);
+
   // Separate digital and cash assets
   const digitalAssets = entries.filter(e => e.type !== 'cash');
   const cashAssets = entries.filter(e => e.type === 'cash');
@@ -969,8 +1140,19 @@ export default function PortfolioTrackerPage() {
                   </span>
                 </div>
               </div>
-              <div className="p-2 rounded-full bg-primary/10">
-                <Wallet className="h-5 w-5 text-primary" />
+              <div className="mt-5">
+                {portfolioMiniLoading ? (
+                  <div className="flex items-center justify-center w-[92px] h-[44px]">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <PortfolioMiniChart
+                    data={portfolioMiniSeries}
+                    isPositive={totalPnL >= 0}
+                    chartId="portfolio-overview-mini"
+                    className="opacity-70 w-32"
+                  />
+                )}
               </div>
             </div>
 
@@ -1023,7 +1205,7 @@ export default function PortfolioTrackerPage() {
                         <p className="text-xs text-muted-foreground">{totalCashDisplay.secondary}</p>
                       </div>
                       <div className="p-2 rounded-full bg-emerald-700/10">
-                        <Coins className="h-5 w-5 text-emerald-800 dark:text-emerald-500" />
+                        <Landmark className="h-5 w-5 text-emerald-800 dark:text-emerald-500" />
                       </div>
                     </div>
                   </div>
@@ -1133,7 +1315,7 @@ export default function PortfolioTrackerPage() {
                       {isCash ? (
                         <div className="flex flex-1 min-w-0 items-center gap-2 px-1 py-2">
                           <div className="p-1.5 rounded-full bg-muted">
-                            <Coins className="h-4.5 w-4.5 text-emerald-800 dark:text-emerald-500" />
+                            <Landmark className="h-4.5 w-4.5 text-emerald-800 dark:text-emerald-500" />
                           </div>
                           <div className="flex flex-col justify-start">
                             <p className="font-semibold text-xs truncate">
@@ -1271,7 +1453,7 @@ export default function PortfolioTrackerPage() {
                       onClick={() => setAssetType('cash')}
                       className="flex-1"
                     >
-                      <Coins className="h-4 w-4 mr-2" />
+                      <Landmark className="h-4 w-4 mr-2" />
                       Cash
                     </Button>
                   </div>
@@ -1416,7 +1598,7 @@ export default function PortfolioTrackerPage() {
         className={`fixed ${isMobileExperience ? 'bottom-24 right-4' : 'bottom-8 right-8'} h-14 w-14 rounded-full bg-emerald-700 shadow-lg z-40`}
         onClick={openAdd}
       >
-        <Plus className="size-6" />
+        <Plus className="size-6 text-white" />
       </Button>
     </div>
   );

@@ -42,11 +42,11 @@ export function PortfolioPie({ digitalUSD, cashUSD, holdingsDistribution = [], c
   });
 
   return (
-    <div className="flex flex-col items-center gap-8">
+    <div className="flex flex-col items-center gap-4">
       {/* Asset Type Chart */}
       <div className="w-full flex flex-col items-center">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Asset Type Distribution</p>
-        <ChartContainer config={config} className="w-full h-52">
+        <ChartContainer config={config} className="w-full h-48">
           <PieChart margin={{ top: 8, right: 16, bottom: 28, left: 16 }}>
             <Pie
               data={assetTypeData}
@@ -74,7 +74,7 @@ export function PortfolioPie({ digitalUSD, cashUSD, holdingsDistribution = [], c
               }} />} />
           </PieChart>
         </ChartContainer>
-        <div className="flex flex-wrap items-center justify-center gap-4 text-[10px] mt-2">
+        <div className="flex flex-wrap items-center justify-center gap-4 text-[10px]">
           {assetTypeData.map((item) => {
             const pct = (item.value / assetSum) * 100;
             return (
