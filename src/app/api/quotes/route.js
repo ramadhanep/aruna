@@ -4,11 +4,94 @@ import { getSupabaseServiceRoleClient } from '@/lib/supabase-server';
 
 const SUPABASE_STORAGE_BASE = 'https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public';
 const PLUANG_CDN_BASE = 'https://image-cdn.pluang.com/icons/light/global-stocks';
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 // Max symbols per request to prevent abuse
 const MAX_SYMBOLS = 50;
 // Concurrency limit for Yahoo Finance calls
 const CONCURRENCY_LIMIT = 10;
+const MAX_CHART_POINTS = 180;
+const DEFAULT_TIMEFRAME = '1D';
+
+const TIMEFRAME_CONFIG = {
+    '1D': { lookbackDays: 10, interval: '1d' },
+    '1W': { lookbackDays: 14, interval: '1d' },
+    '1M': { lookbackDays: 45, interval: '1d' },
+    '3M': { lookbackDays: 120, interval: '1d' },
+    YTD: { lookbackDays: 366, interval: '1d', fromYearStart: true },
+    '1Y': { lookbackDays: 400, interval: '1d' },
+    '2Y': { lookbackDays: 800, interval: '1d' },
+    '5Y': { lookbackDays: 2000, interval: '1d' },
+    ATH: { lookbackDays: 7000, interval: '1d' },
+};
+
+function resolveTimeframe(timeframeRaw) {
+    const normalized = typeof timeframeRaw === 'string' ? timeframeRaw.toUpperCase() : DEFAULT_TIMEFRAME;
+    return TIMEFRAME_CONFIG[normalized] ? normalized : DEFAULT_TIMEFRAME;
+}
+
+function getPeriodRange(timeframe) {
+    const config = TIMEFRAME_CONFIG[timeframe] || TIMEFRAME_CONFIG[DEFAULT_TIMEFRAME];
+    const now = new Date();
+
+    if (config.fromYearStart) {
+        return {
+            period1: new Date(now.getFullYear(), 0, 1),
+            period2: now,
+            interval: config.interval,
+        };
+    }
+
+    return {
+        period1: new Date(now.getTime() - config.lookbackDays * DAY_IN_MS),
+        period2: now,
+        interval: config.interval,
+    };
+}
+
+function downsampleSeries(points, maxPoints = MAX_CHART_POINTS) {
+    if (!Array.isArray(points) || points.length <= maxPoints) {
+        return points;
+    }
+    const step = (points.length - 1) / (maxPoints - 1);
+    const sampled = [];
+    for (let i = 0; i < maxPoints; i++) {
+        const index = Math.round(i * step);
+        sampled.push(points[index]);
+    }
+    return sampled;
+}
+
+function computeTimeframeChange(timeframe, currentPrice, previousClosePrice, validSeries) {
+    if (typeof currentPrice !== 'number' || !Number.isFinite(currentPrice)) {
+        return null;
+    }
+
+    if (timeframe === '1D') {
+        if (typeof previousClosePrice !== 'number' || previousClosePrice === 0) {
+            return null;
+        }
+        return ((currentPrice - previousClosePrice) / previousClosePrice) * 100;
+    }
+
+    if (!Array.isArray(validSeries) || validSeries.length < 2) {
+        return null;
+    }
+
+    if (timeframe === 'ATH') {
+        const highest = Math.max(...validSeries.map((point) => point.price).filter((value) => Number.isFinite(value)));
+        if (!Number.isFinite(highest) || highest <= 0) {
+            return null;
+        }
+        return ((currentPrice - highest) / highest) * 100;
+    }
+
+    const basePrice = validSeries[0]?.price;
+    if (typeof basePrice !== 'number' || basePrice <= 0) {
+        return null;
+    }
+    return ((currentPrice - basePrice) / basePrice) * 100;
+}
 
 /**
  * Ensure a US stock logo exists in Supabase storage.
@@ -81,15 +164,14 @@ async function promisePool(tasks, limit) {
  * Uses chart() API which includes meta with regularMarketPrice, previousClose, etc.
  * Skips the separate quote() call to save resources.
  */
-async function fetchSymbolQuote(symbol) {
+async function fetchSymbolQuote(symbol, timeframe = DEFAULT_TIMEFRAME) {
     try {
-        const endDate = new Date();
-        const startDate = new Date(endDate.getTime() - 30 * 24 * 60 * 60 * 1000); // 30 days
+        const { period1, period2, interval } = getPeriodRange(timeframe);
 
         const result = await yahooFinance.chart(symbol, {
-            period1: startDate,
-            period2: endDate,
-            interval: '1d',
+            period1,
+            period2,
+            interval,
         });
 
         if (!result?.quotes || result.quotes.length === 0) {
@@ -109,25 +191,24 @@ async function fetchSymbolQuote(symbol) {
         let price = meta.regularMarketPrice;
         let previousPrice = meta.previousClose || meta.chartPreviousClose;
 
-        const validSeries = series.filter(
-            (point) => point.adjclose != null || point.close != null
-        );
+        const validSeries = series
+            .map((point) => ({
+                date: point.date,
+                price:
+                    typeof point.adjclose === 'number'
+                        ? point.adjclose
+                        : typeof point.close === 'number'
+                            ? point.close
+                            : null,
+            }))
+            .filter((point) => typeof point.price === 'number' && Number.isFinite(point.price));
 
         if (validSeries.length >= 2) {
             const current = validSeries[validSeries.length - 1];
             const previous = validSeries[validSeries.length - 2];
 
-            if (current.adjclose != null) {
-                price = current.adjclose;
-            } else if (current.close != null) {
-                price = current.close;
-            }
-
-            if (previous.adjclose != null) {
-                previousPrice = previous.adjclose;
-            } else if (previous.close != null) {
-                previousPrice = previous.close;
-            }
+            price = current.price;
+            previousPrice = previous.price;
         }
 
         if (price == null || previousPrice == null) {
@@ -136,18 +217,10 @@ async function fetchSymbolQuote(symbol) {
 
         const change = price - previousPrice;
         const changePercent = previousPrice === 0 ? 0 : (change / previousPrice) * 100;
-
-        // Mini-chart data (last 30 data points)
-        const chartData = series
-            .slice(-30)
-            .map((row) =>
-                typeof row.adjclose === 'number'
-                    ? row.adjclose
-                    : typeof row.close === 'number'
-                        ? row.close
-                        : null
-            )
-            .filter((value) => typeof value === 'number');
+        const timeframeChange = computeTimeframeChange(timeframe, price, previousPrice, validSeries);
+        const downsampledSeries = downsampleSeries(validSeries);
+        const chartData = downsampledSeries.map((point) => point.price);
+        const chartTimestamps = downsampledSeries.map((point) => point.date);
 
         // Resolve logo
         let logoUrl = null;
@@ -189,7 +262,10 @@ async function fetchSymbolQuote(symbol) {
             price,
             change,
             changePercent,
+            timeframe,
+            timeframeChange,
             chartData,
+            chartTimestamps,
             logo: logoUrl,
             meta: {
                 currency: meta.currency,
@@ -218,6 +294,7 @@ export async function POST(request) {
     try {
         const body = await request.json();
         const symbols = body?.symbols;
+        const timeframe = resolveTimeframe(body?.timeframe);
 
         if (!Array.isArray(symbols) || symbols.length === 0) {
             return Response.json(
@@ -252,7 +329,7 @@ export async function POST(request) {
 
         // Fetch all quotes with concurrency control
         const tasks = uniqueSymbols.map(
-            (symbol) => () => fetchSymbolQuote(symbol)
+            (symbol) => () => fetchSymbolQuote(symbol, timeframe)
         );
         const results = await promisePool(tasks, CONCURRENCY_LIMIT);
 
@@ -271,6 +348,7 @@ export async function POST(request) {
                     requested: uniqueSymbols.length,
                     resolved: Object.keys(quotesMap).length,
                     provider: 'yahoo-finance2',
+                    timeframe,
                 },
             }),
         });

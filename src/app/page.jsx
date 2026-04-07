@@ -105,11 +105,31 @@ const MARKET_CATEGORIES = [
 ];
 
 const MARKET_TIMEFRAMES = ["1D", "1W", "1M", "3M", "YTD", "1Y", "2Y", "5Y", "ATH"];
+const MARKET_PULSE_SYMBOLS = [
+  { symbol: "^JKSE", label: "IHSG" },
+  { symbol: "^SPX", label: "S&P" },
+  { symbol: "BTC-USD", label: "BTC" },
+  { symbol: "GC=F", label: "Gold" },
+  { symbol: "^IXIC", label: "Nasdaq" },
+  { symbol: "USDIDR=X", label: "USD/IDR" },
+];
+
+function getMarketCategoryById(categoryId) {
+  return MARKET_CATEGORIES.find((category) => category.id === categoryId) || null;
+}
 
 function getTimeframeChange(quote, timeframe) {
   if (!quote) return null;
   const price = quote.price;
   if (typeof price !== "number" || !Number.isFinite(price)) return null;
+  if (
+    timeframe !== "1D" &&
+    quote.timeframe === timeframe &&
+    typeof quote.timeframeChange === "number" &&
+    Number.isFinite(quote.timeframeChange)
+  ) {
+    return quote.timeframeChange;
+  }
 
   if (timeframe === "ATH") {
     const high = quote.meta?.fiftyTwoWeekHigh;
@@ -519,7 +539,8 @@ export default function ExplorePage() {
   const [showInstallButton, setShowInstallButton] = useState(false);
   const [activeMarketTab, setActiveMarketTab] = useState("indonesia");
   const [marketTimeframe, setMarketTimeframe] = useState("1D");
-  const [isHighlightsExpanded, setIsHighlightsExpanded] = useState(false);
+  const [activeMarketQuotes, setActiveMarketQuotes] = useState({});
+  const [activeMarketLoading, setActiveMarketLoading] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -528,12 +549,13 @@ export default function ExplorePage() {
   const [categoryDisplayOrder] = useState(() => getCategoryDisplayOrder());
   const touchStartY = useRef(0);
   const containerRef = useRef(null);
-  const quoteRequestRef = useRef(0);
+  const coreQuoteRequestRef = useRef(0);
+  const activeMarketQuoteRequestRef = useRef(0);
 
-  const loadQuotesForSnapshots = useCallback(async (snapshotMap) => {
-    const requestId = ++quoteRequestRef.current;
-
+  const loadCoreQuotesForSnapshots = useCallback(async (snapshotMap) => {
+    const requestId = ++coreQuoteRequestRef.current;
     const symbolSet = new Set();
+
     CATEGORY_ORDER.forEach((category) => {
       const picks = Array.isArray(snapshotMap?.[category]?.results)
         ? snapshotMap[category].results
@@ -545,39 +567,34 @@ export default function ExplorePage() {
         }
       });
     });
-    HIGHLIGHT_SYMBOLS.forEach(({ symbol }) => symbolSet.add(symbol));
-    MARKET_CATEGORIES.forEach((cat) => {
-      cat.symbols.forEach(({ symbol }) => symbolSet.add(symbol));
-    });
-    symbolSet.add("USDIDR=X");
 
-    if (symbolSet.size === 0) {
-      if (quoteRequestRef.current === requestId) {
+    HIGHLIGHT_SYMBOLS.forEach(({ symbol }) => symbolSet.add(symbol));
+    MARKET_PULSE_SYMBOLS.forEach(({ symbol }) => symbolSet.add(symbol));
+
+    const symbolsArray = Array.from(symbolSet);
+    if (symbolsArray.length === 0) {
+      if (coreQuoteRequestRef.current === requestId) {
         setQuotes({});
       }
       return;
     }
 
-    const symbolsArray = Array.from(symbolSet);
-
     try {
-      const { response, data } = await fetchEncodedJson('/api/quotes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbols: symbolsArray }),
+      const { response, data } = await fetchEncodedJson("/api/quotes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symbols: symbolsArray, timeframe: "1D" }),
       });
 
-      if (quoteRequestRef.current !== requestId) {
+      if (coreQuoteRequestRef.current !== requestId) {
         return;
       }
-
       if (!response.ok) {
-        console.warn('Failed to fetch batch quotes:', data?.error);
+        console.warn("Failed to fetch core quotes:", data?.error);
         return;
       }
 
       const batchQuotes = data?.quotes || {};
-
       setQuotes((prev) => {
         const next = {};
         symbolsArray.forEach((symbol) => {
@@ -591,7 +608,60 @@ export default function ExplorePage() {
         return next;
       });
     } catch (error) {
-      console.warn('Failed to fetch batch quotes', error);
+      console.warn("Failed to fetch core quotes", error);
+    }
+  }, []);
+
+  const loadActiveMarketQuotes = useCallback(async (categoryId, timeframe) => {
+    const requestId = ++activeMarketQuoteRequestRef.current;
+    const category = getMarketCategoryById(categoryId);
+    if (!category) {
+      if (activeMarketQuoteRequestRef.current === requestId) {
+        setActiveMarketQuotes({});
+      }
+      return;
+    }
+
+    const symbols = category.symbols.map((item) => item.symbol);
+    if (symbols.length === 0) {
+      if (activeMarketQuoteRequestRef.current === requestId) {
+        setActiveMarketQuotes({});
+      }
+      return;
+    }
+
+    setActiveMarketQuotes({});
+    setActiveMarketLoading(true);
+    try {
+      const { response, data } = await fetchEncodedJson("/api/quotes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symbols, timeframe }),
+      });
+
+      if (activeMarketQuoteRequestRef.current !== requestId) {
+        return;
+      }
+      if (!response.ok) {
+        console.warn("Failed to fetch active market quotes:", data?.error);
+        return;
+      }
+
+      const batchQuotes = data?.quotes || {};
+      const next = {};
+      symbols.forEach((symbol) => {
+        const upperSymbol = symbol.toUpperCase();
+        if (batchQuotes[upperSymbol]) {
+          next[symbol] = batchQuotes[upperSymbol];
+        }
+      });
+      setActiveMarketQuotes(next);
+    } catch (error) {
+      console.warn("Failed to fetch active market quotes", error);
+    } finally {
+      if (activeMarketQuoteRequestRef.current === requestId) {
+        setActiveMarketLoading(false);
+      }
     }
   }, []);
 
@@ -619,11 +689,11 @@ export default function ExplorePage() {
         mapped[item.category] = item;
       });
       setSnapshots(mapped);
-      await loadQuotesForSnapshots(mapped);
+      loadCoreQuotesForSnapshots(mapped);
     } finally {
       setLoading(false);
     }
-  }, [supabase, loadQuotesForSnapshots]);
+  }, [supabase, loadCoreQuotesForSnapshots]);
 
   const loadMoneyFlow = useCallback(async () => {
     setMoneyFlowLoading(true);
@@ -656,6 +726,10 @@ export default function ExplorePage() {
   useEffect(() => {
     loadSnapshots();
   }, [loadSnapshots]);
+
+  useEffect(() => {
+    loadActiveMarketQuotes(activeMarketTab, marketTimeframe);
+  }, [activeMarketTab, marketTimeframe, loadActiveMarketQuotes]);
 
   useEffect(() => {
     loadMoneyFlow();
@@ -707,7 +781,7 @@ export default function ExplorePage() {
           }
           setSnapshots((prev) => {
             const next = { ...prev, [record.category]: record };
-            loadQuotesForSnapshots(next);
+            loadCoreQuotesForSnapshots(next);
             return next;
           });
         }
@@ -717,18 +791,22 @@ export default function ExplorePage() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [supabase, loadQuotesForSnapshots]);
+  }, [supabase, loadCoreQuotesForSnapshots]);
 
   const handleRefresh = useCallback(async () => {
     if (isRefreshing) return;
     setIsRefreshing(true);
     try {
-      await Promise.all([loadSnapshots(), loadMoneyFlow()]);
+      await Promise.all([
+        loadSnapshots(),
+        loadMoneyFlow(),
+        loadActiveMarketQuotes(activeMarketTab, marketTimeframe),
+      ]);
     } finally {
       setIsRefreshing(false);
       setPullDistance(0);
     }
-  }, [isRefreshing, loadMoneyFlow, loadSnapshots]);
+  }, [isRefreshing, loadMoneyFlow, loadSnapshots, loadActiveMarketQuotes, activeMarketTab, marketTimeframe]);
 
   const handleTouchStart = useCallback((event) => {
     if (containerRef.current && containerRef.current.scrollTop === 0) {
@@ -874,39 +952,25 @@ export default function ExplorePage() {
     };
   }, [quotes, snapshots]);
 
-  const highlightClusters = useMemo(
-    () =>
-      HIGHLIGHT_SYMBOLS.map((meta) => ({
-        ...meta,
-        quote: quotes[meta.symbol],
-      })),
-    [quotes]
-  );
-
   const marketCategoryData = useMemo(() => {
     return MARKET_CATEGORIES.map((cat) => ({
       ...cat,
       symbols: cat.symbols.map((s) => ({
         ...s,
-        quote: quotes[s.symbol],
+        quote:
+          cat.id === activeMarketTab
+            ? activeMarketQuotes[s.symbol] ?? quotes[s.symbol]
+            : null,
       })),
     }));
-  }, [quotes]);
+  }, [quotes, activeMarketQuotes, activeMarketTab]);
 
   const activeCategory = useMemo(() => {
     return marketCategoryData.find((c) => c.id === activeMarketTab) || marketCategoryData[0];
   }, [marketCategoryData, activeMarketTab]);
 
   const marketPulse = useMemo(() => {
-    const keySymbols = [
-      { symbol: "^JKSE", label: "IHSG" },
-      { symbol: "^SPX", label: "S&P" },
-      { symbol: "BTC-USD", label: "BTC" },
-      { symbol: "GC=F", label: "Gold" },
-      { symbol: "^IXIC", label: "Nasdaq" },
-      { symbol: "USDIDR=X", label: "USD/IDR" },
-    ];
-    return keySymbols.map((item) => ({
+    return MARKET_PULSE_SYMBOLS.map((item) => ({
       ...item,
       quote: quotes[item.symbol],
     }));
@@ -1092,6 +1156,11 @@ export default function ExplorePage() {
                 {tf}
               </button>
             ))}
+            {activeMarketLoading && (
+              <span className="ml-1 inline-flex items-center text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              </span>
+            )}
           </div>
         </div>
 

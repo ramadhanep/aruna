@@ -3,8 +3,9 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Star, AlignHorizontalDistributeCenter, ChartPie, LayoutGrid, Workflow } from "lucide-react";
+import { Star, AlignHorizontalDistributeCenter, ChartPie, LayoutGrid, Ghost } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TOOLS_ITEMS } from "@/lib/tools-menu";
 
 const navItems = [
   {
@@ -23,9 +24,10 @@ const navItems = [
     icon: LayoutGrid,
   },
   {
-    title: "Flow",
-    url: "/money-flow",
-    icon: Workflow,
+    title: "Tools",
+    url: "/tools",
+    icon: Ghost,
+    matchPaths: ["/tools", ...TOOLS_ITEMS.map((item) => item.url)],
   },
   {
     title: "Portfolio",
@@ -41,7 +43,9 @@ export function MobileBottomNav() {
     <nav className="fixed bottom-5 left-5 right-5 z-50 liquid-glass pb-safe rounded-full">
       <div className="mx-auto max-w-[768px] flex items-center justify-around h-16">
         {navItems.map((item) => {
-          const isActive = pathname === item.url;
+          const isActive = item.matchPaths
+            ? item.matchPaths.some((path) => pathname === path)
+            : pathname === item.url;
           const Icon = item.icon;
 
           return (

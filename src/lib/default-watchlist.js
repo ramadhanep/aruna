@@ -10,6 +10,7 @@ export const DEFAULT_WATCHLIST = [
   { symbol: "AMZN", order: 9 },
   { symbol: "GOOG", order: 10 },
   { symbol: "AVGO", order: 11 },
+  { symbol: "MU", order: 12 },
 ];
 
 export function getDefaultWatchlist() {

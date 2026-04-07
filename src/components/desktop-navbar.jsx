@@ -3,9 +3,10 @@
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Star, AlignHorizontalDistributeCenter, ChartPie, LayoutGrid, UserRound, ChevronDown, Workflow, Axe, Droplets, Rotate3D, Magnet, MessageCircleMore } from "lucide-react";
+import { Star, AlignHorizontalDistributeCenter, ChartPie, LayoutGrid, UserRound, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HeaderSymbolSearch } from "@/components/header-symbol-search";
+import { TOOLS_ITEMS } from "@/lib/tools-menu";
 
 const navItems = [
   {
@@ -30,22 +31,13 @@ const navItems = [
   },
 ];
 
-const toolsItems = [
-  { title: "Money Flow", url: "/money-flow", icon: Workflow, desc: "Track institutional flow" },
-  { title: "Momentum", url: "/idx-momentum", icon: Axe, desc: "IDX momentum scanner" },
-  { title: "Bubbles", url: "/idx-bubbles", icon: Droplets, desc: "Market bubble map" },
-  { title: "Rotation", url: "/idx-rotation", icon: Rotate3D, desc: "Sector rotation view" },
-  { title: "MSCI", url: "/msci", icon: Magnet, desc: "MSCI rebalance tracker" },
-  { title: "Chat", url: "/discussion", icon: MessageCircleMore, desc: "Community discussion" },
-];
-
 export function DesktopNavbar({ onOpenAccountSidebar }) {
   const pathname = usePathname();
   const [toolsOpen, setToolsOpen] = useState(false);
   const toolsRef = useRef(null);
   const timeoutRef = useRef(null);
 
-  const isToolsActive = toolsItems.some((item) => pathname === item.url);
+  const isToolsActive = TOOLS_ITEMS.some((item) => pathname === item.url);
 
   useEffect(() => {
     return () => {
@@ -116,7 +108,7 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
 
             {toolsOpen && (
               <div className="absolute top-full left-0 mt-1 w-64 rounded-xl border border-border/30 bg-background/95 backdrop-blur-2xl shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                {toolsItems.map((item) => {
+                {TOOLS_ITEMS.map((item) => {
                   const isActive = pathname === item.url;
                   const Icon = item.icon;
                   return (
