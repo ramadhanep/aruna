@@ -1,5 +1,6 @@
 import yahooFinance from '@/lib/yahoo-finance';
 import { encodePayload } from '@/lib/secure-payload';
+import { writeYahooRawLog } from '@/lib/yahoo-raw-log';
 
 const toPlainValue = (value) => {
   if (value == null) return null;
@@ -109,23 +110,36 @@ export async function GET(request) {
       lang: 'en-US',
       region: 'US',
     });
+    await writeYahooRawLog({
+      endpoint: 'fundamentals-quote',
+      symbol: symbolKey,
+      requestParams: { lang: 'en-US', region: 'US' },
+      payload: quote,
+    });
   } catch (error) {
     console.warn(`Failed to fetch quote for ${symbolKey}`, error);
   }
 
   let summaryModules = null;
   try {
+    const modules = [
+      'earnings',
+      'assetProfile',
+      'summaryDetail',
+      'defaultKeyStatistics',
+      'financialData',
+      'recommendationTrend',
+      'calendarEvents',
+      'upgradeDowngradeHistory',
+    ];
     summaryModules = await yahooFinance.quoteSummary(symbolKey, {
-      modules: [
-        'earnings',
-        'assetProfile',
-        'summaryDetail',
-        'defaultKeyStatistics',
-        'financialData',
-        'recommendationTrend',
-        'calendarEvents',
-        'upgradeDowngradeHistory',
-      ],
+      modules,
+    });
+    await writeYahooRawLog({
+      endpoint: 'fundamentals-quoteSummary',
+      symbol: symbolKey,
+      requestParams: { modules },
+      payload: summaryModules,
     });
   } catch (error) {
     console.warn(`Failed to fetch fundamentals summary for ${symbolKey}`, error);
@@ -212,6 +226,61 @@ export async function GET(request) {
                   (quote.postMarketTime != null ? String(quote.postMarketTime) : null),
               }
             : null,
+      }
+    : null;
+
+  const marketData = quote
+    ? {
+        quoteSourceName: quote.quoteSourceName ?? null,
+        marketState: quote.marketState ?? null,
+        exchangeTimezoneName: quote.exchangeTimezoneName ?? null,
+        exchangeTimezoneShortName: quote.exchangeTimezoneShortName ?? null,
+        regularMarketTime:
+          quote.regularMarketTime?.fmt ||
+          (quote.regularMarketTime != null ? String(quote.regularMarketTime) : null),
+        preMarketTime:
+          quote.preMarketTime?.fmt ||
+          (quote.preMarketTime != null ? String(quote.preMarketTime) : null),
+        postMarketTime:
+          quote.postMarketTime?.fmt ||
+          (quote.postMarketTime != null ? String(quote.postMarketTime) : null),
+        hasPrePostMarketData: quote.hasPrePostMarketData ?? null,
+        bid: toPlainValue(quote.bid),
+        ask: toPlainValue(quote.ask),
+        bidSize: toPlainValue(quote.bidSize),
+        askSize: toPlainValue(quote.askSize),
+        regularMarketVolume: toPlainValue(quote.regularMarketVolume),
+        averageDailyVolume3Month: toPlainValue(quote.averageDailyVolume3Month),
+        averageDailyVolume10Day: toPlainValue(quote.averageDailyVolume10Day),
+        fiftyDayAverage: toPlainValue(quote.fiftyDayAverage),
+        fiftyDayAverageChange: toPlainValue(quote.fiftyDayAverageChange),
+        fiftyDayAverageChangePercent: toPlainValue(quote.fiftyDayAverageChangePercent),
+        twoHundredDayAverage: toPlainValue(quote.twoHundredDayAverage),
+        twoHundredDayAverageChange: toPlainValue(quote.twoHundredDayAverageChange),
+        twoHundredDayAverageChangePercent: toPlainValue(quote.twoHundredDayAverageChangePercent),
+        fiftyTwoWeekLow: toPlainValue(quote.fiftyTwoWeekLow),
+        fiftyTwoWeekHigh: toPlainValue(quote.fiftyTwoWeekHigh),
+        fiftyTwoWeekLowChange: toPlainValue(quote.fiftyTwoWeekLowChange),
+        fiftyTwoWeekLowChangePercent: toPlainValue(quote.fiftyTwoWeekLowChangePercent),
+        fiftyTwoWeekHighChange: toPlainValue(quote.fiftyTwoWeekHighChange),
+        fiftyTwoWeekHighChangePercent: toPlainValue(quote.fiftyTwoWeekHighChangePercent),
+        averageAnalystRating: quote.averageAnalystRating ?? null,
+        earningsTimestamp:
+          quote.earningsTimestamp?.fmt ||
+          (quote.earningsTimestamp != null ? String(quote.earningsTimestamp) : null),
+        earningsTimestampStart:
+          quote.earningsTimestampStart?.fmt ||
+          (quote.earningsTimestampStart != null ? String(quote.earningsTimestampStart) : null),
+        earningsTimestampEnd:
+          quote.earningsTimestampEnd?.fmt ||
+          (quote.earningsTimestampEnd != null ? String(quote.earningsTimestampEnd) : null),
+        earningsCallTimestampStart:
+          quote.earningsCallTimestampStart?.fmt ||
+          (quote.earningsCallTimestampStart != null ? String(quote.earningsCallTimestampStart) : null),
+        earningsCallTimestampEnd:
+          quote.earningsCallTimestampEnd?.fmt ||
+          (quote.earningsCallTimestampEnd != null ? String(quote.earningsCallTimestampEnd) : null),
+        isEarningsDateEstimate: quote.isEarningsDateEstimate ?? null,
       }
     : null;
 
@@ -336,12 +405,30 @@ export async function GET(request) {
     sharesOutstanding: simplifiedKeyStatistics.sharesOutstanding ?? null,
     floatShares: simplifiedKeyStatistics.floatShares ?? null,
     sharesShort: simplifiedKeyStatistics.sharesShort ?? null,
+    sharesShortPriorMonth: simplifiedKeyStatistics.sharesShortPriorMonth ?? null,
+    sharesShortPreviousMonthDate: simplifiedKeyStatistics.sharesShortPreviousMonthDate ?? null,
+    sharesPercentSharesOut: simplifiedKeyStatistics.sharesPercentSharesOut ?? null,
+    shortPercentOfFloat: simplifiedKeyStatistics.shortPercentOfFloat ?? null,
     shortRatio: simplifiedKeyStatistics.shortRatio ?? null,
+    impliedSharesOutstanding: simplifiedKeyStatistics.impliedSharesOutstanding ?? null,
     heldPercentInsiders: simplifiedKeyStatistics.heldPercentInsiders ?? null,
     heldPercentInstitutions: simplifiedKeyStatistics.heldPercentInstitutions ?? null,
     lastSplitFactor: simplifiedKeyStatistics.lastSplitFactor ?? null,
     lastSplitDate: simplifiedKeyStatistics.lastSplitDate ?? null,
+    lastFiscalYearEnd: simplifiedKeyStatistics.lastFiscalYearEnd ?? null,
+    nextFiscalYearEnd: simplifiedKeyStatistics.nextFiscalYearEnd ?? null,
+    mostRecentQuarter: simplifiedKeyStatistics.mostRecentQuarter ?? null,
     fiftyTwoWeekChange: simplifiedKeyStatistics['52WeekChange'] ?? null,
+  } : null;
+
+  const governance = simplifiedAssetProfile ? {
+    auditRisk: simplifiedAssetProfile.auditRisk ?? null,
+    boardRisk: simplifiedAssetProfile.boardRisk ?? null,
+    compensationRisk: simplifiedAssetProfile.compensationRisk ?? null,
+    shareHolderRightsRisk: simplifiedAssetProfile.shareHolderRightsRisk ?? null,
+    overallRisk: simplifiedAssetProfile.overallRisk ?? null,
+    governanceEpochDate: simplifiedAssetProfile.governanceEpochDate ?? null,
+    compensationAsOfEpochDate: simplifiedAssetProfile.compensationAsOfEpochDate ?? null,
   } : null;
 
   // Dividend info from summaryDetail
@@ -368,6 +455,8 @@ export async function GET(request) {
       recommendations,
       calendarData,
       upgrades,
+      marketData,
+      governance,
       financialHealth,
       keyStatsExtras,
       dividendInfo,

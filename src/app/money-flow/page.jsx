@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, ArrowUpDown, Check, ChevronRight, Loader2, TrendingUp } from "lucide-react";
+import { AlertTriangle, ArrowUpDown, Check, FilterX } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -205,15 +205,24 @@ export default function MoneyFlowPage() {
     };
   }, [timeframe, sortBy, sortOrder, minScore]);
 
-  const reports = payload?.reports || [];
+  const reports = useMemo(() => payload?.reports || [], [payload]);
+  const positiveSignals = useMemo(
+    () => reports.filter((item) => String(item?.signal || "").includes("Accumulation")).length,
+    [reports]
+  );
+  const avgVolumeSpike = useMemo(() => {
+    if (!reports.length) return 0;
+    const total = reports.reduce((sum, item) => sum + Number(item?.volume_spike || 0), 0);
+    return total / reports.length;
+  }, [reports]);
   const activeSortLabel = useMemo(
     () => sortOptions.find((option) => option.key === sortBy)?.label || "Money Flow Score",
     [sortBy]
   );
 
   return (
-    <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start gap-4 pb-4">
-      <div className="lg:col-span-12 flex flex-col gap-4">
+    <div className="flex flex-col gap-4 pb-4">
+      <div className="flex flex-col gap-4">
         <Card className="border-none bg-gradient-to-br from-emerald-800 via-emerald-900 to-teal-950 text-white shadow-xl shadow-emerald-900/30 rounded-2xl">
           <CardContent className="p-4 space-y-2">
             <p className="text-xs text-white/85 leading-relaxed">
@@ -228,7 +237,7 @@ export default function MoneyFlowPage() {
           </CardContent>
         </Card>
 
-        <div className="sticky top-14 z-30 glass border-b border-border/30 -mx-4 lg:mx-0 px-4 lg:px-0 py-3 lg:py-3 lg:border-none lg:bg-transparent lg:backdrop-blur-none space-y-2">
+        <div className="sticky top-14 z-30 glass border-b border-border/30 -mx-4 lg:mx-0 px-4 lg:px-0 py-3 lg:py-2 lg:border-none lg:bg-transparent lg:backdrop-blur-none space-y-2">
           <div className="flex items-center gap-2">
             <div className="flex-1 flex gap-1.5 p-1 bg-muted/40 rounded-2xl">
               {timeframeOptions.map((option) => (
@@ -274,10 +283,74 @@ export default function MoneyFlowPage() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+
+          {/* <div className="hidden lg:flex items-center gap-2 rounded-2xl border border-border/40 bg-background/80 p-2">
+            <div className="w-36">
+              <Input
+                value={minScoreInput}
+                onChange={(event) => setMinScoreInput(event.target.value)}
+                placeholder="Min score"
+                className="h-9 rounded-xl border-border/40 text-sm"
+              />
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              className="rounded-xl"
+              onClick={() => setMinScore(Number(minScoreInput || 0))}
+            >
+              Apply
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="rounded-xl text-xs"
+              onClick={() => {
+                setMinScoreInput("0");
+                setMinScore(0);
+              }}
+            >
+              Reset
+            </Button>
+            <div className="ml-auto text-xs text-muted-foreground">
+              Sort: <span className="font-semibold text-foreground">{activeSortLabel}</span>
+            </div>
+          </div> */}
         </div>
       </div>
 
-      <div className="lg:col-span-12 max-w-4xl mx-auto w-full">
+      <div className="grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)] gap-4 lg:gap-6 items-start">
+        <aside className="hidden xl:block sticky top-20 space-y-3">
+          <Card className="rounded-2xl border-border/40 bg-gradient-to-b from-background to-muted/20">
+            <CardContent className="p-4 space-y-3">
+              {/* <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Desk Snapshot</p> */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-xl border border-border/40 bg-background/70 px-3 py-2">
+                  <p className="text-[10px] text-muted-foreground">Reports</p>
+                  <p className="text-lg font-semibold">{reports.length}</p>
+                </div>
+                <div className="rounded-xl border border-border/40 bg-background/70 px-3 py-2">
+                  <p className="text-[10px] text-muted-foreground">Accumulation</p>
+                  <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">{positiveSignals}</p>
+                </div>
+                <div className="rounded-xl border border-border/40 bg-background/70 px-3 py-2">
+                  <p className="text-[10px] text-muted-foreground">Avg Vol Spike</p>
+                  <p className="text-lg font-semibold">{avgVolumeSpike.toFixed(2)}x</p>
+                </div>
+                <div className="rounded-xl border border-border/40 bg-background/70 px-3 py-2">
+                  <p className="text-[10px] text-muted-foreground">Timeframe</p>
+                  <p className="text-sm font-semibold capitalize">{timeframe}</p>
+                </div>
+              </div>
+              <div className="rounded-xl border border-border/40 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
+                Desktop mode now separates controls from report stream for faster scanning.
+              </div>
+            </CardContent>
+          </Card>
+        </aside>
+
+        <div className="max-w-5xl mx-auto w-full">
         {error && (
           <Card className="bg-red-600/10 border-red-600/30 rounded-2xl mb-4">
             <CardContent className="p-4 flex items-center gap-3">
@@ -300,6 +373,7 @@ export default function MoneyFlowPage() {
             Last updated: {new Date(payload.updated_at).toLocaleString()}
           </p>
         )}
+        </div>
       </div>
     </div>
   );

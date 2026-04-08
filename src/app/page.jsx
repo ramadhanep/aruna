@@ -375,6 +375,27 @@ function ShimmerItem() {
   );
 }
 
+function MarketSymbolCardSkeleton() {
+  return (
+    <div className="rounded-2xl p-3.5 border border-border/20 bg-card">
+      <div className="flex items-center gap-2.5">
+        <div className="h-9 w-9 rounded-full shimmer" />
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <div className="h-3 w-20 rounded-full shimmer" />
+          <div className="h-3 w-16 rounded-full shimmer" />
+        </div>
+      </div>
+      <div className="mt-3 flex items-end justify-between gap-2">
+        <div className="space-y-1.5">
+          <div className="h-4 w-20 rounded-full shimmer" />
+          <div className="h-3 w-16 rounded-full shimmer" />
+        </div>
+        <div className="h-10 w-[72px] rounded-xl shimmer" />
+      </div>
+    </div>
+  );
+}
+
 function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
   const generatedId = useId();
   const gradientKey = chartId ?? generatedId;
@@ -517,6 +538,62 @@ function PickItem({ pick, quote }) {
         </div>
       </div>
     </Link>
+  );
+}
+
+function MarketPulseMarquee({ items }) {
+  const validItems = items.filter((item) => item.quote);
+  if (validItems.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="overflow-hidden">
+      <div className="flex items-center whitespace-nowrap animate-marquee" style={{ "--marquee-duration": "18s" }}>
+        {validItems.map((item) => {
+          const q = item.quote;
+          const isPos = (q?.change ?? 0) >= 0;
+          return (
+            <Link
+              key={`pulse-mq-${item.symbol}`}
+              href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted/40 transition-colors"
+            >
+              <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
+              <span className="text-xs font-bold tabular-nums">{q ? formatPrice(q.price) : "—"}</span>
+              {q && typeof q.changePercent === "number" ? (
+                <span className={`text-[11px] font-semibold flex items-center gap-0.5 ${isPos ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                  {isPos ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                  {isPos ? "+" : ""}
+                  {q.changePercent.toFixed(2)}%
+                </span>
+              ) : null}
+            </Link>
+          );
+        })}
+        {validItems.map((item) => {
+          const q = item.quote;
+          const isPos = (q?.change ?? 0) >= 0;
+          return (
+            <Link
+              key={`pulse-mq-dup-${item.symbol}`}
+              href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted/40 transition-colors"
+            >
+              <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
+              <span className="text-xs font-bold tabular-nums">{q ? formatPrice(q.price) : "—"}</span>
+              {q && typeof q.changePercent === "number" ? (
+                <span className={`text-[11px] font-semibold flex items-center gap-0.5 ${isPos ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                  {isPos ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                  {isPos ? "+" : ""}
+                  {q.changePercent.toFixed(2)}%
+                </span>
+              ) : null}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -995,77 +1072,68 @@ export default function ExplorePage() {
   if (loading) {
     return (
       <div className="flex flex-col gap-6">
-        <section className="bg-background/80">
-          <div className="grid grid-cols-2 gap-3">
-            {HIGHLIGHT_SYMBOLS.slice(0, 4).map((symbol) => (
-              <div key={symbol.symbol}>
-                <div className="flex items-center justify-between gap-2">
-                  <div className="space-y-2">
-                    <div className="h-3 w-16 rounded-full shimmer" />
-                    <div className="h-3 w-20 rounded-full shimmer" />
-                  </div>
-                  <div className="h-3 w-10 rounded-full shimmer" />
-                </div>
-                <div className="mt-3 flex items-end justify-between gap-4">
-                  <div className="space-y-2">
-                    <div className="h-4 w-20 rounded-full shimmer" />
-                    <div className="h-3 w-16 rounded-full shimmer" />
-                  </div>
-                  <div className="h-12 w-24 rounded-xl shimmer" />
-                </div>
-              </div>
+        <section className="w-full overflow-x-auto scrollbar-hide -mx-1 px-1">
+          <div className="flex items-center gap-3 min-w-max">
+            {MARKET_PULSE_SYMBOLS.map((item) => (
+              <div key={`pulse-loading-${item.symbol}`} className="h-9 w-28 rounded-xl shimmer" />
             ))}
           </div>
         </section>
 
-        <Card className="mt-4 border-none">
-          <CardContent className="space-y-3 pt-0">
-            <div className="h-16 w-full rounded-lg shimmer bg-white/20"></div>
-          </CardContent>
-        </Card>
-
-        <Card className="mt-4 border-none">
-          <CardContent className="space-y-3 pt-0">
-            <div className="h-3 w-full rounded-full shimmer bg-white/20"></div>
-            <div className="h-3 w-5/6 rounded-full shimmer bg-white/20"></div>
-          </CardContent>
-        </Card>
-
-        {["idx", "us"].map((category) => (
-          <section key={category} className="rounded-xl bg-background/80">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <div className="space-y-2">
-                <div className="h-3 w-32 rounded-full shimmer" />
-                <div className="h-3 w-40 rounded-full shimmer" />
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="h-6 w-16 rounded-full shimmer" />
-                <div className="h-6 w-20 rounded-full shimmer" />
-              </div>
-            </div>
-            <div>
-              {[...Array(5)].map((_, idx) => (
-                <ShimmerItem key={`${category}-shimmer-${idx}`} />
+        <section className="w-full">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-2 w-full">
+            <div className="flex items-center gap-2 mb-4 overflow-x-auto scrollbar-hide w-full">
+              {MARKET_CATEGORIES.map((cat) => (
+                <div key={`tab-loading-${cat.id}`} className="h-8 w-24 rounded-full shimmer shrink-0" />
               ))}
             </div>
-            <div className="flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground/80">
-              <div className="h-3 w-24 rounded-full shimmer" />
-              <div className="h-3 w-20 rounded-full shimmer" />
+            <div className="flex items-center gap-1.5 mb-4 overflow-x-auto scrollbar-hide">
+              {MARKET_TIMEFRAMES.map((tf) => (
+                <div key={`tf-loading-${tf}`} className="h-7 w-9 rounded-lg shimmer shrink-0" />
+              ))}
             </div>
-          </section>
-        ))}
-
-        <section className="rounded-xl bg-background/80 p-4">
-          <div className="h-4 w-48 rounded-full shimmer" />
-          <div className="mt-4 grid grid-cols-3 gap-3">
-            {CATEGORY_ORDER.map((category) => (
-              <div key={`trigger-${category}`} className="space-y-2 text-center">
-                <div className="h-8 rounded-full shimmer" />
-                <div className="h-3 w-24 mx-auto rounded-full shimmer" />
-              </div>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <MarketSymbolCardSkeleton key={`market-card-loading-${idx}`} />
             ))}
           </div>
         </section>
+
+        <Card className="border-none">
+          <CardContent className="space-y-3 pt-0">
+            <div className="h-16 w-full rounded-2xl shimmer bg-white/20" />
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-4 space-y-2">
+            {[1, 2, 3].map((item) => (
+              <div key={`money-flow-loading-${item}`} className="h-16 rounded-2xl shimmer" />
+            ))}
+          </div>
+          <div className="lg:col-span-8 lg:columns-2 lg:gap-6 space-y-4 lg:space-y-0">
+            {["idx", "us", "crypto"].map((category) => (
+              <section key={category} className="rounded-xl bg-background/80 lg:[break-inside:avoid] lg:mb-6">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-2">
+                    <div className="h-3 w-32 rounded-full shimmer" />
+                    <div className="h-3 w-40 rounded-full shimmer" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-16 rounded-full shimmer" />
+                    <div className="h-6 w-20 rounded-full shimmer" />
+                  </div>
+                </div>
+                <div>
+                  {[...Array(5)].map((_, idx) => (
+                    <ShimmerItem key={`${category}-shimmer-${idx}`} />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
@@ -1091,7 +1159,7 @@ export default function ExplorePage() {
 
       {/* ───── Market Pulse Ticker Strip ───── */}
       <section className="w-full overflow-x-auto scrollbar-hide -mx-1 px-1">
-        <div className="flex items-center gap-3 min-w-max">
+        <div className="hidden md:flex items-center gap-3 min-w-max">
           {marketPulse.map((item) => {
             const q = item.quote;
             const isPos = (q?.change ?? 0) >= 0;
@@ -1113,6 +1181,9 @@ export default function ExplorePage() {
             );
           })}
         </div>
+        <div className="md:hidden">
+          <MarketPulseMarquee items={marketPulse} />
+        </div>
       </section>
 
       {/* ───── Market Categories (Tabbed) ───── */}
@@ -1121,9 +1192,6 @@ export default function ExplorePage() {
           <div className="flex items-center gap-2 mb-4 overflow-x-auto scrollbar-hide w-full">
             {MARKET_CATEGORIES.map((cat) => {
               const CatIcon = cat.icon;
-              const isMarketOpen = cat.marketTz
-                ? isWithinMarketHours(cat.marketTz, cat.marketOpen[0], cat.marketOpen[1], cat.marketClose[0], cat.marketClose[1])
-                : true;
               return (
                 <button
                   key={cat.id}
@@ -1165,61 +1233,65 @@ export default function ExplorePage() {
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
-          {activeCategory.symbols.map((item) => {
-            const q = item.quote;
-            const tfChange = getTimeframeChange(q, marketTimeframe);
-            const changeValue = tfChange ?? (q?.change ?? 0);
-            const isPositive = changeValue >= 0;
-            const isAtATH = marketTimeframe === "ATH" && tfChange !== null && Math.abs(tfChange) < 0.5;
-            return (
-              <Link
-                key={item.symbol}
-                href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
-                className={`rounded-2xl p-3.5 border transition-all duration-200 block card-hover bg-card ${
-                  isAtATH
-                    ? "border-amber-500/40 bg-gradient-to-br from-amber-500/5 to-orange-500/5 ring-1 ring-amber-500/20"
-                    : "border-border/20 hover:border-border/40"
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <TickerAvatar symbol={item.symbol} logo={item.logo || q?.logo} />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-sm font-bold text-foreground tracking-tight truncate">{item.label}</p>
-                      {isAtATH && <Flame className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
+          {activeMarketLoading
+            ? activeCategory.symbols.map((item) => (
+                <MarketSymbolCardSkeleton key={`loading-${item.symbol}`} />
+              ))
+            : activeCategory.symbols.map((item) => {
+                const q = item.quote;
+                const tfChange = getTimeframeChange(q, marketTimeframe);
+                const changeValue = tfChange ?? (q?.change ?? 0);
+                const isPositive = changeValue >= 0;
+                const isAtATH = marketTimeframe === "ATH" && tfChange !== null && Math.abs(tfChange) < 0.5;
+                return (
+                  <Link
+                    key={item.symbol}
+                    href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
+                    className={`rounded-2xl p-3.5 border transition-all duration-200 block card-hover bg-card ${
+                      isAtATH
+                        ? "border-amber-500/40 bg-gradient-to-br from-amber-500/5 to-orange-500/5 ring-1 ring-amber-500/20"
+                        : "border-border/20 hover:border-border/40"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <TickerAvatar symbol={item.symbol} logo={item.logo || q?.logo} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-bold text-foreground tracking-tight truncate">{item.label}</p>
+                          {isAtATH && <Flame className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground truncate">{formatTickerDisplay(item.symbol)}</p>
+                      </div>
                     </div>
-                    <p className="text-[11px] text-muted-foreground truncate">{formatTickerDisplay(item.symbol)}</p>
-                  </div>
-                </div>
-                <div className="mt-3 flex items-end justify-between gap-2">
-                  <div>
-                    <p className="text-base font-bold text-foreground tabular-nums">
-                      {q ? formatPrice(q.price) : "—"}
-                    </p>
-                    <p className={`text-xs font-semibold mt-0.5 ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
-                      {tfChange !== null
-                        ? `${isPositive ? "+" : ""}${tfChange.toFixed(2)}%`
-                        : q && typeof q.changePercent === "number"
-                          ? `${q.changePercent >= 0 ? "+" : ""}${q.changePercent.toFixed(2)}%`
-                          : "—"}
-                      {marketTimeframe !== "1D" && tfChange !== null && (
-                        <span className="text-muted-foreground font-normal ml-1">({marketTimeframe})</span>
-                      )}
-                    </p>
-                  </div>
-                  <div className={`flex items-center ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
-                    <MiniChart
-                      data={q?.chartData || []}
-                      isPositive={isPositive}
-                      width={72}
-                      height={40}
-                      chartId={`market-${item.symbol}`}
-                    />
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
+                    <div className="mt-3 flex items-end justify-between gap-2">
+                      <div>
+                        <p className="text-base font-bold text-foreground tabular-nums">
+                          {q ? formatPrice(q.price) : "—"}
+                        </p>
+                        <p className={`text-xs font-semibold mt-0.5 ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                          {tfChange !== null
+                            ? `${isPositive ? "+" : ""}${tfChange.toFixed(2)}%`
+                            : q && typeof q.changePercent === "number"
+                              ? `${q.changePercent >= 0 ? "+" : ""}${q.changePercent.toFixed(2)}%`
+                              : "—"}
+                          {marketTimeframe !== "1D" && tfChange !== null && (
+                            <span className="text-muted-foreground font-normal ml-1">({marketTimeframe})</span>
+                          )}
+                        </p>
+                      </div>
+                      <div className={`flex items-center ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
+                        <MiniChart
+                          data={q?.chartData || []}
+                          isPositive={isPositive}
+                          width={72}
+                          height={40}
+                          chartId={`market-${item.symbol}`}
+                        />
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
         </div>
       </section>
 
@@ -1286,13 +1358,14 @@ export default function ExplorePage() {
         </div>
 
         {/* ───── Right: Breakout Signals ───── */}
-        <div className="lg:col-span-8 grid grid-cols-1 lg:grid-cols-2 gap-x-6 gap-y-2 content-start">
-          {orderedCategories.map((section) => {
+        <div className="lg:col-span-8">
+          <div className="grid grid-cols-1 gap-y-2 lg:block lg:columns-2 lg:gap-6">
+            {orderedCategories.map((section) => {
             const gatedPicks = section.picks.slice(5);
             const firstPicks = section.picks.slice(0, 5);
             const shouldGate = !isAuthenticated && gatedPicks.length > 0;
             return (
-              <section key={section.category} className="py-5 fade-in">
+              <section key={section.category} className="py-5 fade-in lg:[break-inside:avoid] lg:mb-2">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <div className="flex items-center gap-2">
@@ -1352,9 +1425,10 @@ export default function ExplorePage() {
               </section>
             );
           })}
+          </div>
 
           {/* ───── Screener Triggers ───── */}
-          <section className="p-4 rounded-2xl bg-card border border-border/20">
+          <section className="p-4 rounded-2xl bg-card border border-border/20 mt-4 lg:mt-2">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">
@@ -1405,8 +1479,6 @@ export default function ExplorePage() {
               })}
             </div>
           </section>
-
-
         </div>
       </div>
 

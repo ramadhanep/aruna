@@ -1850,6 +1850,34 @@ function ElectionCyclePageContent() {
     if (!fundamentals) return [];
     const valuations = fundamentals.valuations || {};
     const priceInfo = fundamentals.price || {};
+    const marketData = fundamentals.marketData || {};
+    const currentValue =
+      typeof displayedPrice === 'number'
+        ? displayedPrice
+        : typeof symbolInfo?.currentPrice === 'number'
+          ? symbolInfo.currentPrice
+          : null;
+    const relativeVolume =
+      marketData.regularMarketVolume != null && marketData.averageDailyVolume3Month
+        ? Number(marketData.regularMarketVolume) / Number(marketData.averageDailyVolume3Month)
+        : null;
+    const distTo50d =
+      currentValue != null && marketData.fiftyDayAverage
+        ? ((currentValue - Number(marketData.fiftyDayAverage)) / Number(marketData.fiftyDayAverage)) * 100
+        : null;
+    const distTo200d =
+      currentValue != null && marketData.twoHundredDayAverage
+        ? ((currentValue - Number(marketData.twoHundredDayAverage)) / Number(marketData.twoHundredDayAverage)) * 100
+        : null;
+    const distTo52wHigh =
+      currentValue != null && marketData.fiftyTwoWeekHigh
+        ? ((currentValue - Number(marketData.fiftyTwoWeekHigh)) / Number(marketData.fiftyTwoWeekHigh)) * 100
+        : null;
+    const distFrom52wLow =
+      currentValue != null && marketData.fiftyTwoWeekLow
+        ? ((currentValue - Number(marketData.fiftyTwoWeekLow)) / Number(marketData.fiftyTwoWeekLow)) * 100
+        : null;
+
     const stats = [
       { label: 'Market Cap', value: formatCompactCurrency(valuations.marketCap) },
       { label: 'Enterprise Value', value: formatCompactCurrency(valuations.enterpriseValue) },
@@ -1863,11 +1891,50 @@ function ElectionCyclePageContent() {
       { label: '52W Range', value: formatPlainNumber(priceInfo.fiftyTwoWeekRange) },
       { label: 'Day Range', value: formatPlainNumber(priceInfo.dayRange) },
       { label: 'Volume', value: formatPlainNumber(priceInfo.volume) },
+      { label: 'Avg Volume (3M)', value: formatPlainNumber(marketData.averageDailyVolume3Month) },
+      { label: 'Avg Volume (10D)', value: formatPlainNumber(marketData.averageDailyVolume10Day) },
+      {
+        label: 'Relative Volume',
+        value:
+          relativeVolume != null && Number.isFinite(relativeVolume)
+            ? `${relativeVolume.toFixed(2)}x`
+            : '—',
+      },
+      { label: '50D Average', value: formatPlainNumber(marketData.fiftyDayAverage) },
+      { label: '200D Average', value: formatPlainNumber(marketData.twoHundredDayAverage) },
+      {
+        label: 'Vs 50D',
+        value:
+          distTo50d != null && Number.isFinite(distTo50d)
+            ? `${distTo50d >= 0 ? '+' : ''}${distTo50d.toFixed(2)}%`
+            : '—',
+      },
+      {
+        label: 'Vs 200D',
+        value:
+          distTo200d != null && Number.isFinite(distTo200d)
+            ? `${distTo200d >= 0 ? '+' : ''}${distTo200d.toFixed(2)}%`
+            : '—',
+      },
+      {
+        label: 'To 52W High',
+        value:
+          distTo52wHigh != null && Number.isFinite(distTo52wHigh)
+            ? `${distTo52wHigh >= 0 ? '+' : ''}${distTo52wHigh.toFixed(2)}%`
+            : '—',
+      },
+      {
+        label: 'From 52W Low',
+        value:
+          distFrom52wLow != null && Number.isFinite(distFrom52wLow)
+            ? `${distFrom52wLow >= 0 ? '+' : ''}${distFrom52wLow.toFixed(2)}%`
+            : '—',
+      },
       { label: 'Previous Close', value: formatPlainNumber(priceInfo.previousClose) },
       { label: 'Open', value: formatPlainNumber(priceInfo.open) },
     ];
     return stats.filter((item) => item.value && item.value !== '—');
-  }, [fundamentals, formatCompactCurrency, formatRatio, formatPlainNumber]);
+  }, [fundamentals, formatCompactCurrency, formatRatio, formatPlainNumber, displayedPrice, symbolInfo?.currentPrice]);
 
   const currentYtdReturn = useMemo(() => {
     const currentLine = rawLinesData.find((entry) => entry.key === 'current');
@@ -2246,11 +2313,16 @@ function ElectionCyclePageContent() {
     const officers = Array.isArray(extendedProfile?.companyOfficers)
       ? extendedProfile.companyOfficers.filter((officer) => officer?.name).slice(0, 6)
       : [];
+    const governance = fundamentals?.governance;
 
     const keyFacts = [
       { label: 'Exchange', value: profileInfo?.exchange },
+      { label: 'Quote Type', value: profileInfo?.quoteType },
+      { label: 'Market State', value: profileInfo?.marketState },
       { label: 'Sector', value: extendedProfile?.sector || profileInfo?.sector },
       { label: 'Industry', value: extendedProfile?.industry || profileInfo?.industry },
+      { label: 'Country', value: extendedProfile?.country || null },
+      { label: 'Phone', value: extendedProfile?.phone || null },
       {
         label: 'Employees',
         value:
@@ -2269,6 +2341,19 @@ function ElectionCyclePageContent() {
             className="text-emerald-600 hover:underline"
           >
             {websiteRaw}
+          </a>
+        ) : null,
+      },
+      {
+        label: 'Investor Relations',
+        value: extendedProfile?.irWebsite ? (
+          <a
+            href={extendedProfile.irWebsite}
+            target="_blank"
+            rel="noreferrer"
+            className="text-emerald-600 hover:underline"
+          >
+            IR Site
           </a>
         ) : null,
       },
@@ -2303,6 +2388,33 @@ function ElectionCyclePageContent() {
               <p className="text-xs leading-relaxed text-muted-foreground whitespace-pre-line">
                 {extendedProfile.longBusinessSummary}
               </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {governance && Object.values(governance).some((value) => value != null) && (
+          <Card className="mt-4 pt-4">
+            <CardHeader>
+              <CardTitle className="text-sm mb-2">Governance Risk</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <dl className="grid grid-cols-2 gap-3 text-xs">
+                {[
+                  { label: 'Overall Risk', value: governance.overallRisk },
+                  { label: 'Audit Risk', value: governance.auditRisk },
+                  { label: 'Board Risk', value: governance.boardRisk },
+                  { label: 'Compensation Risk', value: governance.compensationRisk },
+                  { label: 'Shareholder Rights Risk', value: governance.shareHolderRightsRisk },
+                  { label: 'Governance As Of', value: governance.governanceEpochDate ? formatScreeningTimestamp(governance.governanceEpochDate) : null },
+                ]
+                  .filter((item) => item.value != null)
+                  .map((item) => (
+                    <div key={item.label} className="space-y-0.5">
+                      <dt className="text-muted-foreground">{item.label}</dt>
+                      <dd className="font-semibold text-foreground">{item.value}</dd>
+                    </div>
+                  ))}
+              </dl>
             </CardContent>
           </Card>
         )}
@@ -2593,6 +2705,38 @@ function ElectionCyclePageContent() {
       );
     }
 
+    const marketData = fundamentals?.marketData || null;
+    const spread =
+      marketData?.bid != null && marketData?.ask != null
+        ? Number(marketData.ask) - Number(marketData.bid)
+        : null;
+    const spreadPct =
+      spread != null && displayedPrice != null && Number(displayedPrice) !== 0
+        ? (spread / Number(displayedPrice)) * 100
+        : null;
+    const snapshotRows = marketData
+      ? [
+          { label: 'Market State', value: marketData.marketState || null },
+          { label: 'Quote Source', value: marketData.quoteSourceName || null },
+          { label: 'Bid', value: formatPlainNumber(marketData.bid) },
+          { label: 'Ask', value: formatPlainNumber(marketData.ask) },
+          { label: 'Bid Size', value: formatQuantityValue(marketData.bidSize) },
+          { label: 'Ask Size', value: formatQuantityValue(marketData.askSize) },
+          {
+            label: 'Spread',
+            value:
+              spread != null && Number.isFinite(spread)
+                ? `${formatPlainNumber(spread)}${spreadPct != null ? ` (${spreadPct.toFixed(3)}%)` : ''}`
+                : null,
+          },
+          { label: 'Timezone', value: marketData.exchangeTimezoneName || null },
+          { label: 'Regular Session', value: marketData.regularMarketTime || null },
+          { label: 'Pre-Market', value: marketData.preMarketTime || null },
+          { label: 'Post-Market', value: marketData.postMarketTime || null },
+          { label: 'Analyst Summary', value: marketData.averageAnalystRating || null },
+        ].filter((item) => item.value && item.value !== '—')
+      : [];
+
     return (
       <div className="space-y-4">
         <Card>
@@ -2616,6 +2760,24 @@ function ElectionCyclePageContent() {
             )}
           </CardContent>
         </Card>
+
+        {snapshotRows.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm mb-2">Trading Snapshot</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                {snapshotRows.map((item) => (
+                  <div key={item.label} className="space-y-0.5">
+                    <dt className="text-muted-foreground">{item.label}</dt>
+                    <dd className="font-semibold text-foreground">{item.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </CardContent>
+          </Card>
+        )}
 
         {(hasEarningsAnalysis || hasRevenueAnalysis) ? (
           <div className="grid gap-2 grid-cols-1">
@@ -2894,6 +3056,10 @@ function ElectionCyclePageContent() {
       return `${Math.min(100, Math.max(0, ((value - minValue) / span) * 100))}%`;
     };
 
+    const recommendationTrend = Array.isArray(fundamentals?.recommendations?.trend)
+      ? fundamentals.recommendations.trend
+      : [];
+    const marketData = fundamentals?.marketData || null;
     const consensusColumns = revenueChartData.slice(-4);
     const consensusRows = [
       {
@@ -3093,6 +3259,74 @@ function ElectionCyclePageContent() {
             </CardContent>
           </Card>
         )}
+
+        {recommendationTrend.length > 0 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Recommendation Trend History</CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">
+                Monthly shift in analyst stance
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {recommendationTrend.map((entry, idx) => {
+                const totals = Number(entry.strongBuy || 0) + Number(entry.buy || 0) + Number(entry.hold || 0) + Number(entry.sell || 0) + Number(entry.strongSell || 0);
+                return (
+                  <div key={`rec-trend-${idx}`} className="rounded-xl border border-border/30 p-2.5">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-semibold text-foreground">{entry.period || `-${idx}m`}</span>
+                      <span className="text-muted-foreground">{totals} opinions</span>
+                    </div>
+                    <div className="mt-2 grid grid-cols-5 gap-1 text-[10px]">
+                      {[
+                        { label: 'SB', value: entry.strongBuy },
+                        { label: 'B', value: entry.buy },
+                        { label: 'H', value: entry.hold },
+                        { label: 'S', value: entry.sell },
+                        { label: 'SS', value: entry.strongSell },
+                      ].map((point) => (
+                        <div key={`${entry.period}-${point.label}`} className="rounded-md bg-muted/40 py-1 text-center">
+                          <p className="text-muted-foreground">{point.label}</p>
+                          <p className="font-semibold text-foreground">{Number(point.value || 0)}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </CardContent>
+          </Card>
+        )}
+
+        {marketData && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Earnings Event Window</CardTitle>
+              <CardDescription className="text-xs text-muted-foreground">
+                Upcoming earnings and call schedule from Yahoo feed
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                {[
+                  { label: 'Earnings Timestamp', value: marketData.earningsTimestamp },
+                  { label: 'Earnings Start', value: marketData.earningsTimestampStart },
+                  { label: 'Earnings End', value: marketData.earningsTimestampEnd },
+                  { label: 'Call Start', value: marketData.earningsCallTimestampStart },
+                  { label: 'Call End', value: marketData.earningsCallTimestampEnd },
+                  { label: 'Date Estimate', value: marketData.isEarningsDateEstimate == null ? null : (marketData.isEarningsDateEstimate ? 'Estimated' : 'Confirmed') },
+                ]
+                  .filter((item) => item.value != null && item.value !== '')
+                  .map((item) => (
+                    <div key={item.label} className="space-y-0.5">
+                      <dt className="text-muted-foreground">{item.label}</dt>
+                      <dd className="font-semibold text-foreground">{item.value}</dd>
+                    </div>
+                  ))}
+              </dl>
+            </CardContent>
+          </Card>
+        )}
       </div>
     );
   };
@@ -3125,14 +3359,27 @@ function ElectionCyclePageContent() {
     const div = fundamentals?.dividendInfo;
     const cal = fundamentals?.calendarData;
     const upgrades = fundamentals?.upgrades;
+    const marketData = fundamentals?.marketData;
 
     const hasFinancialHealth = fh && Object.values(fh).some(v => v != null);
     const hasKeyStats = kse && Object.values(kse).some(v => v != null);
     const hasDividends = div && (div.dividendRate != null || div.dividendYield != null);
-    const hasCalendar = cal && (cal.earningsDate?.length > 0 || cal.exDividendDate);
+    const hasCalendar = cal && (cal.earningsDate?.length > 0 || cal.exDividendDate || cal.dividendDate);
     const hasUpgrades = upgrades && upgrades.length > 0;
+    const hasOwnershipShort = kse && (
+      kse.sharesShortPriorMonth != null ||
+      kse.sharesShortPreviousMonthDate != null ||
+      kse.sharesPercentSharesOut != null ||
+      kse.shortPercentOfFloat != null ||
+      kse.impliedSharesOutstanding != null
+    );
+    const hasFiscalMarkers = kse && (
+      kse.lastFiscalYearEnd != null ||
+      kse.nextFiscalYearEnd != null ||
+      kse.mostRecentQuarter != null
+    );
 
-    if (!hasFinancialHealth && !hasKeyStats && !hasDividends && !hasCalendar && !hasUpgrades) {
+    if (!hasFinancialHealth && !hasKeyStats && !hasDividends && !hasCalendar && !hasUpgrades && !hasOwnershipShort && !hasFiscalMarkers) {
       return (
         <Card>
           <CardContent className="text-xs text-muted-foreground py-6">
@@ -3185,6 +3432,12 @@ function ElectionCyclePageContent() {
                   <div className="flex items-center justify-between py-2">
                     <dt className="text-xs text-muted-foreground">Dividend Pay Date</dt>
                     <dd className="text-xs font-medium">{formatDate(cal.dividendDate)}</dd>
+                  </div>
+                )}
+                {marketData?.earningsCallTimestampStart && (
+                  <div className="flex items-center justify-between py-2 border-t border-border/20">
+                    <dt className="text-xs text-muted-foreground">Earnings Call</dt>
+                    <dd className="text-xs font-medium">{formatDate(marketData.earningsCallTimestampStart)}</dd>
                   </div>
                 )}
               </dl>
@@ -3326,7 +3579,12 @@ function ElectionCyclePageContent() {
                     { label: '52-Week Change', value: kse.fiftyTwoWeekChange != null ? formatPct(kse.fiftyTwoWeekChange) : null },
                     { label: 'Shares Outstanding', value: kse.sharesOutstanding != null ? formatNum(kse.sharesOutstanding) : null },
                     { label: 'Float', value: kse.floatShares != null ? formatNum(kse.floatShares) : null },
+                    { label: 'Implied Shares Out', value: kse.impliedSharesOutstanding != null ? formatNum(kse.impliedSharesOutstanding) : null },
                     { label: 'Short Ratio', value: kse.shortRatio != null ? kse.shortRatio.toFixed(2) : null },
+                    { label: 'Shares Short', value: kse.sharesShort != null ? formatNum(kse.sharesShort) : null },
+                    { label: 'Shares Short (Prev)', value: kse.sharesShortPriorMonth != null ? formatNum(kse.sharesShortPriorMonth) : null },
+                    { label: 'Short % Float', value: kse.shortPercentOfFloat != null ? formatPct(kse.shortPercentOfFloat) : null },
+                    { label: 'Short % Shares Out', value: kse.sharesPercentSharesOut != null ? formatPct(kse.sharesPercentSharesOut) : null },
                     { label: '% Held by Insiders', value: kse.heldPercentInsiders != null ? formatPct(kse.heldPercentInsiders) : null },
                     { label: '% Held by Institutions', value: kse.heldPercentInstitutions != null ? formatPct(kse.heldPercentInstitutions) : null },
                     { label: 'Last Split', value: kse.lastSplitFactor || null },
@@ -3343,6 +3601,70 @@ function ElectionCyclePageContent() {
               <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
                 <Lock className="h-6 w-6 text-muted-foreground" />
                 <p className="text-xs font-semibold text-muted-foreground">Sign in to view key statistics</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {hasOwnershipShort && (
+          <div className="relative">
+            <Card className={!isAuthenticated ? 'pointer-events-none select-none opacity-60 blur-[1.5px]' : ''}>
+              <CardHeader>
+                <CardTitle className="text-sm">Ownership & Short Interest</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                  {[
+                    { label: 'Shares Short (Current)', value: kse.sharesShort != null ? formatNum(kse.sharesShort) : null },
+                    { label: 'Shares Short (Prev)', value: kse.sharesShortPriorMonth != null ? formatNum(kse.sharesShortPriorMonth) : null },
+                    { label: 'Short % Float', value: kse.shortPercentOfFloat != null ? formatPct(kse.shortPercentOfFloat) : null },
+                    { label: 'Short % Shares Out', value: kse.sharesPercentSharesOut != null ? formatPct(kse.sharesPercentSharesOut) : null },
+                    { label: 'Insider Ownership', value: kse.heldPercentInsiders != null ? formatPct(kse.heldPercentInsiders) : null },
+                    { label: 'Institution Ownership', value: kse.heldPercentInstitutions != null ? formatPct(kse.heldPercentInstitutions) : null },
+                    { label: 'Short Data Date', value: kse.sharesShortPreviousMonthDate ? formatDate(kse.sharesShortPreviousMonthDate) : null },
+                  ].filter((item) => item.value != null).map((item) => (
+                    <div key={item.label} className="space-y-0.5">
+                      <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
+                      <dd className="text-xs font-semibold">{item.value}</dd>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            {!isAuthenticated && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
+                <Lock className="h-6 w-6 text-muted-foreground" />
+                <p className="text-xs font-semibold text-muted-foreground">Sign in to view ownership and short interest</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {hasFiscalMarkers && (
+          <div className="relative">
+            <Card className={!isAuthenticated ? 'pointer-events-none select-none opacity-60 blur-[1.5px]' : ''}>
+              <CardHeader>
+                <CardTitle className="text-sm">Fiscal Markers</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  {[
+                    { label: 'Most Recent Quarter', value: kse.mostRecentQuarter ? formatDate(kse.mostRecentQuarter) : null },
+                    { label: 'Last Fiscal Year End', value: kse.lastFiscalYearEnd ? formatDate(kse.lastFiscalYearEnd) : null },
+                    { label: 'Next Fiscal Year End', value: kse.nextFiscalYearEnd ? formatDate(kse.nextFiscalYearEnd) : null },
+                  ].filter((item) => item.value != null).map((item) => (
+                    <div key={item.label} className="space-y-0.5">
+                      <dt className="text-muted-foreground">{item.label}</dt>
+                      <dd className="font-semibold text-foreground">{item.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </CardContent>
+            </Card>
+            {!isAuthenticated && (
+              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
+                <Lock className="h-6 w-6 text-muted-foreground" />
+                <p className="text-xs font-semibold text-muted-foreground">Sign in to view fiscal markers</p>
               </div>
             )}
           </div>

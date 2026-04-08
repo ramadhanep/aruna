@@ -262,25 +262,12 @@ export default function DiscussionPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  // Hide mobile nav, header, and desktop sidebar
+  // Lock scroll while discussion view is active
   useEffect(() => {
     document.body.style.overflow = "hidden";
-    const header = document.querySelector("header");
-    const nav = document.querySelector("nav");
-    const bottomNav = document.querySelector(".mobile-bottom-nav");
-    const aside = document.querySelector("aside");
-
-    if (header) header.style.display = "none";
-    if (nav) nav.style.display = "none";
-    if (bottomNav) bottomNav.style.display = "none";
-    if (aside) aside.style.display = "none";
 
     return () => {
       document.body.style.overflow = "";
-      if (header) header.style.display = "";
-      if (nav) nav.style.display = "";
-      if (bottomNav) bottomNav.style.display = "";
-      if (aside) aside.style.display = "";
     };
   }, []);
 
@@ -447,4 +434,3 @@ export default function DiscussionPage() {
     </div>
   );
 }
-

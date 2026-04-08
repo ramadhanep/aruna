@@ -1,6 +1,7 @@
 import yahooFinance from '@/lib/yahoo-finance';
 import { encodePayload } from '@/lib/secure-payload';
 import { getSupabaseServiceRoleClient } from '@/lib/supabase-server';
+import { writeYahooRawLog } from '@/lib/yahoo-raw-log';
 
 const SUPABASE_STORAGE_BASE = 'https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public';
 const PLUANG_CDN_BASE = 'https://image-cdn.pluang.com/icons/light/global-stocks';
@@ -104,6 +105,12 @@ export async function GET(request) {
       lang: 'en-US',
       region: 'US',
     });
+    await writeYahooRawLog({
+      endpoint: 'finance-quote',
+      symbol,
+      requestParams: { lang: 'en-US', region: 'US' },
+      payload: quoteMeta,
+    });
   } catch (error) {
     console.warn(`Failed to fetch quote metadata for ${symbol}`, error);
   }
@@ -125,6 +132,18 @@ export async function GET(request) {
     }
 
     const result = await yahooFinance.chart(symbol, chartOptions);
+    await writeYahooRawLog({
+      endpoint: 'finance-chart',
+      symbol,
+      requestParams: {
+        period1: chartOptions.period1?.toISOString?.() || chartOptions.period1,
+        period2: chartOptions.period2?.toISOString?.() || chartOptions.period2,
+        interval: chartOptions.interval,
+        events: chartOptions.events,
+        includePrePost: chartOptions.includePrePost || false,
+      },
+      payload: result,
+    });
 
     // Handle empty results
     if (!result?.quotes || result.quotes.length === 0) {
