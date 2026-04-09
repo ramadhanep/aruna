@@ -935,6 +935,41 @@ export default function PortfolioTrackerPage() {
     });
   }, [holdingsWithMetrics]);
 
+  const digitalDistribution = useMemo(() => {
+    const digitalHoldings = holdingsWithMetrics.filter((h) => !h.isCash);
+    return digitalHoldings.map((h, i) => {
+      const hue = (i * 137.5 + 25) % 360;
+      const saturation = 65 + (i % 3) * 10;
+      const lightness = 45 + (i % 2) * 10;
+
+      return {
+        name: formatTickerDisplay(h.entry.symbol),
+        value: h.currentValueUSD,
+        fill: `hsl(${hue}, ${saturation}%, ${lightness}%)`,
+      };
+    });
+  }, [holdingsWithMetrics]);
+
+  const cashTypeDistribution = useMemo(() => {
+    const totals = new Map();
+    holdingsWithMetrics
+      .filter((h) => h.isCash)
+      .forEach((h) => {
+        const code = h.entry.cashCurrency || 'USD';
+        const prev = totals.get(code) || 0;
+        totals.set(code, prev + h.currentValueUSD);
+      });
+
+    return [...totals.entries()].map(([code, value], i) => {
+      const hue = (i * 137.5 + 210) % 360;
+      return {
+        name: code,
+        value,
+        fill: `hsl(${hue}, 70%, 50%)`,
+      };
+    });
+  }, [holdingsWithMetrics]);
+
   // Total Net Worth
   const totalNetWorth = digitalMarket + totalCash;
   const totalPnL = digitalPnL;
@@ -1223,6 +1258,8 @@ export default function PortfolioTrackerPage() {
                         digitalUSD={digitalMarket}
                         cashUSD={totalCash}
                         holdingsDistribution={holdingsDistribution}
+                        digitalDistribution={digitalDistribution}
+                        cashTypeDistribution={cashTypeDistribution}
                         currency={currency}
                         idrPerUsd={idrPerUsd}
                         sgdPerUsd={sgdPerUsd}

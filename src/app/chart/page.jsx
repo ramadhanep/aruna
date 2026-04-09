@@ -2762,7 +2762,7 @@ function ElectionCyclePageContent() {
         </Card>
 
         {snapshotRows.length > 0 && (
-          <Card>
+          <Card className="mt-8">
             <CardHeader>
               <CardTitle className="text-sm mb-2">Trading Snapshot</CardTitle>
             </CardHeader>
