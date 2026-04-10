@@ -16,7 +16,9 @@ export function TickerAvatar({
 }) {
   const { isLiteMode } = useAppearanceMode();
   const [failed, setFailed] = useState(false);
-  const fallbackChar = symbol ? symbol.charAt(0) : "?";
+  const fallbackChar = symbol
+    ? symbol.match(/[A-Za-z]/)?.[0]?.toUpperCase() ?? "O"
+    : "O";
   const showImage = Boolean(logo) && !failed && !isLiteMode;
 
   return (
