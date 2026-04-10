@@ -22,6 +22,8 @@ const STORAGE_KEYS = [
   "aruna_watchlist_updated_at",
   "aruna_search_history",
   "aruna_last_election_symbol",
+  "aruna_appearance_mode",
+  "aruna_landing_started",
 ];
 
 export function ClearDataButton({

@@ -192,12 +192,12 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
                   value={symbolQuery}
                   onChange={(e) => { setSymbolQuery(e.target.value); setForm(f => ({ ...f, symbol: e.target.value })); }}
                   placeholder="Search ticker (e.g. AAPL)"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   disabled={loadingPrice}
                 />
                 {loadingSearch && <p className="text-xs text-muted-foreground">Searching...</p>}
                 {!loadingSearch && symbolResults.length > 0 && (
-                  <div className="max-h-40 overflow-auto rounded-md border border-border bg-background shadow-sm p-1 flex flex-col gap-1">
+                  <div className="max-h-40 overflow-auto rounded-md border border-border bg-background p-1 flex flex-col gap-1">
                     {symbolResults.map(r => (
                       <button
                         type="button"
@@ -222,7 +222,7 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
                     placeholder="0"
                     type="number"
                     step="any"
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
@@ -252,7 +252,7 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
                   placeholder="0"
                   type="number"
                   step="any"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
 

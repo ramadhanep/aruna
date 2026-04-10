@@ -1404,7 +1404,7 @@ function ElectionCyclePageContent() {
           size="sm"
           variant={normalTimeframe === option.value ? 'default' : 'ghost'}
           className={`rounded-sm px-2 min-w-[2.1rem] font-bold py-0 text-[11px] ${normalTimeframe === option.value
-            ? 'bg-emerald-700 text-white/80 shadow-sm'
+            ? 'bg-emerald-700 text-white/80'
             : 'border-border/20 text-muted-foreground'
             }`}
           onClick={() => setNormalTimeframe(option.value)}
@@ -1419,7 +1419,7 @@ function ElectionCyclePageContent() {
           type="button"
           size="sm"
           variant="ghost"
-          className="h-6 w-6 rounded-full border border-border/30 p-0 text-muted-foreground shadow-sm"
+          className="h-6 w-6 rounded-full border border-border/30 p-0 text-muted-foreground"
           onClick={() => setNormalFullscreenOpen(true)}
           disabled={normalSeriesLoading || !normalChartReady}
           title={`Fullscreen ${normalTimeframeLabel} candlestick`}
@@ -1438,7 +1438,7 @@ function ElectionCyclePageContent() {
           type="button"
           size="sm"
           variant="ghost"
-          className="h-6 rounded-md border border-border/30 px-2 gap-1.5 text-muted-foreground shadow-sm text-[11px] font-semibold"
+          className="h-6 rounded-md border border-border/30 px-2 gap-1.5 text-muted-foreground text-[11px] font-semibold"
           title="Chart Type"
           aria-label="Chart type"
         >
@@ -1485,7 +1485,7 @@ function ElectionCyclePageContent() {
           type="button"
           size="sm"
           variant="ghost"
-          className="h-6 w-6 rounded-full border border-border/30 p-0 text-muted-foreground shadow-sm"
+          className="h-6 w-6 rounded-full border border-border/30 p-0 text-muted-foreground"
           title="Chart Settings"
           aria-label="Chart settings"
         >
@@ -3101,7 +3101,7 @@ function ElectionCyclePageContent() {
                   {ratingScore && (
                     <div className="mt-2 relative h-2 rounded-full bg-gradient-to-r from-red-500 via-amber-500 to-emerald-500 overflow-hidden">
                       <div
-                        className="absolute top-0 h-full w-1 bg-white rounded-full shadow-sm ring-1 ring-black/20"
+                        className="absolute top-0 h-full w-1 bg-white rounded-full ring-1 ring-black/20"
                         style={{ left: `${Math.min(100, Math.max(0, ((ratingScore - 1) / 4) * 100))}%` }}
                       />
                     </div>

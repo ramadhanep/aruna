@@ -73,7 +73,7 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
                 type="button"
                 variant="ghost"
                 className={`rounded-xl text-xs font-semibold transition-all px-4 py-2 h-auto ${value === tab.key
-                  ? "bg-gradient-to-br from-teal-600 to-emerald-700 text-white shadow-lg shadow-emerald-500/20"
+                  ? "bg-gradient-to-br from-teal-600 to-emerald-700 text-white shadow-emerald-500/20"
                   : "hover:bg-muted/60"
                   }`}
                 onClick={() => onChange(tab.key)}
@@ -149,7 +149,7 @@ function SummaryCard({ summary }) {
       : 'text-yellow-500';
 
   return (
-    <Card className="border-none bg-gradient-to-br from-teal-600/20 to-emerald-800/10 dark:from-teal-900/40 dark:to-emerald-950/40 text-foreground dark:text-white shadow-lg border border-white/[0.08] rounded-2xl">
+    <Card className="border-none bg-gradient-to-br from-teal-600/20 to-emerald-800/10 dark:from-teal-900/40 dark:to-emerald-950/40 text-foreground dark:text-white border border-white/[0.08] rounded-2xl">
       <CardContent className="p-3 space-y-3">
         {/* Market Sentiment */}
         <div className="flex items-center justify-between">
@@ -198,7 +198,7 @@ function StockCard({ stock, isLocked = false }) {
   const gradientFrom = statusColorMap[stock.status?.variant]?.cardGradient || statusColorMap.danger.cardGradient;
 
   return (
-    <Card className={`bg-gradient-to-br ${gradientFrom} to-transparent border-white/[0.08] dark:border-white/[0.08] text-foreground dark:text-white overflow-hidden relative rounded-2xl shadow-lg`}>
+    <Card className={`bg-gradient-to-br ${gradientFrom} to-transparent border-white/[0.08] dark:border-white/[0.08] text-foreground dark:text-white overflow-hidden relative rounded-2xl`}>
       <CardContent className={`p-3 space-y-2 ${isLocked ? "blur-[2px] opacity-60" : ""}`}>
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -455,7 +455,7 @@ export default function MomentumPage() {
   return (
     <div className="space-y-3 pb-4 max-w-6xl mx-auto w-full">
       {/* Info Card */}
-      <Card className="border-none bg-gradient-to-br from-teal-600/90 to-emerald-800/90 text-white shadow-xl shadow-emerald-900/20 p-3 rounded-2xl">
+      <Card className="border-none bg-gradient-to-br from-teal-600/90 to-emerald-800/90 text-white shadow-emerald-900/20 p-3 rounded-2xl">
         <CardContent className="pt-0">
           <p className="text-xs leading-relaxed text-white/90 font-semibold">
             IDX Momentum & Price Trend Analysis

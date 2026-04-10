@@ -41,7 +41,7 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
             type="button"
             variant="ghost"
             className={`flex-1 rounded-xl text-xs font-semibold transition-all h-9 ${value === "standard"
-              ? "bg-gradient-to-br from-teal-600 to-emerald-700 text-white shadow-lg shadow-emerald-500/20"
+              ? "bg-gradient-to-br from-teal-600 to-emerald-700 text-white shadow-emerald-500/20"
               : "hover:bg-muted/60"
               }`}
             onClick={() => onChange("standard")}
@@ -52,7 +52,7 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
             type="button"
             variant="ghost"
             className={`flex-1 rounded-xl text-xs font-semibold transition-all h-9 ${value === "small_cap"
-              ? "bg-gradient-to-br from-teal-600 to-emerald-700 text-white shadow-lg shadow-emerald-500/20"
+              ? "bg-gradient-to-br from-teal-600 to-emerald-700 text-white shadow-emerald-500/20"
               : "hover:bg-muted/60"
               }`}
             onClick={() => onChange("small_cap")}
@@ -141,7 +141,7 @@ function StockCard({ stock, isLocked = false }) {
   const gradientFrom = statusColorMap[stock.status?.variant]?.cardGradient || statusColorMap.danger.cardGradient;
 
   return (
-    <Card className={`bg-gradient-to-br ${gradientFrom} to-transparent border-white/[0.08] dark:border-white/[0.08] text-foreground dark:text-white overflow-hidden relative rounded-2xl shadow-lg`}>
+    <Card className={`bg-gradient-to-br ${gradientFrom} to-transparent border-white/[0.08] dark:border-white/[0.08] text-foreground dark:text-white overflow-hidden relative rounded-2xl`}>
       <CardContent className={`p-4 space-y-3 ${isLocked ? "blur-[2px] opacity-60" : ""}`}>
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -354,7 +354,7 @@ export default function MSCIPage() {
   return (
     <div className="space-y-4 pb-4 max-w-5xl mx-auto w-full">
       {/* Info Card */}
-      <Card className="border-none bg-gradient-to-br from-teal-600/90 to-emerald-800/90 text-white shadow-xl shadow-emerald-900/20 p-4 rounded-2xl">
+      <Card className="border-none bg-gradient-to-br from-teal-600/90 to-emerald-800/90 text-white shadow-emerald-900/20 p-4 rounded-2xl">
         <CardContent className="pt-0">
           <p className="text-xs leading-relaxed text-white/90 font-medium">
             Indonesian stocks with potential inclusion in the MSCI Global and Small Cap indices, considering key market criteria.

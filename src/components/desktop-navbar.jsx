@@ -11,7 +11,7 @@ import { TOOLS_ITEMS } from "@/lib/tools-menu";
 const navItems = [
   {
     title: "Explore",
-    url: "/",
+    url: "/explore",
     icon: LayoutGrid,
   },
   {
@@ -58,7 +58,7 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
     <header className="hidden lg:flex items-center h-16 sticky top-0 z-40 bg-background/80 backdrop-blur-2xl border-b border-border/30">
       <div className="flex items-center w-full max-w-[1400px] mx-auto px-6 gap-1">
         {/* Logo */}
-        <Link href="/" className="flex items-center gap-2.5 mr-8 shrink-0">
+        <Link href="/explore" className="flex items-center gap-2.5 mr-8 shrink-0">
           <img src="/aruna.png" alt="aruna" className="size-7" />
           <span className="text-lg font-bold tracking-tight">aruna</span>
         </Link>
@@ -107,7 +107,7 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
             </button>
 
             {toolsOpen && (
-              <div className="absolute top-full left-0 mt-1 w-64 rounded-xl border border-border/30 bg-background/95 backdrop-blur-2xl shadow-xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="absolute top-full left-0 mt-1 w-64 rounded-xl border border-border/30 bg-background/95 backdrop-blur-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                 {TOOLS_ITEMS.map((item) => {
                   const isActive = pathname === item.url;
                   const Icon = item.icon;

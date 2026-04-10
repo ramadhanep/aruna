@@ -10,7 +10,7 @@ import { HeaderSymbolSearch } from "@/components/header-symbol-search";
 const navItems = [
   {
     title: "Explore",
-    url: "/",
+    url: "/explore",
     icon: LayoutGrid,
   },
   {

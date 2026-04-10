@@ -223,7 +223,7 @@ export default function MoneyFlowPage() {
   return (
     <div className="flex flex-col gap-4 pb-4">
       <div className="flex flex-col gap-4">
-        <Card className="border-none bg-gradient-to-br from-emerald-800 via-emerald-900 to-teal-950 text-white shadow-xl shadow-emerald-900/30 rounded-2xl">
+        <Card className="border-none bg-gradient-to-br from-emerald-800 via-emerald-900 to-teal-950 text-white shadow-emerald-900/30 rounded-2xl">
           <CardContent className="p-4 space-y-2">
             <p className="text-xs text-white/85 leading-relaxed">
               Smart-money breakdown based on broker flow, market phase, absorption, and screener-synced symbols.
@@ -246,7 +246,7 @@ export default function MoneyFlowPage() {
                   type="button"
                   variant="ghost"
                   className={`flex-1 rounded-xl text-xs font-semibold transition-all h-9 ${timeframe === option.key
-                    ? "bg-gradient-to-br from-emerald-700 to-teal-800 text-white shadow-lg shadow-emerald-500/20"
+                    ? "bg-gradient-to-br from-emerald-700 to-teal-800 text-white shadow-emerald-500/20"
                     : "hover:bg-muted/60"
                     }`}
                   onClick={() => setTimeframe(option.key)}

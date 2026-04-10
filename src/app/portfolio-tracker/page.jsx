@@ -1058,41 +1058,68 @@ export default function PortfolioTrackerPage() {
   if (initialLoading) {
     return (
       <div className={`flex flex-col gap-4 ${isMobileExperience ? 'pb-28' : ''}`}>
-        <div className={`rounded-3xl border border-border/40 bg-gradient-to-br from-background to-muted/30 p-4 ${isMobileExperience ? '' : 'shadow-sm'}`}>
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <div className="h-4 w-24 shimmer" />
-              <div className="h-3 w-40 shimmer" />
+        <Card className={isMobileExperience ? 'rounded-3xl border-border/50 bg-gradient-to-b from-background to-muted/20' : ''}>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 gap-2">
+            <div className="h-4 w-20 shimmer rounded-md" />
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full shimmer" />
+              <div className="h-8 w-[132px] rounded-md shimmer" />
             </div>
-            <div className="h-9 w-24 shimmer rounded-full" />
-          </div>
-          <div className="mt-5 h-10 w-44 shimmer" />
-          <div className="mt-3 grid grid-cols-2 gap-3">
-            <div className="h-20 shimmer" />
-            <div className="h-20 shimmer" />
-          </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div className="space-y-2">
+                <div className="h-3 w-28 shimmer rounded-md" />
+                <div className="h-6 w-40 shimmer rounded-md" />
+                <div className="h-3 w-24 shimmer rounded-md" />
+                <div className="h-3 w-36 shimmer rounded-md" />
+              </div>
+              <div className="h-[44px] w-[92px] shimmer rounded-md" />
+            </div>
+            <div className="rounded-xl border border-border/20 p-3">
+              <div className="h-4 w-24 shimmer rounded-md mx-auto" />
+            </div>
+            <div className="rounded-xl border border-border/20 p-3">
+              <div className="h-4 w-44 shimmer rounded-md mx-auto" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="rounded-xl border border-border/40 bg-muted/20 px-3 py-2">
+          <div className="h-3 w-28 shimmer rounded-md mx-auto" />
         </div>
 
-        <div className={`rounded-3xl border border-border/40 p-4 ${isMobileExperience ? '' : 'shadow-sm'}`}>
-          <div className="h-4 w-24 shimmer mb-4" />
-          <div className="space-y-3">
-            {[...Array(isMobileExperience ? 4 : 5)].map((_, idx) => (
-              <div key={`holding-${idx}`} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full shimmer" />
-                  <div className="space-y-1.5">
-                    <div className="h-3 w-24 shimmer" />
-                    <div className="h-3 w-18 shimmer" />
+        <Card className={`h-full ${isMobileExperience ? 'rounded-3xl border-border/50 bg-gradient-to-b from-background to-muted/20' : ''}`}>
+          <CardHeader className="flex items-center justify-between">
+            <div className="h-4 w-20 shimmer rounded-md" />
+            <div className="h-8 w-8 shimmer rounded-md" />
+          </CardHeader>
+          <CardContent>
+            <div className={`space-y-2 ${isMobileExperience ? 'mb-20' : 'mb-4'}`}>
+              {[...Array(isMobileExperience ? 4 : 5)].map((_, idx) => (
+                <div
+                  key={`holding-${idx}`}
+                  className={`flex items-center gap-3 p-2 rounded-2xl min-h-16 border ${isMobileExperience ? 'bg-background/80 border-border/40' : 'border-border/20'}`}
+                >
+                  <div className="flex flex-1 min-w-0 items-center gap-2 px-1 py-2">
+                    <div className="h-8 w-8 rounded-2xl shimmer" />
+                    <div className="space-y-1.5">
+                      <div className="h-3 w-20 shimmer rounded-md" />
+                      <div className="h-3 w-16 shimmer rounded-md" />
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="space-y-1.5 text-right">
+                      <div className="h-3 w-20 shimmer rounded-md" />
+                      <div className="h-3 w-16 shimmer rounded-md ml-auto" />
+                    </div>
+                    <div className="h-8 w-8 shimmer rounded-md" />
                   </div>
                 </div>
-                <div className="space-y-1.5">
-                  <div className="h-3 w-20 shimmer ml-auto" />
-                  <div className="h-3 w-16 shimmer ml-auto" />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -1335,7 +1362,7 @@ export default function PortfolioTrackerPage() {
                   return (
                     <div
                       key={originalIndex}
-                      className={`flex items-center gap-3 p-2 rounded-2xl min-h-16 transition-colors border ${isMobileExperience ? 'bg-background/80 border-border/40 shadow-sm' : 'border-border/20 hover:bg-muted/30'}`}
+                      className={`flex items-center gap-3 p-2 rounded-2xl min-h-16 transition-colors border ${isMobileExperience ? 'bg-background/80 border-border/40' : 'border-border/20 hover:bg-muted/30'}`}
                     >
                       {isCash ? (
                         <div className="flex flex-1 min-w-0 items-center gap-2 px-1 py-2">
@@ -1494,11 +1521,11 @@ export default function PortfolioTrackerPage() {
                         value={symbolQuery}
                         onChange={(e) => { setSymbolQuery(e.target.value); setForm(f => ({ ...f, symbol: e.target.value })); }}
                         placeholder="Search ticker (e.g. AAPL, BBCA.JK)"
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                       {loadingSearch && <p className="text-xs text-muted-foreground">Searching...</p>}
                       {!loadingSearch && symbolResults.length > 0 && (
-                        <div className="max-h-40 overflow-auto rounded-md border border-border bg-background shadow-sm p-1 flex flex-col gap-2">
+                        <div className="max-h-40 overflow-auto rounded-md border border-border bg-background p-1 flex flex-col gap-2">
                           {symbolResults.map(r => (
                             <button
                               type="button"
@@ -1523,7 +1550,7 @@ export default function PortfolioTrackerPage() {
                           placeholder="0"
                           type="number"
                           step="any"
-                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                         />
                       </div>
                       <div className="flex flex-col gap-2">
@@ -1553,7 +1580,7 @@ export default function PortfolioTrackerPage() {
                         placeholder="0"
                         type="number"
                         step="any"
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                       <p className="text-xs text-muted-foreground">Price per {effectiveUnit === 'lot' ? 'lot' : 'share'} in native currency</p>
                     </div>
@@ -1568,7 +1595,7 @@ export default function PortfolioTrackerPage() {
                         value={form.category}
                         onChange={(e) => setForm(f => ({ ...f, category: e.target.value }))}
                         placeholder="e.g., Bank BCA, Gopay, etc."
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                     </div>
 
@@ -1582,7 +1609,7 @@ export default function PortfolioTrackerPage() {
                           placeholder="0"
                           type="number"
                           step="any"
-                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                         />
                         <p className="text-xs text-muted-foreground">Total cash in selected currency</p>
                       </div>
@@ -1620,7 +1647,7 @@ export default function PortfolioTrackerPage() {
 
       <Button
         size="icon"
-        className={`fixed ${isMobileExperience ? 'bottom-24 right-4' : 'bottom-8 right-8'} h-14 w-14 rounded-full bg-emerald-700 shadow-lg z-40`}
+        className={`fixed ${isMobileExperience ? 'bottom-24 right-4' : 'bottom-8 right-8'} h-14 w-14 rounded-full bg-emerald-700 z-40`}
         onClick={openAdd}
       >
         <Plus className="size-6 text-white" />

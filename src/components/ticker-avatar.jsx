@@ -3,6 +3,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useState } from "react";
+import { useAppearanceMode } from "@/components/appearance-mode-provider";
 
 export function TickerAvatar({
   symbol,
@@ -13,9 +14,10 @@ export function TickerAvatar({
   className = "",
   backgroundClass = "bg-muted/30",
 }) {
+  const { isLiteMode } = useAppearanceMode();
   const [failed, setFailed] = useState(false);
   const fallbackChar = symbol ? symbol.charAt(0) : "?";
-  const showImage = Boolean(logo) && !failed;
+  const showImage = Boolean(logo) && !failed && !isLiteMode;
 
   return (
     <div

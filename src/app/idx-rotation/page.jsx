@@ -391,7 +391,7 @@ export default function IdxRotationPage() {
 
       {/* Tooltip for hovered stock */}
       {hoveredStock && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 liquid-glass rounded-2xl px-4 py-3 z-50 pointer-events-none shadow-xl">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 liquid-glass rounded-2xl px-4 py-3 z-50 pointer-events-none">
           {(() => {
             const stock = positionedStocks.find(s => s.code === hoveredStock);
             if (!stock) return null;

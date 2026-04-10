@@ -14,6 +14,7 @@ export function AppLayoutClient({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const isLandingPage = pathname === "/";
 
   const mobileBackHeaderRoutes = {
     "/idx-momentum": "IDX Momentum",
@@ -21,6 +22,7 @@ export function AppLayoutClient({ children }) {
   };
 
   const hideDefaultMobileChromeRoutes = new Set([
+    "/",
     "/idx-bubbles",
     "/idx-momentum",
     "/idx-rotation",
@@ -28,6 +30,7 @@ export function AppLayoutClient({ children }) {
     "/discussion",
   ]);
   const hideDesktopNavbarRoutes = new Set([
+    "/",
     "/idx-bubbles",
     "/idx-rotation",
     "/discussion",
@@ -76,8 +79,8 @@ export function AppLayoutClient({ children }) {
           </header>
         )}
         
-        <main className={`flex-1 ${hideDefaultMobileChrome ? "pb-0" : "pb-24"} lg:pb-8 relative z-0 w-full flex justify-center`}>
-          <div className="p-4 w-full max-w-[768px] lg:max-w-[1400px] lg:px-6">
+        <main className={`flex-1 ${hideDefaultMobileChrome ? "pb-0" : "pb-24"} lg:pb-8 relative z-0 w-full ${isLandingPage ? "" : "flex justify-center"}`}>
+          <div className={isLandingPage ? "w-full" : "p-4 w-full max-w-[768px] lg:max-w-[1400px] lg:px-6"}>
             {children}
           </div>
         </main>

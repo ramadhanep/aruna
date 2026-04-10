@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ClearDataButton } from "@/components/clear-data-button";
 import { useAuth } from "@/components/auth-provider";
+import { useAppearanceMode } from "@/components/appearance-mode-provider";
 import { GoogleGlyph } from "@/components/google-glyph";
 import {
   Loader2,
@@ -17,6 +18,8 @@ import {
   Cookie,
   Heart,
   X,
+  Sparkles,
+  Leaf,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 
@@ -107,6 +110,7 @@ function AccountSidebarContent({ onClose }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { theme, setTheme, resolvedTheme } = useTheme();
+  const { mode, setMode } = useAppearanceMode();
   const [authError, setAuthError] = useState(null);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -193,7 +197,7 @@ function AccountSidebarContent({ onClose }) {
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-7 pb-12">
         <section className="space-y-3">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Profile</p>
-          <div className="rounded-3xl bg-card border border-border/30 px-4 py-5 text-foreground shadow-sm">
+          <div className="rounded-3xl bg-card border border-border/30 px-4 py-5 text-foreground">
             <div className="flex items-center gap-3">
               <div className="h-14 w-14 overflow-hidden rounded-full border border-black/10 dark:border-white/20 bg-black/5 dark:bg-white/10">
                 {avatarUrl ? (
@@ -242,7 +246,7 @@ function AccountSidebarContent({ onClose }) {
                 <Button
                   type="button"
                   onClick={handleGoogleSignIn}
-                  className="w-full justify-center gap-3 rounded-full bg-white text-[12px] font-semibold text-[#3c4043] shadow-sm hover:bg-white/90"
+                  className="w-full justify-center gap-3 rounded-full bg-white text-[12px] font-semibold text-[#3c4043] hover:bg-white/90"
                 >
                   <GoogleGlyph />
                   <span>Sign in with Google</span>
@@ -259,7 +263,7 @@ function AccountSidebarContent({ onClose }) {
 
         <section className="space-y-3">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Appearance</p>
-          <div className="rounded-3xl bg-card border border-border/30 px-4 py-4 shadow-sm">
+          <div className="rounded-3xl bg-card border border-border/30 px-4 py-4">
             <p className="text-[11px] text-muted-foreground">
               Pick the look that feels best on your device. Light stays bright, dark saves battery.
             </p>
@@ -285,12 +289,27 @@ function AccountSidebarContent({ onClose }) {
                 Dark
               </Button>
             </div>
+            <div className="mt-3 flex items-center justify-between rounded-2xl border border-border/40 bg-muted/20 px-3 py-2.5">
+              <div>
+                <p className="text-xs font-medium">Visual Mode</p>
+                <p className="text-[11px] text-muted-foreground">Lite mode skips ticker logo images to keep it lighter.</p>
+              </div>
+              <Button
+                type="button"
+                variant={mode === "pro" ? "default" : "outline"}
+                className="min-w-[118px] justify-center gap-2 rounded-xl text-xs"
+                onClick={() => setMode(mode === "lite" ? "pro" : "lite")}
+              >
+                {mode === "lite" ? <Leaf className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+                {mode === "lite" ? "Lite" : "Pro"}
+              </Button>
+            </div>
           </div>
         </section>
 
         <section className="space-y-3">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Data & Privacy</p>
-          <div className="rounded-3xl bg-card border border-border/30 px-4 py-4 space-y-4 shadow-sm">
+          <div className="rounded-3xl bg-card border border-border/30 px-4 py-4 space-y-4">
             <ClearDataButton
               onCleared={user ? clearRemoteData : undefined}
               trigger={
@@ -375,7 +394,7 @@ function AccountSidebarContent({ onClose }) {
           </div>
         </section>
 
-        <section className="rounded-3xl bg-card border border-border/30 px-4 py-5 text-center shadow-sm">
+        <section className="rounded-3xl bg-card border border-border/30 px-4 py-5 text-center">
           <p className="text-[11px] text-muted-foreground">
             Version {process.env.NEXT_PUBLIC_APP_VERSION || "1.0.0"}
           </p>
@@ -391,41 +410,18 @@ function AccountSidebarContent({ onClose }) {
 }
 
 export function AccountSidebar({ open, onClose }) {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isAnimating, setIsAnimating] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      setIsVisible(true);
-      // Trigger animation after DOM render
-      const timer = setTimeout(() => {
-        setIsAnimating(true);
-      }, 10); // Small delay to ensure DOM is rendered
-      return () => clearTimeout(timer);
-    } else {
-      setIsAnimating(false);
-      // Wait for animation to complete before unmounting
-      const timer = setTimeout(() => {
-        setIsVisible(false);
-      }, 300); // Match transition duration
-      return () => clearTimeout(timer);
-    }
-  }, [open]);
-
-  if (!isVisible) return null;
-
   return (
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-black/50 z-90 transition-opacity duration-300 ${isAnimating ? "opacity-100" : "opacity-0"
+        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
           }`}
         onClick={onClose}
       />
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 bottom-0 w-full max-w-3xl bg-background z-90 shadow-2xl transition-transform duration-300 ease-out ${isAnimating ? "translate-x-0" : "-translate-x-full"
+        className={`fixed top-0 left-0 bottom-0 w-full max-w-3xl bg-background z-40 transition-transform duration-300 ease-out ${open ? "translate-x-0 pointer-events-auto" : "-translate-x-full pointer-events-none"
           }`}
       >
         <Suspense

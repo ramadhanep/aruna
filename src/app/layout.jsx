@@ -2,6 +2,7 @@ import "./globals.css";
 import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth-provider";
+import { AppearanceModeProvider } from "@/components/appearance-mode-provider";
 import { PWARegister } from "@/components/pwa-register";
 import { PWAInstallDialog } from "@/components/pwa-install-dialog";
 import { AppLayoutClient } from "@/components/app-layout-client";
@@ -61,11 +62,13 @@ export default function RootLayout({ children }) {
           disableTransitionOnChange
         >
           <AuthProvider>
-            <PWARegister />
-            <PWAInstallDialog />
-            <AppLayoutClient>
-              {children}
-            </AppLayoutClient>
+            <AppearanceModeProvider>
+              <PWARegister />
+              <PWAInstallDialog />
+              <AppLayoutClient>
+                {children}
+              </AppLayoutClient>
+            </AppearanceModeProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

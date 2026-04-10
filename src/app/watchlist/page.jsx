@@ -457,7 +457,7 @@ export default function HomePage() {
 
       <div className="lg:col-span-12 lg:grid lg:grid-cols-12 lg:gap-6">
         <div className="lg:col-span-8 flex flex-col gap-4">
-          <Card className="border-none bg-gradient-to-br from-emerald-950 via-[#0f172a] to-[#020617] border-border/20 text-white/90 shadow-xl p-4 rounded-3xl">
+          <Card className="border-none bg-gradient-to-br from-emerald-950 via-[#0f172a] to-[#020617] border-border/20 text-white/90 p-4 rounded-3xl">
             <CardContent className="pt-0">
               <p className="text-xs leading-relaxed text-white/90 font-medium">
                 We search through historical data looking for anomalous patterns that we would not expect to occur at random.
@@ -552,7 +552,7 @@ export default function HomePage() {
           {showInstallButton && deferredPrompt && (
             <Button
               onClick={handleInstall}
-              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 flex items-center gap-2 text-xs text-white rounded-xl shadow-lg shadow-emerald-500/20"
+              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 flex items-center gap-2 text-xs text-white rounded-xl shadow-emerald-500/20"
             >
               <Download className="h-4 w-4" />
               Install App

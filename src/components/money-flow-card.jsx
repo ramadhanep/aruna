@@ -145,7 +145,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
 
   return (
     <AccordionItem value={`${report.symbol}-${report.report_date}`} className="border-none">
-      <Card className={`bg-gradient-to-br ${cardGradient} to-transparent border-white/[0.08] dark:border-white/[0.08] text-foreground dark:text-white overflow-hidden relative rounded-2xl shadow-lg`}>
+      <Card className={`bg-gradient-to-br ${cardGradient} to-transparent border-white/[0.08] dark:border-white/[0.08] text-foreground dark:text-white overflow-hidden relative rounded-2xl`}>
         <AccordionTrigger className={`px-4 py-3 hover:no-underline [&[data-state=open]>div>svg]:rotate-180 ${!isExpandedView && 'px-3 py-3'}`}>
           <div className="flex-1 min-w-0 space-y-3 text-left">
             {/* Header */}
@@ -332,14 +332,14 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                   <button
                     type="button"
                     onClick={() => setIsNetView(false)}
-                    className={`px-2.5 py-1 text-[10px] font-semibold rounded-lg transition-all ${!isNetView ? 'bg-muted text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                    className={`px-2.5 py-1 text-[10px] font-semibold rounded-lg transition-all ${!isNetView ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                   >
                     Gross
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsNetView(true)}
-                    className={`px-2.5 py-1 text-[10px] font-semibold rounded-lg transition-all ${isNetView ? 'bg-muted text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'}`}
+                    className={`px-2.5 py-1 text-[10px] font-semibold rounded-lg transition-all ${isNetView ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                   >
                     Net
                   </button>

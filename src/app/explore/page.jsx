@@ -1,0 +1,1487 @@
+"use client";
+
+import { useState, useEffect, useCallback, useRef, useMemo, useId } from "react";
+import Link from "next/link";
+import { useAuth } from "@/components/auth-provider";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock, Download, Flame, ChevronDown, ChevronUp, ChevronRight, Clock, Globe, Zap, BarChart3, ArrowUpRight, ArrowDownRight, Gem } from "lucide-react";
+import { fetchEncodedJson } from "@/lib/api-client";
+import { TickerAvatar } from "@/components/ticker-avatar";
+import { TrendingMarquee } from "@/components/trending-marquee";
+import { formatTickerDisplay } from "@/lib/utils";
+import { MoneyFlowCard } from "@/components/money-flow-card";
+
+const CATEGORY_LABELS = {
+  idx: "IDX 🇮🇩",
+  us: "US 🇺🇸",
+  crypto: "Crypto ⚡",
+};
+
+const CATEGORY_ORDER = ["idx", "us", "crypto"];
+
+
+const HIGHLIGHT_SYMBOLS = [
+  { symbol: "^JKSE", label: "IHSG", badge: "JK", group: "ID", accent: "bg-amber-500", logo: "https://s3-symbol-logo.tradingview.com/indices/jakarta-composite-index.svg" },
+  { symbol: "BTC-USD", label: "Bitcoin", badge: "BTC", group: "Crypto", accent: "bg-emerald-500" },
+  { symbol: "^SPX", label: "S&P 500", badge: "500", group: "US", accent: "bg-rose-500", logo: "https://s3-symbol-logo.tradingview.com/country/US.svg" },
+  { symbol: "^IXIC", label: "Nasdaq", badge: "100", group: "US", accent: "bg-sky-500", logo: "https://s3-symbol-logo.tradingview.com/nasdaq.svg" },
+  { symbol: "^N225", label: "Japan 225", badge: "225", group: "JP", accent: "bg-sky-500", logo: "https://s3-symbol-logo.tradingview.com/country/JP.svg" },
+  { symbol: "^KS11", label: "KOSPI", badge: "KS11", group: "KR", accent: "bg-sky-500", logo: "https://s3-symbol-logo.tradingview.com/country/KR.svg" },
+  { symbol: "DAX", label: "DAX", badge: "DAX", group: "DE", accent: "bg-sky-500", logo: "https://s3-symbol-logo.tradingview.com/country/DE.svg" },
+  { symbol: "GC=F", label: "Gold", badge: "GC", group: "CM", accent: "bg-sky-500", logo: "https://s3-symbol-logo.tradingview.com/metal/gold.svg" },
+];
+
+const MARKET_CATEGORIES = [
+  {
+    id: "indonesia",
+    title: "Indonesia",
+    emoji: "🇮🇩",
+    icon: null,
+    marketTz: "Asia/Jakarta",
+    marketOpen: [9, 0],
+    marketClose: [15, 15],
+    symbols: [
+      { symbol: "^JKSE", label: "IHSG", logo: "https://s3-symbol-logo.tradingview.com/indices/jakarta-composite-index.svg" },
+      { symbol: "BBCA.JK", label: "BBCA", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/BBCA.png" },
+      { symbol: "BMRI.JK", label: "BMRI", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/BMRI.png" },
+      { symbol: "BBRI.JK", label: "BBRI", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/BBRI.png" },
+      { symbol: "TLKM.JK", label: "TLKM", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/TLKM.png" },
+      { symbol: "ASII.JK", label: "ASII", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/ASII.png" },
+    ],
+  },
+  {
+    id: "global",
+    title: "Global",
+    emoji: null,
+    icon: Globe,
+    marketTz: "America/New_York",
+    marketOpen: [9, 30],
+    marketClose: [16, 0],
+    symbols: [
+      { symbol: "^IXIC", label: "Nasdaq", logo: "https://s3-symbol-logo.tradingview.com/nasdaq.svg" },
+      { symbol: "^SPX", label: "S&P 500", logo: "https://s3-symbol-logo.tradingview.com/country/US.svg" },
+      { symbol: "^DJI", label: "Dow Jones", logo: "https://s3-symbol-logo.tradingview.com/country/US.svg" },
+      { symbol: "^N225", label: "Nikkei 225", logo: "https://s3-symbol-logo.tradingview.com/country/JP.svg" },
+      { symbol: "^KS11", label: "KOSPI", logo: "https://s3-symbol-logo.tradingview.com/country/KR.svg" },
+      { symbol: "^GDAXI", label: "DAX", logo: "https://s3-symbol-logo.tradingview.com/country/DE.svg" },
+    ],
+  },
+  {
+    id: "crypto",
+    title: "Crypto",
+    emoji: null,
+    icon: Zap,
+    marketTz: null,
+    marketOpen: null,
+    marketClose: null,
+    symbols: [
+      { symbol: "BTC-USD", label: "Bitcoin", logo: "https://s3-symbol-logo.tradingview.com/crypto/XTVCBTC.svg" },
+      { symbol: "ETH-USD", label: "Ethereum", logo: "https://s3-symbol-logo.tradingview.com/crypto/XTVCETH.svg" },
+      { symbol: "SOL-USD", label: "Solana", logo: "https://s3-symbol-logo.tradingview.com/crypto/XTVCSOL.svg" },
+      { symbol: "BNB-USD", label: "BNB", logo: "https://s3-symbol-logo.tradingview.com/crypto/XTVCBNB.svg" },
+      { symbol: "XRP-USD", label: "XRP", logo: "https://s3-symbol-logo.tradingview.com/crypto/XTVCXRP.svg" },
+      { symbol: "DOGE-USD", label: "Doge", logo: "https://s3-symbol-logo.tradingview.com/crypto/XTVCDOGE.svg" },
+    ],
+  },
+  {
+    id: "commodities",
+    title: "Commodities",
+    emoji: null,
+    icon: Gem,
+    marketTz: "America/New_York",
+    marketOpen: [9, 30],
+    marketClose: [16, 0],
+    symbols: [
+      { symbol: "CL=F", label: "WTI Oil", logo: "https://s3-symbol-logo.tradingview.com/crude-oil.svg" },
+      { symbol: "BZ=F", label: "Brent", logo: "https://s3-symbol-logo.tradingview.com/crude-oil.svg" },
+      { symbol: "GC=F", label: "Gold", logo: "https://s3-symbol-logo.tradingview.com/metal/gold.svg" },
+      { symbol: "SI=F", label: "Silver", logo: "https://s3-symbol-logo.tradingview.com/metal/silver.svg" },
+      { symbol: "NG=F", label: "Nat Gas", logo: "https://s3-symbol-logo.tradingview.com/natural-gas.svg" },
+      { symbol: "HG=F", label: "Copper", logo: "https://s3-symbol-logo.tradingview.com/metal/copper.svg" },
+    ],
+  },
+];
+
+const MARKET_TIMEFRAMES = ["1D", "1W", "1M", "3M", "YTD", "1Y", "2Y", "5Y", "ATH"];
+const MARKET_PULSE_SYMBOLS = [
+  { symbol: "^JKSE", label: "IHSG" },
+  { symbol: "^SPX", label: "S&P" },
+  { symbol: "BTC-USD", label: "BTC" },
+  { symbol: "GC=F", label: "Gold" },
+  { symbol: "^IXIC", label: "Nasdaq" },
+  { symbol: "USDIDR=X", label: "USD/IDR" },
+];
+
+function getMarketCategoryById(categoryId) {
+  return MARKET_CATEGORIES.find((category) => category.id === categoryId) || null;
+}
+
+function getTimeframeChange(quote, timeframe) {
+  if (!quote) return null;
+  const price = quote.price;
+  if (typeof price !== "number" || !Number.isFinite(price)) return null;
+  if (
+    timeframe !== "1D" &&
+    quote.timeframe === timeframe &&
+    typeof quote.timeframeChange === "number" &&
+    Number.isFinite(quote.timeframeChange)
+  ) {
+    return quote.timeframeChange;
+  }
+
+  if (timeframe === "ATH") {
+    const high = quote.meta?.fiftyTwoWeekHigh;
+    if (typeof high === "number" && high > 0) {
+      return ((price - high) / high) * 100;
+    }
+    // Fallback: compute from chartData max
+    if (Array.isArray(quote.chartData) && quote.chartData.length > 0) {
+      const maxPrice = Math.max(...quote.chartData);
+      if (maxPrice > 0) return ((price - maxPrice) / maxPrice) * 100;
+    }
+    return null;
+  }
+
+  if (timeframe === "1D") return quote.changePercent ?? null;
+
+  // For timeframes based on chartData history
+  const data = quote.chartData;
+  if (!Array.isArray(data) || data.length < 2) return null;
+
+  let daysBack;
+  switch (timeframe) {
+    case "1W": daysBack = 5; break;
+    case "1M": daysBack = 22; break;
+    case "3M": daysBack = 66; break;
+    case "YTD": daysBack = data.length; break;
+    case "1Y": daysBack = 252; break;
+    case "2Y": daysBack = 504; break;
+    case "5Y": daysBack = 1260; break;
+    default: daysBack = data.length;
+  }
+
+  const idx = Math.max(0, data.length - Math.min(daysBack, data.length));
+  const basePrice = data[idx];
+  if (typeof basePrice !== "number" || basePrice === 0) return null;
+  return ((price - basePrice) / basePrice) * 100;
+}
+
+function isWithinMarketHours(timeZone, openHour, openMinute, closeHour, closeMinute) {
+  try {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hour: "numeric",
+      minute: "numeric",
+      weekday: "short",
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(new Date());
+    const get = (type) => parts.find((part) => part.type === type)?.value;
+    const hour = Number(get("hour"));
+    const minute = Number(get("minute"));
+    const weekday = (get("weekday") || "").slice(0, 3).toLowerCase();
+    if (weekday === "sat" || weekday === "sun") return false;
+    const totalMinutes = hour * 60 + minute;
+    const open = openHour * 60 + openMinute;
+    const close = closeHour * 60 + closeMinute;
+    return totalMinutes >= open && totalMinutes <= close;
+  } catch (error) {
+    console.warn("Failed to evaluate market hours", error);
+    return false;
+  }
+}
+
+function getCategoryDisplayOrder() {
+  const isUsOpen = isWithinMarketHours("America/New_York", 9, 30, 16, 0);
+  const isIdxOpen = isWithinMarketHours("Asia/Jakarta", 9, 0, 15, 15);
+
+  if (isUsOpen && !isIdxOpen) {
+    return ["us", "idx", "crypto"];
+  }
+  if (isIdxOpen && !isUsOpen) {
+    return ["idx", "us", "crypto"];
+  }
+  if (isUsOpen && isIdxOpen) {
+    return ["us", "idx", "crypto"];
+  }
+  return CATEGORY_ORDER;
+}
+
+function formatCompactNumber(value) {
+  const numeric = Number(value || 0);
+  if (!Number.isFinite(numeric)) return "0";
+  return new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: 2,
+  }).format(numeric);
+}
+
+function formatPercent(value, digits = 2) {
+  if (value == null || Number.isNaN(Number(value))) return "—";
+  const numeric = Number(value);
+  const sign = numeric > 0 ? "+" : "";
+  return `${sign}${numeric.toFixed(digits)}%`;
+}
+
+function formatLocalDateTimeLabel(value) {
+  if (!value) return "";
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString(undefined, {
+    day: "numeric",
+    month: "short",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function formatTimeAgo(value) {
+  if (!value) return "";
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "";
+  const diffSeconds = (date.getTime() - Date.now()) / 1000;
+  const divisions = [
+    { amount: 60, unit: "second" },
+    { amount: 60, unit: "minute" },
+    { amount: 24, unit: "hour" },
+    { amount: 7, unit: "day" },
+    { amount: 4.34524, unit: "week" },
+    { amount: 12, unit: "month" },
+    { amount: Infinity, unit: "year" },
+  ];
+  const formatter =
+    typeof Intl !== "undefined" && typeof Intl.RelativeTimeFormat === "function"
+      ? new Intl.RelativeTimeFormat(undefined, { numeric: "auto" })
+      : null;
+  let remainder = diffSeconds;
+  for (const division of divisions) {
+    if (Math.abs(remainder) < division.amount) {
+      if (formatter) {
+        return formatter.format(Math.round(remainder), division.unit);
+      }
+      const valueAbs = Math.round(Math.abs(remainder));
+      const label = valueAbs === 1 ? division.unit : `${division.unit}s`;
+      return remainder <= 0 ? `${valueAbs} ${label} ago` : `in ${valueAbs} ${label}`;
+    }
+    remainder /= division.amount;
+  }
+  return "";
+}
+
+function formatLocalTimeLabel(value) {
+  if (!value) return "";
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleTimeString(undefined, {
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function isSameCalendarDay(dateA, dateB = new Date()) {
+  if (!dateA) return false;
+  const a = typeof dateA === "string" ? new Date(dateA) : dateA;
+  if (Number.isNaN(a.getTime())) return false;
+  return (
+    a.getFullYear() === dateB.getFullYear() &&
+    a.getMonth() === dateB.getMonth() &&
+    a.getDate() === dateB.getDate()
+  );
+}
+
+function formatPrice(value) {
+  if (value == null || Number.isNaN(Number(value))) return "—";
+  return Number(value).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function normalizePick(item) {
+  if (!item) return null;
+  if (typeof item === "string") {
+    return { symbol: item };
+  }
+  if (typeof item.symbol === "string" && item.symbol.trim().length > 0) {
+    return item;
+  }
+  return null;
+}
+
+function resolveChangePercent(pick, quote) {
+  if (quote && typeof quote.changePercent === "number") {
+    return quote.changePercent;
+  }
+  if (pick && typeof pick.changePercent === "number") {
+    return pick.changePercent;
+  }
+  return null;
+}
+
+function resolvePrice(pick, quote) {
+  if (quote && typeof quote.price === "number") {
+    return quote.price;
+  }
+  if (pick && typeof pick.lastClose === "number") {
+    return pick.lastClose;
+  }
+  return null;
+}
+
+function resolveName(pick, quote) {
+  if (quote && typeof quote.name === "string" && quote.name.trim().length > 0) {
+    return quote.name;
+  }
+  if (pick && typeof pick.name === "string" && pick.name.trim().length > 0) {
+    return pick.name;
+  }
+  return pick?.symbol || "";
+}
+
+function sortPicksByDescendingChange(picks, quotes) {
+  return [...picks].sort((a, b) => {
+    const changeA = resolveChangePercent(a, quotes[a.symbol]);
+    const changeB = resolveChangePercent(b, quotes[b.symbol]);
+    const hasA = typeof changeA === "number";
+    const hasB = typeof changeB === "number";
+    if (hasA && hasB) {
+      return changeB - changeA;
+    }
+    if (hasA) {
+      return -1;
+    }
+    if (hasB) {
+      return 1;
+    }
+    return 0;
+  });
+}
+
+function ShimmerItem() {
+  return (
+    <div className="flex items-center gap-3 py-3">
+      <div className="flex-1 min-w-0 space-y-1.5">
+        <div className="h-3 w-16 rounded-full shimmer"></div>
+        <div className="h-3 w-32 rounded-full shimmer"></div>
+      </div>
+      <div className="w-[72px] h-[36px] rounded-xl shimmer"></div>
+      <div className="flex flex-col items-end gap-1">
+        <div className="h-3 w-20 rounded-full shimmer"></div>
+        <div className="h-3 w-16 rounded-full shimmer"></div>
+      </div>
+    </div>
+  );
+}
+
+function MarketSymbolCardSkeleton() {
+  return (
+    <div className="rounded-2xl p-3.5 border border-border/20 bg-card">
+      <div className="flex items-center gap-2.5">
+        <div className="h-9 w-9 rounded-full shimmer" />
+        <div className="min-w-0 flex-1 space-y-1.5">
+          <div className="h-3 w-20 rounded-full shimmer" />
+          <div className="h-3 w-16 rounded-full shimmer" />
+        </div>
+      </div>
+      <div className="mt-3 flex items-end justify-between gap-2">
+        <div className="space-y-1.5">
+          <div className="h-4 w-20 rounded-full shimmer" />
+          <div className="h-3 w-16 rounded-full shimmer" />
+        </div>
+        <div className="h-10 w-[72px] rounded-xl shimmer" />
+      </div>
+    </div>
+  );
+}
+
+function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
+  const generatedId = useId();
+  const gradientKey = chartId ?? generatedId;
+  if (!Array.isArray(data) || data.length < 2) {
+    return <div style={{ width, height }} className="rounded-full bg-muted/40" />;
+  }
+
+  const min = Math.min(...data);
+  const max = Math.max(...data);
+  const range = max - min || 1;
+
+  const coordinates = data.map((value, index) => {
+    const x = (index / (data.length - 1)) * width;
+    const y = height - ((value - min) / range) * height;
+    return { x, y };
+  });
+
+  const linePath = coordinates
+    .map((point, idx) => `${idx === 0 ? "M" : "L"}${point.x.toFixed(2)},${point.y.toFixed(2)}`)
+    .join(" ");
+  const areaPath = `${linePath} L${coordinates[coordinates.length - 1].x.toFixed(2)},${height} L0,${height} Z`;
+  const strokeColor = isPositive ? "#10b981" : "#ef4444";
+  const gradientId = `${gradientKey}-fill`;
+
+  // Calculate baseline at first data point (represents 0% change)
+  const firstValue = data[0];
+  const baselineY = height - ((firstValue - min) / range) * height;
+
+  return (
+    <svg width={width} height={height} className="overflow-visible">
+      <defs>
+        <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={strokeColor} stopOpacity="0.45" />
+          <stop offset="100%" stopColor={strokeColor} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {/* Baseline reference line */}
+      <line
+        x1="0"
+        y1={baselineY}
+        x2={width}
+        y2={baselineY}
+        stroke="currentColor"
+        strokeWidth="0.8"
+        strokeDasharray="2,2"
+        opacity="0.3"
+        className="text-muted-foreground"
+      />
+      <path d={areaPath} fill={`url(#${gradientId})`} opacity="0.9" />
+      <path
+        d={linePath}
+        fill="none"
+        stroke={strokeColor}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <circle
+        cx={coordinates[coordinates.length - 1].x}
+        cy={coordinates[coordinates.length - 1].y}
+        r={2.4}
+        fill={strokeColor}
+      />
+    </svg>
+  );
+}
+
+
+function PickItem({ pick, quote }) {
+  const symbol = typeof pick === "string" ? pick : pick?.symbol;
+  if (!symbol) return null;
+  const pickData = pick && typeof pick === "object" ? pick : {};
+  const isNewSignal = isSameCalendarDay(pickData?.signal_date);
+  const change =
+    typeof quote?.change === "number"
+      ? quote.change
+      : typeof pickData?.change === "number"
+        ? pickData.change
+        : 0;
+  const changePercent =
+    typeof quote?.changePercent === "number"
+      ? quote.changePercent
+      : typeof pickData?.changePercent === "number"
+        ? pickData.changePercent
+        : 0;
+  const price =
+    typeof quote?.price === "number"
+      ? quote.price
+      : typeof pickData?.lastClose === "number"
+        ? pickData.lastClose
+        : null;
+  const isPositive = change >= 0;
+  const color = isPositive ? "text-emerald-600" : "text-red-600";
+  const formattedPrice = typeof price === "number"
+    ? price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : "-";
+  const displayName = quote?.name || pickData?.name || symbol;
+  const isWarning = Boolean(pickData?.is_warning);
+  const chartData =
+    Array.isArray(quote?.chartData) && quote.chartData.length > 0
+      ? quote.chartData
+      : Array.isArray(pickData?.sparkline)
+        ? pickData.sparkline
+        : [];
+  const logo = quote?.logo || null;
+
+  return (
+    <Link
+      href={`/chart?symbol=${encodeURIComponent(symbol)}&cycle=normal&tab=tradingPlan`}
+      className="flex items-center gap-3 py-3.5 px-1 hover:bg-accent/40 transition-all duration-200 rounded-xl -mx-1"
+    >
+      <div className="flex-1 min-w-0 flex items-center gap-3">
+        <div className="flex-shrink-0">
+          <TickerAvatar symbol={symbol} logo={logo} />
+        </div>
+        <div className="min-w-0">
+          <div className="font-semibold text-sm truncate flex items-center gap-1.5">
+            <span>{formatTickerDisplay(symbol)}</span>
+            {isNewSignal ? (
+              <span className="text-[9px] font-bold tracking-wide text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-500/15 px-1.5 py-[2px] rounded-md">
+                NEW
+              </span>
+            ) : null}
+            {isWarning ? (
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-500" title="High volume vs market cap" />
+            ) : null}
+          </div>
+          <div className="text-xs text-muted-foreground truncate mt-0.5">{displayName}</div>
+        </div>
+      </div>
+      <div className={`flex items-center ${Array.isArray(chartData) ? color : "text-muted-foreground"}`}>
+        <MiniChart data={chartData} isPositive={isPositive} chartId={`explore-${symbol}`} />
+      </div>
+      <div className="flex flex-col items-end">
+        <div className="font-semibold text-sm tabular-nums">{formattedPrice}</div>
+        <div className={`text-xs font-medium flex items-center gap-1 ${color}`}>
+          {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
+          {isPositive ? "+" : ""}
+          {changePercent?.toFixed ? changePercent.toFixed(2) : "0.00"}%
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+function MarketPulseMarquee({ items }) {
+  const validItems = items.filter((item) => item.quote);
+  if (validItems.length === 0) {
+    return null;
+  }
+
+  return (
+    <div className="overflow-hidden">
+      <div className="flex items-center whitespace-nowrap animate-marquee" style={{ "--marquee-duration": "18s" }}>
+        {validItems.map((item) => {
+          const q = item.quote;
+          const isPos = (q?.change ?? 0) >= 0;
+          return (
+            <Link
+              key={`pulse-mq-${item.symbol}`}
+              href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted/40 transition-colors"
+            >
+              <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
+              <span className="text-xs font-bold tabular-nums">{q ? formatPrice(q.price) : "—"}</span>
+              {q && typeof q.changePercent === "number" ? (
+                <span className={`text-[11px] font-semibold flex items-center gap-0.5 ${isPos ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                  {isPos ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                  {isPos ? "+" : ""}
+                  {q.changePercent.toFixed(2)}%
+                </span>
+              ) : null}
+            </Link>
+          );
+        })}
+        {validItems.map((item) => {
+          const q = item.quote;
+          const isPos = (q?.change ?? 0) >= 0;
+          return (
+            <Link
+              key={`pulse-mq-dup-${item.symbol}`}
+              href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted/40 transition-colors"
+            >
+              <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
+              <span className="text-xs font-bold tabular-nums">{q ? formatPrice(q.price) : "—"}</span>
+              {q && typeof q.changePercent === "number" ? (
+                <span className={`text-[11px] font-semibold flex items-center gap-0.5 ${isPos ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                  {isPos ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                  {isPos ? "+" : ""}
+                  {q.changePercent.toFixed(2)}%
+                </span>
+              ) : null}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function formatMoneyFlowDelta(value) {
+  const numeric = Number(value || 0) * 100;
+  const sign = numeric >= 0 ? "+" : "";
+  return `${sign}${numeric.toFixed(2)}%`;
+}
+
+
+
+export default function ExplorePage() {
+  const { supabase, user } = useAuth();
+  const [snapshots, setSnapshots] = useState({});
+  const [quotes, setQuotes] = useState({});
+  const [moneyFlowReports, setMoneyFlowReports] = useState([]);
+  const [moneyFlowUpdatedAt, setMoneyFlowUpdatedAt] = useState(null);
+  const [moneyFlowLoading, setMoneyFlowLoading] = useState(true);
+  const [moneyFlowError, setMoneyFlowError] = useState("");
+  const [showInstallButton, setShowInstallButton] = useState(false);
+  const [activeMarketTab, setActiveMarketTab] = useState("indonesia");
+  const [marketTimeframe, setMarketTimeframe] = useState("1D");
+  const [activeMarketQuotes, setActiveMarketQuotes] = useState({});
+  const [activeMarketLoading, setActiveMarketLoading] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [manualLoading, setManualLoading] = useState({ idx: false, us: false, crypto: false });
+  const [categoryDisplayOrder] = useState(() => getCategoryDisplayOrder());
+  const touchStartY = useRef(0);
+  const containerRef = useRef(null);
+  const coreQuoteRequestRef = useRef(0);
+  const activeMarketQuoteRequestRef = useRef(0);
+
+  const loadCoreQuotesForSnapshots = useCallback(async (snapshotMap) => {
+    const requestId = ++coreQuoteRequestRef.current;
+    const symbolSet = new Set();
+
+    CATEGORY_ORDER.forEach((category) => {
+      const picks = Array.isArray(snapshotMap?.[category]?.results)
+        ? snapshotMap[category].results
+        : [];
+      picks.forEach((pick) => {
+        const symbol = typeof pick === "string" ? pick : pick?.symbol;
+        if (symbol) {
+          symbolSet.add(symbol);
+        }
+      });
+    });
+
+    HIGHLIGHT_SYMBOLS.forEach(({ symbol }) => symbolSet.add(symbol));
+    MARKET_PULSE_SYMBOLS.forEach(({ symbol }) => symbolSet.add(symbol));
+
+    const symbolsArray = Array.from(symbolSet);
+    if (symbolsArray.length === 0) {
+      if (coreQuoteRequestRef.current === requestId) {
+        setQuotes({});
+      }
+      return;
+    }
+
+    try {
+      const { response, data } = await fetchEncodedJson("/api/quotes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symbols: symbolsArray, timeframe: "1D" }),
+      });
+
+      if (coreQuoteRequestRef.current !== requestId) {
+        return;
+      }
+      if (!response.ok) {
+        console.warn("Failed to fetch core quotes:", data?.error);
+        return;
+      }
+
+      const batchQuotes = data?.quotes || {};
+      setQuotes((prev) => {
+        const next = {};
+        symbolsArray.forEach((symbol) => {
+          const upperSymbol = symbol.toUpperCase();
+          if (batchQuotes[upperSymbol]) {
+            next[symbol] = batchQuotes[upperSymbol];
+          } else if (prev[symbol]) {
+            next[symbol] = prev[symbol];
+          }
+        });
+        return next;
+      });
+    } catch (error) {
+      console.warn("Failed to fetch core quotes", error);
+    }
+  }, []);
+
+  const loadActiveMarketQuotes = useCallback(async (categoryId, timeframe) => {
+    const requestId = ++activeMarketQuoteRequestRef.current;
+    const category = getMarketCategoryById(categoryId);
+    if (!category) {
+      if (activeMarketQuoteRequestRef.current === requestId) {
+        setActiveMarketQuotes({});
+      }
+      return;
+    }
+
+    const symbols = category.symbols.map((item) => item.symbol);
+    if (symbols.length === 0) {
+      if (activeMarketQuoteRequestRef.current === requestId) {
+        setActiveMarketQuotes({});
+      }
+      return;
+    }
+
+    setActiveMarketQuotes({});
+    setActiveMarketLoading(true);
+    try {
+      const { response, data } = await fetchEncodedJson("/api/quotes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ symbols, timeframe }),
+      });
+
+      if (activeMarketQuoteRequestRef.current !== requestId) {
+        return;
+      }
+      if (!response.ok) {
+        console.warn("Failed to fetch active market quotes:", data?.error);
+        return;
+      }
+
+      const batchQuotes = data?.quotes || {};
+      const next = {};
+      symbols.forEach((symbol) => {
+        const upperSymbol = symbol.toUpperCase();
+        if (batchQuotes[upperSymbol]) {
+          next[symbol] = batchQuotes[upperSymbol];
+        }
+      });
+      setActiveMarketQuotes(next);
+    } catch (error) {
+      console.warn("Failed to fetch active market quotes", error);
+    } finally {
+      if (activeMarketQuoteRequestRef.current === requestId) {
+        setActiveMarketLoading(false);
+      }
+    }
+  }, []);
+
+  const loadSnapshots = useCallback(async () => {
+    if (!supabase) {
+      setSnapshots({});
+      setQuotes({});
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from("screening_snapshots")
+        .select("*")
+        .in("category", CATEGORY_ORDER);
+      if (error) {
+        console.warn("Failed to load screening snapshots", error);
+        setSnapshots({});
+        setQuotes({});
+        return;
+      }
+      const mapped = {};
+      data?.forEach((item) => {
+        mapped[item.category] = item;
+      });
+      setSnapshots(mapped);
+      loadCoreQuotesForSnapshots(mapped);
+    } finally {
+      setLoading(false);
+    }
+  }, [supabase, loadCoreQuotesForSnapshots]);
+
+  const loadMoneyFlow = useCallback(async () => {
+    setMoneyFlowLoading(true);
+    setMoneyFlowError("");
+    try {
+      const params = new URLSearchParams({
+        timeframe: "weekly",
+        sort: "score",
+        order: "desc",
+        limit: "5",
+      });
+      const { response, data } = await fetchEncodedJson(`/api/money-flow?${params.toString()}`);
+      if (!response.ok || data?.error) {
+        throw new Error(data?.error || "Failed to load money-flow highlights");
+      }
+      setMoneyFlowReports(Array.isArray(data?.reports) ? data.reports : []);
+      if (data?.updated_at) {
+        setMoneyFlowUpdatedAt(new Date(data.updated_at));
+      }
+    } catch (error) {
+      console.warn("Failed to load money-flow highlights", error);
+      setMoneyFlowError(error?.message || "Failed to load money-flow highlights");
+      setMoneyFlowReports([]);
+      setMoneyFlowUpdatedAt(null);
+    } finally {
+      setMoneyFlowLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSnapshots();
+  }, [loadSnapshots]);
+
+  useEffect(() => {
+    loadActiveMarketQuotes(activeMarketTab, marketTimeframe);
+  }, [activeMarketTab, marketTimeframe, loadActiveMarketQuotes]);
+
+  useEffect(() => {
+    loadMoneyFlow();
+  }, [loadMoneyFlow]);
+
+  useEffect(() => {
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
+    setShowInstallButton(!isStandalone);
+
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallButton(!isStandalone);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handler);
+    };
+  }, []);
+
+  const handleInstall = async () => {
+    if (!deferredPrompt) return;
+
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+
+    if (outcome === 'accepted') {
+      console.log('User accepted the install prompt');
+    }
+
+    setDeferredPrompt(null);
+    setShowInstallButton(false);
+  };
+
+  useEffect(() => {
+    if (!supabase) return;
+    const channel = supabase
+      .channel("screening_snapshots_feed")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "screening_snapshots" },
+        (payload) => {
+          const record = payload?.new;
+          if (!record?.category) {
+            return;
+          }
+          setSnapshots((prev) => {
+            const next = { ...prev, [record.category]: record };
+            loadCoreQuotesForSnapshots(next);
+            return next;
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [supabase, loadCoreQuotesForSnapshots]);
+
+  const handleRefresh = useCallback(async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        loadSnapshots(),
+        loadMoneyFlow(),
+        loadActiveMarketQuotes(activeMarketTab, marketTimeframe),
+      ]);
+    } finally {
+      setIsRefreshing(false);
+      setPullDistance(0);
+    }
+  }, [isRefreshing, loadMoneyFlow, loadSnapshots, loadActiveMarketQuotes, activeMarketTab, marketTimeframe]);
+
+  const handleTouchStart = useCallback((event) => {
+    if (containerRef.current && containerRef.current.scrollTop === 0) {
+      touchStartY.current = event.touches[0].clientY;
+    }
+  }, []);
+
+  const handleTouchMove = useCallback(
+    (event) => {
+      if (isRefreshing || touchStartY.current === 0 || !containerRef.current) return;
+      if (containerRef.current.scrollTop > 0) {
+        touchStartY.current = 0;
+        setPullDistance(0);
+        return;
+      }
+      const touchY = event.touches[0].clientY;
+      const distance = touchY - touchStartY.current;
+      if (distance > 0) {
+        setPullDistance(Math.min(distance, 150));
+      }
+    },
+    [isRefreshing]
+  );
+
+  const handleTouchEnd = useCallback(() => {
+    if (pullDistance > 80) {
+      handleRefresh();
+    } else {
+      setPullDistance(0);
+    }
+    touchStartY.current = 0;
+  }, [pullDistance, handleRefresh]);
+
+  const triggerBatch = useCallback(
+    async (category) => {
+      if (manualLoading[category]) return;
+      setManualLoading((prev) => ({ ...prev, [category]: true }));
+      try {
+        const { response, data } = await fetchEncodedJson(`/api/screeners/${category}`);
+        if (!response.ok) {
+          throw new Error(data?.error || "Failed to trigger screener");
+        }
+        const message = data?.status
+          ? `${category.toUpperCase()} → ${data.status.toUpperCase()}`
+          : `${category.toUpperCase()} → failed`;
+        alert(message);
+        await loadSnapshots();
+      } catch (error) {
+        console.warn("Trigger failed", error);
+        alert(`${category.toUpperCase()} → error`);
+      } finally {
+        setManualLoading((prev) => ({ ...prev, [category]: false }));
+      }
+    },
+    [manualLoading, loadSnapshots]
+  );
+
+  const isAuthenticated = Boolean(user);
+
+  const breakoutInsights = useMemo(() => {
+    const categories = [];
+    const allSignals = [];
+    let totalChange = 0;
+    let changers = 0;
+    let latestTimestamp = null;
+
+    CATEGORY_ORDER.forEach((category) => {
+      const snapshot = snapshots[category];
+      const rawResults = Array.isArray(snapshot?.results) ? snapshot.results : [];
+      const normalized = rawResults
+        .map((item) => normalizePick(item))
+        .filter(Boolean);
+      if (normalized.length === 0) {
+        return;
+      }
+      const lastScreened = snapshot?.updated_at ? new Date(snapshot.updated_at) : null;
+      if (lastScreened && (!latestTimestamp || lastScreened > latestTimestamp)) {
+        latestTimestamp = lastScreened;
+      }
+
+      let categoryChangeSum = 0;
+      let categoryChangeCount = 0;
+
+      const enriched = normalized.map((pick) => {
+        const symbol = pick.symbol;
+        const quote = quotes[symbol];
+        const changePercent = resolveChangePercent(pick, quote);
+        if (typeof changePercent === "number") {
+          totalChange += changePercent;
+          changers += 1;
+          categoryChangeSum += changePercent;
+          categoryChangeCount += 1;
+        }
+        const detail = {
+          symbol,
+          pick,
+          quote,
+          changePercent,
+          price: resolvePrice(pick, quote),
+        };
+        allSignals.push(detail);
+        return detail;
+      });
+      const sortedPicks = sortPicksByDescendingChange(normalized, quotes);
+
+      categories.push({
+        category,
+        title: CATEGORY_LABELS[category] ?? category,
+        snapshot,
+        picks: sortedPicks,
+        enriched,
+        lastScreened,
+        averageChange:
+          categoryChangeCount > 0 ? categoryChangeSum / categoryChangeCount : null,
+      });
+    });
+
+    const averageChange = changers > 0 ? totalChange / changers : null;
+
+    const bestGainer = allSignals.reduce((best, signal) => {
+      if (typeof signal.changePercent !== "number") return best;
+      if (!best || signal.changePercent > best.changePercent) {
+        return signal;
+      }
+      return best;
+    }, null);
+
+    const bestLoser = allSignals.reduce((worst, signal) => {
+      if (typeof signal.changePercent !== "number") return worst;
+      if (!worst || signal.changePercent < worst.changePercent) {
+        return signal;
+      }
+      return worst;
+    }, null);
+
+    return {
+      categories,
+      totalBreakouts: allSignals.length,
+      averageChange,
+      lastUpdated: latestTimestamp,
+      bestGainer,
+      bestLoser,
+    };
+  }, [quotes, snapshots]);
+
+  const marketCategoryData = useMemo(() => {
+    return MARKET_CATEGORIES.map((cat) => ({
+      ...cat,
+      symbols: cat.symbols.map((s) => ({
+        ...s,
+        quote:
+          cat.id === activeMarketTab
+            ? activeMarketQuotes[s.symbol] ?? quotes[s.symbol]
+            : null,
+      })),
+    }));
+  }, [quotes, activeMarketQuotes, activeMarketTab]);
+
+  const activeCategory = useMemo(() => {
+    return marketCategoryData.find((c) => c.id === activeMarketTab) || marketCategoryData[0];
+  }, [marketCategoryData, activeMarketTab]);
+
+  const marketPulse = useMemo(() => {
+    return MARKET_PULSE_SYMBOLS.map((item) => ({
+      ...item,
+      quote: quotes[item.symbol],
+    }));
+  }, [quotes]);
+
+  const categoriesWithSignals = breakoutInsights.categories;
+  const orderedCategories = useMemo(() => {
+    if (!Array.isArray(categoriesWithSignals)) {
+      return [];
+    }
+    const rank = categoryDisplayOrder.reduce((map, category, index) => {
+      map[category] = index;
+      return map;
+    }, {});
+    return [...categoriesWithSignals].sort((a, b) => {
+      const orderA = rank[a.category] ?? 999;
+      const orderB = rank[b.category] ?? 999;
+      return orderA - orderB;
+    });
+  }, [categoriesWithSignals, categoryDisplayOrder]);
+
+  if (loading) {
+    return (
+      <div className="flex flex-col gap-6">
+        <section className="w-full overflow-x-auto scrollbar-hide -mx-1 px-1">
+          <div className="flex items-center gap-3 min-w-max">
+            {MARKET_PULSE_SYMBOLS.map((item) => (
+              <div key={`pulse-loading-${item.symbol}`} className="h-9 w-28 rounded-xl shimmer" />
+            ))}
+          </div>
+        </section>
+
+        <section className="w-full">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-2 w-full">
+            <div className="flex items-center gap-2 mb-4 overflow-x-auto scrollbar-hide w-full">
+              {MARKET_CATEGORIES.map((cat) => (
+                <div key={`tab-loading-${cat.id}`} className="h-8 w-24 rounded-full shimmer shrink-0" />
+              ))}
+            </div>
+            <div className="flex items-center gap-1.5 mb-4 overflow-x-auto scrollbar-hide">
+              {MARKET_TIMEFRAMES.map((tf) => (
+                <div key={`tf-loading-${tf}`} className="h-7 w-9 rounded-lg shimmer shrink-0" />
+              ))}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+            {Array.from({ length: 6 }).map((_, idx) => (
+              <MarketSymbolCardSkeleton key={`market-card-loading-${idx}`} />
+            ))}
+          </div>
+        </section>
+
+        <Card className="border-none">
+          <CardContent className="space-y-3 pt-0">
+            <div className="h-16 w-full rounded-2xl shimmer bg-white/20" />
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          <div className="lg:col-span-4 space-y-2">
+            {[1, 2, 3].map((item) => (
+              <div key={`money-flow-loading-${item}`} className="h-16 rounded-2xl shimmer" />
+            ))}
+          </div>
+          <div className="lg:col-span-8 lg:columns-2 lg:gap-6 space-y-4 lg:space-y-0">
+            {["idx", "us", "crypto"].map((category) => (
+              <section key={category} className="rounded-xl bg-background/80 lg:[break-inside:avoid] lg:mb-6">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="space-y-2">
+                    <div className="h-3 w-32 rounded-full shimmer" />
+                    <div className="h-3 w-40 rounded-full shimmer" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-6 w-16 rounded-full shimmer" />
+                    <div className="h-6 w-20 rounded-full shimmer" />
+                  </div>
+                </div>
+                <div>
+                  {[...Array(5)].map((_, idx) => (
+                    <ShimmerItem key={`${category}-shimmer-${idx}`} />
+                  ))}
+                </div>
+              </section>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={containerRef}
+      className="flex flex-col gap-6 pb-12"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
+      {pullDistance > 0 && (
+        <div
+          className="flex items-center justify-center transition-all duration-200"
+          style={{ height: `${Math.min(pullDistance, 120)}px` }}
+        >
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Loader2 className={`h-6 w-6 text-muted-foreground ${pullDistance > 80 || isRefreshing ? "animate-spin" : ""}`} />
+          </div>
+        </div>
+      )}
+
+      {/* ───── Market Pulse Ticker Strip ───── */}
+      <section className="w-full overflow-x-auto scrollbar-hide -mx-1 px-1">
+        <div className="hidden md:flex items-center gap-3 min-w-max">
+          {marketPulse.map((item) => {
+            const q = item.quote;
+            const isPos = (q?.change ?? 0) >= 0;
+            return (
+              <Link
+                key={item.symbol}
+                href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
+                className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted/40 transition-colors"
+              >
+                <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
+                <span className="text-xs font-bold tabular-nums">{q ? formatPrice(q.price) : "—"}</span>
+                {q && typeof q.changePercent === "number" ? (
+                  <span className={`text-[11px] font-semibold flex items-center gap-0.5 ${isPos ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                    {isPos ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                    {isPos ? "+" : ""}{q.changePercent.toFixed(2)}%
+                  </span>
+                ) : null}
+              </Link>
+            );
+          })}
+        </div>
+        <div className="md:hidden">
+          <MarketPulseMarquee items={marketPulse} />
+        </div>
+      </section>
+
+      {/* ───── Market Categories (Tabbed) ───── */}
+      <section className="w-full">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-2 w-full">
+          <div className="flex items-center gap-2 mb-4 overflow-x-auto scrollbar-hide w-full">
+            {MARKET_CATEGORIES.map((cat) => {
+              const CatIcon = cat.icon;
+              return (
+                <button
+                  key={cat.id}
+                  onClick={() => setActiveMarketTab(cat.id)}
+                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-150 whitespace-nowrap ${
+                    activeMarketTab === cat.id
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  {cat.emoji ? <span>{cat.emoji}</span> : CatIcon ? <CatIcon className="h-3.5 w-3.5" /> : null}
+                  {cat.title}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Timeframe Selector */}
+          <div className="flex items-center gap-1.5 mb-4 overflow-x-auto scrollbar-hide">
+            {MARKET_TIMEFRAMES.map((tf) => (
+              <button
+                key={tf}
+                onClick={() => setMarketTimeframe(tf)}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all duration-150 whitespace-nowrap ${
+                  marketTimeframe === tf
+                    ? "bg-foreground text-background"
+                    : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                }`}
+              >
+                {tf}
+              </button>
+            ))}
+            {activeMarketLoading && (
+              <span className="ml-1 inline-flex items-center text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              </span>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3">
+          {activeMarketLoading
+            ? activeCategory.symbols.map((item) => (
+                <MarketSymbolCardSkeleton key={`loading-${item.symbol}`} />
+              ))
+            : activeCategory.symbols.map((item) => {
+                const q = item.quote;
+                const tfChange = getTimeframeChange(q, marketTimeframe);
+                const changeValue = tfChange ?? (q?.change ?? 0);
+                const isPositive = changeValue >= 0;
+                const isAtATH = marketTimeframe === "ATH" && tfChange !== null && Math.abs(tfChange) < 0.5;
+                return (
+                  <Link
+                    key={item.symbol}
+                    href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
+                    className={`rounded-2xl p-3.5 border transition-all duration-200 block card-hover bg-card ${
+                      isAtATH
+                        ? "border-amber-500/40 bg-gradient-to-br from-amber-500/5 to-orange-500/5 ring-1 ring-amber-500/20"
+                        : "border-border/20 hover:border-border/40"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <TickerAvatar symbol={item.symbol} logo={item.logo || q?.logo} />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <p className="text-sm font-bold text-foreground tracking-tight truncate">{item.label}</p>
+                          {isAtATH && <Flame className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground truncate">{formatTickerDisplay(item.symbol)}</p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-end justify-between gap-2">
+                      <div>
+                        <p className="text-base font-bold text-foreground tabular-nums">
+                          {q ? formatPrice(q.price) : "—"}
+                        </p>
+                        <p className={`text-xs font-semibold mt-0.5 ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
+                          {tfChange !== null
+                            ? `${isPositive ? "+" : ""}${tfChange.toFixed(2)}%`
+                            : q && typeof q.changePercent === "number"
+                              ? `${q.changePercent >= 0 ? "+" : ""}${q.changePercent.toFixed(2)}%`
+                              : "—"}
+                          {marketTimeframe !== "1D" && tfChange !== null && (
+                            <span className="text-muted-foreground font-normal ml-1">({marketTimeframe})</span>
+                          )}
+                        </p>
+                      </div>
+                      <div className={`flex items-center ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
+                        <MiniChart
+                          data={q?.chartData || []}
+                          isPositive={isPositive}
+                          width={72}
+                          height={40}
+                          chartId={`market-${item.symbol}`}
+                        />
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+        </div>
+      </section>
+
+      {/* ───── Trending Marquee ───── */}
+      <div className="w-full">
+        <TrendingMarquee supabase={supabase} />
+      </div>
+
+      {/* ───── Main Content Grid ───── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        {/* ───── Left: Money Flow ───── */}
+        <div className="lg:col-span-4 flex flex-col gap-6">
+          <section>
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
+                    IDX Money Flow 🇮🇩
+                  </p>
+                </div>
+                {moneyFlowUpdatedAt && (
+                  <p className="text-[11px] text-muted-foreground/70 ml-3.5 mt-0.5">
+                    Updated {formatTimeAgo(moneyFlowUpdatedAt)}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {moneyFlowLoading && (
+              <div className="mt-3 space-y-2">
+                {[1, 2, 3].map((item) => (
+                  <div key={item} className="h-16 rounded-2xl shimmer" />
+                ))}
+              </div>
+            )}
+
+            {!moneyFlowLoading && moneyFlowError && (
+              <Card className="mt-3 border border-amber-500/20 bg-amber-500/5">
+                <CardContent className="p-3">
+                  <p className="text-xs text-amber-600 dark:text-amber-400">{moneyFlowError}</p>
+                </CardContent>
+              </Card>
+            )}
+
+            {!moneyFlowLoading && !moneyFlowError && moneyFlowReports.length > 0 && (
+              <Accordion type="single" collapsible className="mt-3 space-y-3">
+                {moneyFlowReports.map((report) => (
+                  <MoneyFlowCard key={`${report.symbol}-${report.report_date}`} report={report} />
+                ))}
+              </Accordion>
+            )}
+
+            <div className="mt-4 flex justify-center">
+              <Link
+                href="/money-flow?timeframe=weekly"
+                className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5 py-1.5 px-4 rounded-full border border-border/20 w-full justify-center transition-colors hover:bg-muted/30 text-emerald-600 dark:text-emerald-400 hover:underline"
+              >
+                View All Money Flow <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          </section>
+        </div>
+
+        {/* ───── Right: Breakout Signals ───── */}
+        <div className="lg:col-span-8">
+          <div className="grid grid-cols-1 gap-y-2 lg:block lg:columns-2 lg:gap-6">
+            {orderedCategories.map((section) => {
+            const gatedPicks = section.picks.slice(5);
+            const firstPicks = section.picks.slice(0, 5);
+            const shouldGate = !isAuthenticated && gatedPicks.length > 0;
+            return (
+              <section key={section.category} className="py-5 fade-in lg:[break-inside:avoid] lg:mb-2">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
+                        Technical Breakout in {section.title}
+                      </p>
+                    </div>
+                    {section.lastScreened && (
+                      <p className="text-[11px] text-muted-foreground/70 ml-3.5">
+                        Updated {formatTimeAgo(section.lastScreened)}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                    <span className="tabular-nums font-medium">{section.picks.length} found</span>
+                    <span className="rounded-lg border border-border/30 px-2.5 py-1 uppercase tracking-wider text-[10px] font-semibold bg-muted/30">
+                      {section.snapshot?.status ?? "idle"}
+                    </span>
+                  </div>
+                </div>
+                <div className="mt-4 space-y-0.5">
+                  {firstPicks.map((pick) => (
+                    <PickItem key={pick.symbol} pick={pick} quote={quotes[pick.symbol]} />
+                  ))}
+                </div>
+                {gatedPicks.length > 0 && (
+                  <div className="mt-1 relative">
+                    <div
+                      className={`space-y-1 divide-y divide-border/20 border-t border-border/20 pt-1 ${shouldGate ? "pointer-events-none select-none blur-[2px] opacity-60" : ""}`}
+                    >
+                      {gatedPicks.map((pick) => (
+                        <PickItem key={pick.symbol} pick={pick} quote={quotes[pick.symbol]} />
+                      ))}
+                    </div>
+                    {shouldGate && (
+                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg px-6 text-center">
+                        <Lock className="h-4 w-4 text-muted-foreground" />
+                        <p className="text-[11px] font-semibold text-muted-foreground">
+                          Sign in to explore all signals
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+                  {typeof section.averageChange === "number" ? (
+                    <span>Average move {formatPercent(section.averageChange)}</span>
+                  ) : null}
+                  {section.snapshot?.metadata?.batchProcessed != null && (
+                    <span>Batch {section.snapshot.metadata.batchProcessed} symbols</span>
+                  )}
+                  {section.snapshot?.metadata?.lastBatchDurationMs != null && (
+                    <span>Last run {(section.snapshot.metadata.lastBatchDurationMs / 1000).toFixed(1)}s</span>
+                  )}
+                </div>
+              </section>
+            );
+          })}
+          </div>
+
+          {/* ───── Screener Triggers ───── */}
+          <section className="p-4 rounded-2xl bg-card border border-border/20 mt-4 lg:mt-2">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">
+                  Run a fresh screening pass for fresh breakout signals.
+                </p>
+              </div>
+            </div>
+            {showInstallButton && deferredPrompt && (
+              <div className="mt-4">
+                <Button
+                  onClick={handleInstall}
+                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 flex items-center gap-2 text-xs text-white rounded-xl shadow-emerald-500/20"
+                >
+                  <Download className="h-4 w-4" />
+                  Install App
+                </Button>
+              </div>
+            )}
+            <div className="mt-4 grid grid-cols-3 gap-3">
+              {CATEGORY_ORDER.map((category) => {
+                const snapshot = snapshots[category];
+                const lastScreened = snapshot?.updated_at ? new Date(snapshot.updated_at) : null;
+                const screenedToday = isSameCalendarDay(lastScreened);
+                const label = category.toUpperCase();
+                return (
+                  <div key={category} className="space-y-1 text-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full rounded-xl text-xs font-semibold border-border/30 bg-muted/30 hover:bg-muted/60 transition-colors"
+                      onClick={() => triggerBatch(category)}
+                      disabled={manualLoading[category]}
+                    >
+                      {manualLoading[category] ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        label
+                      )}
+                    </Button>
+                    <p className="text-[10px] text-muted-foreground">
+                      {lastScreened
+                        ? `Last ${screenedToday ? "today" : formatLocalDateTimeLabel(lastScreened)}`
+                        : "Never screened"}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        </div>
+      </div>
+
+    </div>
+  );
+}

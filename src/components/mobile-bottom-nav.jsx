@@ -20,7 +20,7 @@ const navItems = [
   },
   {
     title: "Explore",
-    url: "/",
+    url: "/explore",
     icon: LayoutGrid,
   },
   {

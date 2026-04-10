@@ -216,7 +216,7 @@ function MessageInput({ onSend, disabled }) {
           onClick={handleSend}
           disabled={!message.trim() || sending || disabled}
           size="icon"
-          className="h-10 w-14 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-700 hover:from-teal-500 hover:to-emerald-600 border-0 text-white shadow-lg shadow-teal-500/20"
+          className="h-10 w-14 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-700 hover:from-teal-500 hover:to-emerald-600 border-0 text-white shadow-teal-500/20"
         >
           {sending ? (
             <Loader2 className="w-4 h-4 animate-spin" />
