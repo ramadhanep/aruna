@@ -144,7 +144,7 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
             className="flex items-center justify-center h-8 w-8 rounded-full bg-muted/60 hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
             aria-label="Profile"
           >
-            <UserRound className="h-4 w-4" />
+            <UserRound className="size-5" />
           </button>
         </div>
       </div>

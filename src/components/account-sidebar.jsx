@@ -398,11 +398,6 @@ function AccountSidebarContent({ onClose }) {
           <p className="text-[11px] text-muted-foreground">
             Version {process.env.NEXT_PUBLIC_APP_VERSION || "1.0.0"}
           </p>
-          <div className="mt-2 flex items-center justify-center gap-1 text-[11px] text-muted-foreground">
-            <span>Made with</span>
-            <Heart className="h-4 w-4 fill-red-600 text-red-600 dark:fill-white dark:text-white" />
-            <span>by Ramadhan Edy from 🇮🇩</span>
-          </div>
         </section>
       </div>
     </div>
@@ -414,14 +409,14 @@ export function AccountSidebar({ open, onClose }) {
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
           }`}
         onClick={onClose}
       />
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 bottom-0 w-full max-w-3xl bg-background z-40 transition-transform duration-300 ease-out ${open ? "translate-x-0 pointer-events-auto" : "-translate-x-full pointer-events-none"
+        className={`fixed top-0 left-0 bottom-0 w-full max-w-3xl bg-background z-[70] transition-transform duration-300 ease-out ${open ? "translate-x-0 pointer-events-auto" : "-translate-x-full pointer-events-none"
           }`}
       >
         <Suspense
