@@ -921,34 +921,25 @@ export default function PortfolioTrackerPage() {
 
   // Holdings distribution for chart
   const holdingsDistribution = useMemo(() => {
-    return holdingsWithMetrics.map((h, i) => {
-      // Use dynamic HSL for more distinct colors for many holdings
-      const hue = (i * 137.5) % 360; 
-      const saturation = 65 + (i % 3) * 10;
-      const lightness = 45 + (i % 2) * 10;
-      
+    return holdingsWithMetrics.map((h) => {
       return {
         name: h.isCash ? h.entry.category : formatTickerDisplay(h.entry.symbol),
         value: h.currentValueUSD,
-        fill: `hsl(${hue}, ${saturation}%, ${lightness}%)`
       };
     });
   }, [holdingsWithMetrics]);
 
   const digitalDistribution = useMemo(() => {
     const digitalHoldings = holdingsWithMetrics.filter((h) => !h.isCash);
-    return digitalHoldings.map((h, i) => {
-      const hue = (i * 137.5 + 25) % 360;
-      const saturation = 65 + (i % 3) * 10;
-      const lightness = 45 + (i % 2) * 10;
-
+    return digitalHoldings.map((h) => {
       return {
         name: formatTickerDisplay(h.entry.symbol),
+        symbol: h.entry.symbol,
+        logo: logoMap[h.entry.symbol] || null,
         value: h.currentValueUSD,
-        fill: `hsl(${hue}, ${saturation}%, ${lightness}%)`,
       };
     });
-  }, [holdingsWithMetrics]);
+  }, [holdingsWithMetrics, logoMap]);
 
   const cashTypeDistribution = useMemo(() => {
     const totals = new Map();
@@ -960,12 +951,10 @@ export default function PortfolioTrackerPage() {
         totals.set(code, prev + h.currentValueUSD);
       });
 
-    return [...totals.entries()].map(([code, value], i) => {
-      const hue = (i * 137.5 + 210) % 360;
+    return [...totals.entries()].map(([code, value]) => {
       return {
         name: code,
         value,
-        fill: `hsl(${hue}, 70%, 50%)`,
       };
     });
   }, [holdingsWithMetrics]);
@@ -1052,7 +1041,6 @@ export default function PortfolioTrackerPage() {
   const digitalPnLDisplay = getDisplayValue(digitalPnL);
   const totalCashDisplay = getDisplayValue(totalCash);
   const selectedCurrencyMeta = CURRENCY_META[currency] || CURRENCY_META.IDR;
-  const sgdFxDisplay = sgdPerUsd > 0 ? formatSGD(sgdPerUsd) : 'loading...';
   const idrFxDisplay = idrPerUsd > 0 ? formatIDR(idrPerUsd) : 'loading...';
 
   if (authLoading) {
@@ -1274,7 +1262,7 @@ export default function PortfolioTrackerPage() {
 
         <div className="rounded-xl border border-border/40 bg-muted/20 px-3 py-2">
           <p className="text-[10px] text-muted-foreground text-center">
-            FX (1 USD): {idrFxDisplay} | {sgdFxDisplay}
+            FX (1 USD): {idrFxDisplay}
           </p>
         </div>
       </div>

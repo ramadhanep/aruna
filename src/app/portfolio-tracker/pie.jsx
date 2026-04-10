@@ -5,6 +5,111 @@ import { Pie, PieChart, Cell } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { useTheme } from 'next-themes';
 
+function rgbToHsl(r, g, b) {
+  const rr = r / 255;
+  const gg = g / 255;
+  const bb = b / 255;
+  const max = Math.max(rr, gg, bb);
+  const min = Math.min(rr, gg, bb);
+  const delta = max - min;
+  let h = 0;
+  let s = 0;
+  const l = (max + min) / 2;
+
+  if (delta !== 0) {
+    s = delta / (1 - Math.abs(2 * l - 1));
+    switch (max) {
+      case rr:
+        h = ((gg - bb) / delta) % 6;
+        break;
+      case gg:
+        h = (bb - rr) / delta + 2;
+        break;
+      default:
+        h = (rr - gg) / delta + 4;
+        break;
+    }
+    h *= 60;
+    if (h < 0) h += 360;
+  }
+
+  return { h, s: s * 100, l: l * 100 };
+}
+
+function hslToCss(h, s, l) {
+  return `hsl(${Math.round(h)} ${Math.round(s)}% ${Math.round(l)}%)`;
+}
+
+function normalizeLogoColor(r, g, b, theme) {
+  const { h, s, l } = rgbToHsl(r, g, b);
+  const normalizedS = Math.min(Math.max(s, 38), 82);
+  const normalizedL = theme === 'dark'
+    ? Math.min(Math.max(l, 46), 72)
+    : Math.min(Math.max(l, 34), 62);
+  return hslToCss(h, normalizedS, normalizedL);
+}
+
+async function extractLogoColor(url, theme) {
+  if (!url || typeof window === 'undefined') return null;
+
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+
+    img.onload = () => {
+      try {
+        const size = 24;
+        const canvas = document.createElement('canvas');
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) {
+          resolve(null);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, size, size);
+        const { data } = ctx.getImageData(0, 0, size, size);
+
+        let totalWeight = 0;
+        let rAcc = 0;
+        let gAcc = 0;
+        let bAcc = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          const alpha = data[i + 3];
+          if (alpha < 40) continue;
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          const max = Math.max(r, g, b);
+          const min = Math.min(r, g, b);
+          const saturationWeight = Math.max(max - min, 24);
+          const weight = saturationWeight * (alpha / 255);
+          totalWeight += weight;
+          rAcc += r * weight;
+          gAcc += g * weight;
+          bAcc += b * weight;
+        }
+
+        if (totalWeight <= 0) {
+          resolve(null);
+          return;
+        }
+
+        const avgR = rAcc / totalWeight;
+        const avgG = gAcc / totalWeight;
+        const avgB = bAcc / totalWeight;
+        resolve(normalizeLogoColor(avgR, avgG, avgB, theme));
+      } catch (error) {
+        resolve(null);
+      }
+    };
+
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
 export function PortfolioPie({
   digitalUSD,
   cashUSD,
@@ -25,19 +130,70 @@ export function PortfolioPie({
   const digital = Math.max(digitalUSD, 0);
   const cash = Math.max(cashUSD, 0);
   const { resolvedTheme } = useTheme();
+  const theme = resolvedTheme === 'dark' ? 'dark' : 'light';
+  const [logoColorMap, setLogoColorMap] = React.useState({});
 
-  const greenPalette = resolvedTheme === 'dark'
-    ? ['#6ee7b7', '#34d399', '#10b981', '#059669', '#047857', '#065f46']
-    : ['#10b981', '#059669', '#047857', '#34d399', '#065f46', '#6ee7b7'];
-  const neutralPalette = resolvedTheme === 'dark'
-    ? ['#f8fafc', '#e2e8f0', '#cbd5e1', '#94a3b8', '#64748b', '#334155']
-    : ['#111827', '#1f2937', '#374151', '#4b5563', '#6b7280', '#9ca3af'];
-  const getThemeColor = (index, offset = 0) => {
+  const greenPalette = React.useMemo(() => (
+    theme === 'dark'
+      ? ['#6ee7b7', '#34d399', '#10b981', '#059669', '#047857', '#065f46']
+      : ['#10b981', '#059669', '#047857', '#34d399', '#065f46', '#6ee7b7']
+  ), [theme]);
+  const neutralPalette = React.useMemo(() => (
+    theme === 'dark'
+      ? ['#f8fafc', '#e2e8f0', '#cbd5e1', '#94a3b8', '#64748b', '#334155']
+      : ['#111827', '#1f2937', '#374151', '#4b5563', '#6b7280', '#9ca3af']
+  ), [theme]);
+  const getThemeColor = React.useCallback((index, offset = 0) => {
     const idx = index + offset;
     const paletteIndex = Math.floor(idx / 2);
     if (idx % 2 === 0) return greenPalette[paletteIndex % greenPalette.length];
     return neutralPalette[paletteIndex % neutralPalette.length];
-  };
+  }, [greenPalette, neutralPalette]);
+
+  const getCashTypeColor = React.useCallback((code, index) => {
+    const currencyCode = String(code || '').toUpperCase();
+    const paletteByCurrency = {
+      IDR: theme === 'dark'
+        ? ['#e11d48', '#be123c', '#9f1239', '#fb7185']
+        : ['#e11d48', '#be123c', '#9f1239', '#fb7185'],
+      USD: theme === 'dark'
+        ? ['#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8']
+        : ['#2563eb', '#1d4ed8', '#1e40af', '#60a5fa'],
+      SGD: theme === 'dark'
+        ? ['#f8fafc', '#e2e8f0', '#cbd5e1', '#94a3b8']
+        : ['#f9fafb', '#e5e7eb', '#d1d5db', '#9ca3af'],
+    };
+    const palette = paletteByCurrency[currencyCode];
+    if (!palette) {
+      return getThemeColor(index, 2);
+    }
+    return palette[index % palette.length];
+  }, [getThemeColor, theme]);
+
+  React.useEffect(() => {
+    let cancelled = false;
+
+    const run = async () => {
+      const nextColorMap = {};
+      for (const item of digitalDistribution) {
+        const symbol = item?.symbol;
+        const logo = item?.logo;
+        if (!symbol || !logo) continue;
+        const extracted = await extractLogoColor(logo, theme);
+        if (extracted) {
+          nextColorMap[symbol] = extracted;
+        }
+      }
+      if (!cancelled) {
+        setLogoColorMap(nextColorMap);
+      }
+    };
+
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [digitalDistribution, theme]);
 
   const assetTypeData = [
     { key: 'digital', name: 'Digital Assets', value: toDisplay(digital), raw: digital, fill: 'var(--color-digital)' },
@@ -55,20 +211,20 @@ export function PortfolioPie({
   const digitalData = digitalDistribution.map((d, i) => ({
     ...d,
     value: toDisplay(d.value),
-    fill: getThemeColor(i, 1),
+    fill: logoColorMap[d.symbol] || getThemeColor(i, 1),
   }));
   const digitalSum = digitalData.reduce((s, d) => s + d.value, 0) || 1;
 
   const cashTypeData = cashTypeDistribution.map((c, i) => ({
     ...c,
     value: toDisplay(c.value),
-    fill: getThemeColor(i, 2),
+    fill: getCashTypeColor(c.name, i),
   }));
   const cashTypeSum = cashTypeData.reduce((s, d) => s + d.value, 0) || 1;
 
   const config = {
     digital: { label: 'Digital Assets', color: 'oklch(59.6% 0.145 163.225)' },
-    cash: { label: 'Total Cash', color: (resolvedTheme === 'dark') ? '#F9F9F9F9' : '#333333' },
+    cash: { label: 'Total Cash', color: (theme === 'dark') ? '#F9F9F9F9' : '#333333' },
   };
 
   // Add holding-specific colors to config if needed, though Cell fill is direct
