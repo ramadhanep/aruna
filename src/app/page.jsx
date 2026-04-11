@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, LineChart, ShieldCheck, Sparkles, Wallet } from "lucide-react";
 import { useAuth } from "@/components/auth-provider";
+import MarketCanvas from "@/components/market-canvas";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -48,13 +49,16 @@ export default function LandingPage() {
         gyroControls: false,
         minHeight: 200,
         minWidth: 200,
-        skyColor: 0x0a1729,
-        cloudColor: 0x0f3f66,
-        cloudShadowColor: 0x07101d,
-        sunColor: 0x6ee7b7,
-        sunGlareColor: 0x7dd3fc,
-        sunlightColor: 0x93c5fd,
-        speed: 0.9,
+
+        skyColor: 0x0f172a,
+        cloudColor: 0x38bdf8,
+        cloudShadowColor: 0x020617,
+
+        sunColor: 0x60a5fa,
+        sunGlareColor: 0x93c5fd,
+        sunlightColor: 0xbfdbfe,
+
+        speed: 0.7,
       });
       setVantaReady(true);
     };
@@ -155,10 +159,10 @@ export default function LandingPage() {
               Built for modern investor workflow
             </div>
             <h1 className="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
-              Financial market signal workspace that feels fast, clean, and practical.
+              A faster, cleaner way to read the financial market.
             </h1>
             <p className="max-w-xl text-sm text-white/75 sm:text-base">
-              Aruna combines explore feed, supercharts, watchlist, and portfolio tracker in one lightweight app so you can move from idea to decision faster.
+              Aruna combines powerful market signals, advanced charting, and portfolio tracking into a seamless workspace designed for focused, decisive traders.
             </p>
             <div className="flex flex-wrap gap-3">
               <Button className="rounded-full bg-emerald-500 px-6 text-emerald-950 hover:bg-emerald-400" onClick={handleStart}>
@@ -193,13 +197,8 @@ export default function LandingPage() {
               <p className="text-[11px] text-white/60">Loading interactive cloud background...</p>
             ) : null}
           </div>
-
-          <div className="relative flex items-center justify-center">
-            <img
-              src="/landing.png"
-              alt="Yoga frog mascot"
-              className="h-98 w-98 object-cover transition-transform duration-500 ease-out hover:scale-[1.04] animate-[bounce_3s_ease-in-out_infinite]"
-            />
+          <div className="hidden lg:flex lg:items-center lg:pl-4">
+            <MarketCanvas />
           </div>
         </div>
       </section>
