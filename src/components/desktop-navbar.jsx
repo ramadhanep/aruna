@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Star, AlignHorizontalDistributeCenter, ChartPie, LayoutGrid, UserRound, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HeaderSymbolSearch } from "@/components/header-symbol-search";
+import { ModeToggle } from "@/components/mode-toggle";
 import { TOOLS_ITEMS } from "@/lib/tools-menu";
 
 const navItems = [
@@ -138,7 +139,8 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
 
         {/* Right Side */}
         <div className="flex items-center gap-2 ml-auto">
-          <HeaderSymbolSearch />
+          <HeaderSymbolSearch variant="input" />
+          <ModeToggle />
           <button
             onClick={onOpenAccountSidebar}
             className="flex items-center justify-center h-8 w-8 rounded-full bg-muted/60 hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"

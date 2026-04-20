@@ -2,12 +2,12 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Loader2, Clock, X } from "lucide-react";
+import { Search, Loader2, Clock } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
-import { formatTickerDisplay } from "@/lib/utils";
+import { cn, formatTickerDisplay } from "@/lib/utils";
 
 const SEARCH_HISTORY_KEY = "aruna_header_symbol_history";
 
@@ -214,15 +214,31 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
   );
 }
 
-export function HeaderSymbolSearch() {
+export function HeaderSymbolSearch({ variant = "icon", className }) {
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
-  const trigger = (
+  const trigger = variant === "input" ? (
+    <Button
+      type="button"
+      variant="outline"
+      className={cn(
+        "h-9 w-[220px] justify-start rounded-full border-border/70 bg-background/70 px-3 text-muted-foreground hover:bg-background md:w-[260px] xl:w-[320px]",
+        className
+      )}
+      aria-label="Search ticker"
+    >
+      <Search className="mr-2 size-4 shrink-0" />
+      <span className="truncate text-xs font-normal">Search ticker or company...</span>
+    </Button>
+  ) : (
     <Button
       variant="ghost"
       size="icon"
-      className="rounded-full p-2 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+      className={cn(
+        "rounded-full p-2 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+        className
+      )}
       aria-label="Search ticker"
     >
       <Search className="size-5" />

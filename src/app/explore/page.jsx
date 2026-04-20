@@ -47,8 +47,8 @@ const MARKET_CATEGORIES = [
       { symbol: "BBCA.JK", label: "BBCA", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/BBCA.png" },
       { symbol: "BMRI.JK", label: "BMRI", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/BMRI.png" },
       { symbol: "BBRI.JK", label: "BBRI", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/BBRI.png" },
-      { symbol: "TLKM.JK", label: "TLKM", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/TLKM.png" },
       { symbol: "ASII.JK", label: "ASII", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/ASII.png" },
+      { symbol: "TLKM.JK", label: "TLKM", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/TLKM.png" },
     ],
   },
   {
