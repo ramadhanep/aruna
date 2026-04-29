@@ -49,6 +49,77 @@ const CURRENT_LINE_COLOR = 'oklch(59.6% 0.145 163.225)';
 
 const SCREENING_CATEGORIES = ['idx', 'us', 'crypto'];
 
+/**
+ * Semicircle gauge chart for analyst rating.
+ * score: 1 (Strong Buy) → 5 (Strong Sell), matching Yahoo Finance's recommendationMean scale.
+ */
+function AnalystGaugeChart({ score }) {
+  const cx = 120, cy = 104, r = 78, trackW = 15;
+  const toPoint = (a, rad) => ({
+    x: cx + rad * Math.cos(a),
+    y: cy - rad * Math.sin(a),
+  });
+  const arc = (a1, a2, rad = r) => {
+    const s = toPoint(a1, rad);
+    const e = toPoint(a2, rad);
+    const large = Math.abs(a1 - a2) > Math.PI ? 1 : 0;
+    return `M ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${rad} ${rad} 0 ${large} 0 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`;
+  };
+  const zones = [
+    [Math.PI, Math.PI * 0.8, '#ef4444'],
+    [Math.PI * 0.8, Math.PI * 0.6, '#f97316'],
+    [Math.PI * 0.6, Math.PI * 0.4, '#eab308'],
+    [Math.PI * 0.4, Math.PI * 0.2, '#84cc16'],
+    [Math.PI * 0.2, 0, '#10b981'],
+  ];
+  // score=1 → p=1 (right/Strong Buy), score=5 → p=0 (left/Strong Sell)
+  const p = score != null ? Math.min(1, Math.max(0, (5 - score) / 4)) : null;
+  const needleAngle = p != null ? Math.PI * (1 - p) : null;
+  const tip = needleAngle != null ? toPoint(needleAngle, r * 0.68) : null;
+  // Labels at each zone midpoint, placed outside the arc
+  const labelDefs = [
+    { angle: Math.PI * 0.9, text: 'Strong\nSell', anchor: 'end', offR: 22 },
+    { angle: Math.PI * 0.7, text: 'Sell', anchor: 'end', offR: 18 },
+    { angle: Math.PI * 0.5, text: 'Neutral', anchor: 'middle', offR: 18 },
+    { angle: Math.PI * 0.3, text: 'Buy', anchor: 'start', offR: 18 },
+    { angle: Math.PI * 0.1, text: 'Strong\nBuy', anchor: 'start', offR: 22 },
+  ];
+  return (
+    <svg viewBox="0 0 240 128" className="w-full max-w-[260px] mx-auto select-none">
+      {/* Subtle background track */}
+      <path d={arc(Math.PI, 0)} fill="none" stroke="currentColor" strokeOpacity={0.07} strokeWidth={trackW + 8} />
+      {/* Colored zone segments */}
+      {zones.map(([a1, a2, col], i) => (
+        <path key={i} d={arc(a1, a2)} fill="none" stroke={col} strokeWidth={trackW} strokeLinecap="butt" />
+      ))}
+      {/* Zone labels */}
+      {labelDefs.map(({ angle, text, anchor, offR }, i) => {
+        const pt = toPoint(angle, r + offR);
+        const lines = text.split('\n');
+        return (
+          <text key={i} x={pt.x.toFixed(1)} y={pt.y.toFixed(1)} textAnchor={anchor} fontSize="7.5" fill="currentColor" opacity="0.5">
+            {lines.map((ln, j) => (
+              <tspan key={j} x={pt.x.toFixed(1)} dy={j === 0 ? 0 : '1.3em'}>{ln}</tspan>
+            ))}
+          </text>
+        );
+      })}
+      {/* Needle */}
+      {tip && (
+        <>
+          <line
+            x1={cx} y1={cy}
+            x2={tip.x.toFixed(2)} y2={tip.y.toFixed(2)}
+            stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"
+          />
+          <circle cx={cx} cy={cy} r={6} fill="currentColor" />
+          <circle cx={cx} cy={cy} r={3.5} fill="currentColor" opacity="0.2" />
+        </>
+      )}
+    </svg>
+  );
+}
+
 function areWatchlistsEqual(a = [], b = []) {
   if (a.length !== b.length) return false;
   for (let i = 0; i < a.length; i++) {
@@ -97,6 +168,30 @@ function formatScreeningTimestamp(value) {
     hour: 'numeric',
     minute: '2-digit',
   });
+}
+
+/**
+ * Formats a date/datetime value as a clean ISO 8601-style string in the client's local timezone.
+ * @param {string|number|Date} v - A date string, Unix timestamp (ms), or Date object
+ * @param {{ dateOnly?: boolean }} options
+ * @returns {string|null}
+ */
+function formatTimestamp(v, { dateOnly = false } = {}) {
+  if (!v) return null;
+  try {
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return null;
+    const pad = (n) => String(n).padStart(2, '0');
+    const year = d.getFullYear();
+    const month = pad(d.getMonth() + 1);
+    const day = pad(d.getDate());
+    if (dateOnly) return `${year}-${month}-${day}`;
+    const hours = pad(d.getHours());
+    const minutes = pad(d.getMinutes());
+    return `${year}-${month}-${day} ${hours}:${minutes}`;
+  } catch {
+    return null;
+  }
 }
 
 const cycleMetaMap = {
@@ -981,11 +1076,14 @@ function ElectionCyclePageContent() {
     return `${value.toFixed(0)}%`;
   };
 
-  function getReturnCellClass(value) {
-    if (value == null || isNaN(value)) return '';
-    if (value > 0) return 'text-white bg-green-900';
-    if (value < 0) return 'text-white bg-red-900';
-    return 'bg-muted text-foreground';
+  function getReturnCellStyle(value) {
+    if (value == null || isNaN(value)) return {};
+    const abs = Math.abs(value);
+    const t = Math.min(1, abs / 10);
+    const alpha = (0.15 + t * 0.65).toFixed(2);
+    if (value > 0) return { backgroundColor: `rgba(34, 197, 94, ${alpha})`, color: t > 0.3 ? 'white' : undefined };
+    if (value < 0) return { backgroundColor: `rgba(239, 68, 68, ${alpha})`, color: t > 0.3 ? 'white' : undefined };
+    return {};
   }
 
   const [quarterFilter, setQuarterFilter] = useState('all');
@@ -2014,20 +2112,22 @@ function ElectionCyclePageContent() {
     const getRecommendationClasses = (key) => {
       switch (key) {
         case 'hold':
-          return 'bg-amber-500/15 text-amber-300';
+          return { bg: 'bg-amber-500/15 text-amber-300', text: 'text-amber-400' };
         case 'sell':
         case 'strong_sell':
         case 'underperform':
-          return 'bg-red-500/15 text-red-300';
+          return { bg: 'bg-red-500/15 text-red-300', text: 'text-red-500' };
         case 'buy':
         case 'strong_buy':
-          return 'bg-emerald-500/15 text-emerald-300';
+          return { bg: 'bg-emerald-500/15 text-emerald-300', text: 'text-emerald-500' };
         default:
-          return 'bg-gray-500/15 text-gray-300';
+          return { bg: 'bg-gray-500/15 text-gray-300', text: 'text-muted-foreground' };
       }
     };
 
-    const ratingBgClass = getRecommendationClasses(recommendationKey);
+    const ratingClasses = getRecommendationClasses(recommendationKey);
+    const ratingBgClass = ratingClasses.bg;
+    const ratingTextClass = ratingClasses.text;
     const ratingScore =
       typeof details?.recommendationMean === 'number'
         ? Number(details.recommendationMean)
@@ -2045,6 +2145,7 @@ function ElectionCyclePageContent() {
       totalOpinions,
       ratingLabel,
       ratingBgClass,
+      ratingTextClass,
       ratingScore,
       priceTargets,
     };
@@ -2398,23 +2499,38 @@ function ElectionCyclePageContent() {
               <CardTitle className="text-sm mb-2">Governance Risk</CardTitle>
             </CardHeader>
             <CardContent>
-              <dl className="grid grid-cols-2 gap-3 text-xs">
+              <div className="space-y-3">
                 {[
                   { label: 'Overall Risk', value: governance.overallRisk },
                   { label: 'Audit Risk', value: governance.auditRisk },
                   { label: 'Board Risk', value: governance.boardRisk },
                   { label: 'Compensation Risk', value: governance.compensationRisk },
-                  { label: 'Shareholder Rights Risk', value: governance.shareHolderRightsRisk },
-                  { label: 'Governance As Of', value: governance.governanceEpochDate ? formatScreeningTimestamp(governance.governanceEpochDate) : null },
+                  { label: 'Shareholder Rights', value: governance.shareHolderRightsRisk },
                 ]
                   .filter((item) => item.value != null)
-                  .map((item) => (
-                    <div key={item.label} className="space-y-0.5">
-                      <dt className="text-muted-foreground">{item.label}</dt>
-                      <dd className="font-semibold text-foreground">{item.value}</dd>
-                    </div>
-                  ))}
-              </dl>
+                  .map((item) => {
+                    const score = Number(item.value);
+                    const pct = Math.min(100, (score / 10) * 100);
+                    const color = score <= 3 ? 'bg-emerald-500' : score <= 6 ? 'bg-amber-500' : 'bg-red-500';
+                    const textColor = score <= 3 ? 'text-emerald-500' : score <= 6 ? 'text-amber-500' : 'text-red-500';
+                    return (
+                      <div key={item.label} className="space-y-1">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">{item.label}</span>
+                          <span className={`font-bold ${textColor}`}>{score} / 10</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-muted">
+                          <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                {governance.governanceEpochDate && (
+                  <p className="text-[10px] text-muted-foreground pt-1">
+                    As of {formatTimestamp(governance.governanceEpochDate, { dateOnly: true }) ?? '—'}
+                  </p>
+                )}
+              </div>
             </CardContent>
           </Card>
         )}
@@ -2730,9 +2846,9 @@ function ElectionCyclePageContent() {
                 : null,
           },
           { label: 'Timezone', value: marketData.exchangeTimezoneName || null },
-          { label: 'Regular Session', value: marketData.regularMarketTime || null },
-          { label: 'Pre-Market', value: marketData.preMarketTime || null },
-          { label: 'Post-Market', value: marketData.postMarketTime || null },
+          { label: 'Regular Session', value: formatTimestamp(marketData.regularMarketTime) || null },
+          { label: 'Pre-Market', value: formatTimestamp(marketData.preMarketTime) || null },
+          { label: 'Post-Market', value: formatTimestamp(marketData.postMarketTime) || null },
           { label: 'Analyst Summary', value: marketData.averageAnalystRating || null },
         ].filter((item) => item.value && item.value !== '—')
       : [];
@@ -2783,12 +2899,7 @@ function ElectionCyclePageContent() {
           <div className="grid gap-2 grid-cols-1">
             {hasEarningsAnalysis && latestEarningsPoint && (
               <div className="relative">
-                <Card
-                  className={`h-full mt-4 ${!isAuthenticated
-                    ? 'pointer-events-none select-none opacity-60 blur-[1.5px]'
-                    : ''
-                    }`}
-                >
+                <Card className="h-full mt-4">
                   <CardHeader className="gap-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-1">
@@ -2883,25 +2994,12 @@ function ElectionCyclePageContent() {
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>
-                {!isAuthenticated && (
-                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
-                    <Lock className="h-6 w-6 text-muted-foreground" />
-                    <p className="text-xs font-semibold text-muted-foreground">
-                      Sign in to explore earnings results
-                    </p>
-                  </div>
-                )}
               </div>
             )}
 
             {hasRevenueAnalysis && (
               <div className="relative">
-                <Card
-                  className={`h-full ${!isAuthenticated
-                    ? 'pointer-events-none select-none opacity-60 blur-[1.5px]'
-                    : ''
-                    }`}
-                >
+                <Card className="h-full">
                   <CardHeader className="gap-2">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex flex-col">
@@ -2983,14 +3081,6 @@ function ElectionCyclePageContent() {
                     </ResponsiveContainer>
                   </CardContent>
                 </Card>
-                {!isAuthenticated && (
-                  <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
-                    <Lock className="h-6 w-6 text-muted-foreground" />
-                    <p className="text-xs font-semibold text-muted-foreground">
-                      Sign in to compare revenue and earnings
-                    </p>
-                  </div>
-                )}
               </div>
             )}
           </div>
@@ -3038,7 +3128,7 @@ function ElectionCyclePageContent() {
       );
     }
 
-    const { breakdown = [], totalOpinions, ratingLabel, ratingBgClass, ratingScore, priceTargets } =
+    const { breakdown = [], totalOpinions, ratingLabel, ratingBgClass, ratingTextClass, ratingScore, priceTargets } =
       recommendationData ?? {};
     const currentPrice = displayedPrice ?? symbolInfo?.currentPrice ?? null;
     const hasBreakdown = breakdown.some((item) => item.value);
@@ -3083,41 +3173,23 @@ function ElectionCyclePageContent() {
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Analyst Rating</CardTitle>
               <CardDescription className="text-xs text-muted-foreground">
-                Based on {totalOpinions || 0} analyst opinions
+                Based on {totalOpinions || 0} analysts in the past 3 months
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-5 text-xs">
-              {/* Rating Score Gauge */}
-              <div className="flex items-center gap-4">
-                <div className={`flex items-center justify-center w-16 h-16 rounded-2xl text-sm font-bold tracking-wide ${ratingBgClass}`}>
-                  {ratingScore ? ratingScore.toFixed(1) : '—'}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-base font-bold text-foreground">{ratingLabel || 'N/A'}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Consensus rating score {ratingScore ? `${ratingScore.toFixed(1)} / 5.0` : '—'}
-                  </p>
-                  {/* Mini horizontal gauge 1-5 */}
-                  {ratingScore && (
-                    <div className="mt-2 relative h-2 rounded-full bg-gradient-to-r from-red-500 via-amber-500 to-emerald-500 overflow-hidden">
-                      <div
-                        className="absolute top-0 h-full w-1 bg-white rounded-full ring-1 ring-black/20"
-                        style={{ left: `${Math.min(100, Math.max(0, ((ratingScore - 1) / 4) * 100))}%` }}
-                      />
-                    </div>
-                  )}
-                  {ratingScore && (
-                    <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
-                      <span>Strong Sell</span>
-                      <span>Strong Buy</span>
-                    </div>
-                  )}
-                </div>
+            <CardContent className="space-y-4 text-xs">
+              {/* Semicircle gauge */}
+              <AnalystGaugeChart score={ratingScore} />
+
+              {/* Rating label below gauge */}
+              <div className="text-center -mt-2">
+                <p className={`text-base font-bold tracking-wide ${ratingTextClass || 'text-foreground'}`}>
+                  {ratingLabel || 'N/A'}
+                </p>
               </div>
 
               {/* Breakdown bars */}
               {hasBreakdown && (
-                <div className="space-y-2">
+                <div className="space-y-2 pt-1">
                   {breakdown.map((item) => {
                     const percent = totalOpinions
                       ? Math.round((item.value / totalOpinions) * 100)
@@ -3270,25 +3342,43 @@ function ElectionCyclePageContent() {
             </CardHeader>
             <CardContent className="space-y-2">
               {recommendationTrend.map((entry, idx) => {
-                const totals = Number(entry.strongBuy || 0) + Number(entry.buy || 0) + Number(entry.hold || 0) + Number(entry.sell || 0) + Number(entry.strongSell || 0);
+                const sb = Number(entry.strongBuy || 0);
+                const b = Number(entry.buy || 0);
+                const h = Number(entry.hold || 0);
+                const s = Number(entry.sell || 0);
+                const ss = Number(entry.strongSell || 0);
+                const totals = sb + b + h + s + ss;
+                const pct = (v) => totals > 0 ? `${((v / totals) * 100).toFixed(0)}%` : '0%';
+                const bars = [
+                  { value: sb, color: 'bg-emerald-600', label: 'SB' },
+                  { value: b, color: 'bg-emerald-500/70', label: 'B' },
+                  { value: h, color: 'bg-amber-500', label: 'H' },
+                  { value: s, color: 'bg-red-500/70', label: 'S' },
+                  { value: ss, color: 'bg-red-600', label: 'SS' },
+                ];
                 return (
-                  <div key={`rec-trend-${idx}`} className="rounded-xl border border-border/30 p-2.5">
+                  <div key={`rec-trend-${idx}`} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
                       <span className="font-semibold text-foreground">{entry.period || `-${idx}m`}</span>
-                      <span className="text-muted-foreground">{totals} opinions</span>
+                      <span className="text-muted-foreground tabular-nums">{totals} analysts</span>
                     </div>
-                    <div className="mt-2 grid grid-cols-5 gap-1 text-[10px]">
-                      {[
-                        { label: 'SB', value: entry.strongBuy },
-                        { label: 'B', value: entry.buy },
-                        { label: 'H', value: entry.hold },
-                        { label: 'S', value: entry.sell },
-                        { label: 'SS', value: entry.strongSell },
-                      ].map((point) => (
-                        <div key={`${entry.period}-${point.label}`} className="rounded-md bg-muted/40 py-1 text-center">
-                          <p className="text-muted-foreground">{point.label}</p>
-                          <p className="font-semibold text-foreground">{Number(point.value || 0)}</p>
-                        </div>
+                    {/* Stacked horizontal bar */}
+                    <div className="flex h-3 rounded-full overflow-hidden gap-px">
+                      {bars.map(({ value, color }) =>
+                        value > 0 ? (
+                          <div
+                            key={color}
+                            className={`${color} transition-all`}
+                            style={{ width: pct(value) }}
+                            title={`${value}`}
+                          />
+                        ) : null
+                      )}
+                    </div>
+                    {/* Count row */}
+                    <div className="flex justify-between text-[9px] text-muted-foreground px-0.5">
+                      {bars.map(({ value, label }) => (
+                        <span key={label} className="tabular-nums">{label}: {value}</span>
                       ))}
                     </div>
                   </div>
@@ -3309,11 +3399,11 @@ function ElectionCyclePageContent() {
             <CardContent>
               <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 {[
-                  { label: 'Earnings Timestamp', value: marketData.earningsTimestamp },
-                  { label: 'Earnings Start', value: marketData.earningsTimestampStart },
-                  { label: 'Earnings End', value: marketData.earningsTimestampEnd },
-                  { label: 'Call Start', value: marketData.earningsCallTimestampStart },
-                  { label: 'Call End', value: marketData.earningsCallTimestampEnd },
+                  { label: 'Earnings Timestamp', value: formatTimestamp(marketData.earningsTimestamp) },
+                  { label: 'Earnings Start', value: formatTimestamp(marketData.earningsTimestampStart) },
+                  { label: 'Earnings End', value: formatTimestamp(marketData.earningsTimestampEnd) },
+                  { label: 'Call Start', value: formatTimestamp(marketData.earningsCallTimestampStart) },
+                  { label: 'Call End', value: formatTimestamp(marketData.earningsCallTimestampEnd) },
                   { label: 'Date Estimate', value: marketData.isEarningsDateEstimate == null ? null : (marketData.isEarningsDateEstimate ? 'Estimated' : 'Confirmed') },
                 ]
                   .filter((item) => item.value != null && item.value !== '')
@@ -3398,13 +3488,7 @@ function ElectionCyclePageContent() {
       if (Math.abs(v) >= 1e3) return `${(v / 1e3).toFixed(2)}K`;
       return typeof v === 'number' ? v.toFixed(2) : String(v);
     };
-    const formatDate = (v) => {
-      if (!v) return '—';
-      try {
-        const d = new Date(v);
-        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
-      } catch { return '—'; }
-    };
+    const formatDate = (v) => formatTimestamp(v, { dateOnly: true }) ?? '—';
 
     return (
       <div className="space-y-4">
@@ -3437,7 +3521,7 @@ function ElectionCyclePageContent() {
                 {marketData?.earningsCallTimestampStart && (
                   <div className="flex items-center justify-between py-2 border-t border-border/20">
                     <dt className="text-xs text-muted-foreground">Earnings Call</dt>
-                    <dd className="text-xs font-medium">{formatDate(marketData.earningsCallTimestampStart)}</dd>
+                    <dd className="text-xs font-medium">{formatTimestamp(marketData.earningsCallTimestampStart) ?? '—'}</dd>
                   </div>
                 )}
               </dl>
@@ -3447,93 +3531,101 @@ function ElectionCyclePageContent() {
 
         {/* Financial Health */}
         {hasFinancialHealth && (
-          <div className="relative">
-            <Card className={!isAuthenticated ? 'pointer-events-none select-none opacity-60 blur-[1.5px]' : ''}>
-              <CardHeader>
-                <CardTitle className="text-sm">Financial Health</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-y-3 gap-x-4">
-                  {[
-                    { label: 'Total Revenue', value: formatNum(fh.totalRevenue) },
-                    { label: 'Free Cash Flow', value: formatNum(fh.freeCashflow) },
-                    { label: 'Total Cash', value: formatNum(fh.totalCash) },
-                    { label: 'Total Debt', value: formatNum(fh.totalDebt) },
-                    { label: 'Debt / Equity', value: fh.debtToEquity != null ? fh.debtToEquity.toFixed(2) : '—' },
-                    { label: 'Current Ratio', value: fh.currentRatio != null ? fh.currentRatio.toFixed(2) : '—' },
-                    { label: 'Quick Ratio', value: fh.quickRatio != null ? fh.quickRatio.toFixed(2) : '—' },
-                    { label: 'Revenue / Share', value: fh.revenuePerShare != null ? fh.revenuePerShare.toFixed(2) : '—' },
-                  ].filter(item => item.value !== '—').map((item) => (
-                    <div key={item.label} className="space-y-0.5">
-                      <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
-                      <dd className="text-xs font-semibold">{item.value}</dd>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            {!isAuthenticated && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
-                <Lock className="h-6 w-6 text-muted-foreground" />
-                <p className="text-xs font-semibold text-muted-foreground">Sign in to view financial health</p>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Financial Health</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                {[
+                  { label: 'Total Revenue', value: formatNum(fh.totalRevenue) },
+                  {
+                    label: 'Free Cash Flow',
+                    value: formatNum(fh.freeCashflow),
+                    highlight: fh.freeCashflow != null ? (fh.freeCashflow >= 0 ? 'pos' : 'neg') : null,
+                  },
+                  { label: 'Total Cash', value: formatNum(fh.totalCash) },
+                  {
+                    label: 'Total Debt',
+                    value: formatNum(fh.totalDebt),
+                    highlight: fh.totalDebt != null && fh.totalCash != null
+                      ? (fh.totalDebt < fh.totalCash ? 'pos' : 'neg')
+                      : null,
+                  },
+                  {
+                    label: 'Debt / Equity',
+                    value: fh.debtToEquity != null ? fh.debtToEquity.toFixed(2) : '—',
+                    highlight: fh.debtToEquity != null ? (fh.debtToEquity < 100 ? 'pos' : 'neg') : null,
+                  },
+                  {
+                    label: 'Current Ratio',
+                    value: fh.currentRatio != null ? fh.currentRatio.toFixed(2) : '—',
+                    highlight: fh.currentRatio != null ? (fh.currentRatio >= 1 ? 'pos' : 'neg') : null,
+                  },
+                  {
+                    label: 'Quick Ratio',
+                    value: fh.quickRatio != null ? fh.quickRatio.toFixed(2) : '—',
+                    highlight: fh.quickRatio != null ? (fh.quickRatio >= 1 ? 'pos' : 'neg') : null,
+                  },
+                  { label: 'Revenue / Share', value: fh.revenuePerShare != null ? fh.revenuePerShare.toFixed(2) : '—' },
+                ].filter(item => item.value !== '—').map((item) => (
+                  <div key={item.label} className="space-y-0.5">
+                    <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
+                    <dd className={`text-xs font-semibold ${item.highlight === 'pos' ? 'text-emerald-500' : item.highlight === 'neg' ? 'text-red-500' : ''}`}>
+                      {item.value}
+                    </dd>
+                  </div>
+                ))}
               </div>
-            )}
-          </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Margins & Growth */}
-        {hasFinancialHealth && (fh.grossMargins != null || fh.profitMargins != null || fh.earningsGrowth != null) && (
-          <div className="relative">
-            <Card className={!isAuthenticated ? 'pointer-events-none select-none opacity-60 blur-[1.5px]' : ''}>
-              <CardHeader>
-                <CardTitle className="text-sm">Margins & Growth</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+        {hasFinancialHealth && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Margins & Growth</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {[
+                  { label: 'Gross Margin', value: fh.grossMargins, color: 'bg-emerald-500' },
+                  { label: 'Operating Margin', value: fh.operatingMargins, color: 'bg-sky-500' },
+                  { label: 'Profit Margin', value: fh.profitMargins, color: 'bg-violet-500' },
+                  { label: 'EBITDA Margin', value: fh.ebitdaMargins, color: 'bg-amber-500' },
+                ].filter(item => item.value != null).map((item) => (
+                  <div key={item.label} className="space-y-1">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">{item.label}</span>
+                      <span className="font-semibold">{formatPct(item.value)}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-muted">
+                      <div
+                        className={`h-full rounded-full ${item.color}`}
+                        style={{ width: `${Math.min(100, Math.max(0, (item.value || 0) * 100))}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border/20">
                   {[
-                    { label: 'Gross Margin', value: fh.grossMargins, color: 'bg-emerald-500' },
-                    { label: 'Operating Margin', value: fh.operatingMargins, color: 'bg-sky-500' },
-                    { label: 'Profit Margin', value: fh.profitMargins, color: 'bg-violet-500' },
-                    { label: 'EBITDA Margin', value: fh.ebitdaMargins, color: 'bg-amber-500' },
+                    { label: 'ROE', value: fh.returnOnEquity },
+                    { label: 'ROA', value: fh.returnOnAssets },
+                    { label: 'Revenue Growth', value: fh.revenueGrowth },
+                    { label: 'Earnings Growth', value: fh.earningsGrowth },
                   ].filter(item => item.value != null).map((item) => (
-                    <div key={item.label} className="space-y-1">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-muted-foreground">{item.label}</span>
-                        <span className="font-semibold">{formatPct(item.value)}</span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-muted">
-                        <div
-                          className={`h-full rounded-full ${item.color}`}
-                          style={{ width: `${Math.min(100, Math.max(0, (item.value || 0) * 100))}%` }}
-                        />
-                      </div>
+                    <div key={item.label} className="space-y-0.5">
+                      <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
+                      <dd className={`text-xs font-semibold ${item.value >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
+                        {formatPct(item.value)}
+                      </dd>
                     </div>
                   ))}
-                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border/20">
-                    {[
-                      { label: 'ROE', value: fh.returnOnEquity },
-                      { label: 'ROA', value: fh.returnOnAssets },
-                      { label: 'Revenue Growth', value: fh.revenueGrowth },
-                      { label: 'Earnings Growth', value: fh.earningsGrowth },
-                    ].filter(item => item.value != null).map((item) => (
-                      <div key={item.label} className="space-y-0.5">
-                        <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
-                        <dd className={`text-xs font-semibold ${item.value >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
-                          {formatPct(item.value)}
-                        </dd>
-                      </div>
-                    ))}
-                  </div>
                 </div>
-              </CardContent>
-            </Card>
-            {!isAuthenticated && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
-                <Lock className="h-6 w-6 text-muted-foreground" />
-                <p className="text-xs font-semibold text-muted-foreground">Sign in to view margins & growth</p>
               </div>
-            )}
-          </div>
+            </CardContent>
+          </Card>
         )}
 
         {/* Dividends */}
@@ -3563,11 +3655,10 @@ function ElectionCyclePageContent() {
 
         {/* Key Stats Extras */}
         {hasKeyStats && (
-          <div className="relative">
-            <Card className={!isAuthenticated ? 'pointer-events-none select-none opacity-60 blur-[1.5px]' : ''}>
-              <CardHeader>
-                <CardTitle className="text-sm">Key Statistics</CardTitle>
-              </CardHeader>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Key Statistics</CardTitle>
+            </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-y-3 gap-x-4">
                   {[
@@ -3596,22 +3687,14 @@ function ElectionCyclePageContent() {
                   ))}
                 </div>
               </CardContent>
-            </Card>
-            {!isAuthenticated && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
-                <Lock className="h-6 w-6 text-muted-foreground" />
-                <p className="text-xs font-semibold text-muted-foreground">Sign in to view key statistics</p>
-              </div>
-            )}
-          </div>
+          </Card>
         )}
 
         {hasOwnershipShort && (
-          <div className="relative">
-            <Card className={!isAuthenticated ? 'pointer-events-none select-none opacity-60 blur-[1.5px]' : ''}>
-              <CardHeader>
-                <CardTitle className="text-sm">Ownership & Short Interest</CardTitle>
-              </CardHeader>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Ownership & Short Interest</CardTitle>
+            </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 gap-y-3 gap-x-4">
                   {[
@@ -3630,22 +3713,14 @@ function ElectionCyclePageContent() {
                   ))}
                 </div>
               </CardContent>
-            </Card>
-            {!isAuthenticated && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
-                <Lock className="h-6 w-6 text-muted-foreground" />
-                <p className="text-xs font-semibold text-muted-foreground">Sign in to view ownership and short interest</p>
-              </div>
-            )}
-          </div>
+          </Card>
         )}
 
         {hasFiscalMarkers && (
-          <div className="relative">
-            <Card className={!isAuthenticated ? 'pointer-events-none select-none opacity-60 blur-[1.5px]' : ''}>
-              <CardHeader>
-                <CardTitle className="text-sm">Fiscal Markers</CardTitle>
-              </CardHeader>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Fiscal Markers</CardTitle>
+            </CardHeader>
               <CardContent>
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   {[
@@ -3660,23 +3735,15 @@ function ElectionCyclePageContent() {
                   ))}
                 </dl>
               </CardContent>
-            </Card>
-            {!isAuthenticated && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
-                <Lock className="h-6 w-6 text-muted-foreground" />
-                <p className="text-xs font-semibold text-muted-foreground">Sign in to view fiscal markers</p>
-              </div>
-            )}
-          </div>
+          </Card>
         )}
 
         {/* Analyst Upgrades/Downgrades */}
         {hasUpgrades && (
-          <div className="relative">
-            <Card className={!isAuthenticated ? 'pointer-events-none select-none opacity-60 blur-[1.5px]' : ''}>
-              <CardHeader>
-                <CardTitle className="text-sm">Recent Upgrades & Downgrades</CardTitle>
-              </CardHeader>
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm">Recent Upgrades & Downgrades</CardTitle>
+            </CardHeader>
               <CardContent>
                 <div className="space-y-2">
                   {upgrades.map((entry, idx) => {
@@ -3707,14 +3774,7 @@ function ElectionCyclePageContent() {
                   })}
                 </div>
               </CardContent>
-            </Card>
-            {!isAuthenticated && (
-              <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
-                <Lock className="h-6 w-6 text-muted-foreground" />
-                <p className="text-xs font-semibold text-muted-foreground">Sign in to view analyst upgrades</p>
-              </div>
-            )}
-          </div>
+          </Card>
         )}
       </div>
     );
@@ -3724,24 +3784,94 @@ function ElectionCyclePageContent() {
     if (quarterlyHeatmap.rows.length === 0 && monthlyHeatmap.rows.length === 0) {
       return (
         <Card>
-          <CardContent className="text-xs text-muted-foreground">
-            Seasonality data unavailable.
+          <CardContent className="text-xs text-muted-foreground py-6 text-center">
+            Seasonality data unavailable for {symbol}.
           </CardContent>
         </Card>
       );
     }
+
+    // Compute summary stats
+    const qAvgs = [1, 2, 3, 4]
+      .map((q) => quarterlyHeatmap.average?.[`Q${q}`])
+      .filter((v) => typeof v === 'number' && !isNaN(v));
+    const mAvgs = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+      .map((m) => monthlyHeatmap.average?.[`M${m}`])
+      .filter((v) => typeof v === 'number' && !isNaN(v));
+    const bestQIdx = qAvgs.length ? qAvgs.indexOf(Math.max(...qAvgs)) : -1;
+    const worstQIdx = qAvgs.length ? qAvgs.indexOf(Math.min(...qAvgs)) : -1;
+    const bestQ = bestQIdx >= 0 ? qAvgs[bestQIdx] : null;
+    const worstQ = worstQIdx >= 0 ? qAvgs[worstQIdx] : null;
+    const qWinRate = qAvgs.length ? Math.round((qAvgs.filter((v) => v > 0).length / qAvgs.length) * 100) : null;
+    const bestMIdx = mAvgs.length ? mAvgs.indexOf(Math.max(...mAvgs)) : -1;
+    const worstMIdx = mAvgs.length ? mAvgs.indexOf(Math.min(...mAvgs)) : -1;
+    const bestM = bestMIdx >= 0 ? mAvgs[bestMIdx] : null;
+    const worstM = worstMIdx >= 0 ? mAvgs[worstMIdx] : null;
+    const mWinRate = mAvgs.length ? Math.round((mAvgs.filter((v) => v > 0).length / mAvgs.length) * 100) : null;
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const qNames = ['Q1', 'Q2', 'Q3', 'Q4'];
+
     return (
-      <Accordion type="multiple" defaultValue={['quarterly', 'monthly']}>
-        <AccordionItem value="quarterly" className="border-b-0">
-          <AccordionTrigger className="py-3 text-sm font-semibold hover:no-underline">
-            Quarterly Returns
-          </AccordionTrigger>
-          <AccordionContent className="pb-4">
-            <div className="relative">
-              <div
-                className={`overflow-x-auto -mx-4 px-4 ${!isAuthenticated ? 'pointer-events-none select-none blur-[1.5px] opacity-60' : ''
-                  }`}
-              >
+      <div className="space-y-3">
+        {/* Stats header */}
+        {(bestQ != null || bestM != null) && (
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-xl bg-muted/40 px-3 py-2.5 text-center border border-border/20">
+              <p className="text-[9px] uppercase tracking-wide text-muted-foreground font-medium mb-1">Best Avg</p>
+              <p className="text-xs font-bold text-emerald-500">
+                {bestQ != null ? `${bestQ >= 0 ? '+' : ''}${bestQ.toFixed(1)}%` : '—'}
+              </p>
+              <p className="text-[9px] text-muted-foreground mt-0.5">{bestQIdx >= 0 ? qNames[bestQIdx] : ''}</p>
+            </div>
+            <div className="rounded-xl bg-muted/40 px-3 py-2.5 text-center border border-border/20">
+              <p className="text-[9px] uppercase tracking-wide text-muted-foreground font-medium mb-1">Worst Avg</p>
+              <p className={`text-xs font-bold ${worstQ != null && worstQ < 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                {worstQ != null ? `${worstQ >= 0 ? '+' : ''}${worstQ.toFixed(1)}%` : '—'}
+              </p>
+              <p className="text-[9px] text-muted-foreground mt-0.5">{worstQIdx >= 0 ? qNames[worstQIdx] : ''}</p>
+            </div>
+            <div className="rounded-xl bg-muted/40 px-3 py-2.5 text-center border border-border/20">
+              <p className="text-[9px] uppercase tracking-wide text-muted-foreground font-medium mb-1">Q Win Rate</p>
+              <p className={`text-xs font-bold ${qWinRate != null && qWinRate >= 50 ? 'text-emerald-500' : 'text-red-500'}`}>
+                {qWinRate != null ? `${qWinRate}%` : '—'}
+              </p>
+              <p className="text-[9px] text-muted-foreground mt-0.5">{qAvgs.filter((v) => v > 0).length}/{qAvgs.length} pos</p>
+            </div>
+          </div>
+        )}
+        {mAvgs.length > 0 && (
+          <div className="grid grid-cols-3 gap-2">
+            <div className="rounded-xl bg-muted/40 px-3 py-2.5 text-center border border-border/20">
+              <p className="text-[9px] uppercase tracking-wide text-muted-foreground font-medium mb-1">Best Month</p>
+              <p className="text-xs font-bold text-emerald-500">
+                {bestM != null ? `${bestM >= 0 ? '+' : ''}${bestM.toFixed(1)}%` : '—'}
+              </p>
+              <p className="text-[9px] text-muted-foreground mt-0.5">{bestMIdx >= 0 ? monthNames[bestMIdx] : ''}</p>
+            </div>
+            <div className="rounded-xl bg-muted/40 px-3 py-2.5 text-center border border-border/20">
+              <p className="text-[9px] uppercase tracking-wide text-muted-foreground font-medium mb-1">Worst Month</p>
+              <p className={`text-xs font-bold ${worstM != null && worstM < 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                {worstM != null ? `${worstM >= 0 ? '+' : ''}${worstM.toFixed(1)}%` : '—'}
+              </p>
+              <p className="text-[9px] text-muted-foreground mt-0.5">{worstMIdx >= 0 ? monthNames[worstMIdx] : ''}</p>
+            </div>
+            <div className="rounded-xl bg-muted/40 px-3 py-2.5 text-center border border-border/20">
+              <p className="text-[9px] uppercase tracking-wide text-muted-foreground font-medium mb-1">M Win Rate</p>
+              <p className={`text-xs font-bold ${mWinRate != null && mWinRate >= 50 ? 'text-emerald-500' : 'text-red-500'}`}>
+                {mWinRate != null ? `${mWinRate}%` : '—'}
+              </p>
+              <p className="text-[9px] text-muted-foreground mt-0.5">{mAvgs.filter((v) => v > 0).length}/{mAvgs.length} pos</p>
+            </div>
+          </div>
+        )}
+
+        <Accordion type="multiple" defaultValue={['quarterly', 'monthly']}>
+          <AccordionItem value="quarterly" className="border-b-0">
+            <AccordionTrigger className="py-3 text-sm font-semibold hover:no-underline">
+              Quarterly Returns
+            </AccordionTrigger>
+            <AccordionContent className="pb-4">
+              <div className="overflow-x-auto -mx-4 px-4">
                 <table className="w-full text-[10px]">
                   <thead>
                     <tr className="border-b">
@@ -3757,9 +3887,8 @@ function ElectionCyclePageContent() {
                         <td className="py-2 px-1 font-medium sticky left-0 bg-background">{row.year}</td>
                         {[1, 2, 3, 4].map((quarter) => {
                           const value = row[`Q${quarter}`];
-                          const cellClass = getReturnCellClass(value);
                           return (
-                            <td key={quarter} className={`text-center py-2 px-2 ${cellClass}`}>
+                            <td key={quarter} className="text-center py-2 px-2 transition-colors" style={getReturnCellStyle(value)}>
                               {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
                             </td>
                           );
@@ -3770,9 +3899,8 @@ function ElectionCyclePageContent() {
                       <td className="py-2 px-1 sticky left-0 bg-muted/50">Avg.</td>
                       {[1, 2, 3, 4].map((quarter) => {
                         const value = quarterlyHeatmap.average[`Q${quarter}`];
-                        const cellClass = getReturnCellClass(value);
                         return (
-                          <td key={quarter} className={`text-center py-2 px-2 ${cellClass}`}>
+                          <td key={quarter} className="text-center py-2 px-2 transition-colors font-bold" style={getReturnCellStyle(value)}>
                             {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
                           </td>
                         );
@@ -3781,28 +3909,15 @@ function ElectionCyclePageContent() {
                   </tbody>
                 </table>
               </div>
-              {!isAuthenticated && (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
-                  <Lock className="h-6 w-6 text-muted-foreground" />
-                  <p className="text-xs font-semibold text-muted-foreground">
-                    Sign in to explore quarterly returns
-                  </p>
-                </div>
-              )}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
+            </AccordionContent>
+          </AccordionItem>
 
-        <AccordionItem value="monthly" className="border-b-0">
-          <AccordionTrigger className="py-3 text-sm font-semibold hover:no-underline">
-            Monthly Returns
-          </AccordionTrigger>
-          <AccordionContent className="pb-4">
-            <div className="relative">
-              <div
-                className={`overflow-x-auto ${!isAuthenticated ? 'pointer-events-none select-none blur-[1.5px] opacity-60' : ''
-                  }`}
-              >
+          <AccordionItem value="monthly" className="border-b-0">
+            <AccordionTrigger className="py-3 text-sm font-semibold hover:no-underline">
+              Monthly Returns
+            </AccordionTrigger>
+            <AccordionContent className="pb-4">
+              <div className="overflow-x-auto">
                 <table className="w-full text-[9px]">
                   <thead>
                     <tr className="border-b">
@@ -3818,9 +3933,8 @@ function ElectionCyclePageContent() {
                         <td className="py-2 px-1 font-medium sticky left-0 bg-background">{row.year}</td>
                         {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((month) => {
                           const value = row[`M${month}`];
-                          const cellClass = getReturnCellClass(value);
                           return (
-                            <td key={month} className={`text-center py-2 px-1 ${cellClass}`}>
+                            <td key={month} className="text-center py-2 px-1 transition-colors" style={getReturnCellStyle(value)}>
                               {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
                             </td>
                           );
@@ -3831,9 +3945,8 @@ function ElectionCyclePageContent() {
                       <td className="py-2 px-1 sticky left-0 bg-muted/50">Avg.</td>
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((month) => {
                         const value = monthlyHeatmap.average[`M${month}`];
-                        const cellClass = getReturnCellClass(value);
                         return (
-                          <td key={month} className={`text-center py-2 px-1 ${cellClass}`}>
+                          <td key={month} className="text-center py-2 px-1 transition-colors font-bold" style={getReturnCellStyle(value)}>
                             {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
                           </td>
                         );
@@ -3842,18 +3955,10 @@ function ElectionCyclePageContent() {
                   </tbody>
                 </table>
               </div>
-              {!isAuthenticated && (
-                <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/05 backdrop-blur-xs px-6 text-center">
-                  <Lock className="h-6 w-6 text-muted-foreground" />
-                  <p className="text-xs font-semibold text-muted-foreground">
-                    Sign in to view monthly returns
-                  </p>
-                </div>
-              )}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </div>
     );
   };
 

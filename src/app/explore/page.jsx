@@ -45,10 +45,10 @@ const MARKET_CATEGORIES = [
     symbols: [
       { symbol: "^JKSE", label: "IHSG", logo: "https://s3-symbol-logo.tradingview.com/indices/jakarta-composite-index.svg" },
       { symbol: "BBCA.JK", label: "BBCA", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/BBCA.png" },
+      { symbol: "BREN.JK", label: "BREN", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/BREN.png" },
+      { symbol: "BRPT.JK", label: "BRPT", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/BRPT.png" },
       { symbol: "BMRI.JK", label: "BMRI", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/BMRI.png" },
       { symbol: "BBRI.JK", label: "BBRI", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/BBRI.png" },
-      { symbol: "ASII.JK", label: "ASII", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/ASII.png" },
-      { symbol: "TLKM.JK", label: "TLKM", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/TLKM.png" },
     ],
   },
   {
@@ -614,8 +614,8 @@ export default function ExplorePage() {
   const [moneyFlowLoading, setMoneyFlowLoading] = useState(true);
   const [moneyFlowError, setMoneyFlowError] = useState("");
   const [showInstallButton, setShowInstallButton] = useState(false);
-  const [activeMarketTab, setActiveMarketTab] = useState("indonesia");
-  const [marketTimeframe, setMarketTimeframe] = useState("1D");
+  const [activeMarketTab, setActiveMarketTab] = useState("global");
+  const [marketTimeframe, setMarketTimeframe] = useState("1y");
   const [activeMarketQuotes, setActiveMarketQuotes] = useState({});
   const [activeMarketLoading, setActiveMarketLoading] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);

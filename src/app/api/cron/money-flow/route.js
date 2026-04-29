@@ -18,7 +18,7 @@ export const revalidate = 0;
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const DEFAULT_SCREENER_TEMPLATE_ID = "5986773";
+const DEFAULT_SCREENER_TEMPLATE_ID = "5461641";
 
 function buildErrorResponse(message, status = 400) {
   return NextResponse.json({ error: message }, { status });

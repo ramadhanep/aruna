@@ -49,6 +49,13 @@ const formatRange = (low, high) => {
   return `${lowVal} - ${highVal}`;
 };
 
+// Converts a timestamp value (Date object or primitive) to an ISO 8601 string
+const toISOStr = (v) => {
+  if (v == null) return null;
+  if (v instanceof Date) return v.toISOString();
+  return String(v);
+};
+
 const mapEarningsSeries = (series) => {
   if (!Array.isArray(series)) {
     return [];
@@ -176,7 +183,7 @@ export async function GET(request) {
         marketState: quote.marketState,
         marketTime:
           quote.regularMarketTime?.fmt ||
-          (quote.regularMarketTime != null ? String(quote.regularMarketTime) : null),
+          (quote.regularMarketTime != null ? toISOStr(quote.regularMarketTime) : null),
         sector: quote.sector || null,
         industry: quote.industry || null,
       }
@@ -210,7 +217,7 @@ export async function GET(request) {
                   toPlainValue(quote.preMarketChangePercent),
                 time:
                   quote.preMarketTime?.fmt ||
-                  (quote.preMarketTime != null ? String(quote.preMarketTime) : null),
+                  (quote.preMarketTime != null ? toISOStr(quote.preMarketTime) : null),
               }
             : null,
         postMarket:
@@ -223,7 +230,7 @@ export async function GET(request) {
                   toPlainValue(quote.postMarketChangePercent),
                 time:
                   quote.postMarketTime?.fmt ||
-                  (quote.postMarketTime != null ? String(quote.postMarketTime) : null),
+                  (quote.postMarketTime != null ? toISOStr(quote.postMarketTime) : null),
               }
             : null,
       }
@@ -237,13 +244,13 @@ export async function GET(request) {
         exchangeTimezoneShortName: quote.exchangeTimezoneShortName ?? null,
         regularMarketTime:
           quote.regularMarketTime?.fmt ||
-          (quote.regularMarketTime != null ? String(quote.regularMarketTime) : null),
+          (quote.regularMarketTime != null ? toISOStr(quote.regularMarketTime) : null),
         preMarketTime:
           quote.preMarketTime?.fmt ||
-          (quote.preMarketTime != null ? String(quote.preMarketTime) : null),
+          (quote.preMarketTime != null ? toISOStr(quote.preMarketTime) : null),
         postMarketTime:
           quote.postMarketTime?.fmt ||
-          (quote.postMarketTime != null ? String(quote.postMarketTime) : null),
+          (quote.postMarketTime != null ? toISOStr(quote.postMarketTime) : null),
         hasPrePostMarketData: quote.hasPrePostMarketData ?? null,
         bid: toPlainValue(quote.bid),
         ask: toPlainValue(quote.ask),
@@ -267,19 +274,19 @@ export async function GET(request) {
         averageAnalystRating: quote.averageAnalystRating ?? null,
         earningsTimestamp:
           quote.earningsTimestamp?.fmt ||
-          (quote.earningsTimestamp != null ? String(quote.earningsTimestamp) : null),
+          (quote.earningsTimestamp != null ? toISOStr(quote.earningsTimestamp) : null),
         earningsTimestampStart:
           quote.earningsTimestampStart?.fmt ||
-          (quote.earningsTimestampStart != null ? String(quote.earningsTimestampStart) : null),
+          (quote.earningsTimestampStart != null ? toISOStr(quote.earningsTimestampStart) : null),
         earningsTimestampEnd:
           quote.earningsTimestampEnd?.fmt ||
-          (quote.earningsTimestampEnd != null ? String(quote.earningsTimestampEnd) : null),
+          (quote.earningsTimestampEnd != null ? toISOStr(quote.earningsTimestampEnd) : null),
         earningsCallTimestampStart:
           quote.earningsCallTimestampStart?.fmt ||
-          (quote.earningsCallTimestampStart != null ? String(quote.earningsCallTimestampStart) : null),
+          (quote.earningsCallTimestampStart != null ? toISOStr(quote.earningsCallTimestampStart) : null),
         earningsCallTimestampEnd:
           quote.earningsCallTimestampEnd?.fmt ||
-          (quote.earningsCallTimestampEnd != null ? String(quote.earningsCallTimestampEnd) : null),
+          (quote.earningsCallTimestampEnd != null ? toISOStr(quote.earningsCallTimestampEnd) : null),
         isEarningsDateEstimate: quote.isEarningsDateEstimate ?? null,
       }
     : null;
