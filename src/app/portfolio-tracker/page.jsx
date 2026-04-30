@@ -1058,7 +1058,7 @@ export default function PortfolioTrackerPage() {
   if (initialLoading) {
     return (
       <div className={`flex flex-col gap-4 ${isMobileExperience ? 'pb-28' : ''}`}>
-        <Card className={isMobileExperience ? 'rounded-3xl border-border/50 bg-gradient-to-b from-background to-muted/20' : ''}>
+        <Card className={isMobileExperience ? 'rounded-3xl' : ''}>
           <CardHeader className="flex flex-row items-center justify-between pb-2 gap-2">
             <div className="h-4 w-20 shimmer rounded-md" />
             <div className="flex items-center gap-2">
@@ -1089,7 +1089,7 @@ export default function PortfolioTrackerPage() {
           <div className="h-3 w-28 shimmer rounded-md mx-auto" />
         </div>
 
-        <Card className={`h-full ${isMobileExperience ? 'rounded-3xl border-border/50 bg-gradient-to-b from-background to-muted/20' : ''}`}>
+        <Card className={`h-full ${isMobileExperience ? 'rounded-3xl' : ''}`}>
           <CardHeader className="flex items-center justify-between">
             <div className="h-4 w-20 shimmer rounded-md" />
             <div className="h-8 w-8 shimmer rounded-md" />
@@ -1146,7 +1146,7 @@ export default function PortfolioTrackerPage() {
       )}
 
       <div className={`${isMobileExperience ? '' : 'lg:col-span-4'} flex flex-col gap-4`}>
-        <Card className={isMobileExperience ? 'rounded-3xl border-border/50 bg-gradient-to-b from-background to-muted/20' : ''}>
+        <Card className={isMobileExperience ? 'rounded-3xl' : ''}>
           <CardHeader className="flex flex-row items-center justify-between pb-2 gap-2">
             <CardTitle className="font-semibold text-sm">Overview</CardTitle>
             <div className="flex items-center gap-2 shrink-0">
@@ -1295,7 +1295,7 @@ export default function PortfolioTrackerPage() {
       </div>
 
       <div className={`${isMobileExperience ? '' : 'lg:col-span-8'}`}>
-        <Card className={`h-full ${isMobileExperience ? 'rounded-3xl border-border/50 bg-gradient-to-b from-background to-muted/20' : ''}`}>
+        <Card className={`h-full ${isMobileExperience ? 'rounded-3xl' : ''}`}>
           <CardHeader className="flex items-center justify-between">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               Holdings

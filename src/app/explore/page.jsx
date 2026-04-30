@@ -614,8 +614,8 @@ export default function ExplorePage() {
   const [moneyFlowLoading, setMoneyFlowLoading] = useState(true);
   const [moneyFlowError, setMoneyFlowError] = useState("");
   const [showInstallButton, setShowInstallButton] = useState(false);
-  const [activeMarketTab, setActiveMarketTab] = useState("global");
-  const [marketTimeframe, setMarketTimeframe] = useState("1y");
+  const [activeMarketTab, setActiveMarketTab] = useState("indonesia");
+  const [marketTimeframe, setMarketTimeframe] = useState("1W");
   const [activeMarketQuotes, setActiveMarketQuotes] = useState({});
   const [activeMarketLoading, setActiveMarketLoading] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
