@@ -106,7 +106,7 @@ export async function GET(request) {
   const symbol = searchParams.get('symbol');
 
   if (!symbol) {
-    return Response.json({ HIDUP_JOKOWI: encodePayload({ error: 'Missing symbol parameter' }) }, { status: 400 });
+    return Response.json({ payload: encodePayload({ error: 'Missing symbol parameter' }) }, { status: 400 });
   }
 
   const symbolKey = symbol.trim().toUpperCase();
@@ -164,7 +164,7 @@ export async function GET(request) {
   if (!quote && !earningsSummary) {
     return Response.json(
       {
-        HIDUP_JOKOWI: encodePayload({
+        payload: encodePayload({
           error: `No fundamentals data found for ${symbolKey}. Symbol may be invalid or not supported.`,
         }),
       },
@@ -450,7 +450,7 @@ export async function GET(request) {
   } : null;
 
   return Response.json({
-    HIDUP_JOKOWI: encodePayload({
+    payload: encodePayload({
       profile,
       price,
       valuations,

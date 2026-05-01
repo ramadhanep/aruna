@@ -76,7 +76,7 @@ export async function GET(request) {
   try {
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       return NextResponse.json(
-        { HIDUP_JOKOWI: encodePayload({ error: "Supabase configuration missing" }) },
+        { payload: encodePayload({ error: "Supabase configuration missing" }) },
         { status: 500 }
       );
     }
@@ -109,7 +109,7 @@ export async function GET(request) {
     if (error) {
       console.error("Money-flow query failed", error);
       return NextResponse.json(
-        { HIDUP_JOKOWI: encodePayload({ error: "Failed to fetch money flow reports" }) },
+        { payload: encodePayload({ error: "Failed to fetch money flow reports" }) },
         { status: 500 }
       );
     }
@@ -137,7 +137,7 @@ export async function GET(request) {
     const topPicks = buildTopPicks(sortedReports, 20);
 
     return NextResponse.json({
-      HIDUP_JOKOWI: encodePayload({
+      payload: encodePayload({
         timeframe: timeframeKey,
         timeframe_label: timeframeConfig.label,
         start_date: startDate,
@@ -162,7 +162,7 @@ export async function GET(request) {
     console.error("Money-flow API error", error);
     return NextResponse.json(
       {
-        HIDUP_JOKOWI: encodePayload({
+        payload: encodePayload({
           error: "Internal server error",
           details: error?.message || "Unknown error",
         }),

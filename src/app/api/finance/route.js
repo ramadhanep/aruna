@@ -3,7 +3,7 @@ import { encodePayload } from '@/lib/secure-payload';
 import { getSupabaseServiceRoleClient } from '@/lib/supabase-server';
 import { writeYahooRawLog } from '@/lib/yahoo-raw-log';
 
-const SUPABASE_STORAGE_BASE = 'https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public';
+const SUPABASE_STORAGE_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public`;
 const PLUANG_CDN_BASE = 'https://image-cdn.pluang.com/icons/light/global-stocks';
 
 /**
@@ -75,7 +75,7 @@ export async function GET(request) {
 
   if (!symbol || !startDate || !endDate) {
     return Response.json(
-      { HIDUP_JOKOWI: encodePayload({ error: 'Missing required parameters: symbol, startDate, endDate' }) },
+      { payload: encodePayload({ error: 'Missing required parameters: symbol, startDate, endDate' }) },
       { status: 400 }
     );
   }
@@ -85,7 +85,7 @@ export async function GET(request) {
 
   if (Number.isNaN(start) || Number.isNaN(end)) {
     return Response.json(
-      { HIDUP_JOKOWI: encodePayload({ error: 'Invalid date parameters; expected Unix timestamps' }) },
+      { payload: encodePayload({ error: 'Invalid date parameters; expected Unix timestamps' }) },
       { status: 400 }
     );
   }
@@ -94,7 +94,7 @@ export async function GET(request) {
   const validIntervals = ['1m', '2m', '5m', '15m', '30m', '60m', '90m', '1h', '1d', '5d', '1wk', '1mo', '3mo'];
   if (!validIntervals.includes(interval)) {
     return Response.json(
-      { HIDUP_JOKOWI: encodePayload({ error: `Invalid interval. Must be one of: ${validIntervals.join(', ')}` }) },
+      { payload: encodePayload({ error: `Invalid interval. Must be one of: ${validIntervals.join(', ')}` }) },
       { status: 400 }
     );
   }
@@ -148,7 +148,7 @@ export async function GET(request) {
     // Handle empty results
     if (!result?.quotes || result.quotes.length === 0) {
       return Response.json(
-        { HIDUP_JOKOWI: encodePayload({ error: 'No data available for the specified period. Symbol may be invalid or delisted.' }) },
+        { payload: encodePayload({ error: 'No data available for the specified period. Symbol may be invalid or delisted.' }) },
         { status: 404 }
       );
     }
@@ -196,7 +196,7 @@ export async function GET(request) {
     }
 
     return Response.json({
-      HIDUP_JOKOWI: encodePayload({
+      payload: encodePayload({
         data: prices,
         events: Object.keys(eventsData).length > 0 ? eventsData : undefined,
         meta: {
@@ -239,6 +239,6 @@ export async function GET(request) {
       message = 'Yahoo Finance API session error. Please try again.';
     }
 
-    return Response.json({ HIDUP_JOKOWI: encodePayload({ error: message }) }, { status });
+    return Response.json({ payload: encodePayload({ error: message }) }, { status });
   }
 }

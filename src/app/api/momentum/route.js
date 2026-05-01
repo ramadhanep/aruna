@@ -82,7 +82,7 @@ export async function GET(request) {
         monthChange: stock.price_1_month_pct_change,
         momentumScore: parseFloat(momentumScore.toFixed(2)),
         status,
-        logo_url: `https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/${stock.code}.png`,
+        logo_url: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/idx/${stock.code}.png`,
       };
     });
 
@@ -132,7 +132,7 @@ export async function GET(request) {
     };
 
     return NextResponse.json({
-      HIDUP_JOKOWI: encodePayload(payload),
+      payload: encodePayload(payload),
     });
   } catch (error) {
     console.error('API error:', error);

@@ -110,7 +110,7 @@ export async function GET(request) {
     };
 
     return NextResponse.json({
-      HIDUP_JOKOWI: encodePayload(payload),
+      payload: encodePayload(payload),
     });
   } catch (error) {
     console.error('API error:', error);
@@ -225,7 +225,7 @@ export async function POST(request) {
     };
 
     return NextResponse.json({
-      HIDUP_JOKOWI: encodePayload({ message: formattedMessage }),
+      payload: encodePayload({ message: formattedMessage }),
     });
   } catch (error) {
     console.error('API error:', error);
@@ -300,7 +300,7 @@ export async function DELETE(request) {
     }
 
     return NextResponse.json({
-      HIDUP_JOKOWI: encodePayload({ success: true }),
+      payload: encodePayload({ success: true }),
     });
   } catch (error) {
     console.error('API error:', error);

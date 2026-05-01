@@ -524,7 +524,7 @@ export function MarketBubbles({ fullScreen = false }) {
 
                   {showLogo && (
                     <image
-                      href={`https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/${bubble.code}.png`}
+                      href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/idx/${bubble.code}.png`}
                       x={bubble.x - logoSize / 2}
                       y={logoY - logoSize / 2}
                       width={logoSize}

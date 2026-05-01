@@ -161,7 +161,7 @@ export function parseScreenerTemplatePayload(payload) {
     const snapshot = {
       symbol,
       company_name: calc?.company?.name || symbol,
-      icon_url: `https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/${symbol}.png` || calc?.company?.icon_url || "",
+      icon_url: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/idx/${symbol}.png` || calc?.company?.icon_url || "",
     };
 
     const results = Array.isArray(calc?.results) ? calc.results : [];

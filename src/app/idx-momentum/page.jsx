@@ -19,6 +19,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { TickerAvatar } from "@/components/ticker-avatar";
+import { formatMarketCap, formatPrice } from "@/lib/utils";
 
 // Color maps for status-based styling
 const statusColorMap = {
@@ -35,19 +36,6 @@ const statusColorMap = {
     cardGradient: "from-red-500/5 dark:from-red-500/10"
   }
 };
-
-function formatMarketCap(value) {
-  if (!value) return "-";
-  if (value >= 1e12) return `${(value / 1e12).toFixed(2)}T`;
-  if (value >= 1e9) return `${(value / 1e9).toFixed(2)}B`;
-  if (value >= 1e6) return `${(value / 1e6).toFixed(2)}M`;
-  return value.toLocaleString();
-}
-
-function formatPrice(value) {
-  if (!value) return "-";
-  return value.toLocaleString("id-ID");
-}
 
 function formatPercent(value) {
   if (value === null || value === undefined) return "-";

@@ -6,14 +6,14 @@ export async function POST(request) {
   const supabaseAdmin = getSupabaseServiceRoleClient();
   if (!supabaseAdmin) {
     return NextResponse.json(
-      { HIDUP_JOKOWI: encodePayload({ error: "Supabase service role key is not configured" }) },
+      { payload: encodePayload({ error: "Supabase service role key is not configured" }) },
       { status: 500 }
     );
   }
 
   const { user, error } = await getUserFromRequest(request);
   if (error || !user) {
-    return NextResponse.json({ HIDUP_JOKOWI: encodePayload({ error: "Unauthorized" }) }, { status: 401 });
+    return NextResponse.json({ payload: encodePayload({ error: "Unauthorized" }) }, { status: 401 });
   }
 
   try {
@@ -28,11 +28,11 @@ export async function POST(request) {
       throw deleteError;
     }
 
-    return NextResponse.json({ HIDUP_JOKOWI: encodePayload({ success: true }) });
+    return NextResponse.json({ payload: encodePayload({ success: true }) });
   } catch (err) {
     console.error("Failed to delete account", err);
     return NextResponse.json(
-      { HIDUP_JOKOWI: encodePayload({ error: "Failed to delete account" }) },
+      { payload: encodePayload({ error: "Failed to delete account" }) },
       { status: 500 }
     );
   }

@@ -14,3 +14,50 @@ export function formatTickerDisplay(symbol) {
   if (!symbol || typeof symbol !== 'string') return symbol || '';
   return symbol.replace(/\.JK$/i, '');
 }
+
+/**
+ * Format market cap for display
+ * @param {number} value - Market cap value
+ * @returns {string} Formatted string (e.g., "15.2T", "450B")
+ */
+export function formatMarketCap(value) {
+  if (!value) return '—';
+
+  const trillion = 1_000_000_000_000;
+  const billion = 1_000_000_000;
+  const million = 1_000_000;
+
+  if (value >= trillion) {
+    return `${(value / trillion).toFixed(1)}T`;
+  }
+  if (value >= billion) {
+    return `${(value / billion).toFixed(1)}B`;
+  }
+  if (value >= million) {
+    return `${(value / million).toFixed(1)}M`;
+  }
+  return value.toLocaleString('id-ID');
+}
+
+/**
+ * Format price for display
+ * @param {number} value - Price value
+ * @returns {string} Formatted price
+ */
+export function formatPrice(value) {
+  if (!value) return '—';
+  return value.toLocaleString('id-ID', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
+}
+
+/**
+ * Format percentage for display
+ * @param {number} value - Percentage value
+ * @returns {string} Formatted percentage
+ */
+export function formatPercent(value) {
+  if (value == null) return '—';
+  return `${value.toFixed(1)}%`;
+}

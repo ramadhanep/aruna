@@ -1,0 +1,749 @@
+{
+  "info": {
+    "name": "Aruna API",
+    "description": "API collection for the Aruna project.\n\nNOTE: All responses (except `/api/discussions` and `/api/cron/*`) are XOR-obfuscated and wrapped under the key `payload`. The responses documented here show the decoded structure.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "CRON_SECRET",
+      "value": "<your-cron-secret>",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Market Data",
+      "item": [
+        {
+          "name": "Get Quote (finance)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{BASE_URL}}/api/finance?symbol=BBCA.JK",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "finance"
+              ],
+              "query": [
+                {
+                  "key": "symbol",
+                  "value": "BBCA.JK"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{BASE_URL}}/api/finance?symbol=BBCA.JK",
+                  "host": [
+                    "{{BASE_URL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "finance"
+                  ],
+                  "query": [
+                    {
+                      "key": "symbol",
+                      "value": "BBCA.JK"
+                    }
+                  ]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"payload\": \"xor_encoded_string_here... (decoded structure below)\",\n  \"_decoded\": {\n    \"symbol\": \"BBCA.JK\",\n    \"price\": 9850,\n    \"change\": 150,\n    \"changePercent\": 1.54,\n    \"volume\": 45000000,\n    \"marketCap\": 1200000000000,\n    \"logoUrl\": \"https://example.supabase.co/storage/v1/object/public/idx/BBCA.png\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Batch Quotes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"symbols\": [\n    \"BBCA.JK\",\n    \"BMRI.JK\",\n    \"AAPL\",\n    \"BTC-USD\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/quotes",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "quotes"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"_decoded\": [\n    {\n      \"symbol\": \"BBCA.JK\",\n      \"price\": 9850,\n      \"changePercent\": 1.54\n    },\n    {\n      \"symbol\": \"BMRI.JK\",\n      \"price\": 6050,\n      \"changePercent\": -0.5\n    },\n    {\n      \"symbol\": \"AAPL\",\n      \"price\": 175.5,\n      \"changePercent\": 0.2\n    },\n    {\n      \"symbol\": \"BTC-USD\",\n      \"price\": 64000,\n      \"changePercent\": 2.1\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Price Series",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{BASE_URL}}/api/price-series?symbol=BBCA.JK&interval=1d&range=1mo",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "price-series"
+              ],
+              "query": [
+                {
+                  "key": "symbol",
+                  "value": "BBCA.JK"
+                },
+                {
+                  "key": "interval",
+                  "value": "1d"
+                },
+                {
+                  "key": "range",
+                  "value": "1mo"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"_decoded\": {\n    \"quotes\": [\n      {\n        \"date\": \"2024-03-01T00:00:00.000Z\",\n        \"close\": 9700\n      },\n      {\n        \"date\": \"2024-03-02T00:00:00.000Z\",\n        \"close\": 9850\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Symbol Search",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{BASE_URL}}/api/symbol-search?q=Bank Central",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "symbol-search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "Bank Central"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"_decoded\": [\n    {\n      \"symbol\": \"BBCA.JK\",\n      \"shortname\": \"Bank Central Asia Tbk\",\n      \"exchange\": \"JK\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Fundamentals",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{BASE_URL}}/api/fundamentals?symbol=BBCA.JK",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "fundamentals"
+              ],
+              "query": [
+                {
+                  "key": "symbol",
+                  "value": "BBCA.JK"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"_decoded\": {\n    \"trailingPE\": 22.5,\n    \"dividendYield\": 0.025,\n    \"recommendationMean\": 2.1,\n    \"recommendationKey\": \"buy\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Screeners",
+      "item": [
+        {
+          "name": "IDX Screener",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{BASE_URL}}/api/screeners/idx",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "screeners",
+                "idx"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"_decoded\": {\n    \"data\": [\n      {\n        \"symbol\": \"BBCA.JK\",\n        \"momentum\": \"leading\"\n      }\n    ],\n    \"metadata\": {\n      \"last_run\": \"2024-03-15T00:00:00Z\"\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "US Screener",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{BASE_URL}}/api/screeners/us",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "screeners",
+                "us"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"_decoded\": {\n    \"data\": [\n      {\n        \"symbol\": \"NVDA\",\n        \"momentum\": \"leading\"\n      }\n    ],\n    \"metadata\": {\n      \"last_run\": \"2024-03-15T00:00:00Z\"\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Crypto Screener",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{BASE_URL}}/api/screeners/crypto",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "screeners",
+                "crypto"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"_decoded\": {\n    \"data\": [\n      {\n        \"symbol\": \"BTC-USD\",\n        \"momentum\": \"leading\"\n      }\n    ],\n    \"metadata\": {\n      \"last_run\": \"2024-03-15T00:00:00Z\"\n    }\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Analytics",
+      "item": [
+        {
+          "name": "Bubbles",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{BASE_URL}}/api/bubbles?market=idx",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "bubbles"
+              ],
+              "query": [
+                {
+                  "key": "market",
+                  "value": "idx"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"_decoded\": [\n    {\n      \"code\": \"BBCA.JK\",\n      \"name\": \"Bank Central Asia\",\n      \"price\": 9850,\n      \"market_cap\": 1200000000000,\n      \"price_1_week_pct_change\": 2.5\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Rotation (RRG)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{BASE_URL}}/api/rotation?market=idx",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "rotation"
+              ],
+              "query": [
+                {
+                  "key": "market",
+                  "value": "idx"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"_decoded\": [\n    {\n      \"symbol\": \"BBCA.JK\",\n      \"rs_ratio\": 102.5,\n      \"rs_momentum\": 101.2,\n      \"quadrant\": \"leading\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Momentum",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{BASE_URL}}/api/momentum",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "momentum"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"_decoded\": [\n    {\n      \"symbol\": \"BBCA.JK\",\n      \"momentumScore\": 85,\n      \"status\": \"leading\",\n      \"logo_url\": \"https://...\"\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Money Flow",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{BASE_URL}}/api/money-flow?symbol=BBCA.JK",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "money-flow"
+              ],
+              "query": [
+                {
+                  "key": "symbol",
+                  "value": "BBCA.JK"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"_decoded\": {\n    \"symbol\": \"BBCA.JK\",\n    \"reports\": [\n      {\n        \"timeframe\": \"weekly\",\n        \"money_flow_score\": 8,\n        \"signal\": \"Strong Accumulation\",\n        \"broker_accdist\": \"Accumulation\"\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "MSCI Tracker",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{BASE_URL}}/api/msci",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "msci"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"_decoded\": {\n    \"standard\": [\n      {\n        \"ticker\": \"BBCA.JK\",\n        \"free_float_mcap\": 25000000000,\n        \"msci_status\": \"included\"\n      }\n    ],\n    \"small_cap\": [\n      {\n        \"ticker\": \"ACES.JK\",\n        \"free_float_mcap\": 450000000,\n        \"msci_status\": \"included\"\n      }\n    ]\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Community",
+      "item": [
+        {
+          "name": "Get Discussions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "sb-access-token=your_token_here",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/discussions?symbol=BBCA.JK",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "discussions"
+              ],
+              "query": [
+                {
+                  "key": "symbol",
+                  "value": "BBCA.JK"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"uuid\",\n      \"content\": \"Thoughts on BBCA?\",\n      \"mentions\": [\n        \"BBCA.JK\"\n      ],\n      \"created_at\": \"2024-03-15T00:00:00Z\",\n      \"profiles\": {\n        \"full_name\": \"John Doe\",\n        \"avatar_url\": \"https://...\"\n      }\n    }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Post Discussion",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Cookie",
+                "value": "sb-access-token=your_token_here",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Thoughts on BBCA?\",\n  \"mentions\": [\n    \"BBCA.JK\"\n  ],\n  \"reply_to_id\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{BASE_URL}}/api/discussions",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "discussions"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"success\": true,\n  \"data\": {\n    \"id\": \"uuid\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Discussion",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "sb-access-token=your_token_here",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/discussions?id=123",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "discussions"
+              ],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "123"
+                }
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"success\": true\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Account",
+      "item": [
+        {
+          "name": "Delete Account",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Cookie",
+                "value": "sb-access-token=your_token_here",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/delete-account",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "delete-account"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"success\": true,\n  \"message\": \"Account and all associated data deleted successfully.\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Cron (Internal)",
+      "item": [
+        {
+          "name": "Trigger IDX Screener",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{CRON_SECRET}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/cron/idx",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "cron",
+                "idx"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"success\": true,\n  \"count\": 150\n}"
+            }
+          ]
+        },
+        {
+          "name": "Trigger US Screener",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{CRON_SECRET}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/cron/us",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "cron",
+                "us"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"success\": true,\n  \"count\": 500\n}"
+            }
+          ]
+        },
+        {
+          "name": "Trigger Crypto Screener",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{CRON_SECRET}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/cron/crypto",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "cron",
+                "crypto"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"success\": true,\n  \"count\": 50\n}"
+            }
+          ]
+        },
+        {
+          "name": "Trigger Money Flow",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{CRON_SECRET}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{BASE_URL}}/api/cron/money-flow",
+              "host": [
+                "{{BASE_URL}}"
+              ],
+              "path": [
+                "api",
+                "cron",
+                "money-flow"
+              ]
+            }
+          },
+          "response": [
+            {
+              "name": "Example Response",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"success\": true,\n  \"message\": \"Money flow analysis completed\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

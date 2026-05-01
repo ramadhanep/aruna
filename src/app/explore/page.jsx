@@ -13,6 +13,8 @@ import { TrendingMarquee } from "@/components/trending-marquee";
 import { formatTickerDisplay } from "@/lib/utils";
 import { MoneyFlowCard } from "@/components/money-flow-card";
 
+const SUPABASE_STORAGE_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public`;
+
 const CATEGORY_LABELS = {
   idx: "IDX 🇮🇩",
   us: "US 🇺🇸",
@@ -44,11 +46,11 @@ const MARKET_CATEGORIES = [
     marketClose: [15, 15],
     symbols: [
       { symbol: "^JKSE", label: "IHSG", logo: "https://s3-symbol-logo.tradingview.com/indices/jakarta-composite-index.svg" },
-      { symbol: "BBCA.JK", label: "BBCA", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/BBCA.png" },
-      { symbol: "BREN.JK", label: "BREN", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/BREN.png" },
-      { symbol: "BRPT.JK", label: "BRPT", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/BRPT.png" },
-      { symbol: "BMRI.JK", label: "BMRI", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/BMRI.png" },
-      { symbol: "BBRI.JK", label: "BBRI", logo: "https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public/idx/BBRI.png" },
+      { symbol: "BBCA.JK", label: "BBCA", logo: `${SUPABASE_STORAGE_BASE}/idx/BBCA.png` },
+      { symbol: "BREN.JK", label: "BREN", logo: `${SUPABASE_STORAGE_BASE}/idx/BREN.png` },
+      { symbol: "BRPT.JK", label: "BRPT", logo: `${SUPABASE_STORAGE_BASE}/idx/BRPT.png` },
+      { symbol: "BMRI.JK", label: "BMRI", logo: `${SUPABASE_STORAGE_BASE}/idx/BMRI.png` },
+      { symbol: "BBRI.JK", label: "BBRI", logo: `${SUPABASE_STORAGE_BASE}/idx/BBRI.png` },
     ],
   },
   {

@@ -78,5 +78,5 @@ export function decodeApiResponse(body, keyOverride) {
   if (!body || typeof body !== 'object') {
     return null;
   }
-  return decodePayload(body.HIDUP_JOKOWI, keyOverride);
+  return decodePayload(body.payload, keyOverride);
 }

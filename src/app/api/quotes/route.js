@@ -2,7 +2,7 @@ import yahooFinance from '@/lib/yahoo-finance';
 import { encodePayload } from '@/lib/secure-payload';
 import { getSupabaseServiceRoleClient } from '@/lib/supabase-server';
 
-const SUPABASE_STORAGE_BASE = 'https://yjygsxwzkkjhvigedvdy.supabase.co/storage/v1/object/public';
+const SUPABASE_STORAGE_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public`;
 const PLUANG_CDN_BASE = 'https://image-cdn.pluang.com/icons/light/global-stocks';
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
@@ -299,7 +299,7 @@ export async function POST(request) {
         if (!Array.isArray(symbols) || symbols.length === 0) {
             return Response.json(
                 {
-                    HIDUP_JOKOWI: encodePayload({
+                    payload: encodePayload({
                         error: 'Missing or empty symbols array in request body',
                     }),
                 },
@@ -319,7 +319,7 @@ export async function POST(request) {
         if (uniqueSymbols.length === 0) {
             return Response.json(
                 {
-                    HIDUP_JOKOWI: encodePayload({
+                    payload: encodePayload({
                         error: 'No valid symbols provided',
                     }),
                 },
@@ -342,7 +342,7 @@ export async function POST(request) {
         });
 
         return Response.json({
-            HIDUP_JOKOWI: encodePayload({
+            payload: encodePayload({
                 quotes: quotesMap,
                 meta: {
                     requested: uniqueSymbols.length,
@@ -356,7 +356,7 @@ export async function POST(request) {
         console.error('[quotes] Batch error:', error);
         return Response.json(
             {
-                HIDUP_JOKOWI: encodePayload({
+                payload: encodePayload({
                     error: error?.message || 'Internal server error',
                 }),
             },

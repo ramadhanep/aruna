@@ -7,7 +7,7 @@ export async function GET(req) {
   const { searchParams } = new URL(req.url);
   const query = searchParams.get('q');
   if (!query || query.length < 1) {
-    return NextResponse.json({ HIDUP_JOKOWI: encodePayload({ symbols: [] }) });
+    return NextResponse.json({ payload: encodePayload({ symbols: [] }) });
   }
 
   try {
@@ -24,12 +24,12 @@ export async function GET(req) {
         type: q.quoteType,
       }));
     return NextResponse.json({
-      HIDUP_JOKOWI: encodePayload({ symbols, source: { provider: 'yahoo-finance2' } }),
+      payload: encodePayload({ symbols, source: { provider: 'yahoo-finance2' } }),
     });
   } catch (error) {
     console.error('Symbol search failed', error);
     return NextResponse.json(
-      { HIDUP_JOKOWI: encodePayload({ error: error?.message || 'Search failed', symbols: [] }) },
+      { payload: encodePayload({ error: error?.message || 'Search failed', symbols: [] }) },
       { status: 500 }
     );
   }

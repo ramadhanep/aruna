@@ -394,7 +394,7 @@ export async function GET(request, context) {
   const category = params?.category?.toLowerCase();
   if (!SCREENER_CONFIG[category]) {
     return NextResponse.json(
-      { HIDUP_JOKOWI: encodePayload({ error: "Unknown screener category" }) },
+      { payload: encodePayload({ error: "Unknown screener category" }) },
       { status: 400 }
     );
   }
@@ -402,7 +402,7 @@ export async function GET(request, context) {
   const supabase = getSupabaseServiceRoleClient();
   if (!supabase) {
     return NextResponse.json(
-      { HIDUP_JOKOWI: encodePayload({ error: "Supabase service role key is not configured" }) },
+      { payload: encodePayload({ error: "Supabase service role key is not configured" }) },
       { status: 500 }
     );
   }
@@ -417,7 +417,7 @@ export async function GET(request, context) {
   const totalCount = universe.length;
   if (!totalCount) {
     return NextResponse.json(
-      { HIDUP_JOKOWI: encodePayload({ error: "Symbol universe is empty", category }) },
+      { payload: encodePayload({ error: "Symbol universe is empty", category }) },
       { status: 500 }
     );
   }
@@ -538,7 +538,7 @@ export async function GET(request, context) {
   if (upsertError) {
     console.error("Failed to persist screening snapshot:", upsertError.message);
     return NextResponse.json(
-      { HIDUP_JOKOWI: encodePayload({ error: "Failed to persist screening snapshot", category }) },
+      { payload: encodePayload({ error: "Failed to persist screening snapshot", category }) },
       { status: 500 }
     );
   }
@@ -570,7 +570,7 @@ export async function GET(request, context) {
   }
 
   return NextResponse.json({
-    HIDUP_JOKOWI: encodePayload({
+    payload: encodePayload({
       category,
       status: finished ? "done" : "continue",
       processedThisBatch: processedCount,
