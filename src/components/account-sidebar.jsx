@@ -115,6 +115,11 @@ function AccountSidebarContent({ onClose }) {
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
   const isDark = theme === "dark" || resolvedTheme === "dark";
   const redirectHandledRef = useRef(false);
   const rawRedirect = searchParams?.get("redirect") || null;
@@ -230,7 +235,7 @@ function AccountSidebarContent({ onClose }) {
               <div className="rounded-2xl bg-black/5 dark:bg-white/10 px-3 py-2">
                 <p className="uppercase tracking-wide text-foreground/60 dark:text-white/60">Server</p>
                 <p className="text-sm font-semibold text-foreground dark:text-white">
-                  {supabaseConfigured ? "Connected" : "Offline"}
+                  {mounted && supabaseConfigured ? "Connected" : "Offline"}
                 </p>
               </div>
             </div>

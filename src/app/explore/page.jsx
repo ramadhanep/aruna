@@ -1306,58 +1306,60 @@ export default function ExplorePage() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
         {/* ───── Left: Money Flow ───── */}
+        {(moneyFlowLoading || moneyFlowReports.length > 0) && (
         <div className="lg:col-span-4 flex flex-col gap-6">
-          <section>
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
-                    IDX Money Flow 🇮🇩
-                  </p>
+            <section>
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
+                      IDX Money Flow 🇮🇩
+                    </p>
+                  </div>
+                  {moneyFlowUpdatedAt && (
+                    <p className="text-[11px] text-muted-foreground/70 ml-3.5 mt-0.5">
+                      Updated {formatTimeAgo(moneyFlowUpdatedAt)}
+                    </p>
+                  )}
                 </div>
-                {moneyFlowUpdatedAt && (
-                  <p className="text-[11px] text-muted-foreground/70 ml-3.5 mt-0.5">
-                    Updated {formatTimeAgo(moneyFlowUpdatedAt)}
-                  </p>
-                )}
               </div>
-            </div>
 
-            {moneyFlowLoading && (
-              <div className="mt-3 space-y-2">
-                {[1, 2, 3].map((item) => (
-                  <div key={item} className="h-16 rounded-2xl shimmer" />
-                ))}
+              {moneyFlowLoading && (
+                <div className="mt-3 space-y-2">
+                  {[1, 2, 3].map((item) => (
+                    <div key={item} className="h-16 rounded-2xl shimmer" />
+                  ))}
+                </div>
+              )}
+
+              {!moneyFlowLoading && moneyFlowError && (
+                <Card className="mt-3 border border-amber-500/20 bg-amber-500/5">
+                  <CardContent className="p-3">
+                    <p className="text-xs text-amber-600 dark:text-amber-400">{moneyFlowError}</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {!moneyFlowLoading && !moneyFlowError && moneyFlowReports.length > 0 && (
+                <Accordion type="single" collapsible className="mt-3 space-y-3">
+                  {moneyFlowReports.map((report) => (
+                    <MoneyFlowCard key={`${report.symbol}-${report.report_date}`} report={report} />
+                  ))}
+                </Accordion>
+              )}
+
+              <div className="mt-4 flex justify-center">
+                <Link
+                  href="/money-flow?timeframe=weekly"
+                  className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5 py-1.5 px-4 rounded-full border border-border/20 w-full justify-center transition-colors hover:bg-muted/30 text-emerald-600 dark:text-emerald-400 hover:underline"
+                >
+                  View All Money Flow <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
               </div>
-            )}
-
-            {!moneyFlowLoading && moneyFlowError && (
-              <Card className="mt-3 border border-amber-500/20 bg-amber-500/5">
-                <CardContent className="p-3">
-                  <p className="text-xs text-amber-600 dark:text-amber-400">{moneyFlowError}</p>
-                </CardContent>
-              </Card>
-            )}
-
-            {!moneyFlowLoading && !moneyFlowError && moneyFlowReports.length > 0 && (
-              <Accordion type="single" collapsible className="mt-3 space-y-3">
-                {moneyFlowReports.map((report) => (
-                  <MoneyFlowCard key={`${report.symbol}-${report.report_date}`} report={report} />
-                ))}
-              </Accordion>
-            )}
-
-            <div className="mt-4 flex justify-center">
-              <Link
-                href="/money-flow?timeframe=weekly"
-                className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5 py-1.5 px-4 rounded-full border border-border/20 w-full justify-center transition-colors hover:bg-muted/30 text-emerald-600 dark:text-emerald-400 hover:underline"
-              >
-                View All Money Flow <ChevronRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-          </section>
+            </section>
         </div>
+        )}
 
         {/* ───── Right: Breakout Signals ───── */}
         <div className="lg:col-span-8">

@@ -102,7 +102,7 @@ const staleWhileRevalidate = async (cacheName, request) => {
       cachePut(cacheName, request, response.clone());
       return response;
     })
-    .catch(() => cached);
+    .catch(() => cached || Response.error());
   return cached || fetchPromise;
 };
 
