@@ -120,7 +120,9 @@ function AccountSidebarContent({ onClose }) {
   useEffect(() => {
     setMounted(true);
   }, []);
-  const isDark = theme === "dark" || resolvedTheme === "dark";
+
+  // Only calculate isDark after component is mounted to avoid hydration mismatch
+  const isDark = mounted ? (theme === "dark" || resolvedTheme === "dark") : false;
   const redirectHandledRef = useRef(false);
   const rawRedirect = searchParams?.get("redirect") || null;
   const redirectParam = rawRedirect && rawRedirect.startsWith("/") ? rawRedirect : null;

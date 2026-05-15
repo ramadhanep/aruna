@@ -888,23 +888,32 @@ export default function ExplorePage() {
   }, [isRefreshing, loadMoneyFlow, loadSnapshots, loadActiveMarketQuotes, activeMarketTab, marketTimeframe]);
 
   const handleTouchStart = useCallback((event) => {
-    if (containerRef.current && containerRef.current.scrollTop === 0) {
+    // Check window scroll position, not container scrollTop
+    if (window.scrollY <= 5) {
       touchStartY.current = event.touches[0].clientY;
+    } else {
+      touchStartY.current = 0;
     }
   }, []);
 
   const handleTouchMove = useCallback(
     (event) => {
-      if (isRefreshing || touchStartY.current === 0 || !containerRef.current) return;
-      if (containerRef.current.scrollTop > 0) {
+      if (isRefreshing || touchStartY.current === 0) return;
+      
+      // If page scrolled down, immediately cancel pull mode
+      if (window.scrollY > 10) {
         touchStartY.current = 0;
         setPullDistance(0);
         return;
       }
+      
       const touchY = event.touches[0].clientY;
       const distance = touchY - touchStartY.current;
       if (distance > 0) {
         setPullDistance(Math.min(distance, 150));
+      } else {
+        // If user dragging down, reset
+        setPullDistance(0);
       }
     },
     [isRefreshing]
