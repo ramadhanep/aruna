@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Star, AlignHorizontalDistributeCenter, ChartPie, LayoutGrid, Ghost } from "lucide-react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { TOOLS_ITEMS } from "@/lib/tools-menu";
 
@@ -38,50 +39,63 @@ const navItems = [
 
 export function MobileBottomNav() {
   const pathname = usePathname();
-  const [scrollProgress, setScrollProgress] = useState(0);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const [isMinimized, setIsMinimized] = useState(false);
+  const lastScrollY = useRef(0);
 
   useEffect(() => {
+    // Initialize lastScrollY to current scroll position on mount
+    lastScrollY.current = window.scrollY;
+
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      const scrollDelta = currentScrollY - lastScrollY;
-      
-      // Responsively update progress berdasarkan arah scroll
-      setScrollProgress((prev) => {
-        let newProgress = prev;
-        
-        if (scrollDelta > 0) {
-          // Scroll DOWN - increment progress (shrink)
-          newProgress = Math.min(prev + scrollDelta * 0.0015, 1);
-        } else if (scrollDelta < 0) {
-          // Scroll UP - decrement progress (expand) - lebih aggressive
-          newProgress = Math.max(prev + scrollDelta * 0.003, 0);
-        }
-        
-        return newProgress;
-      });
-      
-      setLastScrollY(currentScrollY);
+      const maxScrollY = document.documentElement.scrollHeight - window.innerHeight;
+
+      // 1. Handle top bouncing & top area (always maximize)
+      if (currentScrollY <= 10) {
+        setIsMinimized(false);
+        lastScrollY.current = Math.max(0, currentScrollY);
+        return;
+      }
+
+      // 2. Handle bottom bouncing (ignore scroll events past the bottom limit)
+      if (currentScrollY >= maxScrollY - 10) {
+        return;
+      }
+
+      const scrollDelta = currentScrollY - lastScrollY.current;
+
+      // 3. Update state only on significant direction changes (threshold of 5px)
+      // This prevents micro-flickering and ensures ultra-responsive toggling
+      if (scrollDelta > 5) {
+        setIsMinimized(true);
+      } else if (scrollDelta < -5) {
+        setIsMinimized(false);
+      }
+
+      lastScrollY.current = currentScrollY;
     };
 
+    // Use passive listener for butter-smooth scrolling performance (crucial for iOS)
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+  }, []);
 
-  // Scale dari 1 (normal) hingga 0.7 (kecil)
-  const scale = 1 - scrollProgress * 0.3;
-  const opacity = 0.95 + scrollProgress * 0.05;
+  // Fixed scale values: 1.0 (normal) and 0.8 (minimized)
+  const scale = isMinimized ? 0.8 : 1;
+  const opacity = isMinimized ? 0.96 : 1;
 
   return (
     <nav 
-      className="fixed bottom-5 left-5 right-5 z-50 liquid-glass pb-safe rounded-full transition-transform duration-500 ease-out"
+      className="fixed bottom-5 left-5 right-5 z-50 liquid-glass pb-safe rounded-full"
       style={{
         transform: `scale(${scale})`,
         transformOrigin: "center bottom",
         opacity: opacity,
+        transition: "transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1)",
+        willChange: "transform, opacity",
       }}
     >
-      <div className="mx-auto max-w-[768px] flex items-center justify-around h-16">
+      <div className="mx-auto max-w-[768px] flex items-center justify-around h-16 px-2">
         {navItems.map((item) => {
           const isActive = item.matchPaths
             ? item.matchPaths.some((path) => pathname === path)
@@ -93,15 +107,23 @@ export function MobileBottomNav() {
               key={item.url}
               href={item.url}
               className={cn(
-                "relative flex flex-col items-center justify-center gap-1 flex-1 h-full transition-all duration-200",
+                "relative flex flex-col items-center justify-center gap-0.5 flex-1 h-[80%] transition-all duration-200 rounded-full select-none outline-none",
                 isActive
                   ? "text-emerald-600 dark:text-emerald-400"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              {/* {isActive && (
-                <span className="absolute top-1.5 w-5 h-0.5 rounded-full bg-emerald-500 dark:bg-emerald-400" />
-              )} */}
+              {isActive && (
+                <motion.div
+                  layoutId="active-nav-bubble"
+                  className="absolute inset-0 rounded-full bg-black/[0.08] dark:bg-white/[0.08] border border-black/[0.04] dark:border-white/[0.04] shadow-[inset_0_1px_2px_rgba(255,255,255,0.15)] -z-10"
+                  transition={{
+                    type: "spring",
+                    stiffness: 380,
+                    damping: 30
+                  }}
+                />
+              )}
               <Icon className={cn(
                 "h-5 w-5 transition-transform duration-200",
                 isActive && "scale-105"
