@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Star, AlignHorizontalDistributeCenter, ChartPie, LayoutDashboard, Telescope } from "lucide-react";
+import { Star, AlignHorizontalDistributeCenter, BriefcaseBusiness, LayoutDashboard, Telescope } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { TOOLS_ITEMS } from "@/lib/tools-menu";
@@ -33,7 +33,7 @@ const navItems = [
   {
     title: "Portfolio",
     url: "/portfolio-tracker",
-    icon: ChartPie,
+    icon: BriefcaseBusiness,
   },
 ];
 
