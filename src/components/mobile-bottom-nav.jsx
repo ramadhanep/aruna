@@ -86,7 +86,7 @@ export function MobileBottomNav() {
 
   return (
     <nav 
-      className="fixed bottom-5 left-5 right-5 z-50 liquid-glass pb-safe rounded-full"
+      className="fixed bottom-5 left-2 right-2 z-50 liquid-glass p-1.5 rounded-full"
       style={{
         transform: `scale(${scale})`,
         transformOrigin: "center bottom",
@@ -95,7 +95,7 @@ export function MobileBottomNav() {
         willChange: "transform, opacity",
       }}
     >
-      <div className="mx-auto max-w-[768px] flex items-center justify-around h-16 px-2">
+      <div className="mx-auto max-w-[768px] flex items-center justify-around">
         {navItems.map((item) => {
           const isActive = item.matchPaths
             ? item.matchPaths.some((path) => pathname === path)
@@ -107,7 +107,7 @@ export function MobileBottomNav() {
               key={item.url}
               href={item.url}
               className={cn(
-                "relative flex flex-col items-center justify-center gap-0.5 flex-1 h-[80%] transition-all duration-200 rounded-full select-none outline-none",
+                "relative flex flex-col items-center justify-center gap-0.5 transition-all duration-200 rounded-full select-none outline-none py-4 w-full",
                 isActive
                   ? "text-emerald-600 dark:text-emerald-400"
                   : "text-muted-foreground hover:text-foreground"
@@ -128,12 +128,12 @@ export function MobileBottomNav() {
                 "h-5 w-5 transition-transform duration-200",
                 isActive && "scale-105"
               )} />
-              <span className={cn(
+              {/* <span className={cn(
                 "text-[10px] transition-all",
                 isActive ? "font-semibold" : "font-medium"
               )}>
                 {item.title}
-              </span>
+              </span> */}
             </Link>
           );
         })}
