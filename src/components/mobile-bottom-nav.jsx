@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Star, AlignHorizontalDistributeCenter, ChartPie, LayoutGrid, Ghost } from "lucide-react";
+import { Star, AlignHorizontalDistributeCenter, ChartPie, LayoutDashboard, Telescope } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { TOOLS_ITEMS } from "@/lib/tools-menu";
@@ -22,12 +22,12 @@ const navItems = [
   {
     title: "Explore",
     url: "/explore",
-    icon: LayoutGrid,
+    icon: LayoutDashboard,
   },
   {
     title: "Tools",
     url: "/tools",
-    icon: Ghost,
+    icon: Telescope,
     matchPaths: ["/tools", ...TOOLS_ITEMS.map((item) => item.url)],
   },
   {
@@ -86,7 +86,7 @@ export function MobileBottomNav() {
 
   return (
     <nav 
-      className="fixed bottom-5 left-2 right-2 z-50 liquid-glass p-1.5 rounded-full"
+      className="fixed bottom-5 left-5 right-5 z-50 liquid-glass p-1.5 rounded-full"
       style={{
         transform: `scale(${scale})`,
         transformOrigin: "center bottom",
@@ -125,8 +125,8 @@ export function MobileBottomNav() {
                 />
               )}
               <Icon className={cn(
-                "h-5 w-5 transition-transform duration-200",
-                isActive && "scale-105"
+                "h-5.5 w-5.5 transition-all duration-200",
+                isActive && "scale-105 fill-current"
               )} />
               {/* <span className={cn(
                 "text-[10px] transition-all",
