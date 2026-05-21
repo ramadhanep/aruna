@@ -41,6 +41,12 @@ export function MobileBottomNav() {
   const pathname = usePathname();
   const [isMinimized, setIsMinimized] = useState(false);
   const lastScrollY = useRef(0);
+  const [clickedItem, setClickedItem] = useState(null);
+
+  const handleNavItemClick = (url) => {
+    setClickedItem(url);
+    setTimeout(() => setClickedItem(null), 600);
+  };
 
   useEffect(() => {
     // Initialize lastScrollY to current scroll position on mount
@@ -85,17 +91,47 @@ export function MobileBottomNav() {
   const opacity = isMinimized ? 0.96 : 1;
 
   return (
-    <nav 
+    <motion.nav 
       className="fixed bottom-5 left-5 right-5 z-50 liquid-glass p-1.5 rounded-full"
       style={{
-        transform: `scale(${scale})`,
         transformOrigin: "center bottom",
-        opacity: opacity,
-        transition: "transform 0.24s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.24s cubic-bezier(0.16, 1, 0.3, 1)",
         willChange: "transform, opacity",
       }}
+      animate={
+        clickedItem
+          ? {
+              rotateZ: [0, 2, -2.5, 1.5, -1, 0],
+              scaleY: [1, 0.98, 1.02, 0.99, 1.01, 1],
+              scaleX: [1, 1.01, 0.99, 1.01, 0.99, 1],
+            }
+          : {
+              scale: scale,
+              opacity: opacity,
+            }
+      }
+      transition={{
+        duration: clickedItem ? 0.5 : 0.24,
+        type: clickedItem ? "spring" : "easeInOut",
+        stiffness: clickedItem ? 300 : undefined,
+        damping: clickedItem ? 15 : undefined,
+      }}
     >
-      <div className="mx-auto max-w-[768px] flex items-center justify-around">
+      <motion.div
+        className="mx-auto max-w-[768px] flex items-center justify-around"
+        animate={
+          clickedItem
+            ? {
+                rotateZ: [0, -1, 1.5, -0.8, 0.5, 0],
+              }
+            : {}
+        }
+        transition={{
+          duration: 0.5,
+          type: "spring",
+          stiffness: 250,
+          damping: 12
+        }}
+      >
         {navItems.map((item) => {
           const isActive = item.matchPaths
             ? item.matchPaths.some((path) => pathname === path)
@@ -106,6 +142,7 @@ export function MobileBottomNav() {
             <Link
               key={item.url}
               href={item.url}
+              onClick={() => handleNavItemClick(item.url)}
               className={cn(
                 "relative flex flex-col items-center justify-center gap-0.5 transition-all duration-200 rounded-full select-none outline-none py-4 w-full",
                 isActive
@@ -128,16 +165,10 @@ export function MobileBottomNav() {
                 "h-5.5 w-5.5 transition-all duration-200",
                 isActive && "scale-105 fill-current"
               )} />
-              {/* <span className={cn(
-                "text-[10px] transition-all",
-                isActive ? "font-semibold" : "font-medium"
-              )}>
-                {item.title}
-              </span> */}
             </Link>
           );
         })}
-      </div>
-    </nav>
+      </motion.div>
+    </motion.nav>
   );
 }

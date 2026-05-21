@@ -50,7 +50,7 @@ export function AppLayoutClient({ children }) {
         
         {/* Mobile Header (Hidden on lg+) */}
         {!hideDefaultMobileChrome && (
-          <header className="lg:hidden sticky top-0 z-40 liquid-glass shrink-0">
+          <header className="lg:hidden sticky top-0 z-40 shrink-0">
             <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3 px-3">
               <HeaderAccountMenu onOpenSidebar={() => setSidebarOpen(true)} />
               <div className="flex flex-1 items-center justify-center gap-1.5">
@@ -63,7 +63,7 @@ export function AppLayoutClient({ children }) {
         )}
 
         {needsBackHeader && (
-          <header className="lg:hidden sticky top-0 z-40 liquid-glass shrink-0 border-b border-border/30">
+          <header className="lg:hidden sticky top-0 z-40 shrink-0 border-b border-border/30">
             <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between px-3">
               <button
                 type="button"
