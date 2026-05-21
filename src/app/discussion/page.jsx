@@ -254,7 +254,7 @@ export default function DiscussionPage() {
   // Redirect to signin if not authenticated (after auth check completes)
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/signin?redirect=discussion');
+      router.push('/signin?redirect=/discussion');
     }
   }, [user, authLoading, router]);
 

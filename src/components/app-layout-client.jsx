@@ -1,20 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import { HeaderSymbolSearch } from "@/components/header-symbol-search";
 import { HeaderAccountMenu } from "@/components/header-account-menu";
 import { AccountSidebar } from "@/components/account-sidebar";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { DesktopNavbar } from "@/components/desktop-navbar";
+import { useAuth } from "@/components/auth-provider";
 
+const PUBLIC_ROUTES = new Set(["/", "/signin", "/offline"]);
 
 export function AppLayoutClient({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const { user, loading } = useAuth();
   const isLandingPage = pathname === "/";
+  const isPublicRoute = PUBLIC_ROUTES.has(pathname);
+  const isProtectedRoute = !isPublicRoute;
+  const shouldBlockProtectedContent = isProtectedRoute && (loading || !user);
+
+  useEffect(() => {
+    if (!isProtectedRoute || loading || user) return;
+
+    const currentPath =
+      typeof window !== "undefined"
+        ? `${window.location.pathname}${window.location.search}`
+        : pathname || "/";
+    const redirectPath = currentPath.startsWith("/") ? currentPath : "/";
+
+    router.replace(`/signin?redirect=${encodeURIComponent(redirectPath)}`);
+  }, [isProtectedRoute, loading, pathname, router, user]);
 
   const mobileBackHeaderRoutes = {
     "/idx-momentum": "IDX Momentum",
@@ -23,6 +41,7 @@ export function AppLayoutClient({ children }) {
 
   const hideDefaultMobileChromeRoutes = new Set([
     "/",
+    "/signin",
     "/idx-bubbles",
     "/idx-momentum",
     "/idx-rotation",
@@ -31,6 +50,7 @@ export function AppLayoutClient({ children }) {
   ]);
   const hideDesktopNavbarRoutes = new Set([
     "/",
+    "/signin",
     "/idx-bubbles",
     "/idx-rotation",
     "/discussion",
@@ -39,17 +59,33 @@ export function AppLayoutClient({ children }) {
   const needsBackHeader = Boolean(mobileBackHeaderRoutes[pathname]);
   const hideDefaultMobileChrome = hideDefaultMobileChromeRoutes.has(pathname);
   const hideDesktopNavbar = hideDesktopNavbarRoutes.has(pathname);
+  const mainContent = shouldBlockProtectedContent ? (
+    <div className="flex min-h-[calc(100vh-8rem)] items-center justify-center">
+      <div className="flex flex-col items-center gap-3 text-muted-foreground">
+        <Loader2 className="h-6 w-6 animate-spin" />
+        <p className="text-xs font-semibold uppercase tracking-widest">
+          Checking access
+        </p>
+      </div>
+    </div>
+  ) : (
+    children
+  );
 
   return (
     <>
-      <AccountSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      {!isPublicRoute && !shouldBlockProtectedContent && (
+        <AccountSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      )}
       
       <div className="flex flex-col min-h-screen relative w-full overflow-x-hidden">
         {/* Desktop Top Navbar (Hidden on mobile/tablet) */}
-        {!hideDesktopNavbar && <DesktopNavbar onOpenAccountSidebar={() => setSidebarOpen(true)} />}
+        {!hideDesktopNavbar && !shouldBlockProtectedContent && (
+          <DesktopNavbar onOpenAccountSidebar={() => setSidebarOpen(true)} />
+        )}
         
         {/* Mobile Header (Hidden on lg+) */}
-        {!hideDefaultMobileChrome && (
+        {!hideDefaultMobileChrome && !shouldBlockProtectedContent && (
           <header className="lg:hidden sticky top-0 z-40 shrink-0">
             <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3 px-3">
               <HeaderAccountMenu onOpenSidebar={() => setSidebarOpen(true)} />
@@ -62,7 +98,7 @@ export function AppLayoutClient({ children }) {
           </header>
         )}
 
-        {needsBackHeader && (
+        {needsBackHeader && !shouldBlockProtectedContent && (
           <header className="lg:hidden sticky top-0 z-40 shrink-0 border-b border-border/30">
             <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between px-3">
               <button
@@ -81,12 +117,12 @@ export function AppLayoutClient({ children }) {
         
         <main className={`flex-1 ${hideDefaultMobileChrome ? "pb-0" : "pb-24"} lg:pb-8 relative z-0 w-full ${isLandingPage ? "" : "flex justify-center"}`}>
           <div className={isLandingPage ? "w-full" : "p-4 w-full max-w-[768px] lg:max-w-[1400px] lg:px-6"}>
-            {children}
+            {mainContent}
           </div>
         </main>
         
         {/* Mobile Bottom Nav (Hidden on lg+) */}
-        {!hideDefaultMobileChrome && (
+        {!hideDefaultMobileChrome && !shouldBlockProtectedContent && (
           <div className="lg:hidden">
             <MobileBottomNav />
           </div>

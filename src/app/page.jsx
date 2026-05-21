@@ -200,29 +200,33 @@ function FinalCTA({ onLaunch }) {
   const y = useTransform(scrollYProgress, [0, 0.7], [100, 0]);
 
   return (
-    <section id="why-aruna" ref={containerRef} className="relative h-[80vh] w-full flex items-center justify-center overflow-hidden">
-      <div className="absolute inset-0 bg-emerald-500/[0.03]" />
+    <section
+      id="why-aruna"
+      ref={containerRef}
+      className="relative isolate min-h-[78vh] w-full overflow-hidden px-4 py-24 sm:px-6"
+    >
+      <div className="pointer-events-none absolute inset-0 bg-emerald-500/[0.03]" />
       <motion.div 
         style={{ opacity, scale, y }}
-        className="relative z-10 flex flex-col items-center text-center px-6"
+        className="relative z-10 mx-auto flex min-h-[calc(78vh-12rem)] max-w-4xl flex-col items-center justify-center text-center"
       >
-        <div className="relative mb-12">
-          <div className="absolute -inset-32 bg-emerald-500/30 blur-[140px] rounded-full animate-pulse" />
-          <h2 className="relative text-6xl md:text-8xl font-bold tracking-tighter text-white leading-none">
+        <div className="relative mb-8 sm:mb-10">
+          <div className="pointer-events-none absolute -inset-x-16 -inset-y-20 -z-10 rounded-full bg-emerald-500/20 blur-[110px] sm:-inset-28 sm:bg-emerald-500/25 sm:blur-[140px]" />
+          <h2 className="relative text-5xl font-bold leading-[0.95] tracking-tight text-white sm:text-6xl md:text-8xl">
             READY TO <br />
             <span className="text-emerald-400">LEVEL UP?</span>
           </h2>
         </div>
-        <p className="max-w-xl text-white/60 text-lg md:text-xl mb-12 leading-relaxed">
+        <p className="mb-8 max-w-xl text-base leading-relaxed text-white/60 sm:mb-10 sm:text-lg md:text-xl">
           Join the next generation of investors. Local-first, privacy-focused, and incredibly fast.
         </p>
         <Button 
           size="lg"
-          className="h-16 px-14 rounded-full bg-emerald-500 text-black text-2xl font-semibold hover:bg-emerald-400 hover:scale-110 transition-all duration-500 shadow-[0_0_60px_-10px_rgba(16,185,129,0.6)] group"
+          className="group h-12 max-w-full gap-2 rounded-full bg-emerald-500 px-7 text-sm font-bold text-black shadow-[0_0_44px_-12px_rgba(16,185,129,0.65)] transition-all duration-300 hover:scale-[1.03] hover:bg-emerald-400 sm:h-14 sm:px-10 sm:text-base md:text-lg"
           onClick={onLaunch}
         >
-          Launch Terminal
-          <ArrowRight className="ml-2 size-8 group-hover:translate-x-3 transition-transform duration-500" />
+          <span className="whitespace-nowrap">Launch Terminal</span>
+          <ArrowRight className="size-5 shrink-0 transition-transform duration-300 group-hover:translate-x-1 sm:size-6" />
         </Button>
       </motion.div>
     </section>
@@ -250,7 +254,7 @@ export default function LandingPage() {
   // Redirect if already started
   useEffect(() => {
     if (!clientReady || loading || !hasStarted) return;
-    router.replace(user ? "/portfolio-tracker" : "/explore");
+    router.replace(user ? "/portfolio-tracker" : "/signin?redirect=/portfolio-tracker");
   }, [clientReady, loading, hasStarted, user, router]);
 
   const handleStart = () => {
@@ -259,7 +263,7 @@ export default function LandingPage() {
     } catch {
       // ignore
     }
-    router.push(user ? "/portfolio-tracker" : "/explore");
+    router.push(user ? "/portfolio-tracker" : "/signin?redirect=/portfolio-tracker");
   };
 
   if (!clientReady || (hasStarted && loading)) {
@@ -340,14 +344,14 @@ export default function LandingPage() {
           <div className="space-y-6">
             <h3 className="text-lg font-bold text-white">Open Terminal</h3>
             <p className="text-white/40 text-sm leading-relaxed">
-              Ready to start? No account required for explorer features.
+              Ready to start? Sign in with Google to open the terminal.
             </p>
             <Button 
               size="lg"
               className="w-full justify-center gap-2 rounded-2xl bg-emerald-500 text-black font-bold hover:bg-emerald-400" 
               onClick={handleStart}
             >
-              Go to Explore
+              Launch Terminal
               <ArrowRight className="size-4" />
             </Button>
           </div>
