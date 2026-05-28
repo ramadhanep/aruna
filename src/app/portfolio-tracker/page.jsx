@@ -249,10 +249,10 @@ export default function PortfolioTrackerPage() {
       if (!response.ok) return null;
       const series = data.data || [];
       if (series.length === 0) return null;
-      const last = series[series.length - 1];
+      const validLast = series.slice().reverse().find(s => s?.adjclose != null);
       const logo = data?.meta?.logo || null;
       return {
-        price: last.adjclose ?? null,
+        price: validLast?.adjclose ?? null,
         logo,
       };
     } catch (e) {
@@ -294,7 +294,7 @@ export default function PortfolioTrackerPage() {
 
     const idrSeries = idrResponse.data?.data || [];
     if (idrResponse.response.ok && idrSeries.length > 0) {
-      const idrLast = idrSeries[idrSeries.length - 1]?.adjclose;
+      const idrLast = idrSeries.slice().reverse().find(s => s?.adjclose != null)?.adjclose;
       if (idrLast) {
         setIdrPerUsd(idrLast);
         setFxRate(1 / idrLast);
@@ -303,7 +303,7 @@ export default function PortfolioTrackerPage() {
 
     const sgdSeries = sgdResponse.data?.data || [];
     if (sgdResponse.response.ok && sgdSeries.length > 0) {
-      const sgdLast = sgdSeries[sgdSeries.length - 1]?.adjclose;
+      const sgdLast = sgdSeries.slice().reverse().find(s => s?.adjclose != null)?.adjclose;
       if (sgdLast) {
         setSgdPerUsd(sgdLast);
       }
