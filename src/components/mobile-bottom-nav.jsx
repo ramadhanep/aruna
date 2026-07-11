@@ -24,12 +24,6 @@ const navItems = [
     icon: LayoutDashboard,
   },
   {
-    title: "Tools",
-    url: "/tools",
-    icon: Telescope,
-    matchPaths: ["/tools", ...TOOLS_ITEMS.map((item) => item.url)],
-  },
-  {
     title: "Portfolio",
     url: "/portfolio-tracker",
     icon: BriefcaseBusiness,
@@ -81,14 +75,14 @@ export function MobileBottomNav() {
 
   return (
     <nav
-      className={cn("fixed bottom-3 left-3 right-3 z-50 border border-border bg-card p-1.5 rounded-xl transition-all duration-200", isMinimized && "translate-y-2 opacity-95")}
+      className={cn("fixed bottom-3 left-1/2 -translate-x-1/2 z-50 border border-border bg-card p-1.5 rounded-full transition-all duration-200 w-[300px]", isMinimized && "translate-y-2 -translate-x-1/2 opacity-95")}
       style={{
         transformOrigin: "center bottom",
         willChange: "transform, opacity",
       }}
     >
       <div
-        className="mx-auto max-w-[768px] flex items-center justify-around"
+        className="mx-auto flex items-center justify-around"
       >
         {navItems.map((item) => {
           const isActive = item.matchPaths
@@ -101,7 +95,7 @@ export function MobileBottomNav() {
               key={item.url}
               href={item.url}
               className={cn(
-                "relative flex flex-col items-center justify-center transition-colors duration-200 rounded-lg select-none outline-none py-3 w-full",
+                "relative flex flex-col items-center justify-center transition-colors duration-200 rounded-full select-none outline-none py-3 w-full",
                 isActive
                   ? "bg-accent text-foreground"
                   : "text-muted-foreground hover:text-foreground"

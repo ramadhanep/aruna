@@ -15,6 +15,7 @@ import { fetchEncodedJson } from '@/lib/api-client';
 import { TickerAvatar } from '@/components/ticker-avatar';
 import { formatTickerDisplay } from '@/lib/utils';
 import { useTrial } from '@/components/trial-provider';
+import { GoogleGlyph } from '@/components/google-glyph';
 
 // Dynamic chart component to keep page light and avoid SSR issues
 const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { ssr: false });
@@ -204,6 +205,8 @@ export default function PortfolioTrackerPage() {
     remotePortfolio,
     portfolioLoaded,
     syncPortfolio,
+    signInWithGoogle,
+    supabaseConfigured,
   } = useAuth();
   const { initialized, isActive, isExpired } = useTrial();
   const isAuthenticated = Boolean(user);
@@ -222,6 +225,23 @@ export default function PortfolioTrackerPage() {
     redirectToSignIn();
     return false;
   }, [canUseProtectedActions, redirectToSignIn]);
+  const [authError, setAuthError] = useState(null);
+  const [signingIn, setSigningIn] = useState(false);
+  const handleGoogleSignIn = useCallback(async () => {
+    setAuthError(null);
+    setSigningIn(true);
+    try {
+      await signInWithGoogle('/portfolio-tracker');
+    } catch (error) {
+      console.error('Failed to start Google sign-in', error);
+      setAuthError(
+        supabaseConfigured
+          ? 'Failed to sign in with Google. Please try again.'
+          : 'Sign-in is not configured yet.'
+      );
+      setSigningIn(false);
+    }
+  }, [signInWithGoogle, supabaseConfigured]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -1041,7 +1061,33 @@ export default function PortfolioTrackerPage() {
   }
 
   if (!isAuthenticated) {
-    return null;
+    return (
+      <div className="flex flex-col items-center justify-center py-16 px-4">
+        <div className="w-full max-w-sm space-y-3 rounded-2xl bg-muted/40 px-4 py-4">
+          <p className="text-[11px] text-muted-foreground">
+            Sign in with Google to sync your watchlist and portfolio securely.
+          </p>
+          <Button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={signingIn}
+            className="w-full justify-center gap-3 rounded-full bg-foreground text-[12px] font-semibold text-background hover:bg-foreground/90"
+          >
+            {signingIn ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <GoogleGlyph />
+                <span>Sign in with Google</span>
+              </>
+            )}
+          </Button>
+          {authError ? (
+            <div className="rounded-xl bg-red-600/15 px-3 py-2 text-xs text-red-500">{authError}</div>
+          ) : null}
+        </div>
+      </div>
+    );
   }
 
   if (initialLoading) {

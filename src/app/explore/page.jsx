@@ -6,7 +6,7 @@ import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock, Download, Flame, ChevronDown, ChevronUp, ChevronRight, Clock, Globe, Zap, BarChart3, ArrowUpRight, ArrowDownRight, Gem, Magnet, Rotate3D, Workflow, Radar, Wallet, CalendarRange, Droplets } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock, Download, Flame, ChevronDown, ChevronUp, ChevronRight, Clock, Globe, Zap, BarChart3, ArrowUpRight, ArrowDownRight, Gem, Magnet, Rotate3D, Workflow, Radar, Droplets } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { TrendingMarquee } from "@/components/trending-marquee";
@@ -597,7 +597,7 @@ function formatMoneyFlowDelta(value) {
 
 
 export default function ExplorePage() {
-  const { supabase, user, remotePortfolio } = useAuth();
+  const { supabase, user } = useAuth();
   const [snapshots, setSnapshots] = useState({});
   const [quotes, setQuotes] = useState({});
   const [moneyFlowReports, setMoneyFlowReports] = useState([]);
@@ -1107,12 +1107,6 @@ export default function ExplorePage() {
     return { strongestInflow, strongestOutflow, sentiment };
   }, [moneyFlowReports]);
 
-  const portfolioPreview = useMemo(() => {
-    if (!Array.isArray(remotePortfolio)) return { holdingsCount: 0 };
-    const holdings = remotePortfolio.filter((entry) => entry.type !== "cash");
-    return { holdingsCount: holdings.length };
-  }, [remotePortfolio]);
-
   const topMoversPreview = useMemo(() => {
     const biggestVolume = Array.isArray(moneyFlowReports)
       ? moneyFlowReports.reduce((best, r) => {
@@ -1402,96 +1396,64 @@ export default function ExplorePage() {
       {/* ───── Explore Tools Hub ───── */}
       <section className="w-full space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">Explore Tools</h2>
-          <span className="text-[11px] text-muted-foreground">Aruna&rsquo;s toolkit, at a glance</span>
+          <h2 className="py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Explore Tools</h2>
         </div>
 
-        {/* Feature card row: MSCI + Rotation */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Compact widgets */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Link
             href="/msci"
-            className="group card-hover flex flex-col justify-between gap-4 rounded-3xl border border-border/20 bg-card p-5"
+            className="group card-hover flex items-center justify-between gap-3 rounded-2xl border border-border/20 bg-muted/40"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
-                  <Magnet className="h-4 w-4" />
-                </div>
-                <span className="text-sm font-semibold text-foreground">MSCI Candidate Tracker</span>
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
+                <Magnet className="h-4 w-4" />
               </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+              <div>
+                <div className="text-xs font-semibold text-foreground">MSCI Tracker</div>
+                {msciLoading ? (
+                  <div className="mt-1 h-3 w-28 rounded-full shimmer" />
+                ) : msciPreview ? (
+                  <div className="text-[11px] text-muted-foreground">
+                    {msciPreview.totalStocks} candidates
+                    {" · "}Top: <span className="text-emerald-500 font-medium">{formatTickerDisplay(msciPreview.strongest?.ticker) || "—"}</span>
+                  </div>
+                ) : (
+                  <div className="text-[11px] text-muted-foreground">MSCI free-float thresholds</div>
+                )}
+              </div>
             </div>
-            {msciLoading ? (
-              <div className="space-y-2">
-                <div className="h-3 w-3/4 rounded-full shimmer" />
-                <div className="h-3 w-1/2 rounded-full shimmer" />
-              </div>
-            ) : msciPreview ? (
-              <div className="grid grid-cols-3 gap-2 text-center">
-                <div>
-                  <div className="text-lg font-semibold text-foreground">{msciPreview.totalStocks}</div>
-                  <div className="text-[10px] text-muted-foreground">Candidates</div>
-                </div>
-                <div>
-                  <div className="text-lg font-semibold text-foreground">{msciPreview.strongest?.ticker?.replace(".JK", "") || "—"}</div>
-                  <div className="text-[10px] text-muted-foreground">Strongest</div>
-                </div>
-                <div>
-                  <div className="text-lg font-semibold text-emerald-500">{Math.round(msciPreview.nearestProgress || 0)}%</div>
-                  <div className="text-[10px] text-muted-foreground">Nearest</div>
-                </div>
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">Track stocks approaching MSCI free-float thresholds.</p>
-            )}
-            <span className="text-xs font-medium text-foreground">View Details →</span>
+            <span className="whitespace-nowrap text-xs font-medium text-foreground">Open →</span>
           </Link>
 
           <Link
             href="/idx-rotation"
-            className="group card-hover flex flex-col justify-between gap-4 rounded-3xl border border-border/20 bg-card p-5"
+            className="group card-hover flex items-center justify-between gap-3 rounded-2xl border border-border/20 bg-muted/40"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
-                  <Rotate3D className="h-4 w-4" />
-                </div>
-                <span className="text-sm font-semibold text-foreground">IDX Rotation</span>
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
+                <Rotate3D className="h-4 w-4" />
               </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+              <div>
+                <div className="text-xs font-semibold text-foreground">IDX Rotation</div>
+                {rotationLoading ? (
+                  <div className="mt-1 h-3 w-28 rounded-full shimmer" />
+                ) : rotationPreview ? (
+                  <div className="text-[11px] text-muted-foreground">
+                    Lead: <span className="text-emerald-500 font-medium">{formatTickerDisplay(rotationPreview.strongest?.code) || "—"}</span>
+                    {" · "}Lag: <span className="text-red-500 font-medium">{formatTickerDisplay(rotationPreview.weakest?.code) || "—"}</span>
+                  </div>
+                ) : (
+                  <div className="text-[11px] text-muted-foreground">Sector momentum rotation</div>
+                )}
+              </div>
             </div>
-            {rotationLoading ? (
-              <div className="space-y-2">
-                <div className="h-3 w-3/4 rounded-full shimmer" />
-                <div className="h-3 w-1/2 rounded-full shimmer" />
-              </div>
-            ) : rotationPreview ? (
-              <div className="grid grid-cols-2 gap-2 text-center">
-                <div>
-                  <div className="text-sm font-semibold text-emerald-500">{rotationPreview.strongest?.code || "—"}</div>
-                  <div className="text-[10px] text-muted-foreground">Leading</div>
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-red-500">{rotationPreview.weakest?.code || "—"}</div>
-                  <div className="text-[10px] text-muted-foreground">Lagging</div>
-                </div>
-              </div>
-            ) : (
-              <p className="text-xs text-muted-foreground">See which sectors are leading vs. lagging momentum.</p>
-            )}
-            <span className="text-xs font-medium text-foreground">
-              Open Rotation → {rotationPreview?.lastUpdated ? (
-                <span className="text-muted-foreground font-normal">· {formatTimeAgo(rotationPreview.lastUpdated)}</span>
-              ) : null}
-            </span>
+            <span className="whitespace-nowrap text-xs font-medium text-foreground">Open →</span>
           </Link>
-        </div>
 
-        {/* Compact widgets row: Money Flow + Breakout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Link
             href="/money-flow"
-            className="group card-hover flex items-center justify-between gap-3 rounded-2xl border border-border/20 bg-muted/40 p-4"
+            className="group card-hover flex items-center justify-between gap-3 rounded-2xl border border-border/20 bg-muted/40"
           >
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
@@ -1503,21 +1465,20 @@ export default function ExplorePage() {
                   <div className="mt-1 h-3 w-28 rounded-full shimmer" />
                 ) : moneyFlowPreview ? (
                   <div className="text-[11px] text-muted-foreground">
-                    In: <span className="text-emerald-500 font-medium">{moneyFlowPreview.strongestInflow?.symbol}</span>
-                    {" · "}Out: <span className="text-red-500 font-medium">{moneyFlowPreview.strongestOutflow?.symbol}</span>
-                    {" · "}{moneyFlowPreview.sentiment}
+                    In: <span className="text-emerald-500 font-medium">{formatTickerDisplay(moneyFlowPreview.strongestInflow?.symbol)}</span>
+                    {" · "}Out: <span className="text-red-500 font-medium">{formatTickerDisplay(moneyFlowPreview.strongestOutflow?.symbol)}</span>
                   </div>
                 ) : (
                   <div className="text-[11px] text-muted-foreground">Institutional flow across IDX</div>
                 )}
               </div>
             </div>
-            <span className="whitespace-nowrap text-xs font-medium text-foreground">Open Money Flow →</span>
+            <span className="whitespace-nowrap text-xs font-medium text-foreground">Open →</span>
           </Link>
 
           <a
             href="#breakout-signals"
-            className="group card-hover flex items-center justify-between gap-3 rounded-2xl border border-border/20 bg-muted/40 p-4"
+            className="group card-hover flex items-center justify-between gap-3 rounded-2xl border border-border/20 bg-muted/40"
           >
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
@@ -1529,60 +1490,18 @@ export default function ExplorePage() {
                   {breakoutInsights.totalBreakouts} signals
                   {breakoutInsights.bestGainer ? (
                     <>
-                      {" · "}Top: <span className="text-emerald-500 font-medium">{breakoutInsights.bestGainer.symbol}</span>
+                      {" · "}Top: <span className="text-emerald-500 font-medium">{formatTickerDisplay(breakoutInsights.bestGainer.symbol)}</span>
                     </>
                   ) : null}
                 </div>
               </div>
             </div>
-            <span className="whitespace-nowrap text-xs font-medium text-foreground">View Signals →</span>
+            <span className="whitespace-nowrap text-xs font-medium text-foreground">View →</span>
           </a>
-        </div>
-
-        {/* Horizontal card: Portfolio Tracker */}
-        <Link
-          href="/portfolio-tracker"
-          className="group card-hover flex items-center justify-between gap-4 rounded-2xl border border-border/20 bg-card p-4"
-        >
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-foreground/10 text-foreground">
-              <Wallet className="h-5 w-5" />
-            </div>
-            <div>
-              <div className="text-xs font-semibold text-foreground">Portfolio Tracker</div>
-              <div className="text-[11px] text-muted-foreground">
-                {user
-                  ? portfolioPreview.holdingsCount > 0
-                    ? `${portfolioPreview.holdingsCount} position${portfolioPreview.holdingsCount === 1 ? "" : "s"} tracked`
-                    : "No holdings yet"
-                  : "Track your investments"}
-              </div>
-            </div>
-          </div>
-          <span className="whitespace-nowrap text-xs font-medium text-foreground">Open Portfolio →</span>
-        </Link>
-
-        {/* Mini dashboard tiles: Seasonality + Top Movers */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Link
-            href="/chart?symbol=%5EJKSE&tab=seasonality"
-            className="group card-hover flex items-center justify-between gap-3 rounded-2xl border border-border/20 bg-muted/40 p-4"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
-                <CalendarRange className="h-4 w-4" />
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-foreground">Seasonality</div>
-                <div className="text-[11px] text-muted-foreground">Monthly &amp; quarterly return patterns</div>
-              </div>
-            </div>
-            <span className="whitespace-nowrap text-xs font-medium text-foreground">View Seasonality →</span>
-          </Link>
 
           <Link
             href="/idx-bubbles"
-            className="group card-hover flex items-center justify-between gap-3 rounded-2xl border border-border/20 bg-muted/40 p-4"
+            className="group card-hover flex items-center justify-between gap-3 rounded-2xl border border-border/20 bg-muted/40"
           >
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
@@ -1593,20 +1512,20 @@ export default function ExplorePage() {
                 <div className="text-[11px] text-muted-foreground">
                   {topMoversPreview.bestGainer ? (
                     <>
-                      Gainer: <span className="text-emerald-500 font-medium">{topMoversPreview.bestGainer.symbol}</span>
+                      Gainer: <span className="text-emerald-500 font-medium">{formatTickerDisplay(topMoversPreview.bestGainer.symbol)}</span>
                     </>
                   ) : (
                     "Market bubble view"
                   )}
                   {topMoversPreview.bestLoser ? (
                     <>
-                      {" · "}Loser: <span className="text-red-500 font-medium">{topMoversPreview.bestLoser.symbol}</span>
+                      {" · "}Loser: <span className="text-red-500 font-medium">{formatTickerDisplay(topMoversPreview.bestLoser.symbol)}</span>
                     </>
                   ) : null}
                 </div>
               </div>
             </div>
-            <span className="whitespace-nowrap text-xs font-medium text-foreground">Open Bubble View →</span>
+            <span className="whitespace-nowrap text-xs font-medium text-foreground">Open →</span>
           </Link>
         </div>
       </section>
@@ -1621,13 +1540,13 @@ export default function ExplorePage() {
               <div className="flex items-center justify-between gap-2">
                 <div>
                   <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-lime-600" />
                     <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
                       IDX Money Flow 🇮🇩
                     </p>
                   </div>
                   {moneyFlowUpdatedAt && (
-                    <p className="text-[11px] text-muted-foreground/70 ml-3.5 mt-0.5">
+                    <p className="text-[11px] text-muted-foreground/70 mt-0.5">
                       Updated {formatTimeAgo(moneyFlowUpdatedAt)}
                     </p>
                   )}
@@ -1682,13 +1601,13 @@ export default function ExplorePage() {
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                      <div className="w-1.5 h-1.5 rounded-full bg-lime-600" />
                       <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
                         Technical Breakout in {section.title}
                       </p>
                     </div>
                     {section.lastScreened && (
-                      <p className="text-[11px] text-muted-foreground/70 ml-3.5">
+                      <p className="text-[11px] text-muted-foreground/70">
                         Updated {formatTimeAgo(section.lastScreened)}
                       </p>
                     )}
