@@ -20,28 +20,25 @@ import { formatTickerDisplay } from "@/lib/utils";
 const statusColorMap = {
   success: {
     badge: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-    cardGradient: "from-emerald-500/5 dark:from-emerald-500/10"
   },
   warning: {
     badge: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-    cardGradient: "from-amber-500/5 dark:from-amber-500/10"
   },
   danger: {
     badge: "bg-red-500/10 text-red-500 border-red-500/20",
-    cardGradient: "from-red-500/5 dark:from-red-500/10"
   }
 };
 
 function SegmentControl({ value, onChange, sortBy, onSortChange }) {
   return (
-    <div className="sticky top-14 z-30 glass border-b border-border/30 -mx-4 px-4 py-3">
+    <div className="sticky top-14 z-30 bg-background border-b border-border -mx-4 px-4 py-3">
       <div className="flex items-center gap-2">
         <div className="flex-1 flex gap-1.5 p-1 bg-muted/40 rounded-2xl">
           <Button
             type="button"
             variant="ghost"
             className={`flex-1 rounded-xl text-xs font-semibold transition-all h-9 ${value === "standard"
-              ? "bg-gradient-to-br from-teal-600 to-emerald-700 text-white shadow-emerald-500/20"
+              ? "bg-foreground text-background"
               : "hover:bg-muted/60"
               }`}
             onClick={() => onChange("standard")}
@@ -52,7 +49,7 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
             type="button"
             variant="ghost"
             className={`flex-1 rounded-xl text-xs font-semibold transition-all h-9 ${value === "small_cap"
-              ? "bg-gradient-to-br from-teal-600 to-emerald-700 text-white shadow-emerald-500/20"
+              ? "bg-foreground text-background"
               : "hover:bg-muted/60"
               }`}
             onClick={() => onChange("small_cap")}
@@ -138,11 +135,9 @@ function StatusBadge({ status }) {
 function StockCard({ stock, isLocked = false }) {
   const progressPercent = Math.min(stock.progress, 100);
   const isNearInclusion = stock.progress >= 90;
-  const gradientFrom = statusColorMap[stock.status?.variant]?.cardGradient || statusColorMap.danger.cardGradient;
-
   return (
-    <Card className={`bg-gradient-to-br ${gradientFrom} to-transparent border-white/[0.08] dark:border-white/[0.08] text-foreground dark:text-white overflow-hidden relative rounded-2xl`}>
-      <CardContent className={`p-4 space-y-3 ${isLocked ? "blur-[2px] opacity-60" : ""}`}>
+    <Card className="bg-card border-border text-foreground overflow-hidden relative rounded-lg">
+      <CardContent className={`p-4 space-y-3 ${isLocked ? "opacity-40" : ""}`}>
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
@@ -174,7 +169,7 @@ function StockCard({ stock, isLocked = false }) {
         </div>
 
         {/* Free Float */}
-        <div className="flex items-center justify-between p-2 bg-black/5 dark:bg-white/5 rounded-lg">
+        <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
           <span className="text-[10px] text-muted-foreground dark:text-white/70">Free Float</span>
           <span className="text-xs font-semibold">{formatPercent(stock.free_float_percent)}</span>
         </div>
@@ -187,13 +182,13 @@ function StockCard({ stock, isLocked = false }) {
               {formatPercent(stock.progress)}
             </span>
           </div>
-          <div className="h-2 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
+          <div className="h-2 bg-muted/70 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all ${isNearInclusion
-                ? "bg-gradient-to-r from-emerald-800 to-emerald-900"
+                ? "bg-[#16a085]"
                 : stock.progress >= 70
-                  ? "bg-gradient-to-r from-yellow-800 to-yellow-900"
-                  : "bg-gradient-to-r from-red-800 to-red-900"
+                  ? "bg-[#16a085]"
+                  : "bg-[#16a085]"
                 }`}
               style={{ width: `${progressPercent}%` }}
             />
@@ -218,7 +213,7 @@ function StockCard({ stock, isLocked = false }) {
         </div>
       </CardContent>
       {isLocked && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/05 backdrop-blur-xs px-6 text-center pointer-events-none">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/90 px-6 text-center pointer-events-none">
           <Lock className="h-4 w-4 text-foreground/90 dark:text-white/90" />
           <p className="text-xs font-semibold text-foreground/90 dark:text-white/90">
             Sign in to unlock
@@ -238,41 +233,41 @@ function LoadingSkeleton() {
             {/* Header with ticker and badge */}
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0 space-y-1">
-                <Skeleton className="h-4 w-20 bg-black/10 dark:bg-white/10" />
-                <Skeleton className="h-3 w-40 bg-black/10 dark:bg-white/10" />
+                <Skeleton className="h-4 w-20 " />
+                <Skeleton className="h-3 w-40 " />
               </div>
-              <Skeleton className="h-10 w-10 rounded-full bg-black/10 dark:bg-white/10" />
+              <Skeleton className="h-10 w-10 rounded-full " />
             </div>
             {/* Price & Market Cap */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Skeleton className="h-3 w-12 bg-black/10 dark:bg-white/10" />
-                <Skeleton className="h-4 w-20 bg-black/10 dark:bg-white/10" />
+                <Skeleton className="h-3 w-12 " />
+                <Skeleton className="h-4 w-20 " />
               </div>
               <div className="space-y-1">
-                <Skeleton className="h-3 w-16 bg-black/10 dark:bg-white/10" />
-                <Skeleton className="h-4 w-16 bg-black/10 dark:bg-white/10" />
+                <Skeleton className="h-3 w-16 " />
+                <Skeleton className="h-4 w-16 " />
               </div>
             </div>
             {/* Free Float */}
-            <Skeleton className="h-8 w-full rounded-lg bg-black/10 dark:bg-white/10" />
+            <Skeleton className="h-8 w-full rounded-lg " />
             {/* Progress Bar */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Skeleton className="h-3 w-24 bg-black/10 dark:bg-white/10" />
-                <Skeleton className="h-3 w-12 bg-black/10 dark:bg-white/10" />
+                <Skeleton className="h-3 w-24 " />
+                <Skeleton className="h-3 w-12 " />
               </div>
-              <Skeleton className="h-2 w-full rounded-full bg-black/10 dark:bg-white/10" />
+              <Skeleton className="h-2 w-full rounded-full " />
             </div>
             {/* Target Price & Upside */}
             <div className="grid grid-cols-2 gap-3 pt-2 border-t border-black/10 dark:border-white/10">
               <div className="space-y-1">
-                <Skeleton className="h-3 w-16 bg-black/10 dark:bg-white/10" />
-                <Skeleton className="h-3 w-20 bg-black/10 dark:bg-white/10" />
+                <Skeleton className="h-3 w-16 " />
+                <Skeleton className="h-3 w-20 " />
               </div>
               <div className="space-y-1">
-                <Skeleton className="h-3 w-20 bg-black/10 dark:bg-white/10" />
-                <Skeleton className="h-3 w-16 bg-black/10 dark:bg-white/10" />
+                <Skeleton className="h-3 w-20 " />
+                <Skeleton className="h-3 w-16 " />
               </div>
             </div>
           </CardContent>
@@ -354,9 +349,9 @@ export default function MSCIPage() {
   return (
     <div className="space-y-4 pb-4 max-w-5xl mx-auto w-full">
       {/* Info Card */}
-      <Card className="border-none bg-gradient-to-br from-teal-600/90 to-emerald-800/90 text-white shadow-emerald-900/20 p-4 rounded-2xl">
+      <Card className="border-border bg-card text-foreground p-4 rounded-lg">
         <CardContent className="pt-0">
-          <p className="text-xs leading-relaxed text-white/90 font-medium">
+          <p className="text-xs leading-relaxed text-foreground/90 font-medium">
             Indonesian stocks with potential inclusion in the MSCI Global and Small Cap indices, considering key market criteria.
           </p>
         </CardContent>

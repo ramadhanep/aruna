@@ -111,6 +111,7 @@ function AccountSidebarContent({ onClose }) {
   const searchParams = useSearchParams();
   const { theme, setTheme, resolvedTheme } = useTheme();
   const { mode, setMode } = useAppearanceMode();
+  const activeThemeMode = theme === "system" ? resolvedTheme ?? "light" : theme ?? "light";
   const [authError, setAuthError] = useState(null);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -206,7 +207,7 @@ function AccountSidebarContent({ onClose }) {
           <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Profile</p>
           <div className="rounded-3xl bg-card border border-border/30 px-4 py-5 text-foreground">
             <div className="flex items-center gap-3">
-              <div className="h-14 w-14 overflow-hidden rounded-full border border-black/10 dark:border-white/20 bg-black/5 dark:bg-white/10">
+              <div className="h-14 w-14 overflow-hidden rounded-full border border-black/10 dark:border-white/20 ">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
@@ -230,11 +231,11 @@ function AccountSidebarContent({ onClose }) {
               </div>
             </div>
             <div className="mt-4 grid grid-cols-2 gap-2 text-[11px]">
-              <div className="rounded-2xl bg-black/5 dark:bg-white/10 px-3 py-2">
+              <div className="rounded-2xl  px-3 py-2">
                 <p className="uppercase tracking-wide text-foreground/60 dark:text-white/60">Mode</p>
                 <p className="text-sm font-semibold text-foreground dark:text-white">{user ? "Synced" : "Guest"}</p>
               </div>
-              <div className="rounded-2xl bg-black/5 dark:bg-white/10 px-3 py-2">
+              <div className="rounded-2xl  px-3 py-2">
                 <p className="uppercase tracking-wide text-foreground/60 dark:text-white/60">Server</p>
                 <p className="text-sm font-semibold text-foreground dark:text-white">
                   {mounted && supabaseConfigured ? "Connected" : "Offline"}
@@ -253,7 +254,7 @@ function AccountSidebarContent({ onClose }) {
                 <Button
                   type="button"
                   onClick={handleGoogleSignIn}
-                  className="w-full justify-center gap-3 rounded-full bg-white text-[12px] font-semibold text-[#3c4043] hover:bg-white/90"
+                  className="w-full justify-center gap-3 rounded-full bg-foreground text-[12px] font-semibold text-background hover:bg-foreground/90"
                 >
                   <GoogleGlyph />
                   <span>Sign in with Google</span>
@@ -277,9 +278,8 @@ function AccountSidebarContent({ onClose }) {
             <div className="mt-3 flex gap-2">
               <Button
                 type="button"
-                variant={isDark ? "outline" : "default"}
-                className={`flex-1 justify-center gap-2 rounded-2xl text-xs ${!isDark ? "bg-primary text-primary-foreground" : ""
-                  }`}
+                variant={activeThemeMode === "light" ? "default" : "outline"}
+                className="flex-1 justify-center gap-2 rounded-2xl text-xs"
                 onClick={() => setTheme("light")}
               >
                 <Sun className="h-4 w-4" />
@@ -287,13 +287,21 @@ function AccountSidebarContent({ onClose }) {
               </Button>
               <Button
                 type="button"
-                variant={isDark ? "default" : "outline"}
-                className={`flex-1 justify-center gap-2 rounded-2xl text-xs ${isDark ? "bg-primary text-primary-foreground" : ""
-                  }`}
+                variant={activeThemeMode === "dark" ? "default" : "outline"}
+                className="flex-1 justify-center gap-2 rounded-2xl text-xs"
                 onClick={() => setTheme("dark")}
               >
                 <Moon className="h-4 w-4" />
                 Dark
+              </Button>
+              <Button
+                type="button"
+                variant={theme === "system" ? "default" : "outline"}
+                className="flex-1 justify-center gap-2 rounded-2xl text-xs"
+                onClick={() => setTheme("system")}
+              >
+                <Sparkles className="h-4 w-4" />
+                System
               </Button>
             </div>
             <div className="mt-3 flex items-center justify-between rounded-2xl border border-border/40 bg-muted/20 px-3 py-2.5">
@@ -414,7 +422,6 @@ function AccountSidebarContent({ onClose }) {
 export function AccountSidebar({ open, onClose }) {
   return (
     <>
-      {/* Backdrop */}
       <div
         className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
           }`}

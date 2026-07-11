@@ -9,21 +9,24 @@ import { AccountSidebar } from "@/components/account-sidebar";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { DesktopNavbar } from "@/components/desktop-navbar";
 import { useAuth } from "@/components/auth-provider";
+import { useTrial } from "@/components/trial-provider";
 
-const PUBLIC_ROUTES = new Set(["/", "/signin", "/offline"]);
+const PUBLIC_ROUTES = new Set(["/", "/signin", "/offline", "/pricing", "/explore"]);
 
 export function AppLayoutClient({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
   const { user, loading } = useAuth();
+  const { initialized, isActive, isExpired } = useTrial();
   const isLandingPage = pathname === "/";
   const isPublicRoute = PUBLIC_ROUTES.has(pathname);
   const isProtectedRoute = !isPublicRoute;
-  const shouldBlockProtectedContent = isProtectedRoute && (loading || !user);
+  const canAccessWithoutAuth = Boolean(user) || (initialized && isActive) || isPublicRoute;
+  const shouldBlockProtectedContent = isProtectedRoute && !canAccessWithoutAuth && (loading || !user);
 
   useEffect(() => {
-    if (!isProtectedRoute || loading || user) return;
+    if (!isProtectedRoute || loading || user || (initialized && isActive)) return;
 
     const currentPath =
       typeof window !== "undefined"
@@ -31,8 +34,13 @@ export function AppLayoutClient({ children }) {
         : pathname || "/";
     const redirectPath = currentPath.startsWith("/") ? currentPath : "/";
 
+    if (initialized && isExpired) {
+      router.replace("/pricing");
+      return;
+    }
+
     router.replace(`/signin?redirect=${encodeURIComponent(redirectPath)}`);
-  }, [isProtectedRoute, loading, pathname, router, user]);
+  }, [isProtectedRoute, loading, pathname, router, user, initialized, isActive, isExpired]);
 
   const mobileBackHeaderRoutes = {
     "/idx-momentum": "IDX Momentum",
@@ -86,8 +94,8 @@ export function AppLayoutClient({ children }) {
         
         {/* Mobile Header (Hidden on lg+) */}
         {!hideDefaultMobileChrome && !shouldBlockProtectedContent && (
-          <header className="lg:hidden sticky top-0 z-40 shrink-0">
-            <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3 px-3">
+          <header className="lg:hidden sticky top-0 z-40 shrink-0 border-b border-border bg-black">
+            <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3 px-4">
               <HeaderAccountMenu onOpenSidebar={() => setSidebarOpen(true)} />
               <div className="flex flex-1 items-center justify-center gap-1.5">
                 <img src="/aruna.png" alt="aruna" className="size-5" />
@@ -99,12 +107,12 @@ export function AppLayoutClient({ children }) {
         )}
 
         {needsBackHeader && !shouldBlockProtectedContent && (
-          <header className="lg:hidden sticky top-0 z-40 shrink-0 border-b border-border/30">
+          <header className="lg:hidden sticky top-0 z-40 shrink-0 border-b border-border bg-black">
             <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between px-3">
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white/[0.06] hover:bg-white/[0.12] transition-colors"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-[#111] hover:bg-[#171717] transition-colors"
                 aria-label="Go back"
               >
                 <ArrowLeft className="h-4 w-4 text-muted-foreground" />

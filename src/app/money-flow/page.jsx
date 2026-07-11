@@ -26,15 +26,15 @@ function LoadingState() {
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <div className="space-y-1.5">
-                <Skeleton className="h-4 w-20 bg-black/10 dark:bg-white/10" />
-                <Skeleton className="h-3 w-28 bg-black/10 dark:bg-white/10" />
+                <Skeleton className="h-4 w-20 " />
+                <Skeleton className="h-3 w-28 " />
               </div>
-              <Skeleton className="h-6 w-24 rounded-full bg-black/10 dark:bg-white/10" />
+              <Skeleton className="h-6 w-24 rounded-full " />
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <Skeleton className="h-10 rounded-xl bg-black/10 dark:bg-white/10" />
-              <Skeleton className="h-10 rounded-xl bg-black/10 dark:bg-white/10" />
-              <Skeleton className="h-10 rounded-xl bg-black/10 dark:bg-white/10" />
+              <Skeleton className="h-10 rounded-xl " />
+              <Skeleton className="h-10 rounded-xl " />
+              <Skeleton className="h-10 rounded-xl " />
             </div>
           </CardContent>
         </Card>
@@ -136,7 +136,7 @@ function ReportList({ reports }) {
   if (!reports.length) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center rounded-2xl border border-border/30 bg-black/5 dark:bg-white/5">
-        <div className="h-12 w-12 rounded-full bg-black/10 dark:bg-white/10 flex items-center justify-center mb-4">
+        <div className="h-12 w-12 rounded-full  flex items-center justify-center mb-4">
           <FilterX className="h-6 w-6 text-muted-foreground" />
         </div>
         <p className="text-sm font-medium">No results found</p>
@@ -223,21 +223,21 @@ export default function MoneyFlowPage() {
   return (
     <div className="flex flex-col gap-4 pb-4">
       <div className="flex flex-col gap-4">
-        <Card className="border-none bg-gradient-to-br from-emerald-800 via-emerald-900 to-teal-950 text-white shadow-emerald-900/30 rounded-2xl">
+        <Card className="border-border bg-card text-foreground rounded-lg">
           <CardContent className="p-4 space-y-2">
-            <p className="text-xs text-white/85 leading-relaxed">
+            <p className="text-xs text-foreground/85 leading-relaxed">
               Smart-money breakdown based on broker flow, market phase, absorption, and screener-synced symbols.
             </p>
             {/* {payload?.screener?.name && (
-              <p className="text-[10px] text-white/80">
+              <p className="text-[10px] text-foreground/80">
                 Universe: {payload.screener.name} ({payload.screener.total_rows || 0} stocks)
               </p>
             )} */}
-            {payload?.start_date && <p className="text-[10px] text-white/75">Window start: {payload.start_date}</p>}
+            {payload?.start_date && <p className="text-[10px] text-muted-foreground">Window start: {payload.start_date}</p>}
           </CardContent>
         </Card>
 
-        <div className="sticky top-14 z-30 glass border-b border-border/30 -mx-4 lg:mx-0 px-4 lg:px-0 py-3 lg:py-2 lg:border-none lg:bg-transparent lg:backdrop-blur-none space-y-2">
+        <div className="sticky top-14 z-30 bg-background border-b border-border -mx-4 lg:mx-0 px-4 lg:px-0 py-3 lg:py-2 lg:border-none lg:bg-background space-y-2">
           <div className="flex items-center gap-2">
             <div className="flex-1 flex gap-1.5 p-1 bg-muted/40 rounded-2xl">
               {timeframeOptions.map((option) => (
@@ -246,7 +246,7 @@ export default function MoneyFlowPage() {
                   type="button"
                   variant="ghost"
                   className={`flex-1 rounded-xl text-xs font-semibold transition-all h-9 ${timeframe === option.key
-                    ? "bg-gradient-to-br from-emerald-700 to-teal-800 text-white shadow-emerald-500/20"
+                    ? "bg-foreground text-background"
                     : "hover:bg-muted/60"
                     }`}
                   onClick={() => setTimeframe(option.key)}
@@ -322,7 +322,7 @@ export default function MoneyFlowPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)] gap-4 lg:gap-6 items-start">
         <aside className="hidden xl:block sticky top-20 space-y-3">
-          <Card className="rounded-2xl border-border/40 bg-gradient-to-b from-background to-muted/20">
+          <Card className="rounded-lg border-border bg-card">
             <CardContent className="p-4 space-y-3">
               {/* <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Desk Snapshot</p> */}
               <div className="grid grid-cols-2 gap-2">

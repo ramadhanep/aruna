@@ -25,15 +25,12 @@ import { formatMarketCap, formatPrice } from "@/lib/utils";
 const statusColorMap = {
   success: {
     badge: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-    cardGradient: "from-emerald-500/5 dark:from-emerald-500/10"
   },
   warning: {
     badge: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-    cardGradient: "from-amber-500/5 dark:from-amber-500/10"
   },
   danger: {
     badge: "bg-red-500/10 text-red-500 border-red-500/20",
-    cardGradient: "from-red-500/5 dark:from-red-500/10"
   }
 };
 
@@ -45,7 +42,7 @@ function formatPercent(value) {
 
 function SegmentControl({ value, onChange, sortBy, onSortChange }) {
   return (
-    <div className="sticky top-14 z-30 glass border-b border-border/30 -mx-4 px-4 py-3">
+    <div className="sticky top-14 z-30 bg-background border-b border-border -mx-4 px-4 py-3">
       <div className="flex items-center gap-2">
         <div className="flex-1 overflow-x-auto scrollbar-hide">
           <div className="flex gap-1.5 p-1 bg-muted/40 rounded-2xl min-w-max">
@@ -61,7 +58,7 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
                 type="button"
                 variant="ghost"
                 className={`rounded-xl text-xs font-semibold transition-all px-4 py-2 h-auto ${value === tab.key
-                  ? "bg-gradient-to-br from-teal-600 to-emerald-700 text-white shadow-emerald-500/20"
+                  ? "bg-foreground text-background"
                   : "hover:bg-muted/60"
                   }`}
                 onClick={() => onChange(tab.key)}
@@ -137,7 +134,7 @@ function SummaryCard({ summary }) {
       : 'text-yellow-500';
 
   return (
-    <Card className="border-none bg-gradient-to-br from-teal-600/20 to-emerald-800/10 dark:from-teal-900/40 dark:to-emerald-950/40 text-foreground dark:text-white border border-white/[0.08] rounded-2xl">
+    <Card className="bg-card text-foreground border border-border rounded-lg">
       <CardContent className="p-3 space-y-3">
         {/* Market Sentiment */}
         <div className="flex items-center justify-between">
@@ -152,7 +149,7 @@ function SummaryCard({ summary }) {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-4 gap-2">
-          <div className="text-center p-2 bg-black/5 dark:bg-white/5 rounded-xl">
+          <div className="text-center p-2 bg-muted/50 rounded-xl">
             <p className="text-xs text-muted-foreground dark:text-white/50">Total</p>
             <p className="text-xs font-bold">{summary.totalStocks}</p>
           </div>
@@ -171,7 +168,7 @@ function SummaryCard({ summary }) {
         </div>
 
         {/* Avg Momentum */}
-        <div className="flex items-center justify-between p-2 bg-black/5 dark:bg-white/5 rounded-xl">
+        <div className="flex items-center justify-between p-2 bg-muted/50 rounded-xl">
           <span className="text-xs text-muted-foreground dark:text-white/70">Avg Momentum Score</span>
           <span className={`text-xs font-bold ${summary.avgMomentum >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
             {summary.avgMomentum > 0 ? '+' : ''}{summary.avgMomentum}
@@ -183,11 +180,9 @@ function SummaryCard({ summary }) {
 }
 
 function StockCard({ stock, isLocked = false }) {
-  const gradientFrom = statusColorMap[stock.status?.variant]?.cardGradient || statusColorMap.danger.cardGradient;
-
   return (
-    <Card className={`bg-gradient-to-br ${gradientFrom} to-transparent border-white/[0.08] dark:border-white/[0.08] text-foreground dark:text-white overflow-hidden relative rounded-2xl`}>
-      <CardContent className={`p-3 space-y-2 ${isLocked ? "blur-[2px] opacity-60" : ""}`}>
+    <Card className="bg-card border-border text-foreground overflow-hidden relative rounded-lg">
+      <CardContent className={`p-3 space-y-2 ${isLocked ? "opacity-40" : ""}`}>
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
@@ -217,7 +212,7 @@ function StockCard({ stock, isLocked = false }) {
         </div>
 
         {/* Momentum Score */}
-        <div className="flex items-center justify-between p-1.5 bg-black/5 dark:bg-white/5 rounded-xl">
+        <div className="flex items-center justify-between p-1.5 bg-muted/50 rounded-xl">
           <div className="flex items-center gap-1">
             <Zap className="h-3 w-3 text-muted-foreground dark:text-white/70" />
             <span className="text-[9px] text-muted-foreground dark:text-white/70">Momentum Score</span>
@@ -246,7 +241,7 @@ function StockCard({ stock, isLocked = false }) {
         </div>
       </CardContent>
       {isLocked && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1.5 rounded-lg bg-background/05 backdrop-blur-xs px-4 text-center pointer-events-none">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1.5 rounded-lg bg-black/80 px-4 text-center pointer-events-none">
           <Lock className="h-3.5 w-3.5 text-foreground/90 dark:text-white/90" />
           <p className="text-xs font-semibold text-foreground/90 dark:text-white/90">Sign in to unlock</p>
         </div>
@@ -309,10 +304,10 @@ function LoadingSkeleton() {
       {/* Summary Skeleton */}
       <Card className="border-white/[0.08] dark:border-white/[0.08] rounded-2xl">
         <CardContent className="p-3 space-y-3">
-          <Skeleton className="h-4 w-32 bg-black/10 dark:bg-white/10" />
+          <Skeleton className="h-4 w-32 " />
           <div className="grid grid-cols-4 gap-2">
             {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-12 w-full rounded-lg bg-black/10 dark:bg-white/10" />
+              <Skeleton key={i} className="h-12 w-full rounded-lg " />
             ))}
           </div>
         </CardContent>
@@ -324,14 +319,14 @@ function LoadingSkeleton() {
           <CardContent className="p-3 space-y-2">
             <div className="flex items-start justify-between">
               <div className="space-y-1">
-                <Skeleton className="h-3 w-16 bg-black/10 dark:bg-white/10" />
-                <Skeleton className="h-2.5 w-24 bg-black/10 dark:bg-white/10" />
+                <Skeleton className="h-3 w-16 " />
+                <Skeleton className="h-2.5 w-24 " />
               </div>
-              <Skeleton className="h-8 w-8 rounded-full bg-black/10 dark:bg-white/10" />
+              <Skeleton className="h-8 w-8 rounded-full " />
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <Skeleton className="h-8 w-full bg-black/10 dark:bg-white/10" />
-              <Skeleton className="h-8 w-full bg-black/10 dark:bg-white/10" />
+              <Skeleton className="h-8 w-full " />
+              <Skeleton className="h-8 w-full " />
             </div>
           </CardContent>
         </Card>
@@ -443,9 +438,9 @@ export default function MomentumPage() {
   return (
     <div className="space-y-3 pb-4 max-w-6xl mx-auto w-full">
       {/* Info Card */}
-      <Card className="border-none bg-gradient-to-br from-teal-600/90 to-emerald-800/90 text-white shadow-emerald-900/20 p-3 rounded-2xl">
+      <Card className="border-border bg-card text-foreground p-3 rounded-lg">
         <CardContent className="pt-0">
-          <p className="text-xs leading-relaxed text-white/90 font-semibold">
+          <p className="text-xs leading-relaxed text-foreground/90 font-semibold">
             IDX Momentum & Price Trend Analysis
           </p>
         </CardContent>

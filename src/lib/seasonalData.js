@@ -246,7 +246,7 @@ export function calculateQuarterlyReturns(data) {
  * Returns last N years + average row
  */
 export function formatMonthlyHeatmap(monthlyReturns, maxYears = 10) {
-  if (!monthlyReturns || monthlyReturns.length === 0) return { rows: [], average: {} };
+  if (!monthlyReturns || monthlyReturns.length === 0) return { rows: [], average: {}, winRate: {} };
 
   // Get unique years and sort descending
   const years = [...new Set(monthlyReturns.map(r => r.year))].sort((a, b) => b - a);
@@ -262,14 +262,16 @@ export function formatMonthlyHeatmap(monthlyReturns, maxYears = 10) {
     return row;
   });
 
-  // Calculate average across ALL years (not just recent)
+  // Calculate average and winning probability across ALL years (not just recent)
   const average = { year: 'Average' };
+  const winRate = { year: 'Probability' };
   for (let month = 1; month <= 12; month++) {
     const values = monthlyReturns.filter(r => r.month === month && r.return !== null).map(r => r.return);
     average[`M${month}`] = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : null;
+    winRate[`M${month}`] = values.length > 0 ? (values.filter(v => v > 0).length / values.length) * 100 : null;
   }
 
-  return { rows, average };
+  return { rows, average, winRate };
 }
 
 /**
@@ -277,7 +279,7 @@ export function formatMonthlyHeatmap(monthlyReturns, maxYears = 10) {
  * Returns last N years + average row
  */
 export function formatQuarterlyHeatmap(quarterlyReturns, maxYears = 10) {
-  if (!quarterlyReturns || quarterlyReturns.length === 0) return { rows: [], average: {} };
+  if (!quarterlyReturns || quarterlyReturns.length === 0) return { rows: [], average: {}, winRate: {} };
 
   // Get unique years and sort descending
   const years = [...new Set(quarterlyReturns.map(r => r.year))].sort((a, b) => b - a);
@@ -293,12 +295,41 @@ export function formatQuarterlyHeatmap(quarterlyReturns, maxYears = 10) {
     return row;
   });
 
-  // Calculate average across ALL years (not just recent)
+  // Calculate average and winning probability across ALL years (not just recent)
   const average = { year: 'Average' };
+  const winRate = { year: 'Probability' };
   for (let quarter = 1; quarter <= 4; quarter++) {
     const values = quarterlyReturns.filter(r => r.quarter === quarter && r.return !== null).map(r => r.return);
     average[`Q${quarter}`] = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : null;
+    winRate[`Q${quarter}`] = values.length > 0 ? (values.filter(v => v > 0).length / values.length) * 100 : null;
   }
 
-  return { rows, average };
+  return { rows, average, winRate };
+}
+
+/**
+ * Diverging heatmap color for a winning-probability percentage (0-100),
+ * centered at 50%. Mirrors the intensity-scaled rgba() approach used for
+ * return-magnitude heatmaps, but keyed off distance from 50 instead of 0.
+ */
+export function getWinRateCellStyle(pct) {
+  if (pct == null || isNaN(pct)) return {};
+  const clamped = Math.max(0, Math.min(100, pct));
+  const diff = clamped - 50;
+  const intensity = Math.abs(diff) / 50;
+  const alpha = 0.12 + intensity * 0.68;
+
+  if (diff > 0) {
+    return {
+      backgroundColor: `rgba(34, 197, 94, ${alpha.toFixed(2)})`,
+      color: intensity > 0.35 ? '#ffffff' : undefined,
+    };
+  }
+  if (diff < 0) {
+    return {
+      backgroundColor: `rgba(239, 68, 68, ${alpha.toFixed(2)})`,
+      color: intensity > 0.35 ? '#ffffff' : undefined,
+    };
+  }
+  return { backgroundColor: 'rgba(148, 163, 184, 0.15)' };
 }

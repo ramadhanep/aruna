@@ -156,19 +156,19 @@ export default function IdxRotationPage() {
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 gap-2">
         <Link href="/" className="flex items-center gap-2 shrink-0">
-          <div className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+          <div className="p-1.5 rounded-lg bg-accent hover:bg-accent/80 transition-colors">
             <ArrowLeft className="size-6 text-muted-foreground" />
           </div>
         </Link>
 
         <div className="flex-1 text-center">
-          <h1 className="text-sm font-semibold text-white/80">Market Rotation</h1>
-          <p className="text-[10px] text-white/40">Top 50 by Market Cap</p>
+          <h1 className="text-sm font-semibold text-foreground/80">Market Rotation</h1>
+          <p className="text-[10px] text-muted-foreground">Top 50 by Market Cap</p>
         </div>
 
         <button
           onClick={handleDownload}
-          className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors shrink-0"
+          className="p-1.5 rounded-lg bg-accent hover:bg-accent/80 transition-colors shrink-0"
           title="Download as image"
         >
           <Download className="size-6 text-muted-foreground" />
@@ -178,7 +178,7 @@ export default function IdxRotationPage() {
       {/* Summary Stats */}
       <div className="absolute top-14 left-0 right-0 z-40 flex justify-center gap-2 px-3">
         {Object.entries(QUADRANT_COLORS).map(([key, value]) => (
-          <div key={key} className="flex items-center gap-1.5 liquid-glass rounded-full px-2.5 py-1">
+          <div key={key} className="flex items-center gap-1.5 border border-border bg-card rounded-md px-2.5 py-1">
             <div
               className="w-2 h-2 rounded-full"
               style={{ backgroundColor: value.bg }}
@@ -391,7 +391,7 @@ export default function IdxRotationPage() {
 
       {/* Tooltip for hovered stock */}
       {hoveredStock && (
-        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 liquid-glass rounded-2xl px-4 py-3 z-50 pointer-events-none">
+        <div className="fixed bottom-20 left-1/2 -translate-x-1/2 border border-border bg-card rounded-lg px-4 py-3 z-50 pointer-events-none">
           {(() => {
             const stock = positionedStocks.find(s => s.code === hoveredStock);
             if (!stock) return null;

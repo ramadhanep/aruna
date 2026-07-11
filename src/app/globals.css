@@ -1,42 +1,4 @@
-/*
- * ══════════════════════════════════════════════════════════════
- * CANONICAL CLASS PATTERNS
- * Use these patterns consistently across all pages / components.
- * ══════════════════════════════════════════════════════════════
- *
- * Card container (feature card):
- *   bg-gradient-to-br from-<color>/5 to-transparent
- *   border-white/[0.08] dark:border-white/[0.08]
- *   text-foreground dark:text-white rounded-2xl
- *
- * Stock list row / item:
- *   flex items-center gap-3 p-3
- *   bg-muted/30 rounded-xl
- *
- * Badge / tag:
- *   inline-flex items-center px-2 py-0.5 rounded-full
- *   text-[10px] font-semibold border
- *   bg-<color>-500/10 text-<color>-500 border-<color>-500/20
- *
- * Section header:
- *   text-sm font-semibold text-foreground
- *
- * Muted label:
- *   text-[10px] text-muted-foreground dark:text-white/50
- *   uppercase tracking-wide
- *
- * Sticky sub-nav:
- *   sticky top-14 z-30 glass border-b border-border/30
- *   -mx-4 px-4 py-3
- *
- * Segment control button (active):
- *   bg-gradient-to-br from-teal-600 to-emerald-700
- *   text-white shadow-emerald-500/20
- *
- * Glass panel:
- *   .glass  (backdrop-blur-xl bg-background/80)
- * ══════════════════════════════════════════════════════════════
- */
+/* Aruna terminal system — intentionally quiet, monochrome, and dense. */
 
 @import "tailwindcss";
 @import "tw-animate-css";
@@ -93,115 +55,75 @@
   --radius-xl: calc(var(--radius) + 6px);
 }
 
-/* ================================================= */
-/* ROOT THEME — LOGO INSPIRED EMERALD / MODERN SAAS  */
-/* ================================================= */
-
 :root {
-  --radius: 1rem;
-
-  /* Background */
-  --background: oklch(0.985 0.004 180);
-  --foreground: oklch(0.18 0.015 190);
-
-  /* Surfaces */
-  --card: oklch(0.995 0.002 180);
-  --card-foreground: oklch(0.18 0.015 190);
-
-  --popover: oklch(0.995 0.002 180);
-  --popover-foreground: oklch(0.18 0.015 190);
-
-  /* Brand */
-  --primary: oklch(0.67 0.17 170);
-  --primary-foreground: oklch(0.99 0 0);
-
-  /* Support */
-  --secondary: oklch(0.95 0.01 185);
-  --secondary-foreground: oklch(0.22 0.01 190);
-
-  --muted: oklch(0.96 0.006 185);
-  --muted-foreground: oklch(0.48 0.01 190);
-
-  --accent: oklch(0.92 0.03 175);
-  --accent-foreground: oklch(0.22 0.01 190);
-
-  --destructive: oklch(0.61 0.24 28);
-
-  /* Borders */
-  --border: oklch(0.90 0.01 185);
-  --input: oklch(0.93 0.01 185);
-  --ring: oklch(0.70 0.15 170);
-
-  /* Charts */
-  --chart-1: oklch(0.69 0.17 170);
-  --chart-2: oklch(0.63 0.14 210);
-  --chart-3: oklch(0.74 0.14 140);
-  --chart-4: oklch(0.77 0.18 90);
-  --chart-5: oklch(0.60 0.12 250);
-
-  /* Sidebar */
-  --sidebar: oklch(0.985 0.004 180);
-  --sidebar-foreground: oklch(0.18 0.015 190);
-
-  --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: var(--primary-foreground);
-
-  --sidebar-accent: oklch(0.95 0.01 185);
-  --sidebar-accent-foreground: oklch(0.22 0.01 190);
-
-  --sidebar-border: var(--border);
-  --sidebar-ring: var(--ring);
+  --radius: .625rem;
+  --background: #f7f7f3;
+  --foreground: #111111;
+  --card: #ffffff;
+  --card-foreground: #111111;
+  --popover: #ffffff;
+  --popover-foreground: #111111;
+  --primary: #111111;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f1eb;
+  --secondary-foreground: #111111;
+  --muted: #f1f1eb;
+  --muted-foreground: #676767;
+  --accent: #f0f0eb;
+  --accent-foreground: #111111;
+  --destructive: #ef4444;
+  --border: #e2e2db;
+  --input: #ffffff;
+  --ring: #3b82f6;
+  --chart-1: #111111;
+  --chart-2: #4b5563;
+  --chart-3: #9ca3af;
+  --chart-4: #3b82f6;
+  --chart-5: #64748b;
+  --sidebar: #f3f3ef;
+  --sidebar-foreground: #111111;
+  --sidebar-primary: #111111;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #ecece7;
+  --sidebar-accent-foreground: #111111;
+  --sidebar-border: #e2e2db;
+  --sidebar-ring: #3b82f6;
+  color-scheme: light;
 }
 
-/* ======================== */
-/* DARK MODE — PREMIUM FEEL */
-/* ======================== */
-
 .dark {
-  --background: oklch(0.14 0.012 210);
-  --foreground: oklch(0.95 0.002 180);
-
-  --card: oklch(0.18 0.015 210);
-  --card-foreground: oklch(0.95 0.002 180);
-
-  --popover: oklch(0.18 0.015 210);
-  --popover-foreground: oklch(0.95 0.002 180);
-
-  --primary: oklch(0.76 0.16 170);
-  --primary-foreground: oklch(0.12 0.01 210);
-
-  --secondary: oklch(0.24 0.012 210);
-  --secondary-foreground: oklch(0.94 0.002 180);
-
-  --muted: oklch(0.22 0.012 210);
-  --muted-foreground: oklch(0.68 0.005 180);
-
-  --accent: oklch(0.28 0.03 175);
-  --accent-foreground: oklch(0.95 0.002 180);
-
-  --destructive: oklch(0.63 0.23 28);
-
-  --border: oklch(1 0 0 / 8%);
-  --input: oklch(1 0 0 / 10%);
-  --ring: oklch(0.78 0.14 170);
-
-  --chart-1: oklch(0.75 0.17 170);
-  --chart-2: oklch(0.72 0.14 220);
-  --chart-3: oklch(0.74 0.14 140);
-  --chart-4: oklch(0.78 0.18 95);
-  --chart-5: oklch(0.72 0.15 300);
-
-  --sidebar: oklch(0.16 0.012 210);
-  --sidebar-foreground: oklch(0.95 0.002 180);
-
-  --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: var(--primary-foreground);
-
-  --sidebar-accent: oklch(0.22 0.012 210);
-  --sidebar-accent-foreground: oklch(0.95 0.002 180);
-
-  --sidebar-border: oklch(1 0 0 / 8%);
-  --sidebar-ring: var(--ring);
+  --background: #000000;
+  --foreground: #ffffff;
+  --card: #111111;
+  --card-foreground: #ffffff;
+  --popover: #171717;
+  --popover-foreground: #ffffff;
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --secondary: #171717;
+  --secondary-foreground: #ffffff;
+  --muted: #111111;
+  --muted-foreground: #a8a8a8;
+  --accent: #1a1a1a;
+  --accent-foreground: #ffffff;
+  --destructive: #ef4444;
+  --border: #232323;
+  --input: #171717;
+  --ring: #3b82f6;
+  --chart-1: #ffffff;
+  --chart-2: #a8a8a8;
+  --chart-3: #6e6e6e;
+  --chart-4: #3b82f6;
+  --chart-5: #737373;
+  --sidebar: #0b0b0b;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #000000;
+  --sidebar-accent: #171717;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #232323;
+  --sidebar-ring: #3b82f6;
+  color-scheme: dark;
 }
 
 /* ======================== */
@@ -219,9 +141,8 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-    background-image:
-      radial-gradient(circle at top left, color-mix(in oklch, var(--primary) 12%, transparent), transparent 40%),
-      radial-gradient(circle at bottom right, color-mix(in oklch, var(--accent) 18%, transparent), transparent 35%);
+    background-image: none;
+    transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
   }
 
   /* Safe area padding for iOS */
@@ -257,88 +178,12 @@
 /* ======================== */
 
 @layer utilities {
-
-  /* Glassmorphism */
-  .glass {
-    background: color-mix(in oklch, var(--background) 65%, transparent);
-    backdrop-filter: blur(24px) saturate(1.8);
-    -webkit-backdrop-filter: blur(24px) saturate(1.8);
-  }
-
-  .glass-subtle {
-    background: color-mix(in oklch, var(--background) 80%, transparent);
-    backdrop-filter: blur(16px) saturate(1.4);
-    -webkit-backdrop-filter: blur(16px) saturate(1.4);
-  }
-
-  /* Liquid Glass — frosted translucent effect with refraction & lens distortion */
-  .liquid-glass {
-    background: 
-      radial-gradient(135% 135% at 50% 0%, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
-      radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.04) 0%, transparent 70%),
-      color-mix(in oklch, var(--background) 72%, transparent);
-    backdrop-filter: 
-      blur(48px) 
-      saturate(2.2) 
-      brightness(1.08)
-      contrast(1.1)
-      drop-shadow(0 0 2px rgba(255, 255, 255, 0.05));
-    -webkit-backdrop-filter: 
-      blur(48px) 
-      saturate(2.2) 
-      brightness(1.08)
-      contrast(1.1)
-      drop-shadow(0 0 2px rgba(255, 255, 255, 0.05));
-    border: 1px solid color-mix(in oklch, var(--foreground) 9%, transparent);
-    box-shadow:
-      inset 0 1px 2px rgba(255, 255, 255, 0.18),
-      inset 0 -1px 3px rgba(0, 0, 0, 0.06),
-      inset 0 0 20px rgba(255, 255, 255, 0.04),
-      0 8px 32px -8px rgba(0, 0, 0, 0.08),
-      0 0 1px rgba(0, 0, 0, 0.04);
-  }
-
-  .dark .liquid-glass {
-    background: 
-      radial-gradient(135% 135% at 50% 0%, rgba(255, 255, 255, 0.06) 0%, transparent 50%),
-      radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.02) 0%, transparent 70%),
-      color-mix(in oklch, var(--background) 72%, transparent);
-    border: 1px solid color-mix(in oklch, white 11%, transparent);
-    box-shadow:
-      inset 0 1px 2px rgba(255, 255, 255, 0.10),
-      inset 0 -1px 3px rgba(0, 0, 0, 0.15),
-      inset 0 0 24px rgba(255, 255, 255, 0.02),
-      0 12px 40px -8px rgba(0, 0, 0, 0.30),
-      0 0 1px rgba(255, 255, 255, 0.02);
-  }
-
-  .liquid-glass-strong {
-    background: color-mix(in oklch, var(--background) 75%, transparent);
-    backdrop-filter: blur(56px) saturate(2.2) brightness(1.08);
-    -webkit-backdrop-filter: blur(56px) saturate(2.2) brightness(1.08);
-    border: 1px solid color-mix(in oklch, var(--foreground) 10%, transparent);
-    box-shadow:
-      0 1px 0 0 color-mix(in oklch, white 20%, transparent) inset,
-      0 -1px 0 0 color-mix(in oklch, var(--foreground) 6%, transparent) inset,
-      0 8px 32px -8px rgba(0, 0, 0, 0.10);
-  }
-
-  .dark .liquid-glass-strong {
-    background: color-mix(in oklch, var(--background) 70%, transparent);
-    border: 1px solid color-mix(in oklch, white 12%, transparent);
-    box-shadow:
-      0 1px 0 0 color-mix(in oklch, white 10%, transparent) inset,
-      0 -1px 0 0 color-mix(in oklch, white 4%, transparent) inset,
-      0 8px 36px -8px rgba(0, 0, 0, 0.35);
-  }
-
   .card-hover {
-    transition: all .25s cubic-bezier(.4,0,.2,1);
+    transition: transform .18s ease-out, border-color .18s ease-out, background-color .18s ease-out;
   }
 
   .card-hover:hover {
-    transform: translateY(-4px) scale(1.01);
-    box-shadow: 0 24px 50px -20px rgba(0,0,0,.14);
+    transform: scale(1.01);
   }
 
   /* Fade in animation */
@@ -359,29 +204,12 @@
     position: absolute;
     inset: 0;
     transform: translateX(-100%);
-    background-image: linear-gradient(110deg,
-        transparent 20%,
-        color-mix(in oklch, white 40%, transparent) 50%,
-        transparent 80%);
+    background-color: rgba(255, 255, 255, .035);
     animation: shimmer-slide 1.6s ease-in-out infinite;
   }
 
-  /* Gradient text */
-  .gradient-text {
-    background: linear-gradient(
-      135deg,
-      oklch(0.78 0.17 170),
-      oklch(0.60 0.18 190),
-      oklch(0.72 0.14 220)
-    );
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
   .btn-glow:hover {
-    box-shadow: 0 0 0 4px color-mix(in oklch, var(--primary) 12%, transparent),
-      0 12px 40px -12px color-mix(in oklch, var(--primary) 45%, transparent);
+    box-shadow: none;
   }
 }
 
@@ -450,24 +278,23 @@ button[data-slot="dialog-close"].ring-offset-background {
   font-weight: 600;
 }
 
-/* ======================== */
-/* LIQUID GLASS LENS EFFECT */
-/* Magnification on content  */
-/* ======================== */
-/* Magnification lens distortion effect */
-nav.liquid-glass::before {
-  content: "";
-  position: fixed;
-  bottom: 1.25rem;
-  left: 1rem;
-  right: 1rem;
-  height: 3.5rem;
-  border-radius: 9999px;
-  pointer-events: none;
-  background: 
-    radial-gradient(circle 80px at 50% 50%, rgba(255, 255, 255, 0.12) 0%, transparent 65%);
-  mix-blend-mode: overlay;
-  opacity: 0.9;
-  box-shadow: inset 0 0 40px 10px rgba(255, 255, 255, 0.08);
-  z-index: 49;
+[class*="bg-emerald"], [class*="bg-teal"], [class*="bg-green"] {
+  background-color: var(--card) !important;
+}
+
+[class*="text-emerald"],
+[class*="text-green"] {
+  color: #34d399 !important;
+}
+
+[class*="text-teal"] {
+  color: var(--foreground) !important;
+}
+
+[class*="border-emerald"], [class*="border-teal"], [class*="border-green"] {
+  border-color: var(--border) !important;
+}
+
+[class*="shadow-emerald"], [class*="shadow-teal"], [class*="shadow-green"], [class*="shadow-\["] {
+  box-shadow: none !important;
 }

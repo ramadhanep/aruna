@@ -223,7 +223,7 @@ export function HeaderSymbolSearch({ variant = "icon", className }) {
       type="button"
       variant="outline"
       className={cn(
-        "h-9 w-[220px] justify-start rounded-full border-border/70 bg-background/70 px-3 text-muted-foreground hover:bg-background md:w-[260px] xl:w-[320px]",
+        "h-9 w-[220px] justify-start rounded-md border-border bg-card px-3 text-muted-foreground hover:bg-accent md:w-[260px] xl:w-[320px]",
         className
       )}
       aria-label="Search ticker"

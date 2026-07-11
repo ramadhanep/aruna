@@ -96,11 +96,6 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
   const isPositive = Number(changeValue || 0) >= 0;
 
   // Let's decide on card style based on signal
-  let cardGradient = "from-neutral-500/5 dark:from-neutral-500/10";
-  if (report.signal?.includes("Accumulation")) cardGradient = "from-emerald-500/5 dark:from-emerald-500/10";
-  else if (report.signal?.includes("Distribution")) cardGradient = "from-rose-500/5 dark:from-rose-500/10";
-  else if (report.signal === "Neutral") cardGradient = "from-amber-500/5 dark:from-amber-500/10";
-
   // Broker calculation logic
   const brokers = useMemo(() => {
     const rawBrokers = Array.isArray(report.broker_summary) ? report.broker_summary : [];
@@ -145,7 +140,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
 
   return (
     <AccordionItem value={`${report.symbol}-${report.report_date}`} className="border-none">
-      <Card className={`bg-gradient-to-br ${cardGradient} to-transparent border-white/[0.08] dark:border-white/[0.08] text-foreground dark:text-white overflow-hidden relative rounded-2xl`}>
+      <Card className="bg-card border-border text-foreground overflow-hidden relative rounded-lg">
         <AccordionTrigger className={`px-4 py-3 hover:no-underline [&[data-state=open]>div>svg]:rotate-180 ${!isExpandedView && 'px-3 py-3'}`}>
           <div className="flex-1 min-w-0 space-y-3 text-left">
             {/* Header */}
@@ -319,7 +314,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             )}
 
             {/* Modern Broker Summary Board */}
-            <div className="rounded-2xl overflow-hidden border border-border/40 bg-gradient-to-b from-background to-muted/20">
+            <div className="rounded-lg overflow-hidden border border-border bg-card">
               <div className="px-3 py-2.5 border-b border-border/40 flex items-center justify-between bg-black/5 dark:bg-white/5">
                 <div className="flex items-center gap-2">
                   <p className="text-xs font-semibold">Broker Action</p>
@@ -348,7 +343,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
 
               <div className="overflow-x-auto">
                 {/* Visual Indicator Line (Big Dist -> Big Acc) */}
-                <div className="w-full h-1 bg-gradient-to-r from-rose-500 via-neutral-500 to-emerald-500" />
+                <div className="w-full h-px bg-border" />
                 <div className="hidden sm:flex items-center justify-between px-3 py-2 text-[10px] text-muted-foreground border-b border-border/30">
                   <span className="font-medium text-emerald-600 dark:text-emerald-400">Buyer side accumulation</span>
                   <span className="font-medium text-rose-500 dark:text-rose-400">Seller side distribution</span>

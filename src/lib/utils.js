@@ -5,6 +5,41 @@ export function cn(...inputs) {
   return twMerge(clsx(inputs));
 }
 
+const stableColorCache = new Map();
+
+function hashString(value) {
+  let hash = 2166136261;
+  const stringValue = String(value ?? "");
+
+  for (let index = 0; index < stringValue.length; index += 1) {
+    hash ^= stringValue.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+
+  return hash >>> 0;
+}
+
+export function getStableColorFromLabel(label) {
+  const normalizedLabel = String(label ?? "").trim();
+
+  if (!normalizedLabel) {
+    return "hsl(210 70% 56%)";
+  }
+
+  if (stableColorCache.has(normalizedLabel)) {
+    return stableColorCache.get(normalizedLabel);
+  }
+
+  const hash = hashString(normalizedLabel);
+  const hue = hash % 360;
+  const saturation = 66 + (hash % 9);
+  const lightness = 48 + ((hash >>> 3) % 10);
+  const color = `hsl(${hue} ${saturation}% ${lightness}%)`;
+
+  stableColorCache.set(normalizedLabel, color);
+  return color;
+}
+
 /**
  * Formats ticker symbol for display by removing the .JK suffix for Indonesian stocks
  * @param {string} symbol - The ticker symbol (e.g., "BBRI.JK", "AAPL")

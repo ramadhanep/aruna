@@ -56,7 +56,7 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
   };
 
   return (
-    <header className="hidden lg:flex items-center h-16 sticky top-0 z-40 bg-background/80 backdrop-blur-2xl border-b border-border/30">
+    <header className="hidden lg:flex items-center h-16 sticky top-0 z-40 bg-background/95 border-b border-border">
       <div className="flex items-center w-full max-w-[1400px] mx-auto px-6 gap-1">
         {/* Logo */}
         <Link href="/explore" className="flex items-center gap-2.5 mr-8 shrink-0">
@@ -75,10 +75,10 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
                 key={item.url}
                 href={item.url}
                 className={cn(
-                  "flex items-center gap-2 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-150",
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium transition-colors duration-200",
                   isActive
-                    ? "bg-primary/10 text-primary font-semibold"
-                    : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                    ? "bg-accent text-foreground font-semibold"
+                    : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -96,10 +96,10 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
           >
             <button
               className={cn(
-                "flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[13px] font-medium transition-all duration-150",
+                "flex items-center gap-1.5 px-3 py-2 rounded-md text-[13px] font-medium transition-colors duration-200",
                 isToolsActive
-                  ? "bg-primary/10 text-primary font-semibold"
-                  : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                  ? "bg-accent text-foreground font-semibold"
+                  : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
               )}
               onClick={() => setToolsOpen(!toolsOpen)}
             >
@@ -108,7 +108,7 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
             </button>
 
             {toolsOpen && (
-              <div className="absolute top-full left-0 mt-1 w-64 rounded-xl border border-border/30 bg-background/95 backdrop-blur-2xl py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+              <div className="absolute top-full left-0 mt-2 w-64 rounded-lg border border-border bg-popover py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150 shadow-2xl shadow-black/40">
                 {TOOLS_ITEMS.map((item) => {
                   const isActive = pathname === item.url;
                   const Icon = item.icon;
@@ -118,10 +118,10 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
                       href={item.url}
                       onClick={() => setToolsOpen(false)}
                       className={cn(
-                        "flex items-center gap-3 px-3.5 py-2.5 mx-1 rounded-lg text-[13px] transition-colors",
+                        "flex items-center gap-3 px-3.5 py-2.5 mx-1 rounded-md text-[13px] transition-colors",
                         isActive
-                          ? "bg-primary/10 text-primary font-semibold"
-                          : "text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                          ? "bg-accent text-foreground font-semibold"
+                          : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
                       )}
                     >
                       <Icon className="h-4 w-4 shrink-0" />
@@ -143,7 +143,7 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
           <ModeToggle />
           <button
             onClick={onOpenAccountSidebar}
-            className="flex items-center justify-center h-8 w-8 rounded-full bg-muted/60 hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+            className="flex items-center justify-center h-8 w-8 rounded-md bg-card hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
             aria-label="Profile"
           >
             <UserRound className="size-5" />

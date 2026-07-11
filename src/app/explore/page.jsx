@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo, useId } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock, Download, Flame, ChevronDown, ChevronUp, ChevronRight, Clock, Globe, Zap, BarChart3, ArrowUpRight, ArrowDownRight, Gem } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock, Download, Flame, ChevronDown, ChevronUp, ChevronRight, Clock, Globe, Zap, BarChart3, ArrowUpRight, ArrowDownRight, Gem, Magnet, Rotate3D, Workflow, Radar, Wallet, CalendarRange, Droplets } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { TrendingMarquee } from "@/components/trending-marquee";
@@ -399,8 +399,6 @@ function MarketSymbolCardSkeleton() {
 }
 
 function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
-  const generatedId = useId();
-  const gradientKey = chartId ?? generatedId;
   if (!Array.isArray(data) || data.length < 2) {
     return <div style={{ width, height }} className="rounded-full bg-muted/40" />;
   }
@@ -418,9 +416,7 @@ function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
   const linePath = coordinates
     .map((point, idx) => `${idx === 0 ? "M" : "L"}${point.x.toFixed(2)},${point.y.toFixed(2)}`)
     .join(" ");
-  const areaPath = `${linePath} L${coordinates[coordinates.length - 1].x.toFixed(2)},${height} L0,${height} Z`;
   const strokeColor = isPositive ? "#10b981" : "#ef4444";
-  const gradientId = `${gradientKey}-fill`;
 
   // Calculate baseline at first data point (represents 0% change)
   const firstValue = data[0];
@@ -428,12 +424,6 @@ function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
 
   return (
     <svg width={width} height={height} className="overflow-visible">
-      <defs>
-        <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor={strokeColor} stopOpacity="0.45" />
-          <stop offset="100%" stopColor={strokeColor} stopOpacity="0" />
-        </linearGradient>
-      </defs>
       {/* Baseline reference line */}
       <line
         x1="0"
@@ -446,7 +436,6 @@ function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
         opacity="0.3"
         className="text-muted-foreground"
       />
-      <path d={areaPath} fill={`url(#${gradientId})`} opacity="0.9" />
       <path
         d={linePath}
         fill="none"
@@ -608,13 +597,17 @@ function formatMoneyFlowDelta(value) {
 
 
 export default function ExplorePage() {
-  const { supabase, user } = useAuth();
+  const { supabase, user, remotePortfolio } = useAuth();
   const [snapshots, setSnapshots] = useState({});
   const [quotes, setQuotes] = useState({});
   const [moneyFlowReports, setMoneyFlowReports] = useState([]);
   const [moneyFlowUpdatedAt, setMoneyFlowUpdatedAt] = useState(null);
   const [moneyFlowLoading, setMoneyFlowLoading] = useState(true);
   const [moneyFlowError, setMoneyFlowError] = useState("");
+  const [msciData, setMsciData] = useState(null);
+  const [msciLoading, setMsciLoading] = useState(true);
+  const [rotationData, setRotationData] = useState(null);
+  const [rotationLoading, setRotationLoading] = useState(true);
   const [showInstallButton, setShowInstallButton] = useState(false);
   const [activeMarketTab, setActiveMarketTab] = useState("indonesia");
   const [marketTimeframe, setMarketTimeframe] = useState("1W");
@@ -802,6 +795,38 @@ export default function ExplorePage() {
     }
   }, []);
 
+  const loadMsci = useCallback(async () => {
+    setMsciLoading(true);
+    try {
+      const { response, data } = await fetchEncodedJson("/api/msci?index=standard");
+      if (!response.ok || data?.error) {
+        throw new Error(data?.error || "Failed to load MSCI candidates");
+      }
+      setMsciData(data);
+    } catch (error) {
+      console.warn("Failed to load MSCI candidates", error);
+      setMsciData(null);
+    } finally {
+      setMsciLoading(false);
+    }
+  }, []);
+
+  const loadRotation = useCallback(async () => {
+    setRotationLoading(true);
+    try {
+      const { response, data } = await fetchEncodedJson("/api/rotation");
+      if (!response.ok || data?.error) {
+        throw new Error(data?.error || "Failed to load rotation data");
+      }
+      setRotationData(data);
+    } catch (error) {
+      console.warn("Failed to load rotation data", error);
+      setRotationData(null);
+    } finally {
+      setRotationLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     loadSnapshots();
   }, [loadSnapshots]);
@@ -813,6 +838,11 @@ export default function ExplorePage() {
   useEffect(() => {
     loadMoneyFlow();
   }, [loadMoneyFlow]);
+
+  useEffect(() => {
+    loadMsci();
+    loadRotation();
+  }, [loadMsci, loadRotation]);
 
   useEffect(() => {
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
@@ -1040,6 +1070,64 @@ export default function ExplorePage() {
     };
   }, [quotes, snapshots]);
 
+  const msciPreview = useMemo(() => {
+    const stocks = Array.isArray(msciData?.stocks) ? msciData.stocks : [];
+    if (stocks.length === 0) return null;
+    const strongest = [...stocks].sort((a, b) => (b.progress || 0) - (a.progress || 0))[0];
+    return {
+      totalStocks: msciData?.summary?.standard?.totalStocks ?? stocks.length,
+      nearestProgress: msciData?.summary?.standard?.nearestProgress ?? strongest?.progress ?? 0,
+      strongest,
+    };
+  }, [msciData]);
+
+  const rotationPreview = useMemo(() => {
+    const stocks = Array.isArray(rotationData?.stocks) ? rotationData.stocks : [];
+    if (stocks.length === 0) return null;
+    const leading = stocks.filter((s) => s.quadrant === "leading");
+    const lagging = stocks.filter((s) => s.quadrant === "lagging");
+    const strongest = [...leading].sort((a, b) => b.monthlyChange - a.monthlyChange)[0] || null;
+    const weakest = [...lagging].sort((a, b) => a.monthlyChange - b.monthlyChange)[0] || null;
+    return {
+      strongest,
+      weakest,
+      lastUpdated: rotationData?.lastUpdated || null,
+    };
+  }, [rotationData]);
+
+  const moneyFlowPreview = useMemo(() => {
+    if (!Array.isArray(moneyFlowReports) || moneyFlowReports.length === 0) return null;
+    const strongestInflow = moneyFlowReports[0];
+    const strongestOutflow = [...moneyFlowReports].sort(
+      (a, b) => (a.money_flow_score ?? 0) - (b.money_flow_score ?? 0)
+    )[0];
+    const avgScore =
+      moneyFlowReports.reduce((sum, r) => sum + (r.money_flow_score ?? 0), 0) / moneyFlowReports.length;
+    const sentiment = avgScore >= 60 ? "Accumulation" : avgScore <= 40 ? "Distribution" : "Neutral";
+    return { strongestInflow, strongestOutflow, sentiment };
+  }, [moneyFlowReports]);
+
+  const portfolioPreview = useMemo(() => {
+    if (!Array.isArray(remotePortfolio)) return { holdingsCount: 0 };
+    const holdings = remotePortfolio.filter((entry) => entry.type !== "cash");
+    return { holdingsCount: holdings.length };
+  }, [remotePortfolio]);
+
+  const topMoversPreview = useMemo(() => {
+    const biggestVolume = Array.isArray(moneyFlowReports)
+      ? moneyFlowReports.reduce((best, r) => {
+          const vol = r.today_volume ?? r.volume ?? 0;
+          if (!best || vol > (best.today_volume ?? best.volume ?? 0)) return r;
+          return best;
+        }, null)
+      : null;
+    return {
+      bestGainer: breakoutInsights.bestGainer,
+      bestLoser: breakoutInsights.bestLoser,
+      biggestVolume,
+    };
+  }, [breakoutInsights, moneyFlowReports]);
+
   const marketCategoryData = useMemo(() => {
     return MARKET_CATEGORIES.map((cat) => ({
       ...cat,
@@ -1260,7 +1348,7 @@ export default function ExplorePage() {
                     href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
                     className={`rounded-2xl p-3.5 border transition-all duration-200 block card-hover bg-card ${
                       isAtATH
-                        ? "border-amber-500/40 bg-gradient-to-br from-amber-500/5 to-orange-500/5 ring-1 ring-amber-500/20"
+                        ? "border-amber-500/40 bg-card ring-1 ring-amber-500/20"
                         : "border-border/20 hover:border-border/40"
                     }`}
                   >
@@ -1310,6 +1398,218 @@ export default function ExplorePage() {
       <div className="w-full">
         <TrendingMarquee supabase={supabase} />
       </div>
+
+      {/* ───── Explore Tools Hub ───── */}
+      <section className="w-full space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">Explore Tools</h2>
+          <span className="text-[11px] text-muted-foreground">Aruna&rsquo;s toolkit, at a glance</span>
+        </div>
+
+        {/* Feature card row: MSCI + Rotation */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Link
+            href="/msci"
+            className="group card-hover flex flex-col justify-between gap-4 rounded-3xl border border-border/20 bg-card p-5"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
+                  <Magnet className="h-4 w-4" />
+                </div>
+                <span className="text-sm font-semibold text-foreground">MSCI Candidate Tracker</span>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+            </div>
+            {msciLoading ? (
+              <div className="space-y-2">
+                <div className="h-3 w-3/4 rounded-full shimmer" />
+                <div className="h-3 w-1/2 rounded-full shimmer" />
+              </div>
+            ) : msciPreview ? (
+              <div className="grid grid-cols-3 gap-2 text-center">
+                <div>
+                  <div className="text-lg font-semibold text-foreground">{msciPreview.totalStocks}</div>
+                  <div className="text-[10px] text-muted-foreground">Candidates</div>
+                </div>
+                <div>
+                  <div className="text-lg font-semibold text-foreground">{msciPreview.strongest?.ticker?.replace(".JK", "") || "—"}</div>
+                  <div className="text-[10px] text-muted-foreground">Strongest</div>
+                </div>
+                <div>
+                  <div className="text-lg font-semibold text-emerald-500">{Math.round(msciPreview.nearestProgress || 0)}%</div>
+                  <div className="text-[10px] text-muted-foreground">Nearest</div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">Track stocks approaching MSCI free-float thresholds.</p>
+            )}
+            <span className="text-xs font-medium text-foreground">View Details →</span>
+          </Link>
+
+          <Link
+            href="/idx-rotation"
+            className="group card-hover flex flex-col justify-between gap-4 rounded-3xl border border-border/20 bg-card p-5"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
+                  <Rotate3D className="h-4 w-4" />
+                </div>
+                <span className="text-sm font-semibold text-foreground">IDX Rotation</span>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
+            </div>
+            {rotationLoading ? (
+              <div className="space-y-2">
+                <div className="h-3 w-3/4 rounded-full shimmer" />
+                <div className="h-3 w-1/2 rounded-full shimmer" />
+              </div>
+            ) : rotationPreview ? (
+              <div className="grid grid-cols-2 gap-2 text-center">
+                <div>
+                  <div className="text-sm font-semibold text-emerald-500">{rotationPreview.strongest?.code || "—"}</div>
+                  <div className="text-[10px] text-muted-foreground">Leading</div>
+                </div>
+                <div>
+                  <div className="text-sm font-semibold text-red-500">{rotationPreview.weakest?.code || "—"}</div>
+                  <div className="text-[10px] text-muted-foreground">Lagging</div>
+                </div>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">See which sectors are leading vs. lagging momentum.</p>
+            )}
+            <span className="text-xs font-medium text-foreground">
+              Open Rotation → {rotationPreview?.lastUpdated ? (
+                <span className="text-muted-foreground font-normal">· {formatTimeAgo(rotationPreview.lastUpdated)}</span>
+              ) : null}
+            </span>
+          </Link>
+        </div>
+
+        {/* Compact widgets row: Money Flow + Breakout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Link
+            href="/money-flow"
+            className="group card-hover flex items-center justify-between gap-3 rounded-2xl border border-border/20 bg-muted/40 p-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
+                <Workflow className="h-4 w-4" />
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-foreground">Money Flow</div>
+                {moneyFlowLoading ? (
+                  <div className="mt-1 h-3 w-28 rounded-full shimmer" />
+                ) : moneyFlowPreview ? (
+                  <div className="text-[11px] text-muted-foreground">
+                    In: <span className="text-emerald-500 font-medium">{moneyFlowPreview.strongestInflow?.symbol}</span>
+                    {" · "}Out: <span className="text-red-500 font-medium">{moneyFlowPreview.strongestOutflow?.symbol}</span>
+                    {" · "}{moneyFlowPreview.sentiment}
+                  </div>
+                ) : (
+                  <div className="text-[11px] text-muted-foreground">Institutional flow across IDX</div>
+                )}
+              </div>
+            </div>
+            <span className="whitespace-nowrap text-xs font-medium text-foreground">Open Money Flow →</span>
+          </Link>
+
+          <a
+            href="#breakout-signals"
+            className="group card-hover flex items-center justify-between gap-3 rounded-2xl border border-border/20 bg-muted/40 p-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
+                <Zap className="h-4 w-4" />
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-foreground">Technical Breakout</div>
+                <div className="text-[11px] text-muted-foreground">
+                  {breakoutInsights.totalBreakouts} signals
+                  {breakoutInsights.bestGainer ? (
+                    <>
+                      {" · "}Top: <span className="text-emerald-500 font-medium">{breakoutInsights.bestGainer.symbol}</span>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+            <span className="whitespace-nowrap text-xs font-medium text-foreground">View Signals →</span>
+          </a>
+        </div>
+
+        {/* Horizontal card: Portfolio Tracker */}
+        <Link
+          href="/portfolio-tracker"
+          className="group card-hover flex items-center justify-between gap-4 rounded-2xl border border-border/20 bg-card p-4"
+        >
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-full bg-foreground/10 text-foreground">
+              <Wallet className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="text-xs font-semibold text-foreground">Portfolio Tracker</div>
+              <div className="text-[11px] text-muted-foreground">
+                {user
+                  ? portfolioPreview.holdingsCount > 0
+                    ? `${portfolioPreview.holdingsCount} position${portfolioPreview.holdingsCount === 1 ? "" : "s"} tracked`
+                    : "No holdings yet"
+                  : "Track your investments"}
+              </div>
+            </div>
+          </div>
+          <span className="whitespace-nowrap text-xs font-medium text-foreground">Open Portfolio →</span>
+        </Link>
+
+        {/* Mini dashboard tiles: Seasonality + Top Movers */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Link
+            href="/chart?symbol=%5EJKSE&tab=seasonality"
+            className="group card-hover flex items-center justify-between gap-3 rounded-2xl border border-border/20 bg-muted/40 p-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
+                <CalendarRange className="h-4 w-4" />
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-foreground">Seasonality</div>
+                <div className="text-[11px] text-muted-foreground">Monthly &amp; quarterly return patterns</div>
+              </div>
+            </div>
+            <span className="whitespace-nowrap text-xs font-medium text-foreground">View Seasonality →</span>
+          </Link>
+
+          <Link
+            href="/idx-bubbles"
+            className="group card-hover flex items-center justify-between gap-3 rounded-2xl border border-border/20 bg-muted/40 p-4"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
+                <Droplets className="h-4 w-4" />
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-foreground">Top Movers</div>
+                <div className="text-[11px] text-muted-foreground">
+                  {topMoversPreview.bestGainer ? (
+                    <>
+                      Gainer: <span className="text-emerald-500 font-medium">{topMoversPreview.bestGainer.symbol}</span>
+                    </>
+                  ) : (
+                    "Market bubble view"
+                  )}
+                  {topMoversPreview.bestLoser ? (
+                    <>
+                      {" · "}Loser: <span className="text-red-500 font-medium">{topMoversPreview.bestLoser.symbol}</span>
+                    </>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+            <span className="whitespace-nowrap text-xs font-medium text-foreground">Open Bubble View →</span>
+          </Link>
+        </div>
+      </section>
 
       {/* ───── Main Content Grid ───── */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -1371,7 +1671,7 @@ export default function ExplorePage() {
         )}
 
         {/* ───── Right: Breakout Signals ───── */}
-        <div className="lg:col-span-8">
+        <div id="breakout-signals" className="lg:col-span-8 scroll-mt-20">
           <div className="grid grid-cols-1 gap-y-2 lg:block lg:columns-2 lg:gap-6">
             {orderedCategories.map((section) => {
             const gatedPicks = section.picks.slice(5);
@@ -1408,7 +1708,7 @@ export default function ExplorePage() {
                 {gatedPicks.length > 0 && (
                   <div className="mt-1 relative">
                     <div
-                      className={`space-y-1 divide-y divide-border/20 border-t border-border/20 pt-1 ${shouldGate ? "pointer-events-none select-none blur-[2px] opacity-60" : ""}`}
+                      className={`space-y-1 divide-y divide-border/20 border-t border-border/20 pt-1 ${shouldGate ? "pointer-events-none select-none opacity-40" : ""}`}
                     >
                       {gatedPicks.map((pick) => (
                         <PickItem key={pick.symbol} pick={pick} quote={quotes[pick.symbol]} />
@@ -1453,7 +1753,7 @@ export default function ExplorePage() {
               <div className="mt-4">
                 <Button
                   onClick={handleInstall}
-                  className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 flex items-center gap-2 text-xs text-white rounded-xl shadow-emerald-500/20"
+                  className="w-full bg-foreground hover:bg-foreground/90 flex items-center gap-2 text-xs text-background rounded-md"
                 >
                   <Download className="h-4 w-4" />
                   Install App

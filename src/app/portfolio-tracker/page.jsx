@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, useId } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -8,12 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, MoreVertical, Pencil, Trash2, Loader2, Landmark, TrendingUp, ArrowUpDown, Check, Eye, EyeClosed } from 'lucide-react';
+import { Plus, MoreVertical, Pencil, Trash2, Loader2, CreditCard, TrendingUp, ArrowUpDown, Check, Eye, EyeClosed } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth-provider';
 import { fetchEncodedJson } from '@/lib/api-client';
 import { TickerAvatar } from '@/components/ticker-avatar';
 import { formatTickerDisplay } from '@/lib/utils';
+import { useTrial } from '@/components/trial-provider';
 
 // Dynamic chart component to keep page light and avoid SSR issues
 const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { ssr: false });
@@ -108,9 +109,7 @@ function savePortfolioVisibility(hidden) {
   }
 }
 
-function PortfolioMiniChart({ data, isPositive, width = 92, height = 44, chartId, fullWidth = false, className = '' }) {
-  const generatedId = useId();
-  const gradientKey = chartId ?? generatedId;
+function PortfolioMiniChart({ data, isPositive, width = 92, height = 44, fullWidth = false, className = '' }) {
   if (!Array.isArray(data) || data.length < 2) {
     return <div style={{ width, height }} className="rounded-full bg-muted/40" />;
   }
@@ -129,9 +128,7 @@ function PortfolioMiniChart({ data, isPositive, width = 92, height = 44, chartId
   const linePath = coordinates
     .map((point, idx) => `${idx === 0 ? 'M' : 'L'}${point.x.toFixed(2)},${point.y.toFixed(2)}`)
     .join(' ');
-  const areaPath = `${linePath} L${coordinates[coordinates.length - 1].x.toFixed(2)},${baseHeight} L0,${baseHeight} Z`;
   const strokeColor = isPositive ? '#10b981' : '#ef4444';
-  const gradientId = `${gradientKey}-fill`;
   const firstValue = data[0];
   const baselineY = baseHeight - ((firstValue - min) / range) * baseHeight;
 
@@ -143,12 +140,6 @@ function PortfolioMiniChart({ data, isPositive, width = 92, height = 44, chartId
       preserveAspectRatio={fullWidth ? 'none' : 'xMidYMid meet'}
       className={`overflow-visible ${className}`}
     >
-      <defs>
-        <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor={strokeColor} stopOpacity="0.45" />
-          <stop offset="100%" stopColor={strokeColor} stopOpacity="0" />
-        </linearGradient>
-      </defs>
       <line
         x1="0"
         y1={baselineY}
@@ -160,7 +151,6 @@ function PortfolioMiniChart({ data, isPositive, width = 92, height = 44, chartId
         opacity="0.25"
         className="text-muted-foreground"
       />
-      <path d={areaPath} fill={`url(#${gradientId})`} opacity="0.9" />
       <path
         d={linePath}
         fill="none"
@@ -215,7 +205,9 @@ export default function PortfolioTrackerPage() {
     portfolioLoaded,
     syncPortfolio,
   } = useAuth();
+  const { initialized, isActive, isExpired } = useTrial();
   const isAuthenticated = Boolean(user);
+  const canUseProtectedActions = isAuthenticated || (initialized && isActive && !isExpired);
   const redirectToSignIn = useCallback(() => {
     const currentPath =
       typeof window !== 'undefined'
@@ -224,19 +216,16 @@ export default function PortfolioTrackerPage() {
     router.push(`/signin?redirect=${encodeURIComponent(currentPath)}`);
   }, [router]);
   const ensureAuthenticated = useCallback(() => {
-    if (isAuthenticated) {
+    if (canUseProtectedActions) {
       return true;
     }
     redirectToSignIn();
     return false;
-  }, [isAuthenticated, redirectToSignIn]);
+  }, [canUseProtectedActions, redirectToSignIn]);
 
   useEffect(() => {
     if (authLoading) return;
-    if (!isAuthenticated) {
-      redirectToSignIn();
-    }
-  }, [authLoading, isAuthenticated, redirectToSignIn]);
+  }, [authLoading]);
 
   // Fetch latest prices (simple batch sequential)
   const fetchPrice = useCallback(async (symbol) => {
@@ -919,8 +908,8 @@ export default function PortfolioTrackerPage() {
     return sum + e.avgPrice * e.amount;
   }, 0);
 
-  // Holdings distribution for chart
-  const holdingsDistribution = useMemo(() => {
+  // Holdings allocation for chart
+  const holdingsAllocation = useMemo(() => {
     return holdingsWithMetrics.map((h) => {
       return {
         name: h.isCash ? h.entry.category : formatTickerDisplay(h.entry.symbol),
@@ -929,7 +918,7 @@ export default function PortfolioTrackerPage() {
     });
   }, [holdingsWithMetrics]);
 
-  const digitalDistribution = useMemo(() => {
+  const digitalAllocation = useMemo(() => {
     const digitalHoldings = holdingsWithMetrics.filter((h) => !h.isCash);
     return digitalHoldings.map((h) => {
       return {
@@ -941,7 +930,7 @@ export default function PortfolioTrackerPage() {
     });
   }, [holdingsWithMetrics, logoMap]);
 
-  const cashTypeDistribution = useMemo(() => {
+  const cashTypeAllocation = useMemo(() => {
     const totals = new Map();
     holdingsWithMetrics
       .filter((h) => h.isCash)
@@ -1228,7 +1217,7 @@ export default function PortfolioTrackerPage() {
                   <summary className="list-none cursor-pointer select-none text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400 py-2.5">
                     View Detail
                   </summary>
-                  <div className="space-y-3 p-3 pt-1">
+                  <div className="space-y-3 pt-1">
                     <div className="flex items-start gap-3 p-3 rounded-xl border">
                       <div className="flex-1">
                         <p className="text-sm text-muted-foreground mb-1">Digital Assets</p>
@@ -1255,7 +1244,7 @@ export default function PortfolioTrackerPage() {
                         <p className="text-xs text-muted-foreground">{totalCashDisplay.secondary}</p>
                       </div>
                       <div className="p-2 rounded-full bg-emerald-700/10">
-                        <Landmark className="h-5 w-5 text-emerald-800 dark:text-emerald-500" />
+                        <CreditCard className="h-5 w-5 text-emerald-800 dark:text-emerald-500" />
                       </div>
                     </div>
                   </div>
@@ -1265,21 +1254,19 @@ export default function PortfolioTrackerPage() {
               <div className="rounded-xl border border-border/20">
                 <details>
                   <summary className="list-none cursor-pointer select-none text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400 py-2.5">
-                    View Distribution Chart
+                    View Allocation Chart
                   </summary>
-                  <div className="space-y-3 p-3 pt-1">
-                    <div className="rounded-xl border p-3">
-                      <PortfolioPie
-                        digitalUSD={digitalMarket}
-                        cashUSD={totalCash}
-                        holdingsDistribution={holdingsDistribution}
-                        digitalDistribution={digitalDistribution}
-                        cashTypeDistribution={cashTypeDistribution}
-                        currency={currency}
-                        idrPerUsd={idrPerUsd}
-                        sgdPerUsd={sgdPerUsd}
-                      />
-                    </div>
+                  <div className="space-y-3 pt-1">
+                    <PortfolioPie
+                      digitalUSD={digitalMarket}
+                      cashUSD={totalCash}
+                      holdingsAllocation={holdingsAllocation}
+                      digitalAllocation={digitalAllocation}
+                      cashTypeAllocation={cashTypeAllocation}
+                      currency={currency}
+                      idrPerUsd={idrPerUsd}
+                      sgdPerUsd={sgdPerUsd}
+                    />
                   </div>
                 </details>
               </div>
@@ -1367,7 +1354,7 @@ export default function PortfolioTrackerPage() {
                       {isCash ? (
                         <div className="flex flex-1 min-w-0 items-center gap-2 px-1 py-2">
                           <div className="p-1.5 rounded-full bg-muted">
-                            <Landmark className="h-4.5 w-4.5 text-emerald-800 dark:text-emerald-500" />
+                            <CreditCard className="h-4.5 w-4.5 text-emerald-800 dark:text-emerald-500" />
                           </div>
                           <div className="flex flex-col justify-start">
                             <p className="font-semibold text-xs truncate">
@@ -1505,7 +1492,7 @@ export default function PortfolioTrackerPage() {
                       onClick={() => setAssetType('cash')}
                       className="flex-1"
                     >
-                      <Landmark className="h-4 w-4 mr-2" />
+                      <CreditCard className="h-4 w-4 mr-2" />
                       Cash
                     </Button>
                   </div>

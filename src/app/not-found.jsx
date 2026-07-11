@@ -4,7 +4,7 @@ export default function NotFound() {
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6 text-center px-4">
       <div className="relative">
-        <div className="text-[120px] lg:text-[160px] font-black leading-none tracking-tighter bg-gradient-to-b from-foreground/20 to-foreground/5 bg-clip-text text-transparent select-none">
+        <div className="text-[120px] lg:text-[160px] font-black leading-none tracking-tighter text-foreground/20 select-none">
           404
         </div>
         <div className="absolute inset-0 flex items-center justify-center">

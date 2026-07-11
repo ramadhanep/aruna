@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef, useMemo, useId } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TrendingUp, TrendingDown, Loader2, Download, Edit, BarChart3 } from "lucide-react";
@@ -13,6 +13,7 @@ import { TickerAvatar } from "@/components/ticker-avatar";
 import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist";
 import { TrendingMarquee } from "@/components/trending-marquee";
 import { formatTickerDisplay } from "@/lib/utils";
+import { useTrial } from "@/components/trial-provider";
 
 function areWatchlistsEqual(a = [], b = []) {
   if (a.length !== b.length) return false;
@@ -42,8 +43,6 @@ async function fetchBatchQuotes(symbols) {
 }
 
 function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
-  const generatedId = useId();
-  const gradientKey = chartId ?? generatedId;
   if (!Array.isArray(data) || data.length < 2) {
     return <div style={{ width, height }} className="rounded-full bg-muted/40" />;
   }
@@ -61,9 +60,7 @@ function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
   const linePath = coordinates
     .map((point, idx) => `${idx === 0 ? "M" : "L"}${point.x.toFixed(2)},${point.y.toFixed(2)}`)
     .join(" ");
-  const areaPath = `${linePath} L${coordinates[coordinates.length - 1].x.toFixed(2)},${height} L0,${height} Z`;
   const strokeColor = isPositive ? "#10b981" : "#ef4444";
-  const gradientId = `${gradientKey}-fill`;
 
   // Calculate baseline at first data point (represents 0% change)
   const firstValue = data[0];
@@ -71,12 +68,6 @@ function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
 
   return (
     <svg width={width} height={height} className="overflow-visible">
-      <defs>
-        <linearGradient id={gradientId} x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0%" stopColor={strokeColor} stopOpacity="0.45" />
-          <stop offset="100%" stopColor={strokeColor} stopOpacity="0" />
-        </linearGradient>
-      </defs>
       {/* Baseline reference line */}
       <line
         x1="0"
@@ -89,7 +80,6 @@ function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
         opacity="0.3"
         className="text-muted-foreground"
       />
-      <path d={areaPath} fill={`url(#${gradientId})`} opacity="0.9" />
       <path
         d={linePath}
         fill="none"
@@ -194,7 +184,9 @@ export default function HomePage() {
     watchlistLoaded,
     syncWatchlist,
   } = useAuth();
+  const { initialized, isActive, isExpired } = useTrial();
   const isAuthenticated = Boolean(user);
+  const canUseProtectedActions = isAuthenticated || (initialized && isActive && !isExpired);
 
   const redirectToSignIn = useCallback(() => {
     const currentPath =
@@ -457,9 +449,9 @@ export default function HomePage() {
 
       <div className="lg:col-span-12 lg:grid lg:grid-cols-12 lg:gap-6">
         <div className="lg:col-span-8 flex flex-col gap-4">
-          <Card className="border-none bg-gradient-to-br from-emerald-950 via-[#0f172a] to-[#020617] border-border/20 text-white/90 p-4 rounded-3xl">
+          <Card className="border-border bg-card text-foreground p-4 rounded-lg">
             <CardContent className="pt-0">
-              <p className="text-xs leading-relaxed text-white/90 font-medium">
+              <p className="text-xs leading-relaxed text-foreground/90 font-medium">
                 We search through historical data looking for anomalous patterns that we would not expect to occur at random.
               </p>
             </CardContent>
@@ -477,7 +469,7 @@ export default function HomePage() {
             <div className="border-t border-border/20 py-2.5 mt-2">
               <button
                 onClick={() => {
-                  if (!isAuthenticated) {
+                  if (!canUseProtectedActions) {
                     redirectToSignIn();
                     return;
                   }
@@ -552,7 +544,7 @@ export default function HomePage() {
           {showInstallButton && deferredPrompt && (
             <Button
               onClick={handleInstall}
-              className="w-full bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 flex items-center gap-2 text-xs text-white rounded-xl shadow-emerald-500/20"
+              className="w-full bg-foreground hover:bg-foreground/90 flex items-center gap-2 text-xs text-background rounded-md"
             >
               <Download className="h-4 w-4" />
               Install App
@@ -562,13 +554,13 @@ export default function HomePage() {
       </div>
 
       <ManageWatchlistDialog
-        open={manageDialogOpen && isAuthenticated}
+        open={manageDialogOpen && canUseProtectedActions}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) {
             setManageDialogOpen(false);
             return;
           }
-          if (!isAuthenticated) {
+          if (!canUseProtectedActions) {
             redirectToSignIn();
             return;
           }
@@ -576,7 +568,7 @@ export default function HomePage() {
         }}
         watchlist={watchlist}
         onSave={(newWatchlist) => {
-          if (!isAuthenticated) {
+          if (!canUseProtectedActions) {
             redirectToSignIn();
             return;
           }

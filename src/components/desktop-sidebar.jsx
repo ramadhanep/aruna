@@ -39,7 +39,7 @@ export function DesktopSidebar({ onOpenAccountSidebar }) {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden flex-col w-64 border-r border-border/30 h-screen fixed top-0 left-0 bg-background/50 backdrop-blur-xl z-40">
+    <aside className="hidden flex-col w-64 border-r border-border h-screen fixed top-0 left-0 bg-sidebar z-40">
       <div className="flex h-14 items-center gap-3 px-4 border-b border-border/30">
         <div className="flex flex-1 items-center justify-center gap-2">
           <div className="h-4 relative overflow-hidden">

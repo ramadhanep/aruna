@@ -192,7 +192,7 @@ export function TrendingMarquee({ supabase }) {
       <SectionHeader title="Trending" />
       <div
         ref={scrollContainerRef}
-        className="relative overflow-x-auto overflow-y-hidden liquid-glass py-2 scrollbar-hide rounded-2xl"
+        className="relative overflow-x-auto overflow-y-hidden border-y border-border bg-card py-2 scrollbar-hide"
         style={{ WebkitOverflowScrolling: 'touch' }}
       >
         <div

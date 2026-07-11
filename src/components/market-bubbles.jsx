@@ -391,7 +391,7 @@ export function MarketBubbles({ fullScreen = false }) {
             <button
               onClick={() => setTimeframe("weekly")}
               className={`py-2 flex-1 rounded-full text-xs font-semibold transition-all ${timeframe === "weekly"
-                  ? "bg-gradient-to-br from-emerald-200 via-slate-100 to-slate-50 dark:from-emerald-800 dark:via-[#111827] dark:to-[#020617] border-border/20 text-foreground/80 dark:text-white/80"
+                  ? "bg-card border-border text-foreground dark:text-white"
                   : "hover:bg-muted"
                 }`}
             >
@@ -400,7 +400,7 @@ export function MarketBubbles({ fullScreen = false }) {
             <button
               onClick={() => setTimeframe("monthly")}
               className={`py-2 flex-1 rounded-full text-xs font-semibold transition-all ${timeframe === "monthly"
-                  ? "bg-gradient-to-br from-emerald-200 via-slate-100 to-slate-50 dark:from-emerald-800 dark:via-[#111827] dark:to-[#020617] border-border/20 text-foreground/80 dark:text-white/80"
+                  ? "bg-card border-border text-foreground dark:text-white"
                   : "hover:bg-muted"
                 }`}
             >
@@ -426,41 +426,6 @@ export function MarketBubbles({ fullScreen = false }) {
           >
             <rect x="0" y="0" width={dimensions.width} height={dimensions.height} fill="#09090b" />
 
-            <defs>
-              <radialGradient id="glow-positive" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#10b981" stopOpacity="0.4" />
-                <stop offset="50%" stopColor="#10b981" stopOpacity="0.15" />
-                <stop offset="100%" stopColor="#10b981" stopOpacity="0" />
-              </radialGradient>
-              <radialGradient id="glow-negative" cx="50%" cy="50%" r="50%">
-                <stop offset="0%" stopColor="#ef4444" stopOpacity="0.4" />
-                <stop offset="50%" stopColor="#ef4444" stopOpacity="0.15" />
-                <stop offset="100%" stopColor="#ef4444" stopOpacity="0" />
-              </radialGradient>
-
-              <radialGradient id="fill-positive" cx="30%" cy="30%" r="70%">
-                <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
-                <stop offset="60%" stopColor="#059669" stopOpacity="0.1" />
-                <stop offset="100%" stopColor="#047857" stopOpacity="0.02" />
-              </radialGradient>
-              <radialGradient id="fill-negative" cx="30%" cy="30%" r="70%">
-                <stop offset="0%" stopColor="#ef4444" stopOpacity="0.25" />
-                <stop offset="60%" stopColor="#dc2626" stopOpacity="0.1" />
-                <stop offset="100%" stopColor="#b91c1c" stopOpacity="0.02" />
-              </radialGradient>
-
-              <linearGradient id="stroke-positive" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#34d399" stopOpacity="1" />
-                <stop offset="50%" stopColor="#10b981" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#059669" stopOpacity="0.6" />
-              </linearGradient>
-              <linearGradient id="stroke-negative" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#f87171" stopOpacity="1" />
-                <stop offset="50%" stopColor="#ef4444" stopOpacity="0.8" />
-                <stop offset="100%" stopColor="#dc2626" stopOpacity="0.6" />
-              </linearGradient>
-            </defs>
-
             {packedBubbles.map((bubble, index) => {
               const isPositive = bubble.change >= 0;
               const radius = bubble.size / 2;
@@ -477,10 +442,6 @@ export function MarketBubbles({ fullScreen = false }) {
               const logoY = bubble.y - radius * 0.25;
               const codeY = bubble.y + radius * 0.15;
               const percentY = bubble.y + radius * 0.45;
-
-              const glowId = isPositive ? "glow-positive" : "glow-negative";
-              const fillId = isPositive ? "fill-positive" : "fill-negative";
-              const strokeId = isPositive ? "stroke-positive" : "stroke-negative";
 
               const isBeingDragged = isDragging && dragInfoRef.current?.code === bubble.code;
 
@@ -500,22 +461,11 @@ export function MarketBubbles({ fullScreen = false }) {
                   <circle
                     cx={bubble.x}
                     cy={bubble.y}
-                    r={radius * 1.2}
-                    fill={`url(#${glowId})`}
-                    className="pointer-events-none"
-                  />
-
-                  <circle
-                    cx={bubble.x}
-                    cy={bubble.y}
                     r={radius}
-                    fill={`url(#${fillId})`}
-                    stroke={`url(#${strokeId})`}
+                    fill={isPositive ? "#123d2e" : "#451c1c"}
+                    stroke={isPositive ? "#34d399" : "#f87171"}
                     strokeWidth={strokeWidth}
                     className="cursor-grab active:cursor-grabbing"
-                    style={{
-                      filter: `drop-shadow(0 0 ${strokeWidth * 3}px ${isPositive ? '#10b98155' : '#ef444455'})`,
-                    }}
                     onPointerDown={(e) => handlePointerDown(e, bubble)}
                     onTouchStart={(e) => handlePointerDown(e, bubble)}
                   >

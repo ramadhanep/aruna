@@ -13,6 +13,7 @@ import {
   calculateQuarterlyReturns,
   formatMonthlyHeatmap,
   formatQuarterlyHeatmap,
+  getWinRateCellStyle,
 } from '@/lib/seasonalData';
 import {
   Select,
@@ -63,13 +64,13 @@ function AnalystGaugeChart({ score }) {
     const s = toPoint(a1, rad);
     const e = toPoint(a2, rad);
     const large = Math.abs(a1 - a2) > Math.PI ? 1 : 0;
-    return `M ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${rad} ${rad} 0 ${large} 0 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`;
+    return `M ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${rad} ${rad} 0 ${large} 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`;
   };
   const zones = [
     [Math.PI, Math.PI * 0.8, '#ef4444'],
     [Math.PI * 0.8, Math.PI * 0.6, '#f97316'],
     [Math.PI * 0.6, Math.PI * 0.4, '#eab308'],
-    [Math.PI * 0.4, Math.PI * 0.2, '#84cc16'],
+    [Math.PI * 0.4, Math.PI * 0.2, '#22c55e'],
     [Math.PI * 0.2, 0, '#10b981'],
   ];
   // score=1 → p=1 (right/Strong Buy), score=5 → p=0 (left/Strong Sell)
@@ -476,8 +477,8 @@ function ElectionCyclePageContent() {
   const [normalSeriesError, setNormalSeriesError] = useState(null);
   const [symbolInfo, setSymbolInfo] = useState(null);
   const [assetName, setAssetName] = useState('');
-  const [monthlyHeatmap, setMonthlyHeatmap] = useState({ rows: [], average: {} });
-  const [quarterlyHeatmap, setQuarterlyHeatmap] = useState({ rows: [], average: {} });
+  const [monthlyHeatmap, setMonthlyHeatmap] = useState({ rows: [], average: {}, winRate: {} });
+  const [quarterlyHeatmap, setQuarterlyHeatmap] = useState({ rows: [], average: {}, winRate: {} });
   const [portfolioDialogOpen, setPortfolioDialogOpen] = useState(false);
   const [portfolioEntries, setPortfolioEntries] = useState([]);
   const [fundamentals, setFundamentals] = useState(null);
@@ -2345,7 +2346,7 @@ function ElectionCyclePageContent() {
   );
 
   const toggleFavorite = useCallback(() => {
-    if (!isAuthenticated) {
+    if (!canUseProtectedActions) {
       redirectToSignIn();
       return;
     }
@@ -2582,7 +2583,7 @@ function ElectionCyclePageContent() {
     return (
       <div className="space-y-4 text-xs">
         {/* Summary Banner */}
-        <div className="rounded-2xl bg-gradient-to-r from-primary/5 via-primary/3 to-transparent border border-primary/10 p-4">
+        <div className="rounded-lg bg-card border border-border p-4">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
@@ -2625,7 +2626,7 @@ function ElectionCyclePageContent() {
                   <div key={target.label} className="flex items-stretch gap-3">
                     <div className="flex flex-col items-center w-4">
                       <div className="w-3 h-3 rounded-full bg-emerald-500 border-2 border-emerald-500/30 z-10 shrink-0" />
-                      <div className="w-0.5 flex-1 bg-gradient-to-b from-emerald-500/40 to-emerald-500/20" />
+                      <div className="w-px flex-1 bg-border" />
                     </div>
                     <div className="flex-1 pb-3">
                       <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-3">
@@ -2656,7 +2657,7 @@ function ElectionCyclePageContent() {
                   <div className="w-4 h-4 rounded-full bg-primary border-2 border-primary/30 z-10 shrink-0 flex items-center justify-center">
                     <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />
                   </div>
-                  <div className="w-0.5 flex-1 bg-gradient-to-b from-primary/40 to-red-500/20" />
+                  <div className="w-px flex-1 bg-border" />
                 </div>
                 <div className="flex-1 pb-3">
                   <div className="rounded-xl bg-primary/5 border border-primary/15 p-3">
@@ -3267,11 +3268,11 @@ function ElectionCyclePageContent() {
 
               {/* Visual price range bar */}
               <div className="space-y-2">
-                <div className="relative h-3 rounded-full bg-gradient-to-r from-red-500/20 via-muted to-emerald-500/20 mx-2">
+                <div className="relative h-3 rounded-full bg-muted mx-2">
                   {/* Filled range from low to high */}
                   {lowTarget != null && highTarget != null && (
                     <div
-                      className="absolute top-0 h-full rounded-full bg-gradient-to-r from-red-500/40 to-emerald-500/40"
+                      className="absolute top-0 h-full rounded-full bg-foreground/20"
                       style={{
                         left: getPosition(lowTarget),
                         width: `calc(${getPosition(highTarget)} - ${getPosition(lowTarget)})`,
@@ -3882,6 +3883,17 @@ function ElectionCyclePageContent() {
                     </tr>
                   </thead>
                   <tbody>
+                    <tr className="border-b-2 font-semibold bg-muted/50">
+                      <td className="py-2 px-1 sticky left-0 bg-muted/50">Avg.</td>
+                      {[1, 2, 3, 4].map((quarter) => {
+                        const value = quarterlyHeatmap.average[`Q${quarter}`];
+                        return (
+                          <td key={quarter} className="text-center py-2 px-2 transition-colors font-bold" style={getReturnCellStyle(value)}>
+                            {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
+                          </td>
+                        );
+                      })}
+                    </tr>
                     {quarterlyHeatmap.rows.map((row, idx) => (
                       <tr key={idx}>
                         <td className="py-2 px-1 font-medium sticky left-0 bg-background">{row.year}</td>
@@ -3896,12 +3908,12 @@ function ElectionCyclePageContent() {
                       </tr>
                     ))}
                     <tr className="border-t-2 font-semibold bg-muted/50">
-                      <td className="py-2 px-1 sticky left-0 bg-muted/50">Avg.</td>
+                      <td className="py-2 px-1 sticky left-0 bg-muted/50">Prob.</td>
                       {[1, 2, 3, 4].map((quarter) => {
-                        const value = quarterlyHeatmap.average[`Q${quarter}`];
+                        const value = quarterlyHeatmap.winRate?.[`Q${quarter}`];
                         return (
-                          <td key={quarter} className="text-center py-2 px-2 transition-colors font-bold" style={getReturnCellStyle(value)}>
-                            {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
+                          <td key={quarter} className="text-center py-2 px-2 transition-colors font-bold" style={getWinRateCellStyle(value)}>
+                            {value !== null && value !== undefined ? `${value.toFixed(0)}%` : '-'}
                           </td>
                         );
                       })}
@@ -3928,6 +3940,17 @@ function ElectionCyclePageContent() {
                     </tr>
                   </thead>
                   <tbody>
+                    <tr className="border-b-2 font-semibold bg-muted/50">
+                      <td className="py-2 px-1 sticky left-0 bg-muted/50">Avg.</td>
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((month) => {
+                        const value = monthlyHeatmap.average[`M${month}`];
+                        return (
+                          <td key={month} className="text-center py-2 px-1 transition-colors font-bold" style={getReturnCellStyle(value)}>
+                            {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
+                          </td>
+                        );
+                      })}
+                    </tr>
                     {monthlyHeatmap.rows.map((row, idx) => (
                       <tr key={idx}>
                         <td className="py-2 px-1 font-medium sticky left-0 bg-background">{row.year}</td>
@@ -3942,12 +3965,12 @@ function ElectionCyclePageContent() {
                       </tr>
                     ))}
                     <tr className="border-t-2 font-semibold bg-muted/50">
-                      <td className="py-2 px-1 sticky left-0 bg-muted/50">Avg.</td>
+                      <td className="py-2 px-1 sticky left-0 bg-muted/50">Prob.</td>
                       {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((month) => {
-                        const value = monthlyHeatmap.average[`M${month}`];
+                        const value = monthlyHeatmap.winRate?.[`M${month}`];
                         return (
-                          <td key={month} className="text-center py-2 px-1 transition-colors font-bold" style={getReturnCellStyle(value)}>
-                            {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
+                          <td key={month} className="text-center py-2 px-1 transition-colors font-bold" style={getWinRateCellStyle(value)}>
+                            {value !== null && value !== undefined ? `${value.toFixed(0)}%` : '-'}
                           </td>
                         );
                       })}
@@ -4175,17 +4198,6 @@ function ElectionCyclePageContent() {
                         data={filteredChartData}
                         margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
                       >
-                        <defs>
-                          {chartData.linesData.map((line) => {
-                            const gradientId = `gradient-${line.key}`;
-                            return (
-                              <linearGradient key={gradientId} id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor={line.color} stopOpacity={0.3} />
-                                <stop offset="100%" stopColor={line.color} stopOpacity={0} />
-                              </linearGradient>
-                            );
-                          })}
-                        </defs>
                         <XAxis
                           dataKey="dayOfYear"
                           tickFormatter={formatTick}
@@ -4225,8 +4237,8 @@ function ElectionCyclePageContent() {
                             type="monotone"
                             dataKey={line.key}
                             stroke={line.color}
-                            fill={`url(#gradient-${line.key})`}
-                            fillOpacity={1}
+                            fill="transparent"
+                            fillOpacity={0}
                             name={line.name}
                             dot={false}
                             strokeWidth={1.5}
@@ -4423,13 +4435,13 @@ function ElectionCyclePageContent() {
 
             <Button
               onClick={() => {
-                if (!isAuthenticated) {
+                if (!canUseProtectedActions) {
                   redirectToSignIn();
                   return;
                 }
                 setPortfolioDialogOpen(true);
               }}
-              className="w-full bg-emerald-700 hover:bg-emerald-800 text-xs text-white/80"
+              className="w-full text-xs"
             >
               Add to Your Portfolio
             </Button>
@@ -4466,13 +4478,13 @@ function ElectionCyclePageContent() {
       </div>
 
       <AddAssetModal
-        open={portfolioDialogOpen && isAuthenticated}
+        open={portfolioDialogOpen && canUseProtectedActions}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) {
             setPortfolioDialogOpen(false);
             return;
           }
-          if (!isAuthenticated) {
+          if (!canUseProtectedActions) {
             redirectToSignIn();
             return;
           }
@@ -4480,7 +4492,7 @@ function ElectionCyclePageContent() {
         }}
         initialSymbol={symbol}
         onSave={async (entry) => {
-          if (!isAuthenticated) {
+          if (!canUseProtectedActions) {
             redirectToSignIn();
             return;
           }

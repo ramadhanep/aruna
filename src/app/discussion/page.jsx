@@ -127,7 +127,7 @@ function MessageBubble({ message, isOwn, onDelete, currentUserId }) {
         {/* Message bubble */}
         <div
           className={`relative px-3.5 py-2.5 rounded-3xl ${isOwn
-            ? 'bg-gradient-to-br from-teal-700/40 to-emerald-800/30 border border-teal-700/20 rounded-br-lg'
+            ? 'bg-[#16a085] border border-border rounded-br-lg'
             : 'bg-white/[0.04] border border-white/[0.08] rounded-bl-lg'
             }`}
         >
@@ -198,7 +198,7 @@ function MessageInput({ onSend, disabled }) {
   };
 
   return (
-    <div className="flex-shrink-0 liquid-glass p-3" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
+    <div className="flex-shrink-0 border-t border-border bg-card p-3" style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}>
       <div className="flex items-end gap-2">
         <textarea
           ref={inputRef}
@@ -209,14 +209,14 @@ function MessageInput({ onSend, disabled }) {
           disabled={disabled || sending}
           maxLength={1000}
           rows={1}
-          className="flex-1 px-3.5 py-2.5 text-xs bg-white/[0.04] border border-white/[0.08] rounded-3xl resize-none focus:outline-none focus:ring-1 focus:ring-teal-500/40 placeholder:text-muted-foreground/40 disabled:opacity-50 transition-all"
+          className="flex-1 px-3.5 py-2.5 text-xs bg-background border border-border rounded-3xl resize-none focus:outline-none focus:ring-1 focus:ring-teal-500/40 placeholder:text-muted-foreground/40 disabled:opacity-50 transition-all"
           style={{ minHeight: '36px', maxHeight: '100px' }}
         />
         <Button
           onClick={handleSend}
           disabled={!message.trim() || sending || disabled}
           size="icon"
-          className="h-10 w-14 rounded-2xl bg-gradient-to-r from-teal-600 to-emerald-700 hover:from-teal-500 hover:to-emerald-600 border-0 text-white shadow-teal-500/20"
+          className="h-10 w-14 rounded-md bg-foreground hover:bg-foreground/90 border-0 text-background"
         >
           {sending ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -251,12 +251,12 @@ export default function DiscussionPage() {
   const [messagesLoading, setMessagesLoading] = useState(true);
   const messagesEndRef = useRef(null);
 
-  // Redirect to signin if not authenticated (after auth check completes)
+  // Allow anonymous trial visitors to view the discussion experience.
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/signin?redirect=/discussion');
+      return;
     }
-  }, [user, authLoading, router]);
+  }, [user, authLoading]);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -295,8 +295,8 @@ export default function DiscussionPage() {
     return () => clearInterval(interval);
   }, [fetchMessages, user]);
 
-  // Show loading while checking auth - redirect happens via useEffect
-  if (authLoading || !user) {
+  // Show loading while checking auth, but keep the discussion experience available for trial users.
+  if (authLoading) {
     return (
       <div className="fixed inset-0 w-screen h-screen overflow-hidden flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -388,10 +388,10 @@ export default function DiscussionPage() {
     >
       <div className="w-full max-w-3xl flex flex-col h-full lg:border-x border-border/30 bg-background relative">
         {/* Header */}
-        <div className="flex-shrink-0 flex items-center justify-between px-3 py-3 liquid-glass border-b border-border/30">
+        <div className="flex-shrink-0 flex items-center justify-between px-3 py-3 bg-card border-b border-border">
           <button
             onClick={() => router.push('/')}
-            className="p-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] transition-colors"
+            className="p-1.5 rounded-xl bg-accent hover:bg-accent/80 transition-colors"
           >
             <ArrowLeft className="size-5 text-muted-foreground" />
           </button>

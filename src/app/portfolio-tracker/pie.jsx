@@ -4,6 +4,7 @@ import React from 'react';
 import { Pie, PieChart, Cell } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { useTheme } from 'next-themes';
+import { getStableColorFromLabel } from '@/lib/utils';
 
 function rgbToHsl(r, g, b) {
   const rr = r / 255;
@@ -113,9 +114,9 @@ async function extractLogoColor(url, theme) {
 export function PortfolioPie({
   digitalUSD,
   cashUSD,
-  holdingsDistribution = [],
-  digitalDistribution = [],
-  cashTypeDistribution = [],
+  holdingsAllocation = [],
+  digitalAllocation = [],
+  cashTypeAllocation = [],
   currency = 'USD',
   idrPerUsd = 0,
   sgdPerUsd = 0
@@ -133,49 +134,24 @@ export function PortfolioPie({
   const theme = resolvedTheme === 'dark' ? 'dark' : 'light';
   const [logoColorMap, setLogoColorMap] = React.useState({});
 
-  const greenPalette = React.useMemo(() => (
-    theme === 'dark'
-      ? ['#6ee7b7', '#34d399', '#10b981', '#059669', '#047857', '#065f46']
-      : ['#10b981', '#059669', '#047857', '#34d399', '#065f46', '#6ee7b7']
-  ), [theme]);
-  const neutralPalette = React.useMemo(() => (
-    theme === 'dark'
-      ? ['#f8fafc', '#e2e8f0', '#cbd5e1', '#94a3b8', '#64748b', '#334155']
-      : ['#111827', '#1f2937', '#374151', '#4b5563', '#6b7280', '#9ca3af']
-  ), [theme]);
-  const getThemeColor = React.useCallback((index, offset = 0) => {
-    const idx = index + offset;
-    const paletteIndex = Math.floor(idx / 2);
-    if (idx % 2 === 0) return greenPalette[paletteIndex % greenPalette.length];
-    return neutralPalette[paletteIndex % neutralPalette.length];
-  }, [greenPalette, neutralPalette]);
+  const getHarnessedColor = React.useCallback((label) => getStableColorFromLabel(label), []);
 
-  const getCashTypeColor = React.useCallback((code, index) => {
+  const getCashTypeColor = React.useCallback((code, label) => {
     const currencyCode = String(code || '').toUpperCase();
-    const paletteByCurrency = {
-      IDR: theme === 'dark'
-        ? ['#e11d48', '#be123c', '#9f1239', '#fb7185']
-        : ['#e11d48', '#be123c', '#9f1239', '#fb7185'],
-      USD: theme === 'dark'
-        ? ['#60a5fa', '#3b82f6', '#2563eb', '#1d4ed8']
-        : ['#2563eb', '#1d4ed8', '#1e40af', '#60a5fa'],
-      SGD: theme === 'dark'
-        ? ['#f8fafc', '#e2e8f0', '#cbd5e1', '#94a3b8']
-        : ['#f9fafb', '#e5e7eb', '#d1d5db', '#9ca3af'],
-    };
-    const palette = paletteByCurrency[currencyCode];
-    if (!palette) {
-      return getThemeColor(index, 2);
+    if (!currencyCode) {
+      return getHarnessedColor(label);
     }
-    return palette[index % palette.length];
-  }, [getThemeColor, theme]);
+
+    const currencyLabel = `${currencyCode}:${String(label || '').trim()}`;
+    return getHarnessedColor(currencyLabel);
+  }, [getHarnessedColor]);
 
   React.useEffect(() => {
     let cancelled = false;
 
     const run = async () => {
       const nextColorMap = {};
-      for (const item of digitalDistribution) {
+      for (const item of digitalAllocation) {
         const symbol = item?.symbol;
         const logo = item?.logo;
         if (!symbol || !logo) continue;
@@ -193,7 +169,7 @@ export function PortfolioPie({
     return () => {
       cancelled = true;
     };
-  }, [digitalDistribution, theme]);
+  }, [digitalAllocation, theme]);
 
   const assetTypeData = [
     { key: 'digital', name: 'Digital Assets', value: toDisplay(digital), raw: digital, fill: 'var(--color-digital)' },
@@ -201,24 +177,24 @@ export function PortfolioPie({
   ];
   const assetSum = assetTypeData.reduce((s, d) => s + d.value, 0) || 1;
 
-  const holdingsData = holdingsDistribution.map((h, i) => ({
+  const holdingsData = holdingsAllocation.map((h) => ({
     ...h,
     value: toDisplay(h.value),
-    fill: getThemeColor(i)
+    fill: getHarnessedColor(h.name || h.symbol || h.key || 'holding')
   }));
   const holdingsSum = holdingsData.reduce((s, d) => s + d.value, 0) || 1;
 
-  const digitalData = digitalDistribution.map((d, i) => ({
+  const digitalData = digitalAllocation.map((d) => ({
     ...d,
     value: toDisplay(d.value),
-    fill: logoColorMap[d.symbol] || getThemeColor(i, 1),
+    fill: logoColorMap[d.symbol] || getHarnessedColor(d.name || d.symbol || 'digital-asset'),
   }));
   const digitalSum = digitalData.reduce((s, d) => s + d.value, 0) || 1;
 
-  const cashTypeData = cashTypeDistribution.map((c, i) => ({
+  const cashTypeData = cashTypeAllocation.map((c) => ({
     ...c,
     value: toDisplay(c.value),
-    fill: getCashTypeColor(c.name, i),
+    fill: getCashTypeColor(c.name, c.name || c.code || 'cash-type'),
   }));
   const cashTypeSum = cashTypeData.reduce((s, d) => s + d.value, 0) || 1;
 
@@ -242,7 +218,7 @@ export function PortfolioPie({
     <div className="flex flex-col items-center gap-4">
       {/* Asset Type Chart */}
       <div className="w-full flex flex-col items-center">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Asset Type Distribution</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Asset Type Allocation</p>
         <ChartContainer config={config} className="w-full h-48">
           <PieChart margin={{ top: 8, right: 16, bottom: 28, left: 16 }}>
             <Pie
@@ -290,9 +266,9 @@ export function PortfolioPie({
 
       <div className="w-full border-t border-border/20" />
 
-      {/* Digital Asset Distribution Chart */}
+      {/* Digital Asset Allocation Chart */}
       <div className="w-full flex flex-col items-center">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Digital Asset Distribution</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Digital Asset Allocation</p>
         <ChartContainer config={config} className="w-full h-52">
           <PieChart margin={{ top: 8, right: 16, bottom: 28, left: 16 }}>
             <Pie
@@ -340,9 +316,9 @@ export function PortfolioPie({
 
       <div className="w-full border-t border-border/20" />
 
-      {/* Cash Type Distribution Chart */}
+      {/* Cash Type Allocation Chart */}
       <div className="w-full flex flex-col items-center">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Cash Type Distribution</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Cash Type Allocation</p>
         <ChartContainer config={config} className="w-full h-52">
           <PieChart margin={{ top: 8, right: 16, bottom: 28, left: 16 }}>
             <Pie
@@ -392,7 +368,7 @@ export function PortfolioPie({
 
       {/* Holdings Chart */}
       <div className="w-full flex flex-col items-center">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Holdings Distribution</p>
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Holdings Allocation</p>
         <ChartContainer config={config} className="w-full h-52">
           <PieChart margin={{ top: 8, right: 16, bottom: 28, left: 16 }}>
             <Pie

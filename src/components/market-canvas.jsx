@@ -2,9 +2,8 @@
 
 import { useEffect, useRef } from "react";
 
-const BASE_COLOR = "#34d399";
-const GLOW_COLOR = "rgba(52, 211, 153, 0.42)";
-const CARD_BG = "rgba(255, 255, 255, 0.04)";
+const BASE_COLOR = "#f5f5f5";
+const CARD_BG = "#111111";
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
 
@@ -175,72 +174,23 @@ export default function MarketCanvas() {
 
       const offsetX = -offsetRef.current;
 
-      // Premium dark panel depth.
-      const panelGradient = ctx.createLinearGradient(0, 0, 0, height);
-      panelGradient.addColorStop(0, "rgba(6, 11, 19, 0.2)");
-      panelGradient.addColorStop(1, CARD_BG);
-      ctx.fillStyle = panelGradient;
+      ctx.fillStyle = CARD_BG;
       ctx.fillRect(0, 0, width, height);
 
       // Older-data fade layer (left side), stronger fade as it ages.
-      const historyFade = ctx.createLinearGradient(0, 0, width, 0);
-      historyFade.addColorStop(0, "rgba(6, 11, 19, 0.64)");
-      historyFade.addColorStop(0.25, "rgba(6, 11, 19, 0.4)");
-      historyFade.addColorStop(0.7, "rgba(6, 11, 19, 0.08)");
-      historyFade.addColorStop(1, "rgba(6, 11, 19, 0)");
-
-      buildSmoothPath(ctx, points, stepX, offsetX, toY);
-      ctx.lineTo(width, height);
-      ctx.lineTo(0, height);
-      ctx.closePath();
-
-      const fillGradient = ctx.createLinearGradient(0, topPad, 0, height);
-      fillGradient.addColorStop(0, "rgba(52, 211, 153, 0.32)");
-      fillGradient.addColorStop(0.55, "rgba(16, 185, 129, 0.12)");
-      fillGradient.addColorStop(1, "rgba(6, 11, 19, 0)");
-      ctx.fillStyle = fillGradient;
-      ctx.fill();
-
-      ctx.globalCompositeOperation = "source-over";
-      ctx.fillStyle = historyFade;
-      ctx.fillRect(0, 0, width, height);
-
-      // Main line with glow trail.
+      // A single crisp price line keeps the terminal calm and legible.
       ctx.save();
       buildSmoothPath(ctx, points, stepX, offsetX, toY);
       ctx.strokeStyle = BASE_COLOR;
-      ctx.lineWidth = 2;
-      ctx.shadowColor = GLOW_COLOR;
-      ctx.shadowBlur = 14;
+      ctx.lineWidth = 1.5;
       ctx.stroke();
       ctx.restore();
 
-      // Secondary soft trail.
-      ctx.save();
-      buildSmoothPath(ctx, points, stepX, offsetX, toY);
-      ctx.strokeStyle = "rgba(110, 231, 183, 0.26)";
-      ctx.lineWidth = 5;
-      ctx.shadowColor = "rgba(16, 185, 129, 0.16)";
-      ctx.shadowBlur = 24;
-      ctx.stroke();
-      ctx.restore();
-
-      // Leading pulse near the latest tick.
       const latestX = offsetX + (points.length - 1) * stepX;
       const latestY = toY(points[points.length - 1]);
-      const pulseRadius = 3 + Math.sin(time * 0.01) * 0.9;
-      const pulse = ctx.createRadialGradient(latestX, latestY, 0, latestX, latestY, 20);
-      pulse.addColorStop(0, "rgba(110, 231, 183, 0.95)");
-      pulse.addColorStop(0.35, "rgba(52, 211, 153, 0.45)");
-      pulse.addColorStop(1, "rgba(52, 211, 153, 0)");
-      ctx.fillStyle = pulse;
+      ctx.fillStyle = "#ffffff";
       ctx.beginPath();
-      ctx.arc(latestX, latestY, 20, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = "rgba(167, 243, 208, 0.95)";
-      ctx.beginPath();
-      ctx.arc(latestX, latestY, pulseRadius, 0, Math.PI * 2);
+      ctx.arc(latestX, latestY, 3, 0, Math.PI * 2);
       ctx.fill();
 
       frameRef.current = window.requestAnimationFrame(render);
@@ -255,13 +205,13 @@ export default function MarketCanvas() {
   }, []);
 
   return (
-    <div className="relative h-[420px] w-full overflow-hidden rounded-3xl">
+    <div className="relative h-[420px] w-full overflow-hidden rounded-lg border border-border bg-card">
       <canvas ref={canvasRef} className="h-full w-full" />
 
-      <div className="pointer-events-none absolute left-4 top-4 rounded-xl border border-emerald-200/20 bg-[#07101b]/65 px-3 py-2 backdrop-blur-xl">
+      <div className="pointer-events-none absolute left-4 top-4 rounded-md border border-border bg-black px-3 py-2">
         <div className="mt-1 flex items-center gap-2">
           <span className="text-sm font-semibold text-emerald-300">+7.24%</span>
-          <span className="rounded-full bg-emerald-400/15 px-2 py-0.5 text-[10px] font-semibold text-emerald-200">Live</span>
+          <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">Live</span>
         </div>
       </div>
     </div>

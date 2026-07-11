@@ -1,27 +1,20 @@
 import "./globals.css";
-import { Inter } from "next/font/google";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth-provider";
 import { AppearanceModeProvider } from "@/components/appearance-mode-provider";
 import { PWARegister } from "@/components/pwa-register";
 import { PWAInstallDialog } from "@/components/pwa-install-dialog";
 import { AppLayoutClient } from "@/components/app-layout-client";
-
-const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-inter",
-});
+import { TrialProvider } from "@/components/trial-provider";
+import { TrialGuard } from "@/components/trial-guard";
+import { TrialBanner } from "@/components/trial-banner";
 
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f9fafb' },
-    { media: '(prefers-color-scheme: dark)', color: '#0a0a0f' }
-  ],
+  themeColor: '#000000',
 };
 
 export const metadata = {
@@ -53,22 +46,28 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" suppressHydrationWarning className={inter.variable}>
+    <html lang="en" suppressHydrationWarning>
       <body className="antialiased font-sans">
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
+          storageKey="aruna-theme"
         >
           <AuthProvider>
-            <AppearanceModeProvider>
-              <PWARegister />
-              <PWAInstallDialog />
-              <AppLayoutClient>
-                {children}
-              </AppLayoutClient>
-            </AppearanceModeProvider>
+            <TrialProvider>
+              <AppearanceModeProvider>
+                <PWARegister />
+                <PWAInstallDialog />
+                <TrialGuard>
+                  <AppLayoutClient>
+                    <TrialBanner />
+                    {children}
+                  </AppLayoutClient>
+                </TrialGuard>
+              </AppearanceModeProvider>
+            </TrialProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>
