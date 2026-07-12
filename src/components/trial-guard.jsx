@@ -17,7 +17,7 @@ const PUBLIC_PATHS = ["/", "/signin", "/offline", "/pricing"];
 export function TrialGuard({ children }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { initialized, isGuest, isActive, isExpired } = useTrial();
+  const { initialized, isGuest, isTrialActive } = useTrial();
 
   useEffect(() => {
     if (!initialized || !isGuest) return;
@@ -25,15 +25,17 @@ export function TrialGuard({ children }) {
     const isPublicPath = PUBLIC_PATHS.includes(pathname) || pathname?.startsWith("/api/");
     const isProtectedPath = !isPublicPath && PROTECTED_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`));
 
-    if (isExpired && isProtectedPath) {
+    const active = isTrialActive();
+
+    if (!active && isProtectedPath) {
       router.replace("/pricing");
       return;
     }
 
-    if (!isActive && !isPublicPath && pathname !== "/pricing") {
+    if (!active && !isPublicPath && pathname !== "/pricing") {
       router.replace("/pricing");
     }
-  }, [initialized, isGuest, isActive, isExpired, pathname, router]);
+  }, [initialized, isGuest, isTrialActive, pathname, router]);
 
   return <>{children}</>;
 }

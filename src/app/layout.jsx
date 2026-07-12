@@ -7,7 +7,6 @@ import { PWAInstallDialog } from "@/components/pwa-install-dialog";
 import { AppLayoutClient } from "@/components/app-layout-client";
 import { TrialProvider } from "@/components/trial-provider";
 import { TrialGuard } from "@/components/trial-guard";
-import { TrialBanner } from "@/components/trial-banner";
 
 export const viewport = {
   width: 'device-width',
@@ -50,8 +49,7 @@ export default function RootLayout({ children }) {
       <body className="antialiased font-sans">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="dark"
           disableTransitionOnChange
           storageKey="aruna-theme"
         >
@@ -62,7 +60,6 @@ export default function RootLayout({ children }) {
                 <PWAInstallDialog />
                 <TrialGuard>
                   <AppLayoutClient>
-                    <TrialBanner />
                     {children}
                   </AppLayoutClient>
                 </TrialGuard>

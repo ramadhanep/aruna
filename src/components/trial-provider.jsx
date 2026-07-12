@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { useAuth } from "@/components/auth-provider";
 
 const TRIAL_STORAGE_KEY = "aruna-trial-state";
@@ -22,7 +22,11 @@ function writeStoredTrial(value) {
   if (typeof window === "undefined") return;
 
   try {
-    window.localStorage.setItem(TRIAL_STORAGE_KEY, JSON.stringify(value));
+    if (value === null) {
+      window.localStorage.removeItem(TRIAL_STORAGE_KEY);
+    } else {
+      window.localStorage.setItem(TRIAL_STORAGE_KEY, JSON.stringify(value));
+    }
   } catch {
     // Ignore storage failures for the temporary trial flow.
   }
@@ -65,6 +69,10 @@ const TrialContext = createContext({
   remainingMs: 0,
   remainingSeconds: 0,
   trialDurationMs: TRIAL_DURATION_MS,
+  isTrialActive: () => false,
+  getRemainingTrialTime: () => 0,
+  restartTrial: () => {},
+  expireTrial: () => {},
 });
 
 export function TrialProvider({ children }) {
@@ -118,12 +126,62 @@ export function TrialProvider({ children }) {
     return () => window.clearInterval(interval);
   }, [loading, user, trial.initialized, trial.isGuest]);
 
+  const restartTrial = useCallback(() => {
+    const now = Date.now();
+    const newState = {
+      startedAt: now,
+      expiresAt: now + TRIAL_DURATION_MS,
+    };
+    writeStoredTrial(newState);
+    setTrial({
+      startedAt: newState.startedAt,
+      expiresAt: newState.expiresAt,
+      isActive: true,
+      isExpired: false,
+      remainingMs: TRIAL_DURATION_MS,
+      remainingSeconds: Math.ceil(TRIAL_DURATION_MS / 1000),
+      initialized: true,
+      isGuest: true,
+    });
+  }, []);
+
+  const expireTrial = useCallback(() => {
+    const now = Date.now();
+    const newState = {
+      startedAt: now - TRIAL_DURATION_MS - 1000,
+      expiresAt: now - 1000,
+    };
+    writeStoredTrial(newState);
+    setTrial({
+      startedAt: newState.startedAt,
+      expiresAt: newState.expiresAt,
+      isActive: false,
+      isExpired: true,
+      remainingMs: 0,
+      remainingSeconds: 0,
+      initialized: true,
+      isGuest: true,
+    });
+  }, []);
+
+  const isTrialActive = useCallback(() => {
+    return trial.isActive;
+  }, [trial.isActive]);
+
+  const getRemainingTrialTime = useCallback(() => {
+    return trial.remainingMs;
+  }, [trial.remainingMs]);
+
   const value = useMemo(
     () => ({
       ...trial,
       trialDurationMs: TRIAL_DURATION_MS,
+      isTrialActive,
+      getRemainingTrialTime,
+      restartTrial,
+      expireTrial,
     }),
-    [trial]
+    [trial, isTrialActive, getRemainingTrialTime, restartTrial, expireTrial]
   );
 
   return <TrialContext.Provider value={value}>{children}</TrialContext.Provider>;

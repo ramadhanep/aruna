@@ -20,9 +20,11 @@ import { GoogleGlyph } from '@/components/google-glyph';
 // Dynamic chart component to keep page light and avoid SSR issues
 const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { ssr: false });
 
-// LocalStorage key for currency preference
+// LocalStorage keys
 const PORTFOLIO_CURRENCY_KEY = 'portfolio_currency';
 const PORTFOLIO_VISIBILITY_KEY = 'portfolio_visibility_hidden';
+const GUEST_PORTFOLIO_KEY = 'aruna_guest_portfolio';
+const GUEST_PORTFOLIO_SEEDED_KEY = 'aruna_guest_portfolio_seeded';
 const MOBILE_BREAKPOINT = 1024;
 const CURRENCY_META = {
   IDR: {
@@ -48,11 +50,43 @@ const SUPPORTED_CURRENCIES = Object.keys(CURRENCY_META);
 const DEFAULT_PORTFOLIO_ENTRIES = [
   { symbol: 'BTC-USD', name: 'Bitcoin', amount: 1, unit: 'share', avgPrice: 65000, type: 'digital' },
   { symbol: 'NVDA', name: 'NVIDIA Corporation', amount: 100, unit: 'share', avgPrice: 120, type: 'digital' },
+  { symbol: 'AAPL', name: 'Apple Inc.', amount: 50, unit: 'share', avgPrice: 175, type: 'digital' },
   { symbol: 'BBCA.JK', name: 'Bank Central Asia Tbk', amount: 1000, unit: 'lot', avgPrice: 7500, type: 'digital' },
+  { symbol: 'CASH_IDR', name: 'Cash (IDR)', amount: 1, unit: 'unit', avgPrice: 300, type: 'cash', category: 'Cash (IDR)', cashCurrency: 'IDR', nativeAmount: 5000000 },
 ];
 
 function getDefaultPortfolio() {
   return DEFAULT_PORTFOLIO_ENTRIES.map((entry) => ({ ...entry }));
+}
+
+// Guest portfolio localStorage helpers
+function loadGuestPortfolio() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(GUEST_PORTFOLIO_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function saveGuestPortfolio(entries) {
+  try {
+    localStorage.setItem(GUEST_PORTFOLIO_KEY, JSON.stringify(entries));
+  } catch (e) {
+    console.warn('Failed to save guest portfolio', e);
+  }
+}
+
+function hasGuestPortfolioBeenSeeded() {
+  if (typeof window === 'undefined') return false;
+  try { return localStorage.getItem(GUEST_PORTFOLIO_SEEDED_KEY) === 'true'; } catch { return false; }
+}
+
+function markGuestPortfolioSeeded() {
+  try { localStorage.setItem(GUEST_PORTFOLIO_SEEDED_KEY, 'true'); } catch { /* ignore */ }
 }
 
 // Minimal asset search (reuses existing API route if present)
@@ -199,6 +233,7 @@ export default function PortfolioTrackerPage() {
   const containerRef = React.useRef(null);
   const remotePortfolioSeedRef = React.useRef(false);
   const hydratePortfolioRef = React.useRef(true);
+  const guestSyncedRef = React.useRef(false);
   const {
     user,
     loading: authLoading,
@@ -208,23 +243,8 @@ export default function PortfolioTrackerPage() {
     signInWithGoogle,
     supabaseConfigured,
   } = useAuth();
-  const { initialized, isActive, isExpired } = useTrial();
+  const { initialized: _trialInitialized } = useTrial();
   const isAuthenticated = Boolean(user);
-  const canUseProtectedActions = isAuthenticated || (initialized && isActive && !isExpired);
-  const redirectToSignIn = useCallback(() => {
-    const currentPath =
-      typeof window !== 'undefined'
-        ? `${window.location.pathname}${window.location.search}`
-        : '/portfolio-tracker';
-    router.push(`/signin?redirect=${encodeURIComponent(currentPath)}`);
-  }, [router]);
-  const ensureAuthenticated = useCallback(() => {
-    if (canUseProtectedActions) {
-      return true;
-    }
-    redirectToSignIn();
-    return false;
-  }, [canUseProtectedActions, redirectToSignIn]);
   const [authError, setAuthError] = useState(null);
   const [signingIn, setSigningIn] = useState(false);
   const handleGoogleSignIn = useCallback(async () => {
@@ -395,19 +415,32 @@ export default function PortfolioTrackerPage() {
     })();
   }, [refreshFxRates]);
 
+  // Guest mode: load from localStorage, seed starter portfolio once
   useEffect(() => {
-    if (authLoading) {
-      setPortfolioReady(false);
-      return;
-    }
+    if (authLoading) return;
+    if (isAuthenticated) return; // handled by remote effect below
 
-    if (!isAuthenticated) {
+    const saved = loadGuestPortfolio();
+    if (saved !== null) {
+      hydratePortfolioRef.current = true;
+      setEntries(saved);
+    } else if (!hasGuestPortfolioBeenSeeded()) {
+      markGuestPortfolioSeeded();
+      const defaults = getDefaultPortfolio();
+      hydratePortfolioRef.current = true;
+      setEntries(defaults);
+      saveGuestPortfolio(defaults);
+    } else {
       hydratePortfolioRef.current = true;
       setEntries([]);
-      setInitialLoading(false);
-      setPortfolioReady(true);
-      return;
     }
+    setInitialLoading(false);
+    setPortfolioReady(true);
+  }, [authLoading, isAuthenticated]);
+
+  // Authenticated mode: load from remote
+  useEffect(() => {
+    if (authLoading || !isAuthenticated) return;
 
     if (!portfolioLoaded) {
       setPortfolioReady(false);
@@ -423,17 +456,29 @@ export default function PortfolioTrackerPage() {
 
     if (!remotePortfolioSeedRef.current) {
       remotePortfolioSeedRef.current = true;
-      const defaults = getDefaultPortfolio();
+      // On first sign-in, import guest portfolio if it exists, otherwise seed defaults
+      const guestData = loadGuestPortfolio();
+      const initialEntries = (guestData && guestData.length > 0) ? guestData : getDefaultPortfolio();
       hydratePortfolioRef.current = true;
-      setEntries(defaults);
+      setEntries(initialEntries);
       setPortfolioReady(true);
-      syncPortfolio(defaults)
+      syncPortfolio(initialEntries)
         .catch(() => null)
-        .finally(() => {
-          remotePortfolioSeedRef.current = false;
-        });
+        .finally(() => { remotePortfolioSeedRef.current = false; });
     }
   }, [authLoading, isAuthenticated, portfolioLoaded, remotePortfolio, syncPortfolio]);
+
+  // On sign-in with existing remote data: offer to import local if remote is empty
+  useEffect(() => {
+    if (!isAuthenticated || !portfolioLoaded || guestSyncedRef.current) return;
+    if (Array.isArray(remotePortfolio) && remotePortfolio.length === 0) {
+      const guestData = loadGuestPortfolio();
+      if (guestData && guestData.length > 0) {
+        guestSyncedRef.current = true;
+        syncPortfolio(guestData).catch(() => null);
+      }
+    }
+  }, [isAuthenticated, portfolioLoaded, remotePortfolio, syncPortfolio]);
 
   // Persist changes and refresh prices when entries mutate
   useEffect(() => {
@@ -445,6 +490,9 @@ export default function PortfolioTrackerPage() {
       hydratePortfolioRef.current = false;
     } else if (isAuthenticated) {
       syncPortfolio(entries).catch(() => { });
+    } else {
+      // Guest mode: persist to localStorage
+      saveGuestPortfolio(entries);
     }
 
     const digitalEntries = entries.filter((e) => e.type !== 'cash');
@@ -533,13 +581,11 @@ export default function PortfolioTrackerPage() {
   }
 
   function openAdd() {
-    if (!ensureAuthenticated()) return;
     resetForm();
     setDialogOpen(true);
   }
 
   function openEdit(idx) {
-    if (!ensureAuthenticated()) return;
     const e = entries[idx];
     const isCash = e.type === 'cash';
     let cashAmountDisplay = '';
@@ -571,7 +617,6 @@ export default function PortfolioTrackerPage() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!ensureAuthenticated()) return;
     const amountNum = parseFloat(form.amount);
     if (isNaN(amountNum)) return;
 
@@ -688,7 +733,6 @@ export default function PortfolioTrackerPage() {
   );
 
   function removeEntry(idx) {
-    if (!ensureAuthenticated()) return;
     setEntries((prev) => prev.filter((_, i) => i !== idx));
   }
 
@@ -1060,35 +1104,6 @@ export default function PortfolioTrackerPage() {
     );
   }
 
-  if (!isAuthenticated) {
-    return (
-      <div className="flex flex-col items-center justify-center py-16 px-4">
-        <div className="w-full max-w-sm space-y-3 rounded-2xl bg-muted/40 px-4 py-4">
-          <p className="text-[11px] text-muted-foreground">
-            Sign in with Google to sync your watchlist and portfolio securely.
-          </p>
-          <Button
-            type="button"
-            onClick={handleGoogleSignIn}
-            disabled={signingIn}
-            className="w-full justify-center gap-3 rounded-full bg-foreground text-[12px] font-semibold text-background hover:bg-foreground/90"
-          >
-            {signingIn ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <>
-                <GoogleGlyph />
-                <span>Sign in with Google</span>
-              </>
-            )}
-          </Button>
-          {authError ? (
-            <div className="rounded-xl bg-red-600/15 px-3 py-2 text-xs text-red-500">{authError}</div>
-          ) : null}
-        </div>
-      </div>
-    );
-  }
 
   if (initialLoading) {
     return (
@@ -1320,6 +1335,31 @@ export default function PortfolioTrackerPage() {
           </CardContent>
         </Card>
 
+        {/* Guest local-portfolio info banner */}
+        {!isAuthenticated && (
+          <div className="rounded-2xl border border-border/40 bg-card px-4 py-4 space-y-3">
+            <div>
+              <p className="text-xs font-semibold text-foreground">Local Portfolio</p>
+              <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
+                Your portfolio is stored only on this device.
+                Sign in to securely sync across devices and prevent data loss.
+              </p>
+            </div>
+            <Button
+              type="button"
+              onClick={handleGoogleSignIn}
+              disabled={signingIn || !supabaseConfigured}
+              className="w-full justify-center gap-2 rounded-full bg-foreground text-[12px] font-semibold text-background hover:bg-foreground/90 h-9"
+            >
+              {signingIn ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GoogleGlyph />}
+              {signingIn ? 'Connecting…' : 'Sync with Google'}
+            </Button>
+            {authError && (
+              <p className="text-[11px] text-red-500 text-center">{authError}</p>
+            )}
+          </div>
+        )}
+
         <div className="rounded-xl border border-border/40 bg-muted/20 px-3 py-2">
           <p className="text-[10px] text-muted-foreground text-center">
             FX (1 USD): {idrFxDisplay}
@@ -1379,9 +1419,42 @@ export default function PortfolioTrackerPage() {
           </CardHeader>
           <CardContent>
             {entries.length === 0 && (
-              <p className="text-xs text-muted-foreground text-center py-8">
-                Tap the plus button to add your first asset.
-              </p>
+              <div className="flex flex-col items-center gap-4 py-12 px-4 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted/60">
+                  <TrendingUp className="h-7 w-7 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-foreground">Start Building Your Portfolio</p>
+                  <p className="mt-1.5 text-[11px] text-muted-foreground leading-relaxed max-w-xs">
+                    Track your stocks, crypto and cash in one place.
+                    {!isAuthenticated && ' Everything is stored locally until you decide to sync with Google.'}
+                  </p>
+                </div>
+                <div className="flex flex-col gap-2 w-full max-w-xs">
+                  <Button
+                    onClick={() => {
+                      const defaults = getDefaultPortfolio();
+                      hydratePortfolioRef.current = true;
+                      setEntries(defaults);
+                      if (!isAuthenticated) saveGuestPortfolio(defaults);
+                    }}
+                    className="rounded-full bg-foreground text-background hover:bg-foreground/90 text-xs h-9"
+                  >
+                    Create Starter Portfolio
+                  </Button>
+                  {!isAuthenticated && supabaseConfigured && (
+                    <Button
+                      variant="outline"
+                      onClick={handleGoogleSignIn}
+                      disabled={signingIn}
+                      className="rounded-full text-xs h-9 gap-2"
+                    >
+                      {signingIn ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GoogleGlyph />}
+                      Sign in with Google
+                    </Button>
+                  )}
+                </div>
+              </div>
             )}
             {entries.length > 0 && (
               <div className={`space-y-2 ${isMobileExperience ? 'mb-20' : 'mb-4'}`}>
@@ -1493,13 +1566,10 @@ export default function PortfolioTrackerPage() {
       </div>
 
       <Dialog
-        open={dialogOpen && isAuthenticated}
+        open={dialogOpen}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) {
             setDialogOpen(false);
-            return;
-          }
-          if (!ensureAuthenticated()) {
             return;
           }
           setDialogOpen(true);

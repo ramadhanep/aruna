@@ -109,9 +109,8 @@ function AccountSidebarContent({ onClose }) {
   } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const { mode, setMode } = useAppearanceMode();
-  const activeThemeMode = theme === "system" ? resolvedTheme ?? "light" : theme ?? "light";
   const [authError, setAuthError] = useState(null);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
@@ -122,8 +121,9 @@ function AccountSidebarContent({ onClose }) {
     setMounted(true);
   }, []);
 
-  // Only calculate isDark after component is mounted to avoid hydration mismatch
-  const isDark = mounted ? (theme === "dark" || resolvedTheme === "dark") : false;
+  // Defer theme-derived values until after client mount to prevent hydration mismatch
+  const activeThemeMode = mounted ? (theme === "dark" ? "dark" : "light") : null;
+  const isDark = mounted ? theme === "dark" : false;
   const redirectHandledRef = useRef(false);
   const rawRedirect = searchParams?.get("redirect") || null;
   const redirectParam = rawRedirect && rawRedirect.startsWith("/") ? rawRedirect : null;
@@ -247,7 +247,7 @@ function AccountSidebarContent({ onClose }) {
                 <Loader2 className="h-5 w-5 animate-spin text-foreground/70 dark:text-white/70" />
               </div>
             ) : user ? null : (
-              <div className="mt-4 space-y-3 rounded-2xl bg-black/5 dark:bg-white/5 px-4 py-4">
+              <div className="mt-4 space-y-3 rounded-2xl bg-black/1 dark:bg-white/1 px-4 py-4">
                 <p className="text-[11px] text-foreground/80 dark:text-white/80">
                   Sign in with Google to sync your watchlist and portfolio securely.
                 </p>
@@ -294,15 +294,6 @@ function AccountSidebarContent({ onClose }) {
                 <Moon className="h-4 w-4" />
                 Dark
               </Button>
-              <Button
-                type="button"
-                variant={theme === "system" ? "default" : "outline"}
-                className="flex-1 justify-center gap-2 rounded-2xl text-xs"
-                onClick={() => setTheme("system")}
-              >
-                <Sparkles className="h-4 w-4" />
-                System
-              </Button>
             </div>
             <div className="mt-3 flex items-center justify-between rounded-2xl border border-border/40 bg-muted/20 px-3 py-2.5">
               <div>
@@ -330,7 +321,7 @@ function AccountSidebarContent({ onClose }) {
               trigger={
                 <button
                   type="button"
-                  className="flex w-full items-center justify-between rounded-2xl bg-black/5 dark:bg-white/[0.06] px-3 py-3 text-left text-xs"
+                  className="flex w-full items-center justify-between rounded-2xl bg-black/1 dark:bg-white/1 px-3 py-3 text-left text-xs"
                 >
                   <div>
                     <p className="font-semibold text-foreground">Clear Data</p>

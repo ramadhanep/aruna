@@ -10,6 +10,7 @@ import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { DesktopNavbar } from "@/components/desktop-navbar";
 import { useAuth } from "@/components/auth-provider";
 import { useTrial } from "@/components/trial-provider";
+import { TrialBanner } from "@/components/trial-banner";
 
 const PUBLIC_ROUTES = new Set(["/", "/signin", "/offline", "/pricing", "/explore"]);
 
@@ -18,15 +19,16 @@ export function AppLayoutClient({ children }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, loading } = useAuth();
-  const { initialized, isActive, isExpired } = useTrial();
+  const { initialized, isTrialActive } = useTrial();
+  const active = isTrialActive();
   const isLandingPage = pathname === "/";
   const isPublicRoute = PUBLIC_ROUTES.has(pathname);
   const isProtectedRoute = !isPublicRoute;
-  const canAccessWithoutAuth = Boolean(user) || (initialized && isActive) || isPublicRoute;
+  const canAccessWithoutAuth = Boolean(user) || (initialized && active) || isPublicRoute;
   const shouldBlockProtectedContent = isProtectedRoute && !canAccessWithoutAuth && (loading || !user);
 
   useEffect(() => {
-    if (!isProtectedRoute || loading || user || (initialized && isActive)) return;
+    if (!isProtectedRoute || loading || user || (initialized && active)) return;
 
     const currentPath =
       typeof window !== "undefined"
@@ -34,13 +36,13 @@ export function AppLayoutClient({ children }) {
         : pathname || "/";
     const redirectPath = currentPath.startsWith("/") ? currentPath : "/";
 
-    if (initialized && isExpired) {
+    if (initialized && !active) {
       router.replace("/pricing");
       return;
     }
 
     router.replace(`/signin?redirect=${encodeURIComponent(redirectPath)}`);
-  }, [isProtectedRoute, loading, pathname, router, user, initialized, isActive, isExpired]);
+  }, [isProtectedRoute, loading, pathname, router, user, initialized, active]);
 
   const mobileBackHeaderRoutes = {
     "/idx-momentum": "IDX Momentum",
@@ -82,7 +84,8 @@ export function AppLayoutClient({ children }) {
 
   return (
     <>
-      {!isPublicRoute && !shouldBlockProtectedContent && (
+      <TrialBanner />
+      {!shouldBlockProtectedContent && (
         <AccountSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       )}
       
@@ -94,7 +97,7 @@ export function AppLayoutClient({ children }) {
         
         {/* Mobile Header (Hidden on lg+) */}
         {!hideDefaultMobileChrome && !shouldBlockProtectedContent && (
-          <header className="lg:hidden sticky top-0 z-40 shrink-0 border-b border-border bg-black">
+          <header className="lg:hidden relative z-40 shrink-0 border-b border-border bg-background/95 backdrop-blur">
             <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3 px-4">
               <HeaderAccountMenu onOpenSidebar={() => setSidebarOpen(true)} />
               <div className="flex flex-1 items-center justify-center gap-1.5">
@@ -107,12 +110,12 @@ export function AppLayoutClient({ children }) {
         )}
 
         {needsBackHeader && !shouldBlockProtectedContent && (
-          <header className="lg:hidden sticky top-0 z-40 shrink-0 border-b border-border bg-black">
+          <header className="lg:hidden relative z-40 shrink-0 border-b border-border bg-background/95 backdrop-blur">
             <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between px-3">
               <button
                 type="button"
                 onClick={() => router.back()}
-                className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-[#111] hover:bg-[#171717] transition-colors"
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md bg-secondary hover:bg-secondary/80 transition-colors"
                 aria-label="Go back"
               >
                 <ArrowLeft className="h-4 w-4 text-muted-foreground" />

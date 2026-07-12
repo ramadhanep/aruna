@@ -7,20 +7,19 @@ import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 
 export function ModeToggle() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
 
-  const activeMode = theme === "system" ? resolvedTheme ?? "light" : theme ?? "light";
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Before mount, activeMode is undefined — render in a neutral "light" state
+  // so the server HTML matches the initial client render.
+  const activeMode = mounted ? (theme === "dark" ? "dark" : "light") : "light";
 
   const cycleTheme = () => {
-    if (theme === "light") {
-      setTheme("dark");
-      return;
-    }
-    if (theme === "dark") {
-      setTheme("system");
-      return;
-    }
-    setTheme("light");
+    setTheme(theme === "dark" ? "light" : "dark");
   };
 
   return (

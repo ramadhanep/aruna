@@ -14,10 +14,10 @@ export function PWAInstallDialog() {
   useEffect(() => {
     // Check if already shown
     const hasShown = localStorage.getItem(INSTALL_PROMPT_KEY);
-    
+
     // Check if already installed (running as standalone)
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
-                         window.navigator.standalone === true;
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+      window.navigator.standalone === true;
 
     if (hasShown || isStandalone) {
       return;
@@ -42,11 +42,11 @@ export function PWAInstallDialog() {
 
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    
+
     if (outcome === 'accepted') {
       console.log('User accepted the install prompt');
     }
-    
+
     setDeferredPrompt(null);
     setOpen(false);
     localStorage.setItem(INSTALL_PROMPT_KEY, 'true');
@@ -61,7 +61,7 @@ export function PWAInstallDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-sm" closeButtonPosition="right">
         <div className="flex flex-col items-center gap-4 text-center">
-            <img src="/aruna.png" alt="aruna" className="h-12 w-12" />
+          <img src="/aruna.png" alt="aruna" className="h-12 w-12" />
           <DialogTitle className="text-sm font-bold">Install Aruna</DialogTitle>
           <DialogDescription className="text-sm">
             Install aruna on your device for quick access and a better experience. No app store needed!
@@ -70,7 +70,7 @@ export function PWAInstallDialog() {
             <Button variant="outline" onClick={handleDismiss} className="flex-1 text-sm">
               Not Now
             </Button>
-            <Button onClick={handleInstall} className="flex-1 bg-emerald-700 hover:bg-emerald-800 font-semibold text-sm">
+            <Button onClick={handleInstall} className="flex-1 font-semibold text-sm">
               Install
             </Button>
           </div>

@@ -184,9 +184,9 @@ export default function HomePage() {
     watchlistLoaded,
     syncWatchlist,
   } = useAuth();
-  const { initialized, isActive, isExpired } = useTrial();
+  const { initialized, isTrialActive } = useTrial();
   const isAuthenticated = Boolean(user);
-  const canUseProtectedActions = isAuthenticated || (initialized && isActive && !isExpired);
+  const canUseProtectedActions = isAuthenticated || (initialized && isTrialActive());
 
   const redirectToSignIn = useCallback(() => {
     const currentPath =
