@@ -252,6 +252,20 @@ export function formatMonthlyHeatmap(monthlyReturns, maxYears = 10) {
   const years = [...new Set(monthlyReturns.map(r => r.year))].sort((a, b) => b - a);
   const recentYears = years.slice(0, maxYears);
 
+  // Compound the monthly returns available for a given year into a full-year total
+  const computeYearTotal = (year) => {
+    let compounded = 1;
+    let hasValue = false;
+    for (let month = 1; month <= 12; month++) {
+      const found = monthlyReturns.find(r => r.year === year && r.month === month);
+      if (found && found.return !== null && found.return !== undefined) {
+        compounded *= (1 + found.return / 100);
+        hasValue = true;
+      }
+    }
+    return hasValue ? (compounded - 1) * 100 : null;
+  };
+
   // Build matrix for recent years
   const rows = recentYears.map(year => {
     const row = { year };
@@ -259,6 +273,7 @@ export function formatMonthlyHeatmap(monthlyReturns, maxYears = 10) {
       const found = monthlyReturns.find(r => r.year === year && r.month === month);
       row[`M${month}`] = found ? found.return : null;
     }
+    row.Total = computeYearTotal(year);
     return row;
   });
 
@@ -270,6 +285,10 @@ export function formatMonthlyHeatmap(monthlyReturns, maxYears = 10) {
     average[`M${month}`] = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : null;
     winRate[`M${month}`] = values.length > 0 ? (values.filter(v => v > 0).length / values.length) * 100 : null;
   }
+
+  const yearTotals = years.map(computeYearTotal).filter(v => v !== null);
+  average.Total = yearTotals.length > 0 ? yearTotals.reduce((a, b) => a + b, 0) / yearTotals.length : null;
+  winRate.Total = yearTotals.length > 0 ? (yearTotals.filter(v => v > 0).length / yearTotals.length) * 100 : null;
 
   return { rows, average, winRate };
 }
@@ -285,6 +304,20 @@ export function formatQuarterlyHeatmap(quarterlyReturns, maxYears = 10) {
   const years = [...new Set(quarterlyReturns.map(r => r.year))].sort((a, b) => b - a);
   const recentYears = years.slice(0, maxYears);
 
+  // Compound the quarterly returns available for a given year into a full-year total
+  const computeYearTotal = (year) => {
+    let compounded = 1;
+    let hasValue = false;
+    for (let quarter = 1; quarter <= 4; quarter++) {
+      const found = quarterlyReturns.find(r => r.year === year && r.quarter === quarter);
+      if (found && found.return !== null && found.return !== undefined) {
+        compounded *= (1 + found.return / 100);
+        hasValue = true;
+      }
+    }
+    return hasValue ? (compounded - 1) * 100 : null;
+  };
+
   // Build matrix for recent years
   const rows = recentYears.map(year => {
     const row = { year };
@@ -292,6 +325,7 @@ export function formatQuarterlyHeatmap(quarterlyReturns, maxYears = 10) {
       const found = quarterlyReturns.find(r => r.year === year && r.quarter === quarter);
       row[`Q${quarter}`] = found ? found.return : null;
     }
+    row.Total = computeYearTotal(year);
     return row;
   });
 
@@ -303,6 +337,10 @@ export function formatQuarterlyHeatmap(quarterlyReturns, maxYears = 10) {
     average[`Q${quarter}`] = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : null;
     winRate[`Q${quarter}`] = values.length > 0 ? (values.filter(v => v > 0).length / values.length) * 100 : null;
   }
+
+  const yearTotals = years.map(computeYearTotal).filter(v => v !== null);
+  average.Total = yearTotals.length > 0 ? yearTotals.reduce((a, b) => a + b, 0) / yearTotals.length : null;
+  winRate.Total = yearTotals.length > 0 ? (yearTotals.filter(v => v > 0).length / yearTotals.length) * 100 : null;
 
   return { rows, average, winRate };
 }

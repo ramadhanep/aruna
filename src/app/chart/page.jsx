@@ -28,7 +28,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar, ReferenceLine } from 'recharts';
-import { Loader2, Sun, MoonStar, Clock3, Star, Lock, Bitcoin, Crown, ChevronDown, Fullscreen, ArrowLeft, Settings, Target, Calculator, BarChart3, CandlestickChart, LineChart, BarChart2 } from "lucide-react";
+import { Loader2, Sun, MoonStar, Clock3, Star, Lock, Bitcoin, Crown, ChevronDown, Fullscreen, ArrowLeft, Settings, CandlestickChart, LineChart, BarChart2 } from "lucide-react";
 import { useTheme } from 'next-themes';
 import { AddAssetModal } from "@/components/add-asset-modal";
 import { SymbolSearchDialog } from "@/components/header-symbol-search";
@@ -251,6 +251,7 @@ function infoTabToQueryValue(value) {
 
 const EMA_PERIOD = 31;
 const EMA_COLOR = '#0ea5e9';
+const BUY_SIGNAL_COLOR = '#10b981'; // emerald-500, matches candlestick up/bullish color
 const LIVERMORE_LOOKBACK = 31;
 const LIVERMORE_UPPER_COLOR = '#f97316';
 const LIVERMORE_LOWER_COLOR = '#6b7380';
@@ -1550,7 +1551,7 @@ function ElectionCyclePageContent() {
           )}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-44">
+      <DropdownMenuContent align="end" className="w-44 z-[130]">
         {[
           { key: 'heikinAshi', label: 'Heikin Ashi', icon: CandlestickChart },
           { key: 'candle', label: 'Candlestick', icon: BarChart2 },
@@ -1591,7 +1592,7 @@ function ElectionCyclePageContent() {
           <Settings className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align="end" className="w-48 z-[130]">
         <DropdownMenuItem
           className="flex items-center gap-2 cursor-pointer"
           onSelect={(e) => {
@@ -1681,7 +1682,7 @@ function ElectionCyclePageContent() {
         time: closest,
         position: 'belowBar',
         shape: 'arrowUp',
-        color: EMA_COLOR,
+        color: BUY_SIGNAL_COLOR,
         text: 'Buy',
       },
     ];
@@ -2559,10 +2560,7 @@ function ElectionCyclePageContent() {
     if (!hasTradingPlan) {
       return (
         <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 gap-3 text-center">
-            <div className="p-3 rounded-full bg-muted/50">
-              <BarChart3 className="h-6 w-6 text-muted-foreground" />
-            </div>
+          <CardContent className="flex flex-col items-center justify-center py-12 gap-2 text-center">
             <p className="text-sm font-semibold text-foreground">No Trading Plan Available</p>
             <p className="text-xs text-muted-foreground max-w-xs">
               Trading plans are generated when breakout signals are detected. Check back after the next screening run.
@@ -2585,12 +2583,9 @@ function ElectionCyclePageContent() {
         {/* Summary Banner */}
         <div className="rounded-lg bg-card border border-border p-4">
           <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-                {tradingPlanCategoryLabel ? `${tradingPlanCategoryLabel} Signal` : 'Active Signal'}
-              </span>
-            </div>
+            <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">
+              {tradingPlanCategoryLabel ? `${tradingPlanCategoryLabel} Signal` : 'Active Signal'}
+            </span>
             {screeningSignalDateLabel && (
               <span className="text-[11px] text-muted-foreground">{screeningSignalDateLabel}</span>
             )}
@@ -2611,95 +2606,60 @@ function ElectionCyclePageContent() {
           </div>
         </div>
 
-        {/* Visual Price Ladder */}
+        {/* Price Targets */}
         <Card>
-          <CardContent className="space-y-4">
-            <p className="text-[11px] uppercase tracking-wide font-semibold text-muted-foreground flex items-center gap-1.5">
-              <Target className="h-3.5 w-3.5" /> Price Targets
+          <CardContent className="space-y-3">
+            <p className="text-[11px] uppercase tracking-wide font-semibold text-muted-foreground">
+              Price Targets
             </p>
 
-            <div className="relative space-y-0">
-              {/* Targets - top to bottom (highest first) */}
-              {[...tradingPlanTargets].reverse().map((target, idx) => {
-                const isLast = idx === tradingPlanTargets.length - 1;
-                return (
-                  <div key={target.label} className="flex items-stretch gap-3">
-                    <div className="flex flex-col items-center w-4">
-                      <div className="w-3 h-3 rounded-full bg-emerald-500 border-2 border-emerald-500/30 z-10 shrink-0" />
-                      <div className="w-px flex-1 bg-border" />
-                    </div>
-                    <div className="flex-1 pb-3">
-                      <div className="rounded-xl bg-emerald-500/5 border border-emerald-500/10 p-3">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">{target.label}</span>
-                            <span className="text-[10px] text-muted-foreground ml-2">Take Profit</span>
-                          </div>
-                          <span className="text-base font-bold text-emerald-600 dark:text-emerald-400">{formatPriceValue(target.price)}</span>
-                        </div>
-                        <div className="mt-1.5 flex items-center gap-3">
-                          <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">{formatPlanCurrencyDelta(target.pnl)}</span>
-                          {target.pct != null && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-semibold">
-                              {target.pct >= 0 ? '+' : ''}{target.pct.toFixed(2)}%
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {/* Entry Price */}
-              <div className="flex items-stretch gap-3">
-                <div className="flex flex-col items-center w-4">
-                  <div className="w-4 h-4 rounded-full bg-primary border-2 border-primary/30 z-10 shrink-0 flex items-center justify-center">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary-foreground" />
-                  </div>
-                  <div className="w-px flex-1 bg-border" />
-                </div>
-                <div className="flex-1 pb-3">
-                  <div className="rounded-xl bg-primary/5 border border-primary/15 p-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-primary">Your Entry</span>
-                        <span className="text-[10px] text-muted-foreground ml-2">Buy zone</span>
-                      </div>
-                      <span className="text-base font-bold text-foreground">{formatPriceValue(tradingPlanEntryPrice)}</span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground mt-1">
-                      Total investment: {formatPlanCurrencyValue(tradingPlanEntryNotional)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Stop Loss */}
-              <div className="flex items-stretch gap-3">
-                <div className="flex flex-col items-center w-4">
-                  <div className="w-3 h-3 rounded-full bg-red-500 border-2 border-red-500/30 z-10 shrink-0" />
-                </div>
-                <div className="flex-1">
-                  <div className="rounded-xl bg-red-500/5 border border-red-500/10 p-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-red-600 dark:text-red-400">Stop Loss</span>
-                        <span className="text-[10px] text-muted-foreground ml-2">Exit if price drops here</span>
-                      </div>
-                      <span className="text-base font-bold text-red-600 dark:text-red-400">{formatPriceValue(tradingPlanStopLossPrice)}</span>
-                    </div>
-                    <div className="mt-1.5 flex items-center gap-3">
-                      <span className="text-[11px] font-semibold text-red-600 dark:text-red-400">{formatPlanCurrencyDelta(tradingPlanStopLossPnl)}</span>
-                      {tradingPlanStopLossPct != null && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-red-500/10 text-red-600 dark:text-red-400 font-semibold">
-                          {tradingPlanStopLossPct.toFixed(2)}%
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="overflow-hidden rounded-lg border border-border">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-border bg-muted/40">
+                    <th className="text-left py-2 px-3 font-medium text-muted-foreground">Level</th>
+                    <th className="text-right py-2 px-3 font-medium text-muted-foreground">Price</th>
+                    <th className="text-right py-2 px-3 font-medium text-muted-foreground">P/L</th>
+                    <th className="text-right py-2 px-3 font-medium text-muted-foreground">%</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...tradingPlanTargets].reverse().map((target) => (
+                    <tr key={target.label} className="border-b border-border/60">
+                      <td className="py-2 px-3 font-semibold text-emerald-600 dark:text-emerald-400">
+                        {target.label}
+                        <span className="ml-2 font-normal text-muted-foreground">Take Profit</span>
+                      </td>
+                      <td className="py-2 px-3 text-right font-semibold text-foreground">{formatPriceValue(target.price)}</td>
+                      <td className="py-2 px-3 text-right font-medium text-emerald-600 dark:text-emerald-400">{formatPlanCurrencyDelta(target.pnl)}</td>
+                      <td className="py-2 px-3 text-right font-medium text-emerald-600 dark:text-emerald-400">
+                        {target.pct != null ? `${target.pct >= 0 ? '+' : ''}${target.pct.toFixed(2)}%` : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="border-b border-border/60 bg-primary/5">
+                    <td className="py-2 px-3 font-semibold text-primary">
+                      Entry
+                      <span className="ml-2 font-normal text-muted-foreground">Buy zone</span>
+                    </td>
+                    <td className="py-2 px-3 text-right font-semibold text-foreground">{formatPriceValue(tradingPlanEntryPrice)}</td>
+                    <td className="py-2 px-3 text-right text-muted-foreground" colSpan={2}>
+                      Total: {formatPlanCurrencyValue(tradingPlanEntryNotional)}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-2 px-3 font-semibold text-red-600 dark:text-red-400">
+                      Stop Loss
+                      <span className="ml-2 font-normal text-muted-foreground">Exit if price drops here</span>
+                    </td>
+                    <td className="py-2 px-3 text-right font-semibold text-foreground">{formatPriceValue(tradingPlanStopLossPrice)}</td>
+                    <td className="py-2 px-3 text-right font-medium text-red-600 dark:text-red-400">{formatPlanCurrencyDelta(tradingPlanStopLossPnl)}</td>
+                    <td className="py-2 px-3 text-right font-medium text-red-600 dark:text-red-400">
+                      {tradingPlanStopLossPct != null ? `${tradingPlanStopLossPct.toFixed(2)}%` : '—'}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </CardContent>
         </Card>
@@ -2707,8 +2667,8 @@ function ElectionCyclePageContent() {
         {/* Position Calculator */}
         <Card>
           <CardContent className="space-y-4">
-            <p className="text-[11px] uppercase tracking-wide font-semibold text-muted-foreground flex items-center gap-1.5">
-              <Calculator className="h-3.5 w-3.5" /> Position Calculator
+            <p className="text-[11px] uppercase tracking-wide font-semibold text-muted-foreground">
+              Position Calculator
             </p>
 
             <div className="grid gap-3 lg:grid-cols-2">
@@ -2768,19 +2728,13 @@ function ElectionCyclePageContent() {
 
             {/* Reference Levels */}
             <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border/20">
-              <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-muted/30">
-                <div className="w-1 h-6 rounded-full bg-amber-500/50" />
-                <div>
-                  <p className="text-[10px] text-muted-foreground">Swing Low</p>
-                  <p className="text-xs font-semibold">{formatPriceValue(tradingPlanBasisValues.swing)}</p>
-                </div>
+              <div className="px-2.5 py-2 rounded-lg bg-muted/30">
+                <p className="text-[10px] text-muted-foreground">Swing Low</p>
+                <p className="text-xs font-semibold">{formatPriceValue(tradingPlanBasisValues.swing)}</p>
               </div>
-              <div className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-muted/30">
-                <div className="w-1 h-6 rounded-full bg-sky-500/50" />
-                <div>
-                  <p className="text-[10px] text-muted-foreground">EMA 20</p>
-                  <p className="text-xs font-semibold">{formatPriceValue(tradingPlanBasisValues.ema)}</p>
-                </div>
+              <div className="px-2.5 py-2 rounded-lg bg-muted/30">
+                <p className="text-[10px] text-muted-foreground">EMA 20</p>
+                <p className="text-xs font-semibold">{formatPriceValue(tradingPlanBasisValues.ema)}</p>
               </div>
             </div>
           </CardContent>
@@ -3880,6 +3834,7 @@ function ElectionCyclePageContent() {
                       {['Q1', 'Q2', 'Q3', 'Q4'].map((quarter, idx) => (
                         <th key={idx} className="text-center py-2 px-2 font-medium">{quarter}</th>
                       ))}
+                      <th className="text-center py-2 px-2 font-medium">Total</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3893,6 +3848,14 @@ function ElectionCyclePageContent() {
                           </td>
                         );
                       })}
+                      {(() => {
+                        const value = quarterlyHeatmap.average?.Total;
+                        return (
+                          <td className="text-center py-2 px-2 transition-colors font-bold" style={getReturnCellStyle(value)}>
+                            {value !== null && value !== undefined ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
+                          </td>
+                        );
+                      })()}
                     </tr>
                     {quarterlyHeatmap.rows.map((row, idx) => (
                       <tr key={idx}>
@@ -3905,6 +3868,9 @@ function ElectionCyclePageContent() {
                             </td>
                           );
                         })}
+                        <td className="text-center py-2 px-2 transition-colors font-bold" style={getReturnCellStyle(row.Total)}>
+                          {row.Total !== null && row.Total !== undefined ? `${row.Total >= 0 ? '+' : ''}${row.Total.toFixed(1)}%` : '-'}
+                        </td>
                       </tr>
                     ))}
                     <tr className="border-t-2 font-semibold bg-muted/50">
@@ -3917,6 +3883,14 @@ function ElectionCyclePageContent() {
                           </td>
                         );
                       })}
+                      {(() => {
+                        const value = quarterlyHeatmap.winRate?.Total;
+                        return (
+                          <td className="text-center py-2 px-2 transition-colors font-bold" style={getWinRateCellStyle(value)}>
+                            {value !== null && value !== undefined ? `${value.toFixed(0)}%` : '-'}
+                          </td>
+                        );
+                      })()}
                     </tr>
                   </tbody>
                 </table>
@@ -3937,6 +3911,7 @@ function ElectionCyclePageContent() {
                       {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, idx) => (
                         <th key={idx} className="text-center py-2 px-1 font-medium">{month}</th>
                       ))}
+                      <th className="text-center py-2 px-1 font-medium">Total</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3950,6 +3925,14 @@ function ElectionCyclePageContent() {
                           </td>
                         );
                       })}
+                      {(() => {
+                        const value = monthlyHeatmap.average?.Total;
+                        return (
+                          <td className="text-center py-2 px-1 transition-colors font-bold" style={getReturnCellStyle(value)}>
+                            {value !== null && value !== undefined ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
+                          </td>
+                        );
+                      })()}
                     </tr>
                     {monthlyHeatmap.rows.map((row, idx) => (
                       <tr key={idx}>
@@ -3962,6 +3945,9 @@ function ElectionCyclePageContent() {
                             </td>
                           );
                         })}
+                        <td className="text-center py-2 px-1 transition-colors font-bold" style={getReturnCellStyle(row.Total)}>
+                          {row.Total !== null && row.Total !== undefined ? `${row.Total >= 0 ? '+' : ''}${row.Total.toFixed(1)}%` : '-'}
+                        </td>
                       </tr>
                     ))}
                     <tr className="border-t-2 font-semibold bg-muted/50">
@@ -3974,6 +3960,14 @@ function ElectionCyclePageContent() {
                           </td>
                         );
                       })}
+                      {(() => {
+                        const value = monthlyHeatmap.winRate?.Total;
+                        return (
+                          <td className="text-center py-2 px-1 transition-colors font-bold" style={getWinRateCellStyle(value)}>
+                            {value !== null && value !== undefined ? `${value.toFixed(0)}%` : '-'}
+                          </td>
+                        );
+                      })()}
                     </tr>
                   </tbody>
                 </table>

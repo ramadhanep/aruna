@@ -6,7 +6,7 @@ import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock, Download, Flame, ChevronDown, ChevronUp, ChevronRight, Clock, Globe, Zap, BarChart3, ArrowUpRight, ArrowDownRight, Gem, Magnet, Rotate3D, Workflow, Radar, Droplets } from "lucide-react";
+import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock, Download, Flame, ChevronDown, ChevronUp, ChevronRight, Clock, Globe, Zap, BarChart3, ArrowUpRight, ArrowDownRight, Gem, Magnet, Rotate3D, Axe, MessageCircleMore, Radar, Droplets } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { TrendingMarquee } from "@/components/trending-marquee";
@@ -1095,18 +1095,6 @@ export default function ExplorePage() {
     };
   }, [rotationData]);
 
-  const moneyFlowPreview = useMemo(() => {
-    if (!Array.isArray(moneyFlowReports) || moneyFlowReports.length === 0) return null;
-    const strongestInflow = moneyFlowReports[0];
-    const strongestOutflow = [...moneyFlowReports].sort(
-      (a, b) => (a.money_flow_score ?? 0) - (b.money_flow_score ?? 0)
-    )[0];
-    const avgScore =
-      moneyFlowReports.reduce((sum, r) => sum + (r.money_flow_score ?? 0), 0) / moneyFlowReports.length;
-    const sentiment = avgScore >= 60 ? "Accumulation" : avgScore <= 40 ? "Distribution" : "Neutral";
-    return { strongestInflow, strongestOutflow, sentiment };
-  }, [moneyFlowReports]);
-
   const topMoversPreview = useMemo(() => {
     const biggestVolume = Array.isArray(moneyFlowReports)
       ? moneyFlowReports.reduce((best, r) => {
@@ -1449,25 +1437,32 @@ export default function ExplorePage() {
           </Link>
 
           <Link
-            href="/money-flow"
+            href="/idx-momentum"
             className="group card-hover flex items-center justify-between gap-3 rounded-2xl"
           >
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
-                <Workflow className="h-4 w-4" />
+                <Axe className="h-4 w-4" />
               </div>
               <div>
-                <div className="text-xs font-semibold text-foreground">Money Flow</div>
-                {moneyFlowLoading ? (
-                  <div className="mt-1 h-3 w-28 rounded-full shimmer" />
-                ) : moneyFlowPreview ? (
-                  <div className="text-[11px] text-muted-foreground">
-                    In: <span className="text-emerald-500 font-medium">{formatTickerDisplay(moneyFlowPreview.strongestInflow?.symbol)}</span>
-                    {" · "}Out: <span className="text-red-500 font-medium">{formatTickerDisplay(moneyFlowPreview.strongestOutflow?.symbol)}</span>
-                  </div>
-                ) : (
-                  <div className="text-[11px] text-muted-foreground">Institutional flow across IDX</div>
-                )}
+                <div className="text-xs font-semibold text-foreground">Momentum</div>
+                <div className="text-[11px] text-muted-foreground">IDX momentum scanner</div>
+              </div>
+            </div>
+            <span className="whitespace-nowrap text-xs font-medium text-foreground">Open →</span>
+          </Link>
+
+          <Link
+            href="/discussion"
+            className="group card-hover flex items-center justify-between gap-3 rounded-2xl"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
+                <MessageCircleMore className="h-4 w-4" />
+              </div>
+              <div>
+                <div className="text-xs font-semibold text-foreground">Chat</div>
+                <div className="text-[11px] text-muted-foreground">Community discussion</div>
               </div>
             </div>
             <span className="whitespace-nowrap text-xs font-medium text-foreground">Open →</span>
