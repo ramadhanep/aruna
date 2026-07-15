@@ -225,6 +225,14 @@ const BASE_INFO_TABS = [
   { value: 'profile', label: 'ABOUT' },
 ];
 
+// Fallback rationale/action metadata for take-profit targets missing the newer, richer
+// trading-plan fields (e.g. plans generated before this schema existed).
+const TP_FALLBACK_META = [
+  { reason: 'Momentum Target', sellPercent: 30, action: 'Move Stop Loss to Breakeven' },
+  { reason: 'Momentum Target', sellPercent: 40, action: 'Trail Stop to EMA20' },
+  { reason: 'Momentum Target', sellPercent: 30, action: 'Exit Remaining Position' },
+];
+
 const INFO_TAB_QUERY_LOOKUP = {
   tradingplan: 'trading-plan',
   keystats: 'keystats',
@@ -494,8 +502,8 @@ function ElectionCyclePageContent() {
   const [infoTab, setInfoTab] = useState(() => requestedInfoTab || 'keystats');
   const infoTabRef = useRef(infoTab);
   const [tradingPlanEntryInput, setTradingPlanEntryInput] = useState('');
-  const [tradingPlanSizeInput, setTradingPlanSizeInput] = useState('10');
-  const [tradingPlanSizeMode, setTradingPlanSizeMode] = useState('share');
+  const [tradingPlanBalanceInput, setTradingPlanBalanceInput] = useState('');
+  const [tradingPlanRiskPercentInput, setTradingPlanRiskPercentInput] = useState('1');
   const [normalFullscreenOpen, setNormalFullscreenOpen] = useState(false);
   const remoteWatchlistSeedRef = React.useRef(false);
   const remotePortfolioSeedRef = React.useRef(false);
@@ -701,24 +709,22 @@ function ElectionCyclePageContent() {
   }, [infoTabs, infoTab, requestedInfoTab]);
 
   useEffect(() => {
-    if (!lotEligible && tradingPlanSizeMode === 'lot') {
-      setTradingPlanSizeMode('share');
-    }
-  }, [lotEligible, tradingPlanSizeMode]);
-
-  useEffect(() => {
     if (!tradingPlanPayload) {
       setTradingPlanEntryInput('');
-      setTradingPlanSizeInput('10');
-      setTradingPlanSizeMode(lotEligible ? 'lot' : 'share');
+      setTradingPlanBalanceInput('');
+      setTradingPlanRiskPercentInput('1');
       return;
     }
     setTradingPlanEntryInput(
       tradingPlanPayload.entry_price != null ? String(tradingPlanPayload.entry_price) : ''
     );
-    setTradingPlanSizeMode(lotEligible ? 'lot' : 'share');
-    setTradingPlanSizeInput('10');
-  }, [tradingPlanPayload, lotEligible]);
+    setTradingPlanBalanceInput(
+      tradingPlanPayload.account_size != null ? String(tradingPlanPayload.account_size) : ''
+    );
+    setTradingPlanRiskPercentInput(
+      tradingPlanPayload.risk_percent != null ? String(tradingPlanPayload.risk_percent) : '1'
+    );
+  }, [tradingPlanPayload]);
 
   // Persist last viewed symbol
   useEffect(() => {
@@ -1840,30 +1846,12 @@ function ElectionCyclePageContent() {
     return toFiniteNumber(tradingPlanPayload?.entry_price);
   }, [tradingPlanEntryInput, tradingPlanPayload]);
 
-  const tradingPlanSizeValue = useMemo(() => {
-    const numeric = toFiniteNumber(tradingPlanSizeInput);
-    if (numeric != null && numeric > 0) {
-      return numeric;
-    }
-    return tradingPlanSizeMode === 'lot' ? 10 : 10;
-  }, [tradingPlanSizeInput, tradingPlanSizeMode]);
-
-  const tradingPlanShareCount = useMemo(() => {
-    if (tradingPlanSizeValue == null || tradingPlanSizeValue <= 0) {
-      return 0;
-    }
-    const multiplier = tradingPlanSizeMode === 'lot' ? 100 : 1;
-    return tradingPlanSizeValue * multiplier;
-  }, [tradingPlanSizeMode, tradingPlanSizeValue]);
-
   const tradingPlanStopLossPrice = useMemo(() => toFiniteNumber(tradingPlanPayload?.stop_loss), [tradingPlanPayload]);
 
-  const tradingPlanEntryNotional = useMemo(() => {
-    if (tradingPlanEntryPrice == null || tradingPlanShareCount <= 0) {
-      return null;
-    }
-    return tradingPlanEntryPrice * tradingPlanShareCount;
-  }, [tradingPlanEntryPrice, tradingPlanShareCount]);
+  const tradingPlanStopLossReason = useMemo(
+    () => tradingPlanPayload?.stop_loss_reason || 'Below Key Technical Level',
+    [tradingPlanPayload]
+  );
 
   const tradingPlanStopLossDiff = useMemo(() => {
     if (tradingPlanEntryPrice == null || tradingPlanStopLossPrice == null) {
@@ -1871,17 +1859,6 @@ function ElectionCyclePageContent() {
     }
     return tradingPlanStopLossPrice - tradingPlanEntryPrice;
   }, [tradingPlanEntryPrice, tradingPlanStopLossPrice]);
-
-  const tradingPlanStopLossPnl = useMemo(() => {
-    if (
-      tradingPlanEntryPrice == null ||
-      tradingPlanStopLossPrice == null ||
-      tradingPlanShareCount <= 0
-    ) {
-      return null;
-    }
-    return tradingPlanStopLossDiff != null ? tradingPlanStopLossDiff * tradingPlanShareCount : null;
-  }, [tradingPlanEntryPrice, tradingPlanStopLossPrice, tradingPlanShareCount, tradingPlanStopLossDiff]);
 
   const tradingPlanStopLossPct = useMemo(() => {
     if (
@@ -1894,6 +1871,25 @@ function ElectionCyclePageContent() {
     return ((tradingPlanStopLossPrice - tradingPlanEntryPrice) / tradingPlanEntryPrice) * 100;
   }, [tradingPlanEntryPrice, tradingPlanStopLossPrice]);
 
+  // Risk distance per unit (always positive for a valid long setup) — the backbone of every
+  // R-multiple and position-sizing calculation below.
+  const tradingPlanRiskPerUnit = useMemo(() => {
+    if (tradingPlanEntryPrice == null || tradingPlanStopLossPrice == null) return null;
+    const diff = tradingPlanEntryPrice - tradingPlanStopLossPrice;
+    return diff > 0 ? diff : null;
+  }, [tradingPlanEntryPrice, tradingPlanStopLossPrice]);
+
+  const tradingPlanEntryZone = useMemo(() => {
+    const low = toFiniteNumber(tradingPlanPayload?.entry_zone_low) ?? tradingPlanEntryPrice;
+    const high = toFiniteNumber(tradingPlanPayload?.entry_zone_high) ?? tradingPlanEntryPrice;
+    return {
+      low: low != null ? Math.min(low, high ?? low) : null,
+      high: high != null ? Math.max(low ?? high, high) : null,
+      type: tradingPlanPayload?.entry_type || 'Market',
+      reason: tradingPlanPayload?.entry_reason || 'Breakout confirmed by trend and volume',
+    };
+  }, [tradingPlanPayload, tradingPlanEntryPrice]);
+
   const tradingPlanTargets = useMemo(() => {
     if (!tradingPlanPayload?.tp_targets) {
       return [];
@@ -1904,47 +1900,149 @@ function ElectionCyclePageContent() {
         if (price == null) {
           return null;
         }
+        const fallback = TP_FALLBACK_META[index] || TP_FALLBACK_META[TP_FALLBACK_META.length - 1];
         const label = target?.label || `TP${index + 1}`;
         const diff = tradingPlanEntryPrice != null ? price - tradingPlanEntryPrice : null;
         const pct =
           tradingPlanEntryPrice != null && tradingPlanEntryPrice !== 0 && diff != null
             ? (diff / tradingPlanEntryPrice) * 100
             : null;
-        const pnl =
-          tradingPlanShareCount > 0 && diff != null ? diff * tradingPlanShareCount : null;
-        return { label, price, diff, pct, pnl };
+        const rMultiple =
+          tradingPlanRiskPerUnit != null && diff != null ? diff / tradingPlanRiskPerUnit : null;
+        return {
+          label,
+          price,
+          diff,
+          pct,
+          rMultiple,
+          reason: target?.reason || fallback.reason,
+          sellPercent: target?.sell_percent ?? fallback.sellPercent,
+          action: target?.action || fallback.action,
+        };
       })
       .filter(Boolean);
-  }, [tradingPlanPayload, tradingPlanEntryPrice, tradingPlanShareCount]);
+  }, [tradingPlanPayload, tradingPlanEntryPrice, tradingPlanRiskPerUnit]);
 
-  const tradingPlanSizeSummary = useMemo(() => {
-    if (tradingPlanShareCount <= 0) {
-      return null;
-    }
-    const shareLabel = tradingPlanShareCount.toLocaleString('en-US', { maximumFractionDigits: 2 });
-    if (tradingPlanSizeMode === 'lot') {
-      const lotsLabel = tradingPlanSizeValue != null
-        ? tradingPlanSizeValue.toLocaleString('en-US', { maximumFractionDigits: 2 })
-        : null;
-      return `${lotsLabel || '—'} lots • ${shareLabel} shares`;
-    }
-    return `${shareLabel} shares`;
-  }, [tradingPlanShareCount, tradingPlanSizeMode, tradingPlanSizeValue]);
+  // Primary target used for the headline Risk:Reward figure and the calculator's expected
+  // profit — the middle target (TP2 / measured-move) is the realistic, most-likely outcome.
+  const tradingPlanPrimaryTarget = useMemo(() => {
+    if (tradingPlanTargets.length === 0) return null;
+    const mid = Math.floor(tradingPlanTargets.length / 2);
+    return tradingPlanTargets[mid] || tradingPlanTargets[0];
+  }, [tradingPlanTargets]);
+
+  const tradingPlanRiskReward = useMemo(() => {
+    const fromPayload = tradingPlanPayload?.risk_reward;
+    const perTarget = tradingPlanTargets.map((target) => target.rMultiple ?? null);
+    const primary =
+      toFiniteNumber(fromPayload?.primary) ?? tradingPlanPrimaryTarget?.rMultiple ?? perTarget[perTarget.length - 1] ?? null;
+    return { perTarget, primary };
+  }, [tradingPlanPayload, tradingPlanTargets, tradingPlanPrimaryTarget]);
+
+  const tradingPlanQualityTier = useMemo(() => {
+    const rr = tradingPlanRiskReward.primary;
+    const tier = tradingPlanPayload?.quality_tier ||
+      (rr == null ? 'fair' : rr >= 3 ? 'excellent' : rr >= 2 ? 'good' : rr >= 1.2 ? 'fair' : 'poor');
+    const meta = {
+      excellent: { label: 'Excellent Setup', tone: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10' },
+      good: { label: 'Good Setup', tone: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10' },
+      fair: { label: 'Fair Setup', tone: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10' },
+      poor: { label: 'Weak Setup', tone: 'text-red-600 dark:text-red-400', bg: 'bg-red-500/10' },
+    };
+    return { tier, ...(meta[tier] || meta.fair) };
+  }, [tradingPlanPayload, tradingPlanRiskReward]);
 
   const tradingPlanBasisValues = useMemo(() => {
     if (!tradingPlanPayload?.basis) {
-      return { swing: null, ema: null };
+      return { swing: null, swingHigh: null, ema: null, atr: null };
     }
     return {
       swing: toFiniteNumber(tradingPlanPayload.basis.swing_low),
+      swingHigh: toFiniteNumber(tradingPlanPayload.basis.swing_high),
       ema: toFiniteNumber(tradingPlanPayload.basis.ema20),
+      atr: toFiniteNumber(tradingPlanPayload.basis.atr),
     };
+  }, [tradingPlanPayload]);
+
+  const tradingPlanTechnicalConfirmations = useMemo(() => {
+    const items = [];
+    items.push('Price reclaimed EMA20 with rising slope');
+    const volumeRatio = toFiniteNumber(tradingPlanPayload?.volume_ratio);
+    items.push(
+      volumeRatio != null
+        ? `Volume ${volumeRatio.toFixed(2)}x above 31-day average`
+        : 'Volume above 31-day average'
+    );
+    const slope = toFiniteNumber(tradingPlanPayload?.ema_slope_pct);
+    if (slope != null) {
+      items.push(`EMA20 trending up (${slope >= 0 ? '+' : ''}${slope.toFixed(2)}%/day)`);
+    }
+    return items;
   }, [tradingPlanPayload]);
 
   const tradingPlanCategoryLabel = useMemo(() => {
     if (!screeningCategory) return null;
     return screeningCategory.toUpperCase();
   }, [screeningCategory]);
+
+  // --- Position size calculator: risk-first, never requires manual share math ---
+  const tradingPlanBalanceValue = useMemo(() => {
+    const manual = toFiniteNumber(tradingPlanBalanceInput);
+    if (manual != null && manual > 0) return manual;
+    return toFiniteNumber(tradingPlanPayload?.account_size);
+  }, [tradingPlanBalanceInput, tradingPlanPayload]);
+
+  const tradingPlanRiskPercentValue = useMemo(() => {
+    const manual = toFiniteNumber(tradingPlanRiskPercentInput);
+    if (manual != null && manual > 0) return manual;
+    return toFiniteNumber(tradingPlanPayload?.risk_percent) ?? 1;
+  }, [tradingPlanRiskPercentInput, tradingPlanPayload]);
+
+  const tradingPlanMaxRiskAmount = useMemo(() => {
+    if (tradingPlanBalanceValue == null || tradingPlanRiskPercentValue == null) return null;
+    return (tradingPlanBalanceValue * tradingPlanRiskPercentValue) / 100;
+  }, [tradingPlanBalanceValue, tradingPlanRiskPercentValue]);
+
+  const tradingPlanShareCount = useMemo(() => {
+    if (tradingPlanMaxRiskAmount == null || !tradingPlanRiskPerUnit) return 0;
+    return Math.max(Math.floor(tradingPlanMaxRiskAmount / tradingPlanRiskPerUnit), 0);
+  }, [tradingPlanMaxRiskAmount, tradingPlanRiskPerUnit]);
+
+  const tradingPlanLotCount = useMemo(() => {
+    if (!lotEligible || tradingPlanShareCount <= 0) return null;
+    return Math.floor(tradingPlanShareCount / 100);
+  }, [lotEligible, tradingPlanShareCount]);
+
+  const tradingPlanSizeSummary = useMemo(() => {
+    if (tradingPlanShareCount <= 0) return null;
+    const shareLabel = tradingPlanShareCount.toLocaleString('en-US', { maximumFractionDigits: 0 });
+    if (lotEligible) {
+      const lotShares = (tradingPlanLotCount ?? 0) * 100;
+      const lotLabel = (tradingPlanLotCount ?? 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
+      return `${lotLabel} lots (${lotShares.toLocaleString('en-US')} shares)`;
+    }
+    return `${shareLabel} shares`;
+  }, [tradingPlanShareCount, tradingPlanLotCount, lotEligible]);
+
+  const tradingPlanPositionCost = useMemo(() => {
+    if (tradingPlanShareCount <= 0 || tradingPlanEntryPrice == null) return null;
+    return tradingPlanShareCount * tradingPlanEntryPrice;
+  }, [tradingPlanShareCount, tradingPlanEntryPrice]);
+
+  const tradingPlanExpectedLoss = useMemo(() => {
+    if (tradingPlanShareCount <= 0 || tradingPlanRiskPerUnit == null) return null;
+    return tradingPlanShareCount * tradingPlanRiskPerUnit;
+  }, [tradingPlanShareCount, tradingPlanRiskPerUnit]);
+
+  const tradingPlanExpectedProfit = useMemo(() => {
+    if (tradingPlanShareCount <= 0 || tradingPlanPrimaryTarget?.diff == null) return null;
+    return tradingPlanShareCount * tradingPlanPrimaryTarget.diff;
+  }, [tradingPlanShareCount, tradingPlanPrimaryTarget]);
+
+  const tradingPlanCalculatorRiskReward = useMemo(() => {
+    if (tradingPlanExpectedProfit == null || !tradingPlanExpectedLoss) return tradingPlanRiskReward.primary;
+    return tradingPlanExpectedProfit / tradingPlanExpectedLoss;
+  }, [tradingPlanExpectedProfit, tradingPlanExpectedLoss, tradingPlanRiskReward]);
 
   const quickStats = useMemo(() => {
     if (!fundamentals) return [];
@@ -2559,186 +2657,244 @@ function ElectionCyclePageContent() {
   const renderTradingPlanTab = () => {
     if (!hasTradingPlan) {
       return (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 gap-2 text-center">
-            <p className="text-sm font-semibold text-foreground">No Trading Plan Available</p>
-            <p className="text-xs text-muted-foreground max-w-xs">
-              Trading plans are generated when breakout signals are detected. Check back after the next screening run.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="rounded-xl border border-border/60 py-10 px-4 flex flex-col items-center justify-center gap-1.5 text-center">
+          <p className="text-sm font-semibold text-foreground">No Trading Plan Available</p>
+          <p className="text-xs text-muted-foreground max-w-xs">
+            A plan appears automatically once a breakout signal is detected for this symbol.
+          </p>
+        </div>
       );
     }
 
-    const sizeModeOptions = lotEligible ? ['share', 'lot'] : ['share'];
-
-    // Calculate risk-reward ratio
-    const bestTarget = tradingPlanTargets.length > 0 ? tradingPlanTargets[tradingPlanTargets.length - 1] : null;
-    const riskReward = (tradingPlanStopLossPct != null && bestTarget?.pct != null && tradingPlanStopLossPct !== 0)
-      ? Math.abs(bestTarget.pct / tradingPlanStopLossPct)
-      : null;
+    const rr = tradingPlanRiskReward.primary;
+    const rrLabel = rr != null ? `1 : ${rr.toFixed(1)}` : '—';
+    const rrTone = rr == null
+      ? 'text-muted-foreground'
+      : rr >= 2
+        ? 'text-emerald-600 dark:text-emerald-400'
+        : rr >= 1.2
+          ? 'text-amber-600 dark:text-amber-400'
+          : 'text-red-600 dark:text-red-400';
+    const perTargetRR = tradingPlanRiskReward.perTarget;
+    const firstRR = perTargetRR[0];
+    const lastRR = perTargetRR[perTargetRR.length - 1];
+    const riskPresets = [0.5, 1, 2];
 
     return (
-      <div className="space-y-4 text-xs">
-        {/* Summary Banner */}
-        <div className="rounded-lg bg-card border border-border p-4">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-primary">
-              {tradingPlanCategoryLabel ? `${tradingPlanCategoryLabel} Signal` : 'Active Signal'}
+      <div className="space-y-3 text-xs">
+        {/* 1. Header + Trade Quality */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground truncate">
+              {tradingPlanCategoryLabel ? `${tradingPlanCategoryLabel} Breakout` : 'Breakout Signal'}
             </span>
             {screeningSignalDateLabel && (
-              <span className="text-[11px] text-muted-foreground">{screeningSignalDateLabel}</span>
+              <span className="text-[10px] text-muted-foreground/70 shrink-0">· {screeningSignalDateLabel}</span>
             )}
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div className="text-center">
-              <p className="text-[10px] text-muted-foreground mb-0.5">Entry</p>
-              <p className="text-sm font-bold text-foreground">{formatPriceValue(tradingPlanEntryPrice)}</p>
+          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${tradingPlanQualityTier.bg} ${tradingPlanQualityTier.tone}`}>
+            {tradingPlanQualityTier.label}
+          </span>
+        </div>
+
+        {/* 2. Risk : Reward — the headline metric */}
+        <div className="rounded-xl border border-border/60 bg-card px-4 py-3.5 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Risk : Reward</p>
+            <p className={`text-2xl font-bold leading-none ${rrTone}`}>{rrLabel}</p>
+            <p className="text-[10px] text-muted-foreground mt-1.5">
+              Risk {formatPriceValue(tradingPlanRiskPerUnit)} to reach {tradingPlanPrimaryTarget?.label ?? 'target'} · {tradingPlanPrimaryTarget?.reason ?? '—'}
+            </p>
+          </div>
+          <div className="text-right shrink-0">
+            <p className="text-[10px] text-muted-foreground mb-0.5">Range TP1→TP3</p>
+            <p className="text-xs font-semibold text-foreground">
+              {firstRR != null ? `1:${firstRR.toFixed(1)}` : '—'} → {lastRR != null ? `1:${lastRR.toFixed(1)}` : '—'}
+            </p>
+          </div>
+        </div>
+
+        {/* 3. Entry */}
+        <div className="rounded-xl border border-border/60 p-3 space-y-1">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold text-foreground">Entry</p>
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+              {tradingPlanEntryZone.type}
+            </span>
+          </div>
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-base font-bold text-foreground">{formatPriceValue(tradingPlanEntryPrice)}</p>
+            <p className="text-[10px] text-muted-foreground text-right">
+              Buy zone {formatPriceValue(tradingPlanEntryZone.low)}–{formatPriceValue(tradingPlanEntryZone.high)}
+            </p>
+          </div>
+          <p className="text-[10px] text-muted-foreground">{tradingPlanEntryZone.reason}</p>
+        </div>
+
+        {/* 4. Stop Loss */}
+        <div className="rounded-xl border border-border/60 p-3 space-y-1">
+          <div className="flex items-center justify-between">
+            <p className="text-[11px] font-semibold text-foreground">Stop Loss</p>
+            <span className="text-[10px] font-semibold text-red-600 dark:text-red-400">
+              {tradingPlanStopLossPct != null ? `${tradingPlanStopLossPct.toFixed(2)}%` : '—'}
+            </span>
+          </div>
+          <p className="text-base font-bold text-red-600 dark:text-red-400">{formatPriceValue(tradingPlanStopLossPrice)}</p>
+          <p className="text-[10px] text-muted-foreground">{tradingPlanStopLossReason}</p>
+        </div>
+
+        {/* 5. Take Profit Strategy */}
+        <div className="rounded-xl border border-border/60 p-3 space-y-2">
+          <p className="text-[11px] font-semibold text-foreground">Take Profit Strategy</p>
+          <div className="space-y-2">
+            {tradingPlanTargets.map((target) => (
+              <div
+                key={target.label}
+                className="flex items-start justify-between gap-3 pb-2 border-b border-border/40 last:border-b-0 last:pb-0"
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{target.label}</span>
+                    <span className="text-[10px] text-muted-foreground truncate">{target.reason}</span>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                    Sell {target.sellPercent}% · {target.action}
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-xs font-semibold text-foreground">{formatPriceValue(target.price)}</p>
+                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                    {target.pct != null ? `+${target.pct.toFixed(1)}%` : '—'}
+                    {target.rMultiple != null ? ` · ${target.rMultiple.toFixed(1)}R` : ''}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 6. Position Size Calculator — risk-first, no manual share math */}
+        <div className="rounded-xl border border-border/60 p-3 space-y-3">
+          <p className="text-[11px] font-semibold text-foreground">Position Size Calculator</p>
+
+          <div className="grid grid-cols-2 gap-2.5">
+            <div className="space-y-1">
+              <label className="text-[10px] font-medium text-muted-foreground">Account Balance</label>
+              <Input
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="any"
+                value={tradingPlanBalanceInput}
+                onChange={(event) => setTradingPlanBalanceInput(event.target.value)}
+                className="text-xs h-8"
+                placeholder="e.g. 50,000"
+              />
             </div>
-            <div className="text-center">
-              <p className="text-[10px] text-muted-foreground mb-0.5">Stop Loss</p>
-              <p className="text-sm font-bold text-red-600">{formatPriceValue(tradingPlanStopLossPrice)}</p>
+            <div className="space-y-1">
+              <label className="text-[10px] font-medium text-muted-foreground">Risk %</label>
+              <Input
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="0.1"
+                value={tradingPlanRiskPercentInput}
+                onChange={(event) => setTradingPlanRiskPercentInput(event.target.value)}
+                className="text-xs h-8"
+                placeholder="1"
+              />
             </div>
-            <div className="text-center">
-              <p className="text-[10px] text-muted-foreground mb-0.5">Risk : Reward</p>
-              <p className="text-sm font-bold text-foreground">{riskReward != null ? `1 : ${riskReward.toFixed(1)}` : '—'}</p>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            {riskPresets.map((preset) => (
+              <Button
+                key={preset}
+                type="button"
+                size="xs"
+                variant={Number(tradingPlanRiskPercentInput) === preset ? 'default' : 'ghost'}
+                className={`px-2 py-0.5 text-[10px] rounded-full ${Number(tradingPlanRiskPercentInput) === preset ? 'shadow-sm' : ''}`}
+                onClick={() => setTradingPlanRiskPercentInput(String(preset))}
+              >
+                {preset}%
+              </Button>
+            ))}
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-[10px] font-medium text-muted-foreground">Your Entry Price</label>
+            <Input
+              type="number"
+              inputMode="decimal"
+              step="0.0001"
+              min="0"
+              value={tradingPlanEntryInput}
+              onChange={(event) => setTradingPlanEntryInput(event.target.value)}
+              className="text-xs h-8"
+              placeholder={tradingPlanPayload?.entry_price ? `Default: ${tradingPlanPayload.entry_price}` : 'e.g. 125.50'}
+            />
+          </div>
+
+          <div className="rounded-lg bg-muted/30 p-2.5 grid grid-cols-2 gap-y-2.5 gap-x-2">
+            <div>
+              <p className="text-[10px] text-muted-foreground">Max Risk Amount</p>
+              <p className="text-xs font-semibold text-red-600 dark:text-red-400">{formatPlanCurrencyValue(tradingPlanMaxRiskAmount)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground">Position Size</p>
+              <p className="text-xs font-semibold text-foreground">{tradingPlanSizeSummary || '—'}</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground">Position Cost</p>
+              <p className="text-xs font-semibold text-foreground">{formatPlanCurrencyValue(tradingPlanPositionCost)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground">Risk : Reward</p>
+              <p className="text-xs font-semibold text-foreground">
+                {tradingPlanCalculatorRiskReward != null ? `1 : ${tradingPlanCalculatorRiskReward.toFixed(1)}` : '—'}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground">Expected Loss (at SL)</p>
+              <p className="text-xs font-semibold text-red-600 dark:text-red-400">
+                {formatPlanCurrencyDelta(tradingPlanExpectedLoss != null ? -tradingPlanExpectedLoss : null)}
+              </p>
+            </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground">Expected Profit ({tradingPlanPrimaryTarget?.label ?? 'TP'})</p>
+              <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                {formatPlanCurrencyDelta(tradingPlanExpectedProfit)}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Price Targets */}
-        <Card>
-          <CardContent className="space-y-3">
-            <p className="text-[11px] uppercase tracking-wide font-semibold text-muted-foreground">
-              Price Targets
-            </p>
-
-            <div className="overflow-hidden rounded-lg border border-border">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="border-b border-border bg-muted/40">
-                    <th className="text-left py-2 px-3 font-medium text-muted-foreground">Level</th>
-                    <th className="text-right py-2 px-3 font-medium text-muted-foreground">Price</th>
-                    <th className="text-right py-2 px-3 font-medium text-muted-foreground">P/L</th>
-                    <th className="text-right py-2 px-3 font-medium text-muted-foreground">%</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[...tradingPlanTargets].reverse().map((target) => (
-                    <tr key={target.label} className="border-b border-border/60">
-                      <td className="py-2 px-3 font-semibold text-emerald-600 dark:text-emerald-400">
-                        {target.label}
-                        <span className="ml-2 font-normal text-muted-foreground">Take Profit</span>
-                      </td>
-                      <td className="py-2 px-3 text-right font-semibold text-foreground">{formatPriceValue(target.price)}</td>
-                      <td className="py-2 px-3 text-right font-medium text-emerald-600 dark:text-emerald-400">{formatPlanCurrencyDelta(target.pnl)}</td>
-                      <td className="py-2 px-3 text-right font-medium text-emerald-600 dark:text-emerald-400">
-                        {target.pct != null ? `${target.pct >= 0 ? '+' : ''}${target.pct.toFixed(2)}%` : '—'}
-                      </td>
-                    </tr>
-                  ))}
-                  <tr className="border-b border-border/60 bg-primary/5">
-                    <td className="py-2 px-3 font-semibold text-primary">
-                      Entry
-                      <span className="ml-2 font-normal text-muted-foreground">Buy zone</span>
-                    </td>
-                    <td className="py-2 px-3 text-right font-semibold text-foreground">{formatPriceValue(tradingPlanEntryPrice)}</td>
-                    <td className="py-2 px-3 text-right text-muted-foreground" colSpan={2}>
-                      Total: {formatPlanCurrencyValue(tradingPlanEntryNotional)}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="py-2 px-3 font-semibold text-red-600 dark:text-red-400">
-                      Stop Loss
-                      <span className="ml-2 font-normal text-muted-foreground">Exit if price drops here</span>
-                    </td>
-                    <td className="py-2 px-3 text-right font-semibold text-foreground">{formatPriceValue(tradingPlanStopLossPrice)}</td>
-                    <td className="py-2 px-3 text-right font-medium text-red-600 dark:text-red-400">{formatPlanCurrencyDelta(tradingPlanStopLossPnl)}</td>
-                    <td className="py-2 px-3 text-right font-medium text-red-600 dark:text-red-400">
-                      {tradingPlanStopLossPct != null ? `${tradingPlanStopLossPct.toFixed(2)}%` : '—'}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+        {/* 7. Technical Confirmation */}
+        <div className="rounded-xl border border-border/60 p-3 space-y-2">
+          <p className="text-[11px] font-semibold text-foreground">Technical Confirmation</p>
+          <ul className="space-y-1">
+            {tradingPlanTechnicalConfirmations.map((line, index) => (
+              <li key={index} className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
+                <span className="mt-[5px] h-1 w-1 rounded-full bg-emerald-500 shrink-0" />
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="grid grid-cols-3 gap-2 pt-1.5 border-t border-border/40">
+            <div>
+              <p className="text-[10px] text-muted-foreground">Swing Low</p>
+              <p className="text-[11px] font-semibold">{formatPriceValue(tradingPlanBasisValues.swing)}</p>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Position Calculator */}
-        <Card>
-          <CardContent className="space-y-4">
-            <p className="text-[11px] uppercase tracking-wide font-semibold text-muted-foreground">
-              Position Calculator
-            </p>
-
-            <div className="grid gap-3 lg:grid-cols-2">
-              <div className="space-y-1.5">
-                <label className="text-[11px] font-medium text-muted-foreground">
-                  Your Entry Price
-                </label>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  step="0.0001"
-                  min="0"
-                  value={tradingPlanEntryInput}
-                  onChange={(event) => setTradingPlanEntryInput(event.target.value)}
-                  className="text-xs"
-                  placeholder={tradingPlanPayload?.entry_price ? `Default: ${tradingPlanPayload.entry_price}` : 'e.g. 125.50'}
-                />
-                <p className="text-[10px] text-muted-foreground">
-                  Change this to see updated profit/loss numbers
-                </p>
-              </div>
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <label className="text-[11px] font-medium text-muted-foreground">
-                    How Many?
-                  </label>
-                  <div className="inline-flex items-center gap-0.5 rounded-full border bg-muted/40 p-0.5">
-                    {sizeModeOptions.map((mode) => (
-                      <Button
-                        key={mode}
-                        type="button"
-                        size="xs"
-                        variant={tradingPlanSizeMode === mode ? 'default' : 'ghost'}
-                        className={`px-2.5 py-1 text-[10px] rounded-full ${tradingPlanSizeMode === mode ? 'shadow-sm' : ''}`}
-                        onClick={() => setTradingPlanSizeMode(mode)}
-                      >
-                        {mode === 'lot' ? 'Lots' : 'Shares'}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-                <Input
-                  type="number"
-                  inputMode="decimal"
-                  min="0"
-                  step="any"
-                  value={tradingPlanSizeInput}
-                  onChange={(event) => setTradingPlanSizeInput(event.target.value)}
-                  className="text-xs"
-                  placeholder={tradingPlanSizeMode === 'lot' ? 'e.g. 10 lots' : 'e.g. 100 shares'}
-                />
-                <p className="text-[10px] text-muted-foreground">
-                  {tradingPlanSizeSummary || (tradingPlanSizeMode === 'lot' ? '1 lot = 100 shares' : 'Enter number of shares')}
-                </p>
-              </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground">EMA20</p>
+              <p className="text-[11px] font-semibold">{formatPriceValue(tradingPlanBasisValues.ema)}</p>
             </div>
-
-            {/* Reference Levels */}
-            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border/20">
-              <div className="px-2.5 py-2 rounded-lg bg-muted/30">
-                <p className="text-[10px] text-muted-foreground">Swing Low</p>
-                <p className="text-xs font-semibold">{formatPriceValue(tradingPlanBasisValues.swing)}</p>
-              </div>
-              <div className="px-2.5 py-2 rounded-lg bg-muted/30">
-                <p className="text-[10px] text-muted-foreground">EMA 20</p>
-                <p className="text-xs font-semibold">{formatPriceValue(tradingPlanBasisValues.ema)}</p>
-              </div>
+            <div>
+              <p className="text-[10px] text-muted-foreground">ATR(14)</p>
+              <p className="text-[11px] font-semibold">{formatPriceValue(tradingPlanBasisValues.atr)}</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
     );
   };

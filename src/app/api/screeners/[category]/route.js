@@ -37,10 +37,12 @@ const TRADING_PLAN_ACCOUNT_SIZE = {
 };
 
 const DEFAULT_RISK_PERCENT = 1;
-const TP_PERCENTAGES = [5, 10, 15];
 const STOP_EMA_BUFFER = 0.98;
 const DEFAULT_STOP_BUFFER = 0.97;
 const SWING_LOOKBACK = 5;
+const RESISTANCE_LOOKBACK = 90;
+const RESISTANCE_MIN_GAP = 0.01; // resistance must clear entry by at least 1%
+const ATR_PERIOD = 14;
 
 const EMA_PERIOD = 31;
 const VOLUME_MA_PERIOD = 31;
@@ -110,7 +112,87 @@ function resolveAccountSize(category) {
   return TRADING_PLAN_ACCOUNT_SIZE[category] ?? 50_000;
 }
 
-function buildTradingPlan({ price, emaValue, swingLow, category }) {
+/**
+ * Builds rationale-driven take-profit targets instead of arbitrary percentage steps.
+ * TP1 = prior resistance (or 1.5R fallback), TP2 = measured move off the base (or 2.5R fallback),
+ * TP3 = fibonacci extension of the base range (or ATR-based fallback). Each target is floored
+ * to a minimum 0.5R separation from the previous one so the ladder always progresses.
+ */
+function computeTakeProfitLadder({ entryPrice, stopLoss, swingLow, swingHigh, atr }) {
+  const riskDistance = entryPrice - stopLoss;
+  const safeAtr = Number.isFinite(atr) && atr > 0 ? atr : (riskDistance > 0 ? riskDistance / 1.5 : entryPrice * 0.02);
+
+  let tp1Price;
+  let tp1Reason;
+  if (Number.isFinite(swingHigh) && swingHigh > entryPrice * (1 + RESISTANCE_MIN_GAP)) {
+    tp1Price = swingHigh;
+    tp1Reason = 'Previous Resistance';
+  } else {
+    tp1Price = entryPrice + riskDistance * 1.5;
+    tp1Reason = '1.5R Target';
+  }
+
+  const baseHeight = Number.isFinite(swingLow) && swingLow < entryPrice
+    ? entryPrice - swingLow
+    : riskDistance * 2;
+  let tp2Price = entryPrice + baseHeight;
+  let tp2Reason = 'Measured Move';
+  const tp2Floor = tp1Price + riskDistance * 0.5;
+  if (!(tp2Price > tp2Floor)) {
+    tp2Price = tp2Floor;
+    tp2Reason = '2.5R Target';
+  }
+
+  let tp3Price;
+  let tp3Reason;
+  if (Number.isFinite(swingHigh) && Number.isFinite(swingLow) && swingHigh > swingLow) {
+    const range = swingHigh - swingLow;
+    tp3Price = swingHigh + range * 0.618;
+    tp3Reason = 'Fibonacci Extension (1.618)';
+  } else {
+    tp3Price = entryPrice + safeAtr * 4;
+    tp3Reason = 'ATR Extension Target';
+  }
+  const tp3Floor = tp2Price + riskDistance * 0.5;
+  if (!(tp3Price > tp3Floor)) {
+    tp3Price = tp3Floor;
+    tp3Reason = '4R Target';
+  }
+
+  return [
+    {
+      label: 'TP1',
+      price: formatPlanPrice(tp1Price),
+      reason: tp1Reason,
+      sell_percent: 30,
+      action: 'Move Stop Loss to Breakeven',
+    },
+    {
+      label: 'TP2',
+      price: formatPlanPrice(tp2Price),
+      reason: tp2Reason,
+      sell_percent: 40,
+      action: 'Trail Stop to EMA20',
+    },
+    {
+      label: 'TP3',
+      price: formatPlanPrice(tp3Price),
+      reason: tp3Reason,
+      sell_percent: 30,
+      action: 'Exit Remaining Position',
+    },
+  ];
+}
+
+function resolveQualityTier(primaryRiskReward) {
+  if (!Number.isFinite(primaryRiskReward)) return 'fair';
+  if (primaryRiskReward >= 3) return 'excellent';
+  if (primaryRiskReward >= 2) return 'good';
+  if (primaryRiskReward >= 1.2) return 'fair';
+  return 'poor';
+}
+
+function buildTradingPlan({ price, emaValue, swingLow, swingHigh, atr, volumeRatio, emaSlopePct, category }) {
   const entryPrice = formatPlanPrice(price) ?? price ?? null;
   if (entryPrice == null) {
     return null;
@@ -118,15 +200,20 @@ function buildTradingPlan({ price, emaValue, swingLow, category }) {
 
   const stopCandidates = [];
   if (Number.isFinite(swingLow)) {
-    stopCandidates.push(swingLow);
+    stopCandidates.push({ value: swingLow, reason: 'Below Swing Low' });
   }
   if (Number.isFinite(emaValue)) {
-    stopCandidates.push(emaValue * STOP_EMA_BUFFER);
+    stopCandidates.push({ value: emaValue * STOP_EMA_BUFFER, reason: 'Below EMA20' });
   }
-  const numericStops = stopCandidates.filter((candidate) => Number.isFinite(candidate));
-  let stopLoss = numericStops.length ? Math.min(...numericStops) : null;
+  const numericStops = stopCandidates.filter((candidate) => Number.isFinite(candidate.value));
+  let chosenStop = numericStops.length
+    ? numericStops.reduce((min, candidate) => (candidate.value < min.value ? candidate : min))
+    : null;
+  let stopLoss = chosenStop?.value ?? null;
+  let stopLossReason = chosenStop?.reason ?? 'Technical Stop';
   if (!Number.isFinite(stopLoss) || stopLoss <= 0 || stopLoss >= entryPrice) {
     stopLoss = entryPrice * DEFAULT_STOP_BUFFER;
+    stopLossReason = 'Technical Stop (3% Buffer)';
   }
   stopLoss = formatPlanPrice(stopLoss);
 
@@ -136,23 +223,47 @@ function buildTradingPlan({ price, emaValue, swingLow, category }) {
   const stopDistance = entryPrice - stopLoss;
   const positionSize = stopDistance > 0 ? Math.max(Math.floor(riskAmount / stopDistance), 0) : 0;
   const capitalAtRisk = stopDistance > 0 ? Number((positionSize * stopDistance).toFixed(2)) : 0;
-  const tpTargets = TP_PERCENTAGES.map((percent, index) => ({
-    label: `Take Profit ${index + 1}`,
-    percent,
-    price: formatPlanPrice(entryPrice * (1 + percent / 100)),
-  }));
+
+  const tpTargets = computeTakeProfitLadder({ entryPrice, stopLoss, swingLow, swingHigh, atr });
+
+  const riskReward = stopDistance > 0
+    ? tpTargets.reduce((acc, target, index) => {
+      const key = `tp${index + 1}`;
+      acc[key] = target.price != null ? Number(((target.price - entryPrice) / stopDistance).toFixed(2)) : null;
+      return acc;
+    }, {})
+    : { tp1: null, tp2: null, tp3: null };
+  riskReward.primary = riskReward.tp2 ?? null;
+
+  // Entry zone: pullback toward EMA20 up to the confirmed breakout price.
+  const zoneLow = Number.isFinite(emaValue) && emaValue < entryPrice
+    ? formatPlanPrice(emaValue)
+    : formatPlanPrice(entryPrice * 0.995);
+  const entryType = zoneLow != null && zoneLow < entryPrice ? 'Limit' : 'Market';
 
   return {
     entry_price: entryPrice,
+    entry_zone_low: zoneLow,
+    entry_zone_high: entryPrice,
+    entry_type: entryType,
+    entry_reason: 'EMA20 breakout confirmed by above-average volume',
     stop_loss: stopLoss,
+    stop_loss_reason: stopLossReason,
     account_size: accountSize,
     risk_percent: riskPercent,
+    risk_amount: Number(riskAmount.toFixed(2)),
     position_size: positionSize,
     capital_at_risk: capitalAtRisk,
     tp_targets: tpTargets,
+    risk_reward: riskReward,
+    quality_tier: resolveQualityTier(riskReward.primary),
+    volume_ratio: Number.isFinite(volumeRatio) ? Number(volumeRatio.toFixed(2)) : null,
+    ema_slope_pct: Number.isFinite(emaSlopePct) ? Number(emaSlopePct.toFixed(2)) : null,
     basis: {
       swing_low: swingLow ?? null,
+      swing_high: swingHigh ?? null,
       ema20: formatPlanPrice(emaValue) ?? null,
+      atr: Number.isFinite(atr) ? formatPlanPrice(atr) : null,
     },
   };
 }
@@ -170,6 +281,38 @@ function findRecentSwingLow(points, index) {
     return null;
   }
   return Math.min(...lows);
+}
+
+/** Nearest meaningful resistance: the highest high in the lookback window before the breakout bar. */
+function findPriorResistance(points, index) {
+  if (!Array.isArray(points) || points.length === 0) {
+    return null;
+  }
+  const start = Math.max(0, index - RESISTANCE_LOOKBACK);
+  const end = Math.max(start, index - SWING_LOOKBACK);
+  const window = points.slice(start, end);
+  const highs = window
+    .map((point) => (Number.isFinite(point.high) ? point.high : Number.isFinite(point.close) ? point.close : null))
+    .filter((value) => value != null);
+  if (!highs.length) {
+    return null;
+  }
+  return Math.max(...highs);
+}
+
+/** Wilder-style true range series, smoothed with a simple moving average. */
+function computeATRSeries(points, period = ATR_PERIOD) {
+  const trueRanges = points.map((point, i) => {
+    if (i === 0) return null;
+    const prevClose = points[i - 1].close;
+    const high = Number.isFinite(point.high) ? point.high : point.close;
+    const low = Number.isFinite(point.low) ? point.low : point.close;
+    if (!Number.isFinite(high) || !Number.isFinite(low) || !Number.isFinite(prevClose)) {
+      return null;
+    }
+    return Math.max(high - low, Math.abs(high - prevClose), Math.abs(low - prevClose));
+  });
+  return computeSMA(trueRanges, period);
 }
 
 function toNumeric(value) {
@@ -307,10 +450,12 @@ function evaluateSymbol(quotes, category, meta) {
       const closeRaw = row?.adjclose ?? row?.close ?? null;
       const volumeRaw = row?.volume ?? null;
       const lowRaw = row?.low ?? row?.adjclose ?? row?.close ?? null;
+      const highRaw = row?.high ?? row?.adjclose ?? row?.close ?? null;
       const close = typeof closeRaw === "number" ? closeRaw : closeRaw != null ? Number(closeRaw) : null;
       const volume =
         typeof volumeRaw === "number" ? volumeRaw : volumeRaw != null ? Number(volumeRaw) : null;
       const low = typeof lowRaw === "number" ? lowRaw : lowRaw != null ? Number(lowRaw) : null;
+      const high = typeof highRaw === "number" ? highRaw : highRaw != null ? Number(highRaw) : null;
       if (close == null || volume == null) return null;
       const dateValue = row.date ? new Date(row.date) : null;
       return dateValue && !Number.isNaN(dateValue.valueOf())
@@ -319,6 +464,7 @@ function evaluateSymbol(quotes, category, meta) {
             close,
             volume,
             low: low ?? close,
+            high: high ?? close,
           }
         : null;
     })
@@ -332,6 +478,7 @@ function evaluateSymbol(quotes, category, meta) {
   const volumes = cleaned.map((row) => row.volume);
   const ema20 = computeEMA(closes, EMA_PERIOD);
   const volumeMA20 = computeSMA(volumes, VOLUME_MA_PERIOD);
+  const atrSeries = computeATRSeries(cleaned, ATR_PERIOD);
 
   const startIndex = Math.max(1, cleaned.length - CANDLE_LOOKBACK);
   let hasValidBreakout = false;
@@ -381,7 +528,20 @@ function evaluateSymbol(quotes, category, meta) {
       }
       if (!planPayload) {
         const swingLow = findRecentSwingLow(cleaned, i);
-        planPayload = buildTradingPlan({ price, emaValue, swingLow, category });
+        const swingHigh = findPriorResistance(cleaned, i);
+        const atr = atrSeries[i];
+        const volumeRatio = volumeAvg > 0 ? volume / volumeAvg : null;
+        const emaSlopePct = emaValue ? (emaSlope / emaValue) * 100 : null;
+        planPayload = buildTradingPlan({
+          price,
+          emaValue,
+          swingLow,
+          swingHigh,
+          atr,
+          volumeRatio,
+          emaSlopePct,
+          category,
+        });
       }
     }
   }
