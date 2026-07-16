@@ -2685,11 +2685,8 @@ function ElectionCyclePageContent() {
         {/* 1. Header + Trade Quality */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 min-w-0">
-            <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground truncate">
-              {tradingPlanCategoryLabel ? `${tradingPlanCategoryLabel} Breakout` : 'Breakout Signal'}
-            </span>
             {screeningSignalDateLabel && (
-              <span className="text-[10px] text-muted-foreground/70 shrink-0">· {screeningSignalDateLabel}</span>
+              <span className="text-[10px] text-muted-foreground/70 shrink-0">{screeningSignalDateLabel}</span>
             )}
           </div>
           <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${tradingPlanQualityTier.bg} ${tradingPlanQualityTier.tone}`}>
@@ -2943,25 +2940,25 @@ function ElectionCyclePageContent() {
         : null;
     const snapshotRows = marketData
       ? [
-          { label: 'Market State', value: marketData.marketState || null },
-          { label: 'Quote Source', value: marketData.quoteSourceName || null },
-          { label: 'Bid', value: formatPlainNumber(marketData.bid) },
-          { label: 'Ask', value: formatPlainNumber(marketData.ask) },
-          { label: 'Bid Size', value: formatQuantityValue(marketData.bidSize) },
-          { label: 'Ask Size', value: formatQuantityValue(marketData.askSize) },
-          {
-            label: 'Spread',
-            value:
-              spread != null && Number.isFinite(spread)
-                ? `${formatPlainNumber(spread)}${spreadPct != null ? ` (${spreadPct.toFixed(3)}%)` : ''}`
-                : null,
-          },
-          { label: 'Timezone', value: marketData.exchangeTimezoneName || null },
-          { label: 'Regular Session', value: formatTimestamp(marketData.regularMarketTime) || null },
-          { label: 'Pre-Market', value: formatTimestamp(marketData.preMarketTime) || null },
-          { label: 'Post-Market', value: formatTimestamp(marketData.postMarketTime) || null },
-          { label: 'Analyst Summary', value: marketData.averageAnalystRating || null },
-        ].filter((item) => item.value && item.value !== '—')
+        { label: 'Market State', value: marketData.marketState || null },
+        { label: 'Quote Source', value: marketData.quoteSourceName || null },
+        { label: 'Bid', value: formatPlainNumber(marketData.bid) },
+        { label: 'Ask', value: formatPlainNumber(marketData.ask) },
+        { label: 'Bid Size', value: formatQuantityValue(marketData.bidSize) },
+        { label: 'Ask Size', value: formatQuantityValue(marketData.askSize) },
+        {
+          label: 'Spread',
+          value:
+            spread != null && Number.isFinite(spread)
+              ? `${formatPlainNumber(spread)}${spreadPct != null ? ` (${spreadPct.toFixed(3)}%)` : ''}`
+              : null,
+        },
+        { label: 'Timezone', value: marketData.exchangeTimezoneName || null },
+        { label: 'Regular Session', value: formatTimestamp(marketData.regularMarketTime) || null },
+        { label: 'Pre-Market', value: formatTimestamp(marketData.preMarketTime) || null },
+        { label: 'Post-Market', value: formatTimestamp(marketData.postMarketTime) || null },
+        { label: 'Analyst Summary', value: marketData.averageAnalystRating || null },
+      ].filter((item) => item.value && item.value !== '—')
       : [];
 
     return (
@@ -3770,34 +3767,34 @@ function ElectionCyclePageContent() {
             <CardHeader>
               <CardTitle className="text-sm">Key Statistics</CardTitle>
             </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-y-3 gap-x-4">
-                  {[
-                    { label: 'Beta', value: kse.beta != null ? kse.beta.toFixed(3) : null },
-                    { label: 'Book Value', value: kse.bookValue != null ? kse.bookValue.toFixed(2) : null },
-                    { label: 'EPS (TTM)', value: kse.trailingEps != null ? kse.trailingEps.toFixed(2) : null },
-                    { label: 'EPS (Fwd)', value: kse.forwardEps != null ? kse.forwardEps.toFixed(2) : null },
-                    { label: 'Earnings Growth (Q)', value: kse.earningsQuarterlyGrowth != null ? formatPct(kse.earningsQuarterlyGrowth) : null },
-                    { label: '52-Week Change', value: kse.fiftyTwoWeekChange != null ? formatPct(kse.fiftyTwoWeekChange) : null },
-                    { label: 'Shares Outstanding', value: kse.sharesOutstanding != null ? formatNum(kse.sharesOutstanding) : null },
-                    { label: 'Float', value: kse.floatShares != null ? formatNum(kse.floatShares) : null },
-                    { label: 'Implied Shares Out', value: kse.impliedSharesOutstanding != null ? formatNum(kse.impliedSharesOutstanding) : null },
-                    { label: 'Short Ratio', value: kse.shortRatio != null ? kse.shortRatio.toFixed(2) : null },
-                    { label: 'Shares Short', value: kse.sharesShort != null ? formatNum(kse.sharesShort) : null },
-                    { label: 'Shares Short (Prev)', value: kse.sharesShortPriorMonth != null ? formatNum(kse.sharesShortPriorMonth) : null },
-                    { label: 'Short % Float', value: kse.shortPercentOfFloat != null ? formatPct(kse.shortPercentOfFloat) : null },
-                    { label: 'Short % Shares Out', value: kse.sharesPercentSharesOut != null ? formatPct(kse.sharesPercentSharesOut) : null },
-                    { label: '% Held by Insiders', value: kse.heldPercentInsiders != null ? formatPct(kse.heldPercentInsiders) : null },
-                    { label: '% Held by Institutions', value: kse.heldPercentInstitutions != null ? formatPct(kse.heldPercentInstitutions) : null },
-                    { label: 'Last Split', value: kse.lastSplitFactor || null },
-                  ].filter(item => item.value != null).map((item) => (
-                    <div key={item.label} className="space-y-0.5">
-                      <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
-                      <dd className="text-xs font-semibold">{item.value}</dd>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                {[
+                  { label: 'Beta', value: kse.beta != null ? kse.beta.toFixed(3) : null },
+                  { label: 'Book Value', value: kse.bookValue != null ? kse.bookValue.toFixed(2) : null },
+                  { label: 'EPS (TTM)', value: kse.trailingEps != null ? kse.trailingEps.toFixed(2) : null },
+                  { label: 'EPS (Fwd)', value: kse.forwardEps != null ? kse.forwardEps.toFixed(2) : null },
+                  { label: 'Earnings Growth (Q)', value: kse.earningsQuarterlyGrowth != null ? formatPct(kse.earningsQuarterlyGrowth) : null },
+                  { label: '52-Week Change', value: kse.fiftyTwoWeekChange != null ? formatPct(kse.fiftyTwoWeekChange) : null },
+                  { label: 'Shares Outstanding', value: kse.sharesOutstanding != null ? formatNum(kse.sharesOutstanding) : null },
+                  { label: 'Float', value: kse.floatShares != null ? formatNum(kse.floatShares) : null },
+                  { label: 'Implied Shares Out', value: kse.impliedSharesOutstanding != null ? formatNum(kse.impliedSharesOutstanding) : null },
+                  { label: 'Short Ratio', value: kse.shortRatio != null ? kse.shortRatio.toFixed(2) : null },
+                  { label: 'Shares Short', value: kse.sharesShort != null ? formatNum(kse.sharesShort) : null },
+                  { label: 'Shares Short (Prev)', value: kse.sharesShortPriorMonth != null ? formatNum(kse.sharesShortPriorMonth) : null },
+                  { label: 'Short % Float', value: kse.shortPercentOfFloat != null ? formatPct(kse.shortPercentOfFloat) : null },
+                  { label: 'Short % Shares Out', value: kse.sharesPercentSharesOut != null ? formatPct(kse.sharesPercentSharesOut) : null },
+                  { label: '% Held by Insiders', value: kse.heldPercentInsiders != null ? formatPct(kse.heldPercentInsiders) : null },
+                  { label: '% Held by Institutions', value: kse.heldPercentInstitutions != null ? formatPct(kse.heldPercentInstitutions) : null },
+                  { label: 'Last Split', value: kse.lastSplitFactor || null },
+                ].filter(item => item.value != null).map((item) => (
+                  <div key={item.label} className="space-y-0.5">
+                    <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
+                    <dd className="text-xs font-semibold">{item.value}</dd>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
           </Card>
         )}
 
@@ -3806,24 +3803,24 @@ function ElectionCyclePageContent() {
             <CardHeader>
               <CardTitle className="text-sm">Ownership & Short Interest</CardTitle>
             </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-y-3 gap-x-4">
-                  {[
-                    { label: 'Shares Short (Current)', value: kse.sharesShort != null ? formatNum(kse.sharesShort) : null },
-                    { label: 'Shares Short (Prev)', value: kse.sharesShortPriorMonth != null ? formatNum(kse.sharesShortPriorMonth) : null },
-                    { label: 'Short % Float', value: kse.shortPercentOfFloat != null ? formatPct(kse.shortPercentOfFloat) : null },
-                    { label: 'Short % Shares Out', value: kse.sharesPercentSharesOut != null ? formatPct(kse.sharesPercentSharesOut) : null },
-                    { label: 'Insider Ownership', value: kse.heldPercentInsiders != null ? formatPct(kse.heldPercentInsiders) : null },
-                    { label: 'Institution Ownership', value: kse.heldPercentInstitutions != null ? formatPct(kse.heldPercentInstitutions) : null },
-                    { label: 'Short Data Date', value: kse.sharesShortPreviousMonthDate ? formatDate(kse.sharesShortPreviousMonthDate) : null },
-                  ].filter((item) => item.value != null).map((item) => (
-                    <div key={item.label} className="space-y-0.5">
-                      <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
-                      <dd className="text-xs font-semibold">{item.value}</dd>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
+            <CardContent>
+              <div className="grid grid-cols-2 gap-y-3 gap-x-4">
+                {[
+                  { label: 'Shares Short (Current)', value: kse.sharesShort != null ? formatNum(kse.sharesShort) : null },
+                  { label: 'Shares Short (Prev)', value: kse.sharesShortPriorMonth != null ? formatNum(kse.sharesShortPriorMonth) : null },
+                  { label: 'Short % Float', value: kse.shortPercentOfFloat != null ? formatPct(kse.shortPercentOfFloat) : null },
+                  { label: 'Short % Shares Out', value: kse.sharesPercentSharesOut != null ? formatPct(kse.sharesPercentSharesOut) : null },
+                  { label: 'Insider Ownership', value: kse.heldPercentInsiders != null ? formatPct(kse.heldPercentInsiders) : null },
+                  { label: 'Institution Ownership', value: kse.heldPercentInstitutions != null ? formatPct(kse.heldPercentInstitutions) : null },
+                  { label: 'Short Data Date', value: kse.sharesShortPreviousMonthDate ? formatDate(kse.sharesShortPreviousMonthDate) : null },
+                ].filter((item) => item.value != null).map((item) => (
+                  <div key={item.label} className="space-y-0.5">
+                    <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
+                    <dd className="text-xs font-semibold">{item.value}</dd>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
           </Card>
         )}
 
@@ -3832,20 +3829,20 @@ function ElectionCyclePageContent() {
             <CardHeader>
               <CardTitle className="text-sm">Fiscal Markers</CardTitle>
             </CardHeader>
-              <CardContent>
-                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  {[
-                    { label: 'Most Recent Quarter', value: kse.mostRecentQuarter ? formatDate(kse.mostRecentQuarter) : null },
-                    { label: 'Last Fiscal Year End', value: kse.lastFiscalYearEnd ? formatDate(kse.lastFiscalYearEnd) : null },
-                    { label: 'Next Fiscal Year End', value: kse.nextFiscalYearEnd ? formatDate(kse.nextFiscalYearEnd) : null },
-                  ].filter((item) => item.value != null).map((item) => (
-                    <div key={item.label} className="space-y-0.5">
-                      <dt className="text-muted-foreground">{item.label}</dt>
-                      <dd className="font-semibold text-foreground">{item.value}</dd>
-                    </div>
-                  ))}
-                </dl>
-              </CardContent>
+            <CardContent>
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                {[
+                  { label: 'Most Recent Quarter', value: kse.mostRecentQuarter ? formatDate(kse.mostRecentQuarter) : null },
+                  { label: 'Last Fiscal Year End', value: kse.lastFiscalYearEnd ? formatDate(kse.lastFiscalYearEnd) : null },
+                  { label: 'Next Fiscal Year End', value: kse.nextFiscalYearEnd ? formatDate(kse.nextFiscalYearEnd) : null },
+                ].filter((item) => item.value != null).map((item) => (
+                  <div key={item.label} className="space-y-0.5">
+                    <dt className="text-muted-foreground">{item.label}</dt>
+                    <dd className="font-semibold text-foreground">{item.value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </CardContent>
           </Card>
         )}
 
@@ -3855,36 +3852,36 @@ function ElectionCyclePageContent() {
             <CardHeader>
               <CardTitle className="text-sm">Recent Upgrades & Downgrades</CardTitle>
             </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {upgrades.map((entry, idx) => {
-                    const actionColor = entry.action === 'up' || entry.action === 'init'
-                      ? 'text-emerald-600 dark:text-emerald-400'
-                      : entry.action === 'down'
-                        ? 'text-red-500'
-                        : 'text-muted-foreground';
-                    const actionLabel = entry.action === 'up' ? '↑ Upgrade'
-                      : entry.action === 'down' ? '↓ Downgrade'
-                        : entry.action === 'init' ? '● Initiated'
-                          : entry.action === 'main' ? '— Maintained'
-                            : entry.action || '—';
-                    return (
-                      <div key={idx} className="flex items-start gap-3 py-2 border-b border-border/10 last:border-0">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold truncate">{entry.firm || 'Unknown'}</p>
-                          <p className="text-[11px] text-muted-foreground">
-                            {entry.fromGrade ? `${entry.fromGrade} → ` : ''}{entry.toGrade || '—'}
-                          </p>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <p className={`text-[11px] font-semibold ${actionColor}`}>{actionLabel}</p>
-                          <p className="text-[10px] text-muted-foreground">{formatDate(entry.date)}</p>
-                        </div>
+            <CardContent>
+              <div className="space-y-2">
+                {upgrades.map((entry, idx) => {
+                  const actionColor = entry.action === 'up' || entry.action === 'init'
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : entry.action === 'down'
+                      ? 'text-red-500'
+                      : 'text-muted-foreground';
+                  const actionLabel = entry.action === 'up' ? '↑ Upgrade'
+                    : entry.action === 'down' ? '↓ Downgrade'
+                      : entry.action === 'init' ? '● Initiated'
+                        : entry.action === 'main' ? '— Maintained'
+                          : entry.action || '—';
+                  return (
+                    <div key={idx} className="flex items-start gap-3 py-2 border-b border-border/10 last:border-0">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-semibold truncate">{entry.firm || 'Unknown'}</p>
+                        <p className="text-[11px] text-muted-foreground">
+                          {entry.fromGrade ? `${entry.fromGrade} → ` : ''}{entry.toGrade || '—'}
+                        </p>
                       </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
+                      <div className="text-right shrink-0">
+                        <p className={`text-[11px] font-semibold ${actionColor}`}>{actionLabel}</p>
+                        <p className="text-[10px] text-muted-foreground">{formatDate(entry.date)}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
           </Card>
         )}
       </div>

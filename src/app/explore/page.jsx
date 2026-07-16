@@ -46,11 +46,11 @@ const MARKET_CATEGORIES = [
     marketClose: [15, 15],
     symbols: [
       { symbol: "^JKSE", label: "IHSG", logo: "https://s3-symbol-logo.tradingview.com/indices/jakarta-composite-index.svg" },
-      { symbol: "BBCA.JK", label: "BBCA", logo: `${SUPABASE_STORAGE_BASE}/idx/BBCA.png` },
-      { symbol: "BREN.JK", label: "BREN", logo: `${SUPABASE_STORAGE_BASE}/idx/BREN.png` },
-      { symbol: "BRPT.JK", label: "BRPT", logo: `${SUPABASE_STORAGE_BASE}/idx/BRPT.png` },
-      { symbol: "BMRI.JK", label: "BMRI", logo: `${SUPABASE_STORAGE_BASE}/idx/BMRI.png` },
-      { symbol: "BBRI.JK", label: "BBRI", logo: `${SUPABASE_STORAGE_BASE}/idx/BBRI.png` },
+      { symbol: "BBCA.JK", label: "Bank Central Asia Tbk", logo: `${SUPABASE_STORAGE_BASE}/idx/BBCA.png` },
+      { symbol: "RANS.JK", label: "Rans Entertainmen Indonesia Tbk", logo: `${SUPABASE_STORAGE_BASE}/idx/RANS.png` },
+      { symbol: "BMRI.JK", label: "Bank Mandiri (Persero) Tbk", logo: `${SUPABASE_STORAGE_BASE}/idx/BMRI.png` },
+      { symbol: "BBRI.JK", label: "Bank Rakyat Indonesia (Persero) Tbk", logo: `${SUPABASE_STORAGE_BASE}/idx/BBRI.png` },
+      { symbol: "BRPT.JK", label: "Barito Pacific Tbk", logo: `${SUPABASE_STORAGE_BASE}/idx/BRPT.png` },
     ],
   },
   {
@@ -1335,10 +1335,10 @@ export default function ExplorePage() {
                     <TickerAvatar symbol={item.symbol} logo={item.logo || q?.logo} />
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5">
-                        <p className="text-sm font-bold text-foreground tracking-tight truncate">{item.label}</p>
+                        <p className="text-sm font-bold text-foreground tracking-tight truncate">{item.symbol.replace('.JK', '')}</p>
                         {isAtATH && <Flame className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
                       </div>
-                      <p className="text-[11px] text-muted-foreground truncate">{formatTickerDisplay(item.symbol)}</p>
+                      <p className="text-[11px] text-muted-foreground truncate">{formatTickerDisplay(item.label)}</p>
                     </div>
                   </div>
                   <div className="mt-3 flex items-end justify-between gap-2">

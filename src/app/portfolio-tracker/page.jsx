@@ -52,7 +52,7 @@ const DEFAULT_PORTFOLIO_ENTRIES = [
   { symbol: 'NVDA', name: 'NVIDIA Corporation', amount: 100, unit: 'share', avgPrice: 120, type: 'digital' },
   { symbol: 'AAPL', name: 'Apple Inc.', amount: 50, unit: 'share', avgPrice: 175, type: 'digital' },
   { symbol: 'BBCA.JK', name: 'Bank Central Asia Tbk', amount: 1000, unit: 'lot', avgPrice: 7500, type: 'digital' },
-  { symbol: 'CASH_IDR', name: 'Cash (IDR)', amount: 1, unit: 'unit', avgPrice: 300, type: 'cash', category: 'Cash (IDR)', cashCurrency: 'IDR', nativeAmount: 5000000 },
+  { symbol: 'CASH_IDR', name: 'Cash (IDR)', amount: 1, unit: 'unit', avgPrice: 30000, type: 'cash', category: 'Cash (IDR)', cashCurrency: 'IDR', nativeAmount: 500000000 },
 ];
 
 function getDefaultPortfolio() {
@@ -1084,9 +1084,9 @@ export default function PortfolioTrackerPage() {
   const hiddenPrimaryToken = '••••••';
   const hiddenSecondaryToken = 'Hidden';
   const getDisplayValue = (usdAmount) =>
-    (isPortfolioHidden
-      ? { primary: hiddenPrimaryToken, secondary: hiddenSecondaryToken, tertiary: hiddenSecondaryToken }
-      : formatValue(usdAmount));
+  (isPortfolioHidden
+    ? { primary: hiddenPrimaryToken, secondary: hiddenSecondaryToken, tertiary: hiddenSecondaryToken }
+    : formatValue(usdAmount));
   const getPnLColor = (value) => (isPortfolioHidden ? 'text-muted-foreground' : value >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400');
   const totalNetWorthDisplay = getDisplayValue(totalNetWorth);
   const totalPnLDisplay = getDisplayValue(totalPnL);
