@@ -5,6 +5,7 @@ import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import {
   Loader2,
   TrendingUp,
@@ -20,19 +21,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { fetchEncodedJson } from "@/lib/api-client";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { formatMarketCap, formatPrice } from "@/lib/utils";
-
-// Color maps for status-based styling
-const statusColorMap = {
-  success: {
-    badge: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-  },
-  warning: {
-    badge: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-  },
-  danger: {
-    badge: "bg-red-500/10 text-red-500 border-red-500/20",
-  }
-};
 
 function formatPercent(value) {
   if (value === null || value === undefined) return "-";
@@ -116,13 +104,15 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
 }
 
 function StatusBadge({ status }) {
+  const variantMap = {
+    success: "success",
+    warning: "warning",
+    danger: "danger",
+  };
   return (
-    <span
-      className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-semibold border ${statusColorMap[status.variant]?.badge || statusColorMap.danger.badge
-        }`}
-    >
+    <Badge variant={variantMap[status.variant] || "danger"}>
       {status.label}
-    </span>
+    </Badge>
   );
 }
 
@@ -134,13 +124,13 @@ function SummaryCard({ summary }) {
       : 'text-yellow-500';
 
   return (
-    <Card className="bg-card text-foreground border border-border rounded-lg">
+    <Card>
       <CardContent className="p-3 space-y-3">
         {/* Market Sentiment */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Activity className="h-4 w-4 text-muted-foreground dark:text-white/70" />
-            <span className="text-xs text-muted-foreground dark:text-white/70">Market Sentiment</span>
+            <Activity className="h-4 w-4 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">Market Sentiment</span>
           </div>
           <span className={`text-xs font-bold ${sentimentColor}`}>
             {summary.marketSentiment}
@@ -150,7 +140,7 @@ function SummaryCard({ summary }) {
         {/* Stats Grid */}
         <div className="grid grid-cols-4 gap-2">
           <div className="text-center p-2 bg-muted/50 rounded-xl">
-            <p className="text-xs text-muted-foreground dark:text-white/50">Total</p>
+            <p className="text-xs text-muted-foreground">Total</p>
             <p className="text-xs font-bold">{summary.totalStocks}</p>
           </div>
           <div className="text-center p-2 bg-emerald-900/20 rounded-xl">
@@ -169,7 +159,7 @@ function SummaryCard({ summary }) {
 
         {/* Avg Momentum */}
         <div className="flex items-center justify-between p-2 bg-muted/50 rounded-xl">
-          <span className="text-xs text-muted-foreground dark:text-white/70">Avg Momentum Score</span>
+          <span className="text-xs text-muted-foreground">Avg Momentum Score</span>
           <span className={`text-xs font-bold ${summary.avgMomentum >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
             {summary.avgMomentum > 0 ? '+' : ''}{summary.avgMomentum}
           </span>
@@ -181,7 +171,7 @@ function SummaryCard({ summary }) {
 
 function StockCard({ stock, isLocked = false }) {
   return (
-    <Card className="bg-card border-border text-foreground overflow-hidden relative rounded-lg">
+    <Card className="overflow-hidden relative">
       <CardContent className={`p-3 space-y-2 ${isLocked ? "opacity-40" : ""}`}>
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -190,7 +180,7 @@ function StockCard({ stock, isLocked = false }) {
               <h3 className="text-xs font-bold truncate">{stock.code}</h3>
               <StatusBadge status={stock.status} />
             </div>
-            <p className="text-xs text-muted-foreground dark:text-white/70 truncate">{stock.name}</p>
+            <p className="text-xs text-muted-foreground truncate">{stock.name}</p>
           </div>
           {stock.logo_url && (
             <div className="flex-shrink-0 ml-2">
@@ -202,38 +192,38 @@ function StockCard({ stock, isLocked = false }) {
         {/* Price & Market Cap */}
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-0.5">
-            <p className="text-[9px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">Price</p>
-            <p className="text-[11px] font-semibold">Rp {formatPrice(stock.price)}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Price</p>
+            <p className="text-xs font-semibold">Rp {formatPrice(stock.price)}</p>
           </div>
           <div className="space-y-0.5">
-            <p className="text-[9px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">Market Cap</p>
-            <p className="text-[11px] font-semibold">{formatMarketCap(stock.marketCap)}</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Market Cap</p>
+            <p className="text-xs font-semibold">{formatMarketCap(stock.marketCap)}</p>
           </div>
         </div>
 
         {/* Momentum Score */}
         <div className="flex items-center justify-between p-1.5 bg-muted/50 rounded-xl">
           <div className="flex items-center gap-1">
-            <Zap className="h-3 w-3 text-muted-foreground dark:text-white/70" />
-            <span className="text-[9px] text-muted-foreground dark:text-white/70">Momentum Score</span>
+            <Zap className="h-3 w-3 text-muted-foreground" />
+            <span className="text-[10px] text-muted-foreground">Momentum Score</span>
           </div>
-          <span className={`text-[11px] font-bold ${stock.momentumScore >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+          <span className={`text-xs font-bold ${stock.momentumScore >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
             {stock.momentumScore > 0 ? '+' : ''}{stock.momentumScore}
           </span>
         </div>
 
         {/* Price Changes */}
-        <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-black/10 dark:border-white/10">
+        <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-border">
           <div className="space-y-0.5">
-            <p className="text-[9px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">1 Week</p>
-            <p className={`text-[11px] font-semibold flex items-center gap-0.5 ${stock.weekChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">1 Week</p>
+            <p className={`text-xs font-semibold flex items-center gap-0.5 ${stock.weekChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {stock.weekChange >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
               {formatPercent(stock.weekChange)}
             </p>
           </div>
           <div className="space-y-0.5">
-            <p className="text-[9px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">1 Month</p>
-            <p className={`text-[11px] font-semibold flex items-center gap-0.5 ${stock.monthChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">1 Month</p>
+            <p className={`text-xs font-semibold flex items-center gap-0.5 ${stock.monthChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {stock.monthChange >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
               {formatPercent(stock.monthChange)}
             </p>
@@ -241,9 +231,9 @@ function StockCard({ stock, isLocked = false }) {
         </div>
       </CardContent>
       {isLocked && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1.5 rounded-lg bg-black/80 px-4 text-center pointer-events-none">
-          <Lock className="h-3.5 w-3.5 text-foreground/90 dark:text-white/90" />
-          <p className="text-xs font-semibold text-foreground/90 dark:text-white/90">Sign in to unlock</p>
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1.5 rounded-xl bg-background/90 px-4 text-center pointer-events-none">
+          <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+          <p className="text-xs font-semibold text-muted-foreground">Sign in to unlock</p>
         </div>
       )}
     </Card>
@@ -254,11 +244,11 @@ function MiniStockCard({ stock }) {
   const isPositive = stock.weekChange >= 0;
 
   return (
-    <div className="flex items-center gap-2 p-2 bg-black/5 dark:bg-white/5 rounded-xl min-w-[140px]">
+    <div className="flex items-center gap-2 p-2 bg-muted/30 rounded-xl min-w-[140px]">
       <TickerAvatar symbol={`${stock.code}.JK`} logo={stock.logo_url} size="xs" />
       <div className="flex-1 min-w-0">
         <p className="text-xs font-bold truncate">{stock.code}</p>
-        <p className={`text-[9px] font-semibold ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
+        <p className={`text-[10px] font-semibold ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
           {formatPercent(stock.weekChange)}
         </p>
       </div>
@@ -273,7 +263,7 @@ function TopMoversSection({ topGainers, topLosers }) {
       <div>
         <div className="flex items-center gap-1.5 mb-2">
           <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-          <span className="text-xs font-semibold text-foreground/80 dark:text-white/80">Top Gainers</span>
+          <span className="text-xs font-semibold text-muted-foreground">Top Gainers</span>
         </div>
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
           {topGainers.slice(0, 5).map((stock) => (
@@ -286,7 +276,7 @@ function TopMoversSection({ topGainers, topLosers }) {
       <div>
         <div className="flex items-center gap-1.5 mb-2">
           <TrendingDown className="h-3.5 w-3.5 text-red-500" />
-          <span className="text-xs font-semibold text-foreground/80 dark:text-white/80">Top Losers</span>
+          <span className="text-xs font-semibold text-muted-foreground">Top Losers</span>
         </div>
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
           {topLosers.slice(0, 5).map((stock) => (
@@ -300,37 +290,59 @@ function TopMoversSection({ topGainers, topLosers }) {
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-3">
-      {/* Summary Skeleton */}
-      <Card className="border-white/[0.08] dark:border-white/[0.08] rounded-2xl">
-        <CardContent className="p-3 space-y-3">
-          <Skeleton className="h-4 w-32 " />
-          <div className="grid grid-cols-4 gap-2">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-12 w-full rounded-lg " />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Cards Skeleton */}
-      {[1, 2, 3].map((i) => (
-        <Card key={i} className="border-white/[0.08] dark:border-white/[0.08] rounded-2xl">
-          <CardContent className="p-3 space-y-2">
-            <div className="flex items-start justify-between">
-              <div className="space-y-1">
-                <Skeleton className="h-3 w-16 " />
-                <Skeleton className="h-2.5 w-24 " />
-              </div>
-              <Skeleton className="h-8 w-8 rounded-full " />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <Skeleton className="h-8 w-full " />
-              <Skeleton className="h-8 w-full " />
+    <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start space-y-3 lg:space-y-0">
+      <div className="lg:col-span-4 flex flex-col gap-4 order-first lg:order-last">
+        <Card>
+          <CardContent className="p-3 space-y-3">
+            <Skeleton className="h-4 w-32" />
+            <div className="grid grid-cols-4 gap-2">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-12 w-full rounded-lg" />
+              ))}
             </div>
           </CardContent>
         </Card>
-      ))}
+        <div className="space-y-3">
+          <div className="flex items-center gap-1.5">
+            <Skeleton className="h-3.5 w-3.5 rounded-full" />
+            <Skeleton className="h-3 w-20 rounded-full" />
+          </div>
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-10 w-[140px] rounded-xl shrink-0" />
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Skeleton className="h-3.5 w-3.5 rounded-full" />
+            <Skeleton className="h-3 w-20 rounded-full" />
+          </div>
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-10 w-[140px] rounded-xl shrink-0" />
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="lg:col-span-8 w-full space-y-2">
+        <Skeleton className="h-4 w-40 rounded-full" />
+        {[1, 2, 3].map((i) => (
+          <Card key={i}>
+            <CardContent className="p-3 space-y-2">
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-2.5 w-24" />
+                </div>
+                <Skeleton className="h-8 w-8 rounded-full" />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
@@ -438,8 +450,8 @@ export default function MomentumPage() {
   return (
     <div className="space-y-3 pb-4 max-w-6xl mx-auto w-full">
       {/* Info Card */}
-      <Card className="border-border bg-card text-foreground p-3 rounded-lg">
-        <CardContent className="pt-0">
+      <Card>
+        <CardContent className="p-3">
           <p className="text-xs leading-relaxed text-foreground/90 font-semibold">
             IDX Momentum & Price Trend Analysis
           </p>

@@ -5,11 +5,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TrendingUp, TrendingDown, Loader2, Download, Edit, BarChart3 } from "lucide-react";
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ManageWatchlistDialog } from "@/components/manage-watchlist-dialog";
 import { useAuth } from "@/components/auth-provider";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { TickerAvatar } from "@/components/ticker-avatar";
+import { MiniChart } from "@/components/mini-chart";
 import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist";
 import { TrendingMarquee } from "@/components/trending-marquee";
 import { formatTickerDisplay } from "@/lib/utils";
@@ -42,62 +44,6 @@ async function fetchBatchQuotes(symbols) {
   }
 }
 
-function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
-  if (!Array.isArray(data) || data.length < 2) {
-    return <div style={{ width, height }} className="rounded-full bg-muted/40" />;
-  }
-
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const range = max - min || 1;
-
-  const coordinates = data.map((value, i) => {
-    const x = (i / (data.length - 1)) * width;
-    const y = height - ((value - min) / range) * height;
-    return { x, y };
-  });
-
-  const linePath = coordinates
-    .map((point, idx) => `${idx === 0 ? "M" : "L"}${point.x.toFixed(2)},${point.y.toFixed(2)}`)
-    .join(" ");
-  const strokeColor = isPositive ? "#10b981" : "#ef4444";
-
-  // Calculate baseline at first data point (represents 0% change)
-  const firstValue = data[0];
-  const baselineY = height - ((firstValue - min) / range) * height;
-
-  return (
-    <svg width={width} height={height} className="overflow-visible">
-      {/* Baseline reference line */}
-      <line
-        x1="0"
-        y1={baselineY}
-        x2={width}
-        y2={baselineY}
-        stroke="currentColor"
-        strokeWidth="0.8"
-        strokeDasharray="2,2"
-        opacity="0.3"
-        className="text-muted-foreground"
-      />
-      <path
-        d={linePath}
-        fill="none"
-        stroke={strokeColor}
-        strokeWidth={1.6}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle
-        cx={coordinates[coordinates.length - 1].x}
-        cy={coordinates[coordinates.length - 1].y}
-        r={2.4}
-        fill={strokeColor}
-      />
-    </svg>
-  );
-}
-
 function StockItem({ quote }) {
   if (!quote) return null;
 
@@ -124,7 +70,7 @@ function StockItem({ quote }) {
         <MiniChart
           data={quote.chartData}
           isPositive={isPositive}
-          chartId={`watch-${quote.symbol}`}
+          
         />
       </div>
       <div className="flex flex-col items-end">
@@ -150,13 +96,13 @@ function ShimmerItem() {
   return (
     <div className="flex items-center gap-3 py-3">
       <div className="flex-1 min-w-0 space-y-1.5">
-        <div className="h-3 w-16 rounded-full shimmer"></div>
-        <div className="h-3 w-32 rounded-full shimmer"></div>
+        <Skeleton className="h-3 w-16 rounded-full" />
+        <Skeleton className="h-3 w-32 rounded-full" />
       </div>
-      <div className="w-[72px] h-[36px] rounded-xl shimmer"></div>
+      <Skeleton className="w-[72px] h-[36px] rounded-xl" />
       <div className="flex flex-col items-end gap-1">
-        <div className="h-3 w-20 rounded-full shimmer"></div>
-        <div className="h-3 w-16 rounded-full shimmer"></div>
+        <Skeleton className="h-3 w-20 rounded-full" />
+        <Skeleton className="h-3 w-16 rounded-full" />
       </div>
     </div>
   );
@@ -375,49 +321,54 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-4">
-        <Card className="mt-4 border-none">
-          <CardContent className="space-y-3 pt-0">
-            <div className="h-16 w-full rounded-lg shimmer bg-white/20"></div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none">
-          <CardContent className="space-y-3 pt-0">
-            <div className="h-3 w-full rounded-full shimmer bg-white/20"></div>
-            <div className="h-3 w-3/4 rounded-full shimmer bg-white/20"></div>
-          </CardContent>
-        </Card>
-
-        <div className="overflow-hidden">
-          <SectionHeader title="Watchlist" />
-          <div className="divide-y">
-            {[...Array(8)].map((_, i) => <ShimmerItem key={i} />)}
-          </div>
-          <div className="border-t py-2 flex justify-center">
-            <div className="h-8 w-44 rounded-full shimmer" />
-          </div>
+      <div className="flex flex-col lg:grid lg:grid-cols-12 lg:content-start gap-4 pb-12">
+        <div className="lg:col-span-12">
+          <Skeleton className="h-10 w-full rounded-xl" />
         </div>
 
-        <Card>
-          <CardHeader className="pb-0">
-            <div className="flex items-center gap-2">
-              <div className="h-5 w-5 rounded-full shimmer"></div>
-              <div className="h-4 w-24 rounded-full shimmer"></div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4 pt-4">
-            {[...Array(2)].map((_, idx) => (
-              <div key={idx} className="flex items-center justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="h-3 w-16 rounded-full shimmer"></div>
-                  <div className="h-3 w-24 rounded-full shimmer"></div>
-                </div>
-                <div className="h-6 w-20 rounded-full shimmer"></div>
+        <div className="lg:col-span-12 lg:grid lg:grid-cols-12 lg:gap-6">
+          <div className="lg:col-span-8 flex flex-col gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <Skeleton className="h-4 w-full rounded-full" />
+              </CardContent>
+            </Card>
+
+            <div className="overflow-hidden">
+              <SectionHeader title="Watchlist" />
+              <div className="lg:grid lg:grid-cols-2 lg:gap-x-8 lg:gap-y-1">
+                {[...Array(8)].map((_, i) => <ShimmerItem key={i} />)}
               </div>
-            ))}
-          </CardContent>
-        </Card>
+              <div className="border-t border-border/20 py-2.5 mt-2 flex justify-center">
+                <Skeleton className="h-8 w-44 rounded-full" />
+              </div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-4 flex flex-col gap-4 mt-4 lg:mt-0">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-5 w-5 rounded-full" />
+                  <Skeleton className="h-4 w-24 rounded-full" />
+                </div>
+                <Skeleton className="h-3 w-40 rounded-full" />
+              </CardHeader>
+              <CardContent className="space-y-4 pt-4">
+                {[...Array(2)].map((_, idx) => (
+                  <div key={idx} className="flex items-center justify-between gap-3">
+                    <div className="space-y-1">
+                      <Skeleton className="h-3 w-16 rounded-full" />
+                      <Skeleton className="h-3 w-24 rounded-full" />
+                    </div>
+                    <Skeleton className="h-12 w-24 rounded-lg" />
+                  </div>
+                ))}
+                <Skeleton className="h-4 w-24 rounded-full" />
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
@@ -449,8 +400,8 @@ export default function HomePage() {
 
       <div className="lg:col-span-12 lg:grid lg:grid-cols-12 lg:gap-6">
         <div className="lg:col-span-8 flex flex-col gap-4">
-          <Card className="border-border bg-card text-foreground p-4 rounded-lg">
-            <CardContent className="pt-0">
+          <Card>
+            <CardContent className="p-4">
               <p className="text-xs leading-relaxed text-foreground/90 font-medium">
                 We search through historical data looking for anomalous patterns that we would not expect to occur at random.
               </p>
@@ -467,7 +418,9 @@ export default function HomePage() {
               ))}
             </div>
             <div className="border-t border-border/20 py-2.5 mt-2">
-              <button
+              <Button
+                type="button"
+                variant="ghost"
                 onClick={() => {
                   if (!canUseProtectedActions) {
                     redirectToSignIn();
@@ -475,19 +428,19 @@ export default function HomePage() {
                   }
                   setManageDialogOpen(true);
                 }}
-                className="w-full flex items-center gap-2 justify-center text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors py-1"
+                className="w-full flex items-center gap-2 justify-center py-1 h-auto"
               >
                 <Edit className="h-4 w-4" />
                 <span className="text-sm font-semibold">Edit Watchlist</span>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
 
         <div className="lg:col-span-4 flex flex-col gap-4 mt-4 lg:mt-0">
           {marketPulse && marketPulse.topGainer && marketPulse.topLoser && (
-            <Card className="border-border/20 rounded-2xl">
-              <CardHeader className="pb-0">
+            <Card>
+              <CardHeader>
                 <div className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-muted-foreground" />
                   <CardTitle className="text-sm font-bold">Highlights</CardTitle>
@@ -509,7 +462,7 @@ export default function HomePage() {
                       isPositive={marketPulse.topGainer.change >= 0}
                       width={110}
                       height={46}
-                      chartId={`pulse-top-${marketPulse.topGainer.symbol}`}
+
                     />
                   </div>
                 </div>
@@ -527,7 +480,7 @@ export default function HomePage() {
                       isPositive={marketPulse.topLoser.change >= 0}
                       width={110}
                       height={46}
-                      chartId={`pulse-low-${marketPulse.topLoser.symbol}`}
+
                     />
                   </div>
                 </div>

@@ -5,8 +5,7 @@ import { AlertTriangle, ArrowUpDown, Check, FilterX } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { MoneyFlowCard } from "@/components/money-flow-card";
@@ -22,19 +21,31 @@ function LoadingState() {
   return (
     <div className="space-y-3">
       {[1, 2, 3, 4].map((key) => (
-        <Card key={key} className="rounded-2xl border-border/30">
+        <Card key={key}>
           <CardContent className="p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1.5">
-                <Skeleton className="h-4 w-20 " />
-                <Skeleton className="h-3 w-28 " />
+            <div className="flex items-start justify-between">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <Skeleton className="h-4 w-16" />
+                  <Skeleton className="h-5 w-24 rounded-full" />
+                </div>
+                <Skeleton className="h-3 w-32" />
               </div>
-              <Skeleton className="h-6 w-24 rounded-full " />
+              <Skeleton className="h-8 w-8 rounded-full" />
             </div>
             <div className="grid grid-cols-3 gap-3">
-              <Skeleton className="h-10 rounded-xl " />
-              <Skeleton className="h-10 rounded-xl " />
-              <Skeleton className="h-10 rounded-xl " />
+              <div className="space-y-1">
+                <Skeleton className="h-3 w-10" />
+                <Skeleton className="h-5 w-16" />
+              </div>
+              <div className="space-y-1">
+                <Skeleton className="h-3 w-10" />
+                <Skeleton className="h-5 w-16" />
+              </div>
+              <div className="space-y-1">
+                <Skeleton className="h-3 w-10" />
+                <Skeleton className="h-5 w-16" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -87,18 +98,18 @@ const sortOptions = [
   { key: "price_change", label: "Price Change" },
 ];
 
-const signalStyles = {
-  "Strong Accumulation": "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-  Accumulation: "bg-teal-500/10 text-teal-500 border-teal-500/20",
-  Neutral: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-  Distribution: "bg-rose-500/10 text-rose-500 border-rose-500/20",
+const signalVariantMap = {
+  "Strong Accumulation": "success",
+  Accumulation: "success",
+  Neutral: "warning",
+  Distribution: "danger",
 };
 
-const riskStyles = {
-  LOW: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-  MEDIUM: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-  HIGH: "bg-orange-500/10 text-orange-500 border-orange-500/20",
-  CRITICAL: "bg-rose-500/10 text-rose-500 border-rose-500/20",
+const riskVariantMap = {
+  LOW: "success",
+  MEDIUM: "warning",
+  HIGH: "danger",
+  CRITICAL: "danger",
 };
 
 function formatCompactNumber(value) {
@@ -135,8 +146,8 @@ function formatCurrency(value) {
 function ReportList({ reports }) {
   if (!reports.length) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-center rounded-2xl border border-border/30 bg-black/5 dark:bg-white/5">
-        <div className="h-12 w-12 rounded-full  flex items-center justify-center mb-4">
+      <div className="flex flex-col items-center justify-center p-8 text-center rounded-xl border border-border bg-muted/20">
+        <div className="h-12 w-12 flex items-center justify-center mb-4">
           <FilterX className="h-6 w-6 text-muted-foreground" />
         </div>
         <p className="text-sm font-medium">No results found</p>
@@ -223,16 +234,11 @@ export default function MoneyFlowPage() {
   return (
     <div className="flex flex-col gap-4 pb-4">
       <div className="flex flex-col gap-4">
-        <Card className="border-border bg-card text-foreground rounded-lg">
+        <Card>
           <CardContent className="p-4 space-y-2">
             <p className="text-xs text-foreground/85 leading-relaxed">
               Smart-money breakdown based on broker flow, market phase, absorption, and screener-synced symbols.
             </p>
-            {/* {payload?.screener?.name && (
-              <p className="text-[10px] text-foreground/80">
-                Universe: {payload.screener.name} ({payload.screener.total_rows || 0} stocks)
-              </p>
-            )} */}
             {payload?.start_date && <p className="text-[10px] text-muted-foreground">Window start: {payload.start_date}</p>}
           </CardContent>
         </Card>
@@ -322,29 +328,25 @@ export default function MoneyFlowPage() {
 
       <div className="grid grid-cols-1 xl:grid-cols-[320px_minmax(0,1fr)] gap-4 lg:gap-6 items-start">
         <aside className="hidden xl:block sticky top-20 space-y-3">
-          <Card className="rounded-lg border-border bg-card">
+          <Card>
             <CardContent className="p-4 space-y-3">
-              {/* <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">Desk Snapshot</p> */}
               <div className="grid grid-cols-2 gap-2">
-                <div className="rounded-xl border border-border/40 bg-background/70 px-3 py-2">
+                <div className="rounded-xl border border-border bg-background/70 px-3 py-2">
                   <p className="text-[10px] text-muted-foreground">Reports</p>
                   <p className="text-lg font-semibold">{reports.length}</p>
                 </div>
-                <div className="rounded-xl border border-border/40 bg-background/70 px-3 py-2">
+                <div className="rounded-xl border border-border bg-background/70 px-3 py-2">
                   <p className="text-[10px] text-muted-foreground">Accumulation</p>
                   <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">{positiveSignals}</p>
                 </div>
-                <div className="rounded-xl border border-border/40 bg-background/70 px-3 py-2">
+                <div className="rounded-xl border border-border bg-background/70 px-3 py-2">
                   <p className="text-[10px] text-muted-foreground">Avg Vol Spike</p>
                   <p className="text-lg font-semibold">{avgVolumeSpike.toFixed(2)}x</p>
                 </div>
-                <div className="rounded-xl border border-border/40 bg-background/70 px-3 py-2">
+                <div className="rounded-xl border border-border bg-background/70 px-3 py-2">
                   <p className="text-[10px] text-muted-foreground">Timeframe</p>
                   <p className="text-sm font-semibold capitalize">{timeframe}</p>
                 </div>
-              </div>
-              <div className="rounded-xl border border-border/40 bg-muted/30 px-3 py-2 text-xs text-muted-foreground">
-                Desktop mode now separates controls from report stream for faster scanning.
               </div>
             </CardContent>
           </Card>
@@ -352,7 +354,7 @@ export default function MoneyFlowPage() {
 
         <div className="max-w-5xl mx-auto w-full">
         {error && (
-          <Card className="bg-red-600/10 border-red-600/30 rounded-2xl mb-4">
+          <Card className="bg-red-600/10 border-red-600/30 mb-4">
             <CardContent className="p-4 flex items-center gap-3">
               <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0" />
               <div>

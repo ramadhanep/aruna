@@ -278,23 +278,12 @@ button[data-slot="dialog-close"].ring-offset-background {
   font-weight: 600;
 }
 
-[class*="bg-emerald"], [class*="bg-teal"], [class*="bg-green"] {
-  background-color: var(--card) !important;
+/* Profit/Loss semantic colors */
+:root {
+  --profit: #10b981;
+  --loss: #ef4444;
 }
-
-[class*="text-emerald"],
-[class*="text-green"] {
-  color: #34d399 !important;
-}
-
-[class*="text-teal"] {
-  color: var(--foreground) !important;
-}
-
-[class*="border-emerald"], [class*="border-teal"], [class*="border-green"] {
-  border-color: var(--border) !important;
-}
-
-[class*="shadow-emerald"], [class*="shadow-teal"], [class*="shadow-green"], [class*="shadow-\["] {
-  box-shadow: none !important;
+.dark {
+  --profit: #34d399;
+  --loss: #ef4444;
 }

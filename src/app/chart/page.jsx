@@ -35,6 +35,7 @@ import { SymbolSearchDialog } from "@/components/header-symbol-search";
 import { useAuth } from "@/components/auth-provider";
 import { NormalCandlestickChart } from "@/components/normal-candlestick-chart";
 import { fetchEncodedJson } from "@/lib/api-client";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist";
 import { ArunaWatermark } from "@/components/aruna-watermark";
 import { TickerAvatar } from "@/components/ticker-avatar";
@@ -2476,8 +2477,8 @@ function ElectionCyclePageContent() {
             <CardContent className="grid grid-cols-2 gap-3">
               {[...Array(6)].map((_, idx) => (
                 <div key={idx} className="space-y-2">
-                  <div className="h-3 w-20 rounded-full shimmer" />
-                  <div className="h-4 w-24 rounded-full shimmer" />
+                  <div className="h-3 w-20 rounded-full" />
+                  <div className="h-4 w-24 rounded-full" />
                 </div>
               ))}
             </CardContent>
@@ -2907,8 +2908,8 @@ function ElectionCyclePageContent() {
             <CardContent className="grid grid-cols-2 gap-3">
               {[...Array(6)].map((_, idx) => (
                 <div key={idx} className="space-y-2">
-                  <div className="h-3 w-20 rounded-full shimmer" />
-                  <div className="h-4 w-24 rounded-full shimmer" />
+                  <Skeleton className="h-3 w-20 rounded-full" />
+                  <Skeleton className="h-4 w-24 rounded-full" />
                 </div>
               ))}
             </CardContent>
@@ -2917,10 +2918,10 @@ function ElectionCyclePageContent() {
             {[...Array(2)].map((_, idx) => (
               <Card key={idx} className="h-full">
                 <CardHeader>
-                  <div className="h-4 w-32 rounded-full shimmer" />
+                  <Skeleton className="h-4 w-32 rounded-full" />
                 </CardHeader>
                 <CardContent>
-                  <div className="h-[220px] rounded-xl shimmer" />
+                  <Skeleton className="h-[220px] rounded-xl" />
                 </CardContent>
               </Card>
             ))}
@@ -3215,8 +3216,8 @@ function ElectionCyclePageContent() {
               <div className="grid grid-cols-2 gap-3">
                 {[...Array(4)].map((_, idx) => (
                   <div key={idx} className="space-y-2">
-                    <div className="h-3 w-24 rounded-full shimmer" />
-                    <div className="h-3 w-full rounded-full shimmer" />
+                    <Skeleton className="h-3 w-24 rounded-full" />
+                    <Skeleton className="h-3 w-full rounded-full" />
                   </div>
                 ))}
               </div>
@@ -3536,12 +3537,12 @@ function ElectionCyclePageContent() {
           {[...Array(3)].map((_, idx) => (
             <Card key={idx}>
               <CardContent className="p-4 space-y-3">
-                <div className="h-4 w-32 rounded-full shimmer" />
+                <Skeleton className="h-4 w-32 rounded-full" />
                 <div className="grid grid-cols-2 gap-3">
                   {[...Array(4)].map((_, i) => (
                     <div key={i} className="space-y-2">
-                      <div className="h-3 w-20 rounded-full shimmer" />
-                      <div className="h-4 w-24 rounded-full shimmer" />
+                      <Skeleton className="h-3 w-20 rounded-full" />
+                      <Skeleton className="h-4 w-24 rounded-full" />
                     </div>
                   ))}
                 </div>
@@ -4207,29 +4208,29 @@ function ElectionCyclePageContent() {
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1 space-y-2">
-                    <div className="h-3 w-28 rounded-full shimmer"></div>
-                    <div className="h-8 w-32 rounded-2xl shimmer"></div>
-                    <div className="h-4 w-24 rounded-full shimmer"></div>
-                    <div className="h-4 w-20 rounded-full shimmer"></div>
+                    <Skeleton className="h-3 w-28 rounded-full" />
+                    <Skeleton className="h-8 w-32 rounded-xl" />
+                    <Skeleton className="h-4 w-24 rounded-full" />
+                    <Skeleton className="h-4 w-20 rounded-full" />
                   </div>
                   <div className="flex flex-col gap-2">
-                    <div className="h-6 w-40 rounded-full shimmer"></div>
-                    <div className="h-6 w-32 rounded-full shimmer"></div>
+                    <Skeleton className="h-6 w-40 rounded-full" />
+                    <Skeleton className="h-6 w-32 rounded-full" />
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="px-0 pb-0">
-                <div className="w-full h-[380px] lg:h-[500px] rounded-xl shimmer"></div>
+                <Skeleton className="w-full h-[380px] lg:h-[500px] rounded-xl" />
               </CardContent>
             </Card>
 
             <div className="flex gap-2">
               {[...Array(4)].map((_, i) => (
-                <div key={i} className="flex-1 h-7 rounded-full shimmer"></div>
+                <Skeleton key={i} className="flex-1 h-7 rounded-full" />
               ))}
             </div>
 
-            <div className="h-10 rounded-xl shimmer"></div>
+            <Skeleton className="h-10 rounded-xl" />
           </>
         )}
 
@@ -4484,8 +4485,8 @@ function ElectionCyclePageContent() {
                 <div className="grid grid-cols-2 gap-3">
                   {[...Array(6)].map((_, idx) => (
                     <div key={idx} className="space-y-1">
-                      <div className="h-3 w-24 rounded-full shimmer"></div>
-                      <div className="h-4 w-20 rounded-full shimmer"></div>
+                      <Skeleton className="h-3 w-24 rounded-full" />
+                      <Skeleton className="h-4 w-20 rounded-full" />
                     </div>
                   ))}
                 </div>
@@ -4497,22 +4498,22 @@ function ElectionCyclePageContent() {
                   <CardTitle className="text-sm">Earnings Results</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-[240px] rounded-xl shimmer"></div>
+                  <Skeleton className="h-[240px] rounded-xl" />
                 </CardContent>
               </Card>
             </div>
             <div className="border-b border-border/20 pb-2 flex flex-wrap gap-2">
               {[...Array(4)].map((_, idx) => (
-                <div key={`tab-${idx}`} className="h-8 w-16 rounded-full shimmer" />
+                <Skeleton key={`tab-${idx}`} className="h-8 w-16 rounded-full" />
               ))}
             </div>
             <Card>
               <CardHeader>
                 <CardTitle className="text-sm">Analysis</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 text-xs">
+              <CardContent className="space-y-3">
                 {[...Array(5)].map((_, idx) => (
-                  <div key={`analysis-${idx}`} className="h-3 rounded-full shimmer w-full" />
+                  <Skeleton key={`analysis-${idx}`} className="h-3 rounded-full w-full" />
                 ))}
               </CardContent>
             </Card>

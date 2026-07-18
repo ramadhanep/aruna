@@ -5,6 +5,7 @@ import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Loader2, TrendingUp, AlertTriangle, ArrowUpDown, Check, Lock } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
@@ -15,19 +16,6 @@ import {
 } from "@/lib/msci-calculations";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { formatTickerDisplay } from "@/lib/utils";
-
-// Color maps for status-based styling
-const statusColorMap = {
-  success: {
-    badge: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-  },
-  warning: {
-    badge: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-  },
-  danger: {
-    badge: "bg-red-500/10 text-red-500 border-red-500/20",
-  }
-};
 
 function SegmentControl({ value, onChange, sortBy, onSortChange }) {
   return (
@@ -122,13 +110,15 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
 }
 
 function StatusBadge({ status }) {
+  const variantMap = {
+    success: "success",
+    warning: "warning",
+    danger: "danger",
+  };
   return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${statusColorMap[status.variant]?.badge || statusColorMap.danger.badge
-        }`}
-    >
+    <Badge variant={variantMap[status.variant] || "danger"}>
       {status.label}
-    </span>
+    </Badge>
   );
 }
 
@@ -136,7 +126,7 @@ function StockCard({ stock, isLocked = false }) {
   const progressPercent = Math.min(stock.progress, 100);
   const isNearInclusion = stock.progress >= 90;
   return (
-    <Card className="bg-card border-border text-foreground overflow-hidden relative rounded-lg">
+    <Card className="overflow-hidden relative">
       <CardContent className={`p-4 space-y-3 ${isLocked ? "opacity-40" : ""}`}>
         {/* Header */}
         <div className="flex items-start justify-between">
@@ -145,7 +135,7 @@ function StockCard({ stock, isLocked = false }) {
               <h3 className="text-sm font-bold truncate">{formatTickerDisplay(stock.ticker)}</h3>
               <StatusBadge status={stock.status} />
             </div>
-            <p className="text-[11px] text-muted-foreground dark:text-white/70 truncate">
+            <p className="text-xs text-muted-foreground truncate">
               {stock.company_name}
             </p>
           </div>
@@ -159,52 +149,47 @@ function StockCard({ stock, isLocked = false }) {
         {/* Price & Market Cap */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-0.5">
-            <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">Price</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Price</p>
             <p className="text-sm font-semibold">Rp {formatPrice(stock.price)}</p>
           </div>
           <div className="space-y-0.5">
-            <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">Market Cap</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Market Cap</p>
             <p className="text-sm font-semibold">{formatMarketCap(stock.market_cap)}</p>
           </div>
         </div>
 
         {/* Free Float */}
         <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
-          <span className="text-[10px] text-muted-foreground dark:text-white/70">Free Float</span>
+          <span className="text-[10px] text-muted-foreground">Free Float</span>
           <span className="text-xs font-semibold">{formatPercent(stock.free_float_percent)}</span>
         </div>
 
         {/* Progress Bar */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-[10px]">
-            <span className="text-muted-foreground dark:text-white/70">Progress to MSCI</span>
+            <span className="text-muted-foreground">Progress to MSCI</span>
             <span className="font-semibold text-emerald-600 dark:text-emerald-400">
               {formatPercent(stock.progress)}
             </span>
           </div>
           <div className="h-2 bg-muted/70 rounded-full overflow-hidden">
             <div
-              className={`h-full rounded-full transition-all ${isNearInclusion
-                ? "bg-[#16a085]"
-                : stock.progress >= 70
-                  ? "bg-[#16a085]"
-                  : "bg-[#16a085]"
-                }`}
+              className="h-full rounded-full transition-all bg-emerald-600 dark:bg-emerald-400"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
         </div>
 
         {/* Target Price & Upside */}
-        <div className="grid grid-cols-2 gap-3 pt-2 border-t border-black/10 dark:border-white/10">
+        <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border">
           <div className="space-y-0.5">
-            <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">MSCI Qualification Price</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">MSCI Qualification Price</p>
             <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
               Rp {formatPrice(stock.targetPrice)}
             </p>
           </div>
           <div className="space-y-0.5">
-            <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">Potential Upside</p>
+            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Potential Upside</p>
             <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
               <TrendingUp className="h-3 w-3" />
               {formatPercent(stock.upside)}
@@ -213,9 +198,9 @@ function StockCard({ stock, isLocked = false }) {
         </div>
       </CardContent>
       {isLocked && (
-        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg bg-background/90 px-6 text-center pointer-events-none">
-          <Lock className="h-4 w-4 text-foreground/90 dark:text-white/90" />
-          <p className="text-xs font-semibold text-foreground/90 dark:text-white/90">
+        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/90 px-6 text-center pointer-events-none">
+          <Lock className="h-4 w-4 text-muted-foreground" />
+          <p className="text-xs font-semibold text-muted-foreground">
             Sign in to unlock
           </p>
         </div>
@@ -226,48 +211,43 @@ function StockCard({ stock, isLocked = false }) {
 
 function LoadingSkeleton() {
   return (
-    <div className="space-y-3">
-      {[1, 2, 3].map((i) => (
-        <Card key={i} className="border-white/[0.08] dark:border-white/[0.08] rounded-2xl">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      {[1, 2, 3, 4].map((i) => (
+        <Card key={i}>
           <CardContent className="p-4 space-y-3">
-            {/* Header with ticker and badge */}
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0 space-y-1">
-                <Skeleton className="h-4 w-20 " />
-                <Skeleton className="h-3 w-40 " />
+                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-3 w-40" />
               </div>
-              <Skeleton className="h-10 w-10 rounded-full " />
+              <Skeleton className="h-10 w-10 rounded-full" />
             </div>
-            {/* Price & Market Cap */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <Skeleton className="h-3 w-12 " />
-                <Skeleton className="h-4 w-20 " />
+                <Skeleton className="h-3 w-12" />
+                <Skeleton className="h-4 w-20" />
               </div>
               <div className="space-y-1">
-                <Skeleton className="h-3 w-16 " />
-                <Skeleton className="h-4 w-16 " />
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-4 w-16" />
               </div>
             </div>
-            {/* Free Float */}
-            <Skeleton className="h-8 w-full rounded-lg " />
-            {/* Progress Bar */}
+            <Skeleton className="h-8 w-full rounded-lg" />
             <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <Skeleton className="h-3 w-24 " />
-                <Skeleton className="h-3 w-12 " />
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-3 w-12" />
               </div>
-              <Skeleton className="h-2 w-full rounded-full " />
+              <Skeleton className="h-2 w-full rounded-full" />
             </div>
-            {/* Target Price & Upside */}
-            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-black/10 dark:border-white/10">
+            <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border">
               <div className="space-y-1">
-                <Skeleton className="h-3 w-16 " />
-                <Skeleton className="h-3 w-20 " />
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-3 w-20" />
               </div>
               <div className="space-y-1">
-                <Skeleton className="h-3 w-20 " />
-                <Skeleton className="h-3 w-16 " />
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-3 w-16" />
               </div>
             </div>
           </CardContent>
@@ -349,8 +329,8 @@ export default function MSCIPage() {
   return (
     <div className="space-y-4 pb-4 max-w-5xl mx-auto w-full">
       {/* Info Card */}
-      <Card className="border-border bg-card text-foreground p-4 rounded-lg">
-        <CardContent className="pt-0">
+      <Card>
+        <CardContent className="p-4">
           <p className="text-xs leading-relaxed text-foreground/90 font-medium">
             Indonesian stocks with potential inclusion in the MSCI Global and Small Cap indices, considering key market criteria.
           </p>

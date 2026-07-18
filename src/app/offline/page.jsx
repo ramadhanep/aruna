@@ -1,6 +1,7 @@
 "use client";
 
 import { WifiOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function Offline() {
   return (
@@ -14,12 +15,12 @@ export default function Offline() {
           It looks like you lost your internet connection. Some features may still work from cache.
         </p>
       </div>
-      <button
+      <Button
         onClick={() => window.location.reload()}
-        className="px-5 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-full hover:opacity-90 transition-opacity"
+        className="rounded-full px-6"
       >
         Try Again
-      </button>
+      </Button>
     </div>
   );
 }

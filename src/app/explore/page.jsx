@@ -5,11 +5,14 @@ import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock, Download, Flame, ChevronDown, ChevronUp, ChevronRight, Clock, Globe, Zap, BarChart3, ArrowUpRight, ArrowDownRight, Gem, Magnet, Rotate3D, Axe, MessageCircleMore, Radar, Droplets } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { TrendingMarquee } from "@/components/trending-marquee";
+import { MiniChart } from "@/components/mini-chart";
 import { formatTickerDisplay } from "@/lib/utils";
 import { MoneyFlowCard } from "@/components/money-flow-card";
 
@@ -365,13 +368,13 @@ function ShimmerItem() {
   return (
     <div className="flex items-center gap-3 py-3">
       <div className="flex-1 min-w-0 space-y-1.5">
-        <div className="h-3 w-16 rounded-full shimmer"></div>
-        <div className="h-3 w-32 rounded-full shimmer"></div>
+        <Skeleton className="h-3 w-16 rounded-full" />
+        <Skeleton className="h-3 w-32 rounded-full" />
       </div>
-      <div className="w-[72px] h-[36px] rounded-xl shimmer"></div>
+      <Skeleton className="w-[72px] h-[36px] rounded-xl" />
       <div className="flex flex-col items-end gap-1">
-        <div className="h-3 w-20 rounded-full shimmer"></div>
-        <div className="h-3 w-16 rounded-full shimmer"></div>
+        <Skeleton className="h-3 w-20 rounded-full" />
+        <Skeleton className="h-3 w-16 rounded-full" />
       </div>
     </div>
   );
@@ -379,81 +382,24 @@ function ShimmerItem() {
 
 function MarketSymbolCardSkeleton() {
   return (
-    <div className="rounded-2xl p-3.5 border border-border/20 bg-card">
+    <div className="rounded-xl p-3.5 border border-border bg-card">
       <div className="flex items-center gap-2.5">
-        <div className="h-9 w-9 rounded-full shimmer" />
+        <Skeleton className="h-9 w-9 rounded-full" />
         <div className="min-w-0 flex-1 space-y-1.5">
-          <div className="h-3 w-20 rounded-full shimmer" />
-          <div className="h-3 w-16 rounded-full shimmer" />
+          <Skeleton className="h-3 w-20 rounded-full" />
+          <Skeleton className="h-3 w-16 rounded-full" />
         </div>
       </div>
       <div className="mt-3 flex items-end justify-between gap-2">
         <div className="space-y-1.5">
-          <div className="h-4 w-20 rounded-full shimmer" />
-          <div className="h-3 w-16 rounded-full shimmer" />
+          <Skeleton className="h-4 w-20 rounded-full" />
+          <Skeleton className="h-3 w-16 rounded-full" />
         </div>
-        <div className="h-10 w-[72px] rounded-xl shimmer" />
+        <Skeleton className="h-10 w-[72px] rounded-xl" />
       </div>
     </div>
   );
 }
-
-function MiniChart({ data, isPositive, width = 72, height = 36, chartId }) {
-  if (!Array.isArray(data) || data.length < 2) {
-    return <div style={{ width, height }} className="rounded-full bg-muted/40" />;
-  }
-
-  const min = Math.min(...data);
-  const max = Math.max(...data);
-  const range = max - min || 1;
-
-  const coordinates = data.map((value, index) => {
-    const x = (index / (data.length - 1)) * width;
-    const y = height - ((value - min) / range) * height;
-    return { x, y };
-  });
-
-  const linePath = coordinates
-    .map((point, idx) => `${idx === 0 ? "M" : "L"}${point.x.toFixed(2)},${point.y.toFixed(2)}`)
-    .join(" ");
-  const strokeColor = isPositive ? "#10b981" : "#ef4444";
-
-  // Calculate baseline at first data point (represents 0% change)
-  const firstValue = data[0];
-  const baselineY = height - ((firstValue - min) / range) * height;
-
-  return (
-    <svg width={width} height={height} className="overflow-visible">
-      {/* Baseline reference line */}
-      <line
-        x1="0"
-        y1={baselineY}
-        x2={width}
-        y2={baselineY}
-        stroke="currentColor"
-        strokeWidth="0.8"
-        strokeDasharray="2,2"
-        opacity="0.3"
-        className="text-muted-foreground"
-      />
-      <path
-        d={linePath}
-        fill="none"
-        stroke={strokeColor}
-        strokeWidth={1.6}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <circle
-        cx={coordinates[coordinates.length - 1].x}
-        cy={coordinates[coordinates.length - 1].y}
-        r={2.4}
-        fill={strokeColor}
-      />
-    </svg>
-  );
-}
-
 
 function PickItem({ pick, quote }) {
   const symbol = typeof pick === "string" ? pick : pick?.symbol;
@@ -518,7 +464,7 @@ function PickItem({ pick, quote }) {
         </div>
       </div>
       <div className={`flex items-center ${Array.isArray(chartData) ? color : "text-muted-foreground"}`}>
-        <MiniChart data={chartData} isPositive={isPositive} chartId={`explore-${symbol}`} />
+        <MiniChart data={chartData} isPositive={isPositive} />
       </div>
       <div className="flex flex-col items-end">
         <div className="font-semibold text-sm tabular-nums">{formattedPrice}</div>
@@ -1156,7 +1102,7 @@ export default function ExplorePage() {
         <section className="w-full overflow-x-auto scrollbar-hide -mx-1 px-1">
           <div className="flex items-center gap-3 min-w-max">
             {MARKET_PULSE_SYMBOLS.map((item) => (
-              <div key={`pulse-loading-${item.symbol}`} className="h-9 w-28 rounded-xl shimmer" />
+              <Skeleton key={`pulse-loading-${item.symbol}`} className="h-9 w-28 rounded-xl" />
             ))}
           </div>
         </section>
@@ -1165,12 +1111,12 @@ export default function ExplorePage() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-2 w-full">
             <div className="flex items-center gap-2 mb-4 overflow-x-auto scrollbar-hide w-full">
               {MARKET_CATEGORIES.map((cat) => (
-                <div key={`tab-loading-${cat.id}`} className="h-8 w-24 rounded-full shimmer shrink-0" />
+                <Skeleton key={`tab-loading-${cat.id}`} className="h-8 w-24 rounded-full shrink-0" />
               ))}
             </div>
             <div className="flex items-center gap-1.5 mb-4 overflow-x-auto scrollbar-hide">
               {MARKET_TIMEFRAMES.map((tf) => (
-                <div key={`tf-loading-${tf}`} className="h-7 w-9 rounded-lg shimmer shrink-0" />
+                <Skeleton key={`tf-loading-${tf}`} className="h-7 w-9 rounded-lg shrink-0" />
               ))}
             </div>
           </div>
@@ -1181,38 +1127,77 @@ export default function ExplorePage() {
           </div>
         </section>
 
-        <Card className="border-none">
-          <CardContent className="space-y-3 pt-0">
-            <div className="h-16 w-full rounded-2xl shimmer bg-white/20" />
-          </CardContent>
-        </Card>
+        <Skeleton className="h-10 w-full rounded-xl" />
+
+        <section className="w-full space-y-4">
+          <Skeleton className="h-4 w-24 rounded-full" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-3">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-9 w-9 rounded-full" />
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-3 w-24 rounded-full" />
+                    <Skeleton className="h-3 w-32 rounded-full" />
+                  </div>
+                </div>
+                <Skeleton className="h-4 w-10 rounded-full" />
+              </div>
+            ))}
+          </div>
+        </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-4 space-y-2">
-            {[1, 2, 3].map((item) => (
-              <div key={`money-flow-loading-${item}`} className="h-16 rounded-2xl shimmer" />
-            ))}
+          <div className="lg:col-span-4 flex flex-col gap-6">
+            <section>
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-3 w-3 rounded-full" />
+                <Skeleton className="h-4 w-32 rounded-full" />
+              </div>
+              <div className="mt-3 space-y-2">
+                {[1, 2, 3].map((item) => (
+                  <Skeleton key={`money-loading-${item}`} className="h-16 rounded-xl" />
+                ))}
+              </div>
+              <div className="mt-4">
+                <Skeleton className="h-9 w-full rounded-full" />
+              </div>
+            </section>
           </div>
           <div className="lg:col-span-8 lg:columns-2 lg:gap-6 space-y-4 lg:space-y-0">
             {["idx", "us", "crypto"].map((category) => (
-              <section key={category} className="rounded-xl bg-background/80 lg:[break-inside:avoid] lg:mb-6">
+              <section key={category} className="lg:[break-inside:avoid] lg:mb-2">
                 <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <div className="space-y-2">
-                    <div className="h-3 w-32 rounded-full shimmer" />
-                    <div className="h-3 w-40 rounded-full shimmer" />
+                    <Skeleton className="h-4 w-44 rounded-full" />
+                    <Skeleton className="h-3 w-28 rounded-full" />
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="h-6 w-16 rounded-full shimmer" />
-                    <div className="h-6 w-20 rounded-full shimmer" />
+                    <Skeleton className="h-4 w-16 rounded-full" />
+                    <Skeleton className="h-6 w-20 rounded-lg" />
                   </div>
                 </div>
-                <div>
+                <div className="mt-4">
                   {[...Array(5)].map((_, idx) => (
                     <ShimmerItem key={`${category}-shimmer-${idx}`} />
                   ))}
                 </div>
+                <div className="mt-3">
+                  <Skeleton className="h-4 w-32 rounded-full" />
+                </div>
               </section>
             ))}
+            <section className="p-4 rounded-xl border border-border bg-card">
+              <Skeleton className="h-4 w-48 rounded-full" />
+              <div className="mt-4 grid grid-cols-3 gap-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="space-y-1 text-center">
+                    <Skeleton className="h-8 w-full rounded-xl" />
+                    <Skeleton className="h-3 w-20 rounded-full mx-auto" />
+                  </div>
+                ))}
+              </div>
+            </section>
           </div>
         </div>
       </div>
@@ -1274,17 +1259,19 @@ export default function ExplorePage() {
             {MARKET_CATEGORIES.map((cat) => {
               const CatIcon = cat.icon;
               return (
-                <button
+                <Button
                   key={cat.id}
+                  type="button"
+                  variant="ghost"
                   onClick={() => setActiveMarketTab(cat.id)}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold transition-all duration-150 whitespace-nowrap ${activeMarketTab === cat.id
-                    ? "bg-primary text-primary-foreground"
+                  className={`rounded-full text-xs font-semibold px-4 py-2 h-auto ${activeMarketTab === cat.id
+                    ? "bg-primary text-primary-foreground hover:bg-primary"
                     : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
                     }`}
                 >
                   {cat.emoji ? <span>{cat.emoji}</span> : CatIcon ? <CatIcon className="h-3.5 w-3.5" /> : null}
                   {cat.title}
-                </button>
+                </Button>
               );
             })}
           </div>
@@ -1292,16 +1279,18 @@ export default function ExplorePage() {
           {/* Timeframe Selector */}
           <div className="flex items-center gap-1.5 mb-4 overflow-x-auto scrollbar-hide">
             {MARKET_TIMEFRAMES.map((tf) => (
-              <button
+              <Button
                 key={tf}
+                type="button"
+                variant="ghost"
                 onClick={() => setMarketTimeframe(tf)}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all duration-150 whitespace-nowrap ${marketTimeframe === tf
-                  ? "bg-foreground text-background"
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold h-auto ${marketTimeframe === tf
+                  ? "bg-foreground text-background hover:bg-foreground"
                   : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                   }`}
               >
                 {tf}
-              </button>
+              </Button>
             ))}
             {activeMarketLoading && (
               <span className="ml-1 inline-flex items-center text-muted-foreground">
@@ -1326,7 +1315,7 @@ export default function ExplorePage() {
                 <Link
                   key={item.symbol}
                   href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
-                  className={`rounded-2xl p-3.5 border transition-all duration-200 block card-hover bg-card ${isAtATH
+                  className={`rounded-xl p-3.5 border transition-all duration-200 block card-hover bg-card ${isAtATH
                     ? "border-amber-500/40 bg-card ring-1 ring-amber-500/20"
                     : "border-border/20 hover:border-border/40"
                     }`}
@@ -1363,7 +1352,6 @@ export default function ExplorePage() {
                         isPositive={isPositive}
                         width={72}
                         height={40}
-                        chartId={`market-${item.symbol}`}
                       />
                     </div>
                   </div>
@@ -1388,7 +1376,7 @@ export default function ExplorePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Link
             href="/msci"
-            className="group card-hover flex items-center justify-between gap-3 rounded-2xl"
+            className="group card-hover flex items-center justify-between gap-3 rounded-xl"
           >
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
@@ -1397,7 +1385,7 @@ export default function ExplorePage() {
               <div>
                 <div className="text-xs font-semibold text-foreground">MSCI Tracker</div>
                 {msciLoading ? (
-                  <div className="mt-1 h-3 w-28 rounded-full shimmer" />
+                  <Skeleton className="mt-1 h-3 w-28 rounded-full" />
                 ) : msciPreview ? (
                   <div className="text-[11px] text-muted-foreground">
                     {msciPreview.totalStocks} candidates
@@ -1413,7 +1401,7 @@ export default function ExplorePage() {
 
           <Link
             href="/idx-rotation"
-            className="group card-hover flex items-center justify-between gap-3 rounded-2xl"
+            className="group card-hover flex items-center justify-between gap-3 rounded-xl"
           >
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
@@ -1422,7 +1410,7 @@ export default function ExplorePage() {
               <div>
                 <div className="text-xs font-semibold text-foreground">IDX Rotation</div>
                 {rotationLoading ? (
-                  <div className="mt-1 h-3 w-28 rounded-full shimmer" />
+                  <Skeleton className="mt-1 h-3 w-28 rounded-full" />
                 ) : rotationPreview ? (
                   <div className="text-[11px] text-muted-foreground">
                     Lead: <span className="text-emerald-500 font-medium">{formatTickerDisplay(rotationPreview.strongest?.code) || "—"}</span>
@@ -1438,7 +1426,7 @@ export default function ExplorePage() {
 
           <Link
             href="/idx-momentum"
-            className="group card-hover flex items-center justify-between gap-3 rounded-2xl"
+            className="group card-hover flex items-center justify-between gap-3 rounded-xl"
           >
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
@@ -1454,7 +1442,7 @@ export default function ExplorePage() {
 
           <Link
             href="/discussion"
-            className="group card-hover flex items-center justify-between gap-3 rounded-2xl"
+            className="group card-hover flex items-center justify-between gap-3 rounded-xl"
           >
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
@@ -1470,7 +1458,7 @@ export default function ExplorePage() {
 
           <a
             href="#breakout-signals"
-            className="group card-hover flex items-center justify-between gap-3 rounded-2xl"
+            className="group card-hover flex items-center justify-between gap-3 rounded-xl"
           >
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
@@ -1493,7 +1481,7 @@ export default function ExplorePage() {
 
           <Link
             href="/idx-bubbles"
-            className="group card-hover flex items-center justify-between gap-3 rounded-2xl"
+            className="group card-hover flex items-center justify-between gap-3 rounded-xl"
           >
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
@@ -1548,7 +1536,7 @@ export default function ExplorePage() {
               {moneyFlowLoading && (
                 <div className="mt-3 space-y-2">
                   {[1, 2, 3].map((item) => (
-                    <div key={item} className="h-16 rounded-2xl shimmer" />
+                    <Skeleton key={item} className="h-16 rounded-xl" />
                   ))}
                 </div>
               )}
@@ -1651,7 +1639,7 @@ export default function ExplorePage() {
           </div>
 
           {/* ───── Screener Triggers ───── */}
-          <section className="p-4 rounded-2xl bg-card border border-border/20 mt-4 lg:mt-2">
+          <section className="p-4 rounded-xl bg-card border border-border/20 mt-4 lg:mt-2">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">

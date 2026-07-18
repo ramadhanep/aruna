@@ -13,6 +13,7 @@ import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth-provider';
 import { fetchEncodedJson } from '@/lib/api-client';
 import { TickerAvatar } from '@/components/ticker-avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import { formatTickerDisplay } from '@/lib/utils';
 import { useTrial } from '@/components/trial-provider';
 import { GoogleGlyph } from '@/components/google-glyph';
@@ -1110,60 +1111,60 @@ export default function PortfolioTrackerPage() {
       <div className={`flex flex-col gap-4 ${isMobileExperience ? 'pb-28' : ''}`}>
         <Card className={isMobileExperience ? 'rounded-3xl' : ''}>
           <CardHeader className="flex flex-row items-center justify-between pb-2 gap-2">
-            <div className="h-4 w-20 shimmer rounded-md" />
+            <Skeleton className="h-4 w-20 rounded-md" />
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full shimmer" />
-              <div className="h-8 w-[132px] rounded-md shimmer" />
+              <Skeleton className="h-8 w-8 rounded-full" />
+              <Skeleton className="h-8 w-[132px] rounded-md" />
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex items-start justify-between gap-3">
               <div className="space-y-2">
-                <div className="h-3 w-28 shimmer rounded-md" />
-                <div className="h-6 w-40 shimmer rounded-md" />
-                <div className="h-3 w-24 shimmer rounded-md" />
-                <div className="h-3 w-36 shimmer rounded-md" />
+                <Skeleton className="h-3 w-28 rounded-md" />
+                <Skeleton className="h-6 w-40 rounded-md" />
+                <Skeleton className="h-3 w-24 rounded-md" />
+                <Skeleton className="h-3 w-36 rounded-md" />
               </div>
-              <div className="h-[44px] w-[92px] shimmer rounded-md" />
+              <Skeleton className="h-[44px] w-[92px] rounded-md" />
             </div>
             <div className="rounded-xl border border-border/20 p-3">
-              <div className="h-4 w-24 shimmer rounded-md mx-auto" />
+              <Skeleton className="h-4 w-24 rounded-md mx-auto" />
             </div>
             <div className="rounded-xl border border-border/20 p-3">
-              <div className="h-4 w-44 shimmer rounded-md mx-auto" />
+              <Skeleton className="h-4 w-44 rounded-md mx-auto" />
             </div>
           </CardContent>
         </Card>
 
         <div className="rounded-xl border border-border/40 bg-muted/20 px-3 py-2">
-          <div className="h-3 w-28 shimmer rounded-md mx-auto" />
+          <Skeleton className="h-3 w-28 rounded-md mx-auto" />
         </div>
 
         <Card className={`h-full ${isMobileExperience ? 'rounded-3xl' : ''}`}>
           <CardHeader className="flex items-center justify-between">
-            <div className="h-4 w-20 shimmer rounded-md" />
-            <div className="h-8 w-8 shimmer rounded-md" />
+            <Skeleton className="h-4 w-20 rounded-md" />
+            <Skeleton className="h-8 w-8 rounded-md" />
           </CardHeader>
           <CardContent>
             <div className={`space-y-2 ${isMobileExperience ? 'mb-20' : 'mb-4'}`}>
               {[...Array(isMobileExperience ? 4 : 5)].map((_, idx) => (
                 <div
                   key={`holding-${idx}`}
-                  className={`flex items-center gap-3 p-2 rounded-2xl min-h-16 border ${isMobileExperience ? 'bg-background/80 border-border/40' : 'border-border/20'}`}
+                  className={`flex items-center gap-3 p-2 rounded-xl min-h-16 border ${isMobileExperience ? 'bg-background/80 border-border/40' : 'border-border/20'}`}
                 >
                   <div className="flex flex-1 min-w-0 items-center gap-2 px-1 py-2">
-                    <div className="h-8 w-8 rounded-2xl shimmer" />
+                    <Skeleton className="h-8 w-8 rounded-lg" />
                     <div className="space-y-1.5">
-                      <div className="h-3 w-20 shimmer rounded-md" />
-                      <div className="h-3 w-16 shimmer rounded-md" />
+                      <Skeleton className="h-3 w-20 rounded-md" />
+                      <Skeleton className="h-3 w-16 rounded-md" />
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="space-y-1.5 text-right">
-                      <div className="h-3 w-20 shimmer rounded-md" />
-                      <div className="h-3 w-16 shimmer rounded-md ml-auto" />
+                      <Skeleton className="h-3 w-20 rounded-md" />
+                      <Skeleton className="h-3 w-16 rounded-md ml-auto" />
                     </div>
-                    <div className="h-8 w-8 shimmer rounded-md" />
+                    <Skeleton className="h-8 w-8 rounded-md" />
                   </div>
                 </div>
               ))}
