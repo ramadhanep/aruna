@@ -306,7 +306,7 @@ function AccountSidebarContent({ onClose }) {
                 className="min-w-[118px] justify-center gap-2 rounded-xl text-xs"
                 onClick={() => setMode(mode === "lite" ? "pro" : "lite")}
               >
-                {mode === "lite" ? <Leaf className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />}
+                {/* {mode === "lite" ? <Leaf className="h-4 w-4" /> : <Sparkles className="h-4 w-4" />} */}
                 {mode === "lite" ? "Lite" : "Pro"}
               </Button>
             </div>

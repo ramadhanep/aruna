@@ -117,14 +117,14 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="fixed max-w-none m-0 h-screen rounded-none p-0 flex flex-col" closeButtonPosition="right">
+      <DialogContent variant="fullscreen" closeButtonPosition="right">
         <DialogHeader className="p-6 pb-4">
           <DialogTitle className="text-base font-semibold">Manage Watchlist</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-4">
           {/* Search and Add */}
-          <div className="mb-4">
+          <div className="relative mb-4">
             <div className="relative">
               <Input
                 placeholder="Search ticker..."
@@ -148,7 +148,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
 
             {/* Search Results */}
             {searchResults.length > 0 && (
-              <div className="mt-2 border rounded-md divide-y max-h-[200px] overflow-y-auto bg-card">
+              <div className="absolute top-full inset-x-0 z-20 mt-2 border rounded-md divide-y max-h-[200px] overflow-y-auto bg-card shadow-md">
                 {searchResults.map((result) => (
                   <button
                     key={result.symbol}

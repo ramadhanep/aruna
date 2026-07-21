@@ -45,11 +45,22 @@ function DialogOverlay({
   );
 }
 
+const dialogContentBase =
+  "bg-popover data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed z-[121] duration-200";
+
+const dialogContentVariants = {
+  default:
+    "top-[50%] left-[50%] grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border border-border p-6 sm:max-w-3xl lg:max-w-4xl",
+  // Edge-to-edge mobile sheet: fills the viewport, no rounding/border/padding of its own.
+  fullscreen: "inset-0 flex h-screen w-screen max-w-none flex-col rounded-none border-0 p-0",
+};
+
 function DialogContent({
   className,
   children,
   showCloseButton = true,
   closeButtonPosition = "left",
+  variant = "default",
   ...props
 }) {
   return (
@@ -58,7 +69,8 @@ function DialogContent({
       <DialogPrimitive.Content
         data-slot="dialog-content"
         className={cn(
-          "bg-popover data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-[121] grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border border-border p-6 duration-200 sm:max-w-3xl lg:max-w-4xl",
+          dialogContentBase,
+          dialogContentVariants[variant] ?? dialogContentVariants.default,
           className
         )}
         {...props}>

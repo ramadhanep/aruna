@@ -7,14 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Loader2, TrendingUp, TrendingDown, AlertTriangle, Lock, Download, Flame, ChevronDown, ChevronUp, ChevronRight, Clock, Globe, Zap, BarChart3, ArrowUpRight, ArrowDownRight, Gem, Magnet, Rotate3D, Axe, MessageCircleMore, Radar, Droplets } from "lucide-react";
+import { Loader2, Lock, Download, Flame, ChevronDown, ChevronUp, ChevronRight, Clock, Globe, Zap, BarChart3, ArrowUpRight, ArrowDownRight, Gem, Magnet, Rotate3D, Axe, MessageCircleMore, Radar, Droplets } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
+import { MOTION } from "@/lib/motion";
+import { TickerRowSkeleton } from "@/components/ticker-row-skeleton";
+import { TickerRow } from "@/components/ticker-row";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { TrendingMarquee } from "@/components/trending-marquee";
 import { MiniChart } from "@/components/mini-chart";
-import { formatTickerDisplay } from "@/lib/utils";
-import { MoneyFlowCard } from "@/components/money-flow-card";
+import { cn, formatTickerDisplay } from "@/lib/utils";
 
 const SUPABASE_STORAGE_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public`;
 
@@ -364,22 +365,6 @@ function sortPicksByDescendingChange(picks, quotes) {
   });
 }
 
-function ShimmerItem() {
-  return (
-    <div className="flex items-center gap-3 py-3">
-      <div className="flex-1 min-w-0 space-y-1.5">
-        <Skeleton className="h-3 w-16 rounded-full" />
-        <Skeleton className="h-3 w-32 rounded-full" />
-      </div>
-      <Skeleton className="w-[72px] h-[36px] rounded-xl" />
-      <div className="flex flex-col items-end gap-1">
-        <Skeleton className="h-3 w-20 rounded-full" />
-        <Skeleton className="h-3 w-16 rounded-full" />
-      </div>
-    </div>
-  );
-}
-
 function MarketSymbolCardSkeleton() {
   return (
     <div className="rounded-xl p-3.5 border border-border bg-card">
@@ -401,87 +386,33 @@ function MarketSymbolCardSkeleton() {
   );
 }
 
-function PickItem({ pick, quote }) {
+function pickToRowProps(pick, quote) {
   const symbol = typeof pick === "string" ? pick : pick?.symbol;
-  if (!symbol) return null;
   const pickData = pick && typeof pick === "object" ? pick : {};
-  const isNewSignal = isSameCalendarDay(pickData?.signal_date);
-  const change =
-    typeof quote?.change === "number"
-      ? quote.change
-      : typeof pickData?.change === "number"
-        ? pickData.change
-        : 0;
-  const changePercent =
-    typeof quote?.changePercent === "number"
-      ? quote.changePercent
-      : typeof pickData?.changePercent === "number"
-        ? pickData.changePercent
-        : 0;
-  const price =
-    typeof quote?.price === "number"
-      ? quote.price
-      : typeof pickData?.lastClose === "number"
-        ? pickData.lastClose
-        : null;
-  const isPositive = change >= 0;
-  const color = isPositive ? "text-emerald-600" : "text-red-600";
-  const formattedPrice = typeof price === "number"
-    ? price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : "-";
-  const displayName = quote?.name || pickData?.name || symbol;
-  const isWarning = Boolean(pickData?.is_warning);
-  const chartData =
-    Array.isArray(quote?.chartData) && quote.chartData.length > 0
-      ? quote.chartData
-      : Array.isArray(pickData?.sparkline)
-        ? pickData.sparkline
-        : [];
-  const logo = quote?.logo || null;
-
-  return (
-    <Link
-      href={`/chart?symbol=${encodeURIComponent(symbol)}&cycle=normal&tab=tradingPlan`}
-      className="flex items-center gap-3 py-3.5 px-1 hover:bg-accent/40 transition-all duration-200 rounded-xl -mx-1"
-    >
-      <div className="flex-1 min-w-0 flex items-center gap-3">
-        <div className="flex-shrink-0">
-          <TickerAvatar symbol={symbol} logo={logo} />
-        </div>
-        <div className="min-w-0">
-          <div className="font-semibold text-sm truncate flex items-center gap-1.5">
-            <span>{formatTickerDisplay(symbol)}</span>
-            {isNewSignal ? (
-              <span className="text-[9px] font-bold tracking-wide text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-500/15 px-1.5 py-[2px] rounded-md">
-                NEW
-              </span>
-            ) : null}
-            {isWarning ? (
-              <AlertTriangle className="h-3.5 w-3.5 text-amber-500" title="High volume vs market cap" />
-            ) : null}
-          </div>
-          <div className="text-xs text-muted-foreground truncate mt-0.5">{displayName}</div>
-        </div>
-      </div>
-      <div className={`flex items-center ${Array.isArray(chartData) ? color : "text-muted-foreground"}`}>
-        <MiniChart data={chartData} isPositive={isPositive} />
-      </div>
-      <div className="flex flex-col items-end">
-        <div className="font-semibold text-sm tabular-nums">{formattedPrice}</div>
-        <div className={`text-xs font-medium flex items-center gap-1 ${color}`}>
-          {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-          {isPositive ? "+" : ""}
-          {changePercent?.toFixed ? changePercent.toFixed(2) : "0.00"}%
-        </div>
-      </div>
-    </Link>
-  );
+  return {
+    symbol,
+    href: symbol ? `/chart?symbol=${encodeURIComponent(symbol)}&cycle=normal&tab=tradingPlan` : "#",
+    logo: quote?.logo || null,
+    name: quote?.name || pickData?.name || symbol,
+    price: typeof quote?.price === "number" ? quote.price : typeof pickData?.lastClose === "number" ? pickData.lastClose : null,
+    change: typeof quote?.change === "number" ? quote.change : typeof pickData?.change === "number" ? pickData.change : 0,
+    changePercent: typeof quote?.changePercent === "number" ? quote.changePercent : typeof pickData?.changePercent === "number" ? pickData.changePercent : 0,
+    chartData: Array.isArray(quote?.chartData) && quote.chartData.length > 0 ? quote.chartData : Array.isArray(pickData?.sparkline) ? pickData.sparkline : [],
+    isNew: isSameCalendarDay(pickData?.signal_date),
+    isWarning: Boolean(pickData?.is_warning),
+  };
 }
 
 function MarketPulseMarquee({ items }) {
   const validItems = items.filter((item) => item.quote);
   if (validItems.length === 0) {
-    return null;
+    return (
+      <div className="flex items-center gap-3">
+        {MARKET_PULSE_SYMBOLS.map((item) => (
+          <Skeleton key={`pulse-mq-loading-${item.symbol}`} className="h-9 w-28 rounded-xl shrink-0" />
+        ))}
+      </div>
+    );
   }
 
   return (
@@ -534,22 +465,12 @@ function MarketPulseMarquee({ items }) {
   );
 }
 
-function formatMoneyFlowDelta(value) {
-  const numeric = Number(value || 0) * 100;
-  const sign = numeric >= 0 ? "+" : "";
-  return `${sign}${numeric.toFixed(2)}%`;
-}
-
 
 
 export default function ExplorePage() {
   const { supabase, user } = useAuth();
   const [snapshots, setSnapshots] = useState({});
   const [quotes, setQuotes] = useState({});
-  const [moneyFlowReports, setMoneyFlowReports] = useState([]);
-  const [moneyFlowUpdatedAt, setMoneyFlowUpdatedAt] = useState(null);
-  const [moneyFlowLoading, setMoneyFlowLoading] = useState(true);
-  const [moneyFlowError, setMoneyFlowError] = useState("");
   const [msciData, setMsciData] = useState(null);
   const [msciLoading, setMsciLoading] = useState(true);
   const [rotationData, setRotationData] = useState(null);
@@ -713,34 +634,6 @@ export default function ExplorePage() {
     }
   }, [supabase, loadCoreQuotesForSnapshots]);
 
-  const loadMoneyFlow = useCallback(async () => {
-    setMoneyFlowLoading(true);
-    setMoneyFlowError("");
-    try {
-      const params = new URLSearchParams({
-        timeframe: "weekly",
-        sort: "score",
-        order: "desc",
-        limit: "5",
-      });
-      const { response, data } = await fetchEncodedJson(`/api/money-flow?${params.toString()}`);
-      if (!response.ok || data?.error) {
-        throw new Error(data?.error || "Failed to load money-flow highlights");
-      }
-      setMoneyFlowReports(Array.isArray(data?.reports) ? data.reports : []);
-      if (data?.updated_at) {
-        setMoneyFlowUpdatedAt(new Date(data.updated_at));
-      }
-    } catch (error) {
-      console.warn("Failed to load money-flow highlights", error);
-      setMoneyFlowError(error?.message || "Failed to load money-flow highlights");
-      setMoneyFlowReports([]);
-      setMoneyFlowUpdatedAt(null);
-    } finally {
-      setMoneyFlowLoading(false);
-    }
-  }, []);
-
   const loadMsci = useCallback(async () => {
     setMsciLoading(true);
     try {
@@ -780,10 +673,6 @@ export default function ExplorePage() {
   useEffect(() => {
     loadActiveMarketQuotes(activeMarketTab, marketTimeframe);
   }, [activeMarketTab, marketTimeframe, loadActiveMarketQuotes]);
-
-  useEffect(() => {
-    loadMoneyFlow();
-  }, [loadMoneyFlow]);
 
   useEffect(() => {
     loadMsci();
@@ -854,14 +743,13 @@ export default function ExplorePage() {
     try {
       await Promise.all([
         loadSnapshots(),
-        loadMoneyFlow(),
         loadActiveMarketQuotes(activeMarketTab, marketTimeframe),
       ]);
     } finally {
       setIsRefreshing(false);
       setPullDistance(0);
     }
-  }, [isRefreshing, loadMoneyFlow, loadSnapshots, loadActiveMarketQuotes, activeMarketTab, marketTimeframe]);
+  }, [isRefreshing, loadSnapshots, loadActiveMarketQuotes, activeMarketTab, marketTimeframe]);
 
   const handleTouchStart = useCallback((event) => {
     // Check window scroll position, not container scrollTop
@@ -1042,19 +930,11 @@ export default function ExplorePage() {
   }, [rotationData]);
 
   const topMoversPreview = useMemo(() => {
-    const biggestVolume = Array.isArray(moneyFlowReports)
-      ? moneyFlowReports.reduce((best, r) => {
-        const vol = r.today_volume ?? r.volume ?? 0;
-        if (!best || vol > (best.today_volume ?? best.volume ?? 0)) return r;
-        return best;
-      }, null)
-      : null;
     return {
       bestGainer: breakoutInsights.bestGainer,
       bestLoser: breakoutInsights.bestLoser,
-      biggestVolume,
     };
-  }, [breakoutInsights, moneyFlowReports]);
+  }, [breakoutInsights]);
 
   const marketCategoryData = useMemo(() => {
     return MARKET_CATEGORIES.map((cat) => ({
@@ -1179,7 +1059,7 @@ export default function ExplorePage() {
                 </div>
                 <div className="mt-4">
                   {[...Array(5)].map((_, idx) => (
-                    <ShimmerItem key={`${category}-shimmer-${idx}`} />
+                    <TickerRowSkeleton key={`${category}-shimmer-${idx}`} />
                   ))}
                 </div>
                 <div className="mt-3">
@@ -1207,7 +1087,7 @@ export default function ExplorePage() {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col gap-6 pb-12"
+      className={cn("flex flex-col gap-6 pb-12", MOTION.fadeIn)}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -1315,10 +1195,13 @@ export default function ExplorePage() {
                 <Link
                   key={item.symbol}
                   href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
-                  className={`rounded-xl p-3.5 border transition-all duration-200 block card-hover bg-card ${isAtATH
-                    ? "border-amber-500/40 bg-card ring-1 ring-amber-500/20"
-                    : "border-border/20 hover:border-border/40"
-                    }`}
+                  className={cn(
+                    "rounded-xl p-3.5 border transition-all duration-200 block card-hover bg-card",
+                    MOTION.fadeIn,
+                    isAtATH
+                      ? "border-amber-500/40 bg-card ring-1 ring-amber-500/20"
+                      : "border-border/20 hover:border-border/40"
+                  )}
                 >
                   <div className="flex items-center gap-2.5">
                     <TickerAvatar symbol={item.symbol} logo={item.logo || q?.logo} />
@@ -1511,66 +1394,10 @@ export default function ExplorePage() {
       </section>
 
       {/* ───── Main Content Grid ───── */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 gap-6">
 
-        {/* ───── Left: Money Flow ───── */}
-        {(moneyFlowLoading || moneyFlowReports.length > 0) && (
-          <div className="lg:col-span-4 flex flex-col gap-6">
-            <section>
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-lime-600" />
-                    <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
-                      IDX Money Flow 🇮🇩
-                    </p>
-                  </div>
-                  {moneyFlowUpdatedAt && (
-                    <p className="text-[11px] text-muted-foreground/70 mt-0.5">
-                      Updated {formatTimeAgo(moneyFlowUpdatedAt)}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              {moneyFlowLoading && (
-                <div className="mt-3 space-y-2">
-                  {[1, 2, 3].map((item) => (
-                    <Skeleton key={item} className="h-16 rounded-xl" />
-                  ))}
-                </div>
-              )}
-
-              {!moneyFlowLoading && moneyFlowError && (
-                <Card className="mt-3 border border-amber-500/20 bg-amber-500/5">
-                  <CardContent className="p-3">
-                    <p className="text-xs text-amber-600 dark:text-amber-400">{moneyFlowError}</p>
-                  </CardContent>
-                </Card>
-              )}
-
-              {!moneyFlowLoading && !moneyFlowError && moneyFlowReports.length > 0 && (
-                <Accordion type="single" collapsible className="mt-3 space-y-3">
-                  {moneyFlowReports.map((report) => (
-                    <MoneyFlowCard key={`${report.symbol}-${report.report_date}`} report={report} />
-                  ))}
-                </Accordion>
-              )}
-
-              <div className="mt-4 flex justify-center">
-                <Link
-                  href="/money-flow?timeframe=weekly"
-                  className="text-xs font-semibold text-muted-foreground hover:text-foreground flex items-center gap-1.5 py-1.5 px-4 rounded-full border border-border/20 w-full justify-center transition-colors hover:bg-muted/30 text-emerald-600 dark:text-emerald-400 hover:underline"
-                >
-                  View All Money Flow <ChevronRight className="h-3.5 w-3.5" />
-                </Link>
-              </div>
-            </section>
-          </div>
-        )}
-
-        {/* ───── Right: Breakout Signals ───── */}
-        <div id="breakout-signals" className="lg:col-span-8 scroll-mt-20">
+        {/* ───── Breakout Signals ───── */}
+        <div id="breakout-signals" className="scroll-mt-20">
           <div className="grid grid-cols-1 gap-y-2 lg:block lg:columns-2 lg:gap-6">
             {orderedCategories.map((section) => {
               const gatedPicks = section.picks.slice(5);
@@ -1600,7 +1427,7 @@ export default function ExplorePage() {
                   </div>
                   <div className="mt-4 space-y-0.5">
                     {firstPicks.map((pick) => (
-                      <PickItem key={pick.symbol} pick={pick} quote={quotes[pick.symbol]} />
+                      <TickerRow key={pick.symbol} {...pickToRowProps(pick, quotes[pick.symbol])} />
                     ))}
                   </div>
                   {gatedPicks.length > 0 && (
@@ -1609,7 +1436,7 @@ export default function ExplorePage() {
                         className={`space-y-1 divide-y divide-border/20 border-t border-border/20 pt-1 ${shouldGate ? "pointer-events-none select-none opacity-40" : ""}`}
                       >
                         {gatedPicks.map((pick) => (
-                          <PickItem key={pick.symbol} pick={pick} quote={quotes[pick.symbol]} />
+                          <TickerRow key={pick.symbol} {...pickToRowProps(pick, quotes[pick.symbol])} />
                         ))}
                       </div>
                       {shouldGate && (

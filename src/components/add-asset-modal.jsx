@@ -171,7 +171,7 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="fixed max-w-none m-0 h-screen rounded-none p-0 flex flex-col" closeButtonPosition="right">
+      <DialogContent variant="fullscreen" closeButtonPosition="right">
         <div className="flex items-center gap-2 p-4 border-b">
           <DialogTitle className="text-base">Add Asset</DialogTitle>
         </div>
@@ -185,7 +185,7 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
               </div>
             )}
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-1">
+              <div className="relative flex flex-col gap-1">
                 <Label htmlFor="symbolSearch">Symbol</Label>
                 <input
                   id="symbolSearch"
@@ -197,7 +197,7 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
                 />
                 {loadingSearch && <p className="text-xs text-muted-foreground">Searching...</p>}
                 {!loadingSearch && symbolResults.length > 0 && (
-                  <div className="max-h-40 overflow-auto rounded-md border border-border bg-background p-1 flex flex-col gap-1">
+                  <div className="absolute top-full left-0 right-0 z-20 mt-1 max-h-40 overflow-auto rounded-md border border-border bg-background p-1 flex flex-col gap-1 shadow-md">
                     {symbolResults.map(r => (
                       <button
                         type="button"

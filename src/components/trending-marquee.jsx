@@ -5,6 +5,7 @@ import Link from "next/link";
 import { TickerAvatar } from "./ticker-avatar";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { formatTickerDisplay } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function TrendingItem({ symbol, quote }) {
   if (!quote) return null;
@@ -183,7 +184,26 @@ export function TrendingMarquee({ supabase }) {
     };
   }, []);
 
-  if (loading || trendingStocks.length === 0) {
+  if (loading) {
+    return (
+      <div className="overflow-hidden">
+        <SectionHeader title="Trending" />
+        <div className="flex overflow-hidden border-y border-border bg-card py-2">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className="flex items-center gap-2.5 px-3.5 py-2.5 shrink-0">
+              <Skeleton className="w-6 h-6 rounded-2xl shrink-0" />
+              <div className="flex flex-col gap-1.5">
+                <Skeleton className="h-3 w-14 rounded-full" />
+                <Skeleton className="h-3 w-20 rounded-full" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (trendingStocks.length === 0) {
     return null;
   }
 

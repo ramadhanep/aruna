@@ -1,17 +1,17 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { TrendingUp, TrendingDown, Loader2, Download, Edit, BarChart3 } from "lucide-react";
+import { Loader2, Download, Edit, BarChart3 } from "lucide-react";
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ManageWatchlistDialog } from "@/components/manage-watchlist-dialog";
 import { useAuth } from "@/components/auth-provider";
 import { fetchEncodedJson } from "@/lib/api-client";
-import { TickerAvatar } from "@/components/ticker-avatar";
 import { MiniChart } from "@/components/mini-chart";
+import { TickerRowSkeleton } from "@/components/ticker-row-skeleton";
+import { TickerRow } from "@/components/ticker-row";
 import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist";
 import { TrendingMarquee } from "@/components/trending-marquee";
 import { formatTickerDisplay } from "@/lib/utils";
@@ -44,66 +44,10 @@ async function fetchBatchQuotes(symbols) {
   }
 }
 
-function StockItem({ quote }) {
-  if (!quote) return null;
-
-  const isPositive = quote.change >= 0;
-  const color = isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400';
-  const logo = quote.logo;
-  const symbol = quote.symbol || '';
-
-  return (
-    <Link
-      href={`/chart?symbol=${encodeURIComponent(quote.symbol)}&cycle=normal`}
-      className="flex items-center gap-3 py-3.5 px-1 hover:bg-accent/40 transition-all duration-200 rounded-xl -mx-1"
-    >
-      <div className="flex-1 min-w-0 flex items-center gap-3">
-        <div className="flex-shrink-0">
-          <TickerAvatar symbol={symbol} logo={logo} />
-        </div>
-        <div className="min-w-0">
-          <div className="font-semibold text-sm truncate">{formatTickerDisplay(quote.symbol)}</div>
-          <div className="text-xs text-muted-foreground truncate mt-0.5">{quote.name}</div>
-        </div>
-      </div>
-      <div className={`flex items-center ${color}`}>
-        <MiniChart
-          data={quote.chartData}
-          isPositive={isPositive}
-          
-        />
-      </div>
-      <div className="flex flex-col items-end">
-        <div className="font-semibold text-sm tabular-nums">{quote.price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
-        <div className={`text-xs font-medium flex items-center gap-1 ${color}`}>
-          {isPositive ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-          {isPositive ? '+' : ''}{quote.changePercent.toFixed(2)}%
-        </div>
-      </div>
-    </Link>
-  );
-}
-
 function SectionHeader({ title }) {
   return (
     <div className="py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
       {title}
-    </div>
-  );
-}
-
-function ShimmerItem() {
-  return (
-    <div className="flex items-center gap-3 py-3">
-      <div className="flex-1 min-w-0 space-y-1.5">
-        <Skeleton className="h-3 w-16 rounded-full" />
-        <Skeleton className="h-3 w-32 rounded-full" />
-      </div>
-      <Skeleton className="w-[72px] h-[36px] rounded-xl" />
-      <div className="flex flex-col items-end gap-1">
-        <Skeleton className="h-3 w-20 rounded-full" />
-        <Skeleton className="h-3 w-16 rounded-full" />
-      </div>
     </div>
   );
 }
@@ -337,7 +281,7 @@ export default function HomePage() {
             <div className="overflow-hidden">
               <SectionHeader title="Watchlist" />
               <div className="lg:grid lg:grid-cols-2 lg:gap-x-8 lg:gap-y-1">
-                {[...Array(8)].map((_, i) => <ShimmerItem key={i} />)}
+                {[...Array(8)].map((_, i) => <TickerRowSkeleton key={i} />)}
               </div>
               <div className="border-t border-border/20 py-2.5 mt-2 flex justify-center">
                 <Skeleton className="h-8 w-44 rounded-full" />
@@ -413,7 +357,16 @@ export default function HomePage() {
             <div className="lg:grid lg:grid-cols-2 lg:gap-x-8 lg:gap-y-1">
               {quotes.map(quote => (
                 <div key={quote.symbol}>
-                  <StockItem quote={quote} />
+                  <TickerRow
+                    symbol={quote?.symbol}
+                    href={quote ? `/chart?symbol=${encodeURIComponent(quote.symbol)}&cycle=normal` : "#"}
+                    logo={quote?.logo}
+                    name={quote?.name}
+                    price={quote?.price}
+                    change={quote?.change}
+                    changePercent={quote?.changePercent}
+                    chartData={quote?.chartData}
+                  />
                 </div>
               ))}
             </div>

@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TickerAvatar } from "@/components/ticker-avatar";
+import { Badge } from "@/components/ui/badge";
 import { formatTickerDisplay } from "@/lib/utils";
 
 const signalStyles = {
@@ -318,9 +319,9 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
               <div className="px-3 py-2.5 border-b border-border/40 flex items-center justify-between bg-black/5 dark:bg-white/5">
                 <div className="flex items-center gap-2">
                   <p className="text-xs font-semibold">Broker Action</p>
-                  <span className="hidden sm:inline-flex rounded-full border border-border/50 px-2 py-0.5 text-[10px] text-muted-foreground">
+                  <Badge className="hidden sm:inline-flex">
                     Top 10 pairs
-                  </span>
+                  </Badge>
                 </div>
 
                 <div className="flex items-center bg-background/80 rounded-xl border border-border/40 p-0.5">

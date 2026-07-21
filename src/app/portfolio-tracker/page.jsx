@@ -1618,7 +1618,7 @@ export default function PortfolioTrackerPage() {
                 {assetType === 'digital' ? (
                   <>
                     {/* Digital Asset Fields */}
-                    <div className="flex flex-col gap-2">
+                    <div className="relative flex flex-col gap-2">
                       <Label htmlFor="symbolSearch">Symbol</Label>
                       <input
                         id="symbolSearch"
@@ -1629,7 +1629,7 @@ export default function PortfolioTrackerPage() {
                       />
                       {loadingSearch && <p className="text-xs text-muted-foreground">Searching...</p>}
                       {!loadingSearch && symbolResults.length > 0 && (
-                        <div className="max-h-40 overflow-auto rounded-md border border-border bg-background p-1 flex flex-col gap-2">
+                        <div className="absolute top-full left-0 right-0 z-20 mt-1 max-h-40 overflow-auto rounded-md border border-border bg-background p-1 flex flex-col gap-2">
                           {symbolResults.map(r => (
                             <button
                               type="button"

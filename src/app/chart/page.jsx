@@ -36,6 +36,7 @@ import { useAuth } from "@/components/auth-provider";
 import { NormalCandlestickChart } from "@/components/normal-candlestick-chart";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist";
 import { ArunaWatermark } from "@/components/aruna-watermark";
 import { TickerAvatar } from "@/components/ticker-avatar";
@@ -1945,10 +1946,10 @@ function ElectionCyclePageContent() {
     const tier = tradingPlanPayload?.quality_tier ||
       (rr == null ? 'fair' : rr >= 3 ? 'excellent' : rr >= 2 ? 'good' : rr >= 1.2 ? 'fair' : 'poor');
     const meta = {
-      excellent: { label: 'Excellent Setup', tone: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10' },
-      good: { label: 'Good Setup', tone: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-500/10' },
-      fair: { label: 'Fair Setup', tone: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10' },
-      poor: { label: 'Weak Setup', tone: 'text-red-600 dark:text-red-400', bg: 'bg-red-500/10' },
+      excellent: { label: 'Excellent Setup', variant: 'success' },
+      good: { label: 'Good Setup', variant: 'success' },
+      fair: { label: 'Fair Setup', variant: 'warning' },
+      poor: { label: 'Weak Setup', variant: 'danger' },
     };
     return { tier, ...(meta[tier] || meta.fair) };
   }, [tradingPlanPayload, tradingPlanRiskReward]);
@@ -2690,9 +2691,9 @@ function ElectionCyclePageContent() {
               <span className="text-[10px] text-muted-foreground/70 shrink-0">{screeningSignalDateLabel}</span>
             )}
           </div>
-          <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${tradingPlanQualityTier.bg} ${tradingPlanQualityTier.tone}`}>
+          <Badge variant={tradingPlanQualityTier.variant} className="shrink-0">
             {tradingPlanQualityTier.label}
-          </span>
+          </Badge>
         </div>
 
         {/* 2. Risk : Reward — the headline metric */}
@@ -2716,9 +2717,9 @@ function ElectionCyclePageContent() {
         <div className="rounded-xl border border-border/60 p-3 space-y-1">
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-semibold text-foreground">Entry</p>
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
+            <Badge className="border-transparent bg-primary/10 text-primary">
               {tradingPlanEntryZone.type}
-            </span>
+            </Badge>
           </div>
           <div className="flex items-baseline justify-between gap-2">
             <p className="text-base font-bold text-foreground">{formatPriceValue(tradingPlanEntryPrice)}</p>
@@ -3037,9 +3038,9 @@ function ElectionCyclePageContent() {
                           </p>
                         ) : null}
                       </div>
-                      <span className="rounded-full border bg-muted/60 px-3 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      <Badge className="px-3 py-1 uppercase tracking-wide">
                         Normalized
-                      </span>
+                      </Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="h-[260px]">
@@ -4243,13 +4244,13 @@ function ElectionCyclePageContent() {
                     <CardDescription className="text-xs">{assetName}</CardDescription>
                     {screeningSignal && (
                       <div className="flex flex-wrap gap-1">
-                        <span className="rounded-full border border-emerald-700/40 bg-emerald-700/10 px-3 py-1 text-[11px] font-semibold text-emerald-600">
+                        <Badge variant="success" className="px-3 py-1 text-[11px]">
                           BUY SIGNAL
-                        </span>
+                        </Badge>
                         {screeningSignalDateLabel && (
-                          <span className="rounded-full border border-muted/60 bg-muted/20 px-3 py-1 text-[10px] text-muted-foreground">
+                          <Badge className="px-3 py-1">
                             Signal {screeningSignalDateLabel}
-                          </span>
+                          </Badge>
                         )}
                       </div>
                     )}
@@ -4407,7 +4408,7 @@ function ElectionCyclePageContent() {
                 </div>
                 <Dialog open={normalFullscreenOpen} onOpenChange={setNormalFullscreenOpen}>
                   <DialogContent
-                    className="fixed max-w-none h-screen rounded-none p-0 flex flex-col"
+                    variant="fullscreen"
                     onEscapeKeyDown={(event) => event.preventDefault()}
                     onPointerDownOutside={(event) => event.preventDefault()}
                     showCloseButton={false}

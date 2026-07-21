@@ -1,7 +1,34 @@
 # Aruna — AI Session Context
 
 **Version:** 1.7.56
-**Project:** Mobile-first stock market analysis platform for Indonesian retail investors.
+**Project:** Mobile-first stock market analysis platform for Indonesian retail investors (IDX, US equities, crypto). Next.js 16 App Router, React 19, Supabase, Tailwind v4. No test suite exists.
+
+## Commands
+
+```bash
+npm run dev      # Start dev server (localhost:3000)
+npm run build    # Production build
+npm start        # Run production build
+npm run lint     # ESLint (eslint.config.mjs) — run before committing
+```
+
+Trigger cron jobs manually in dev (not auto-scheduled locally):
+```bash
+curl -H "Authorization: Bearer <CRON_SECRET>" http://localhost:3000/api/cron/idx
+curl -H "Authorization: Bearer <CRON_SECRET>" http://localhost:3000/api/cron/money-flow
+```
+
+## Architecture
+
+- **Dependency flow:** `Pages (src/app/*) → Components (src/components/*) → Lib (src/lib/*)`. API routes (`src/app/api/*/route.js`) import lib directly. Lib has no dependencies on components/pages. Components never import API route modules — they call `fetchEncodedJson()`.
+- **API as proxy:** all external calls (Yahoo Finance, Stockbit, Supabase) go through Next.js API routes, never from the browser directly.
+- **Response obfuscation:** every API response except `/api/discussions` and `/api/cron/*` is XOR-encoded via `encodePayload()` (`src/lib/secure-payload.js`) inside a `{"payload": "..."}` envelope, keyed by `SECURE_PAYLOAD_KEY`. Client decodes with `fetchEncodedJson()` from `@/lib/api-client`. This is obfuscation, not real security.
+- **Local-first data:** watchlist/portfolio default to `localStorage`; sync to Supabase (`watchlists`, `portfolios` tables) is optional, merged in `auth-provider.jsx` on sign-in.
+- **No server-side route protection** in `src/middleware.js` — it only applies CORS to `/api/*` (currently permissive/decorative). Access control is API-level bearer checks (cron `CRON_SECRET`, delete-account user token) + RLS + client-side feature gating.
+- **Auth:** Supabase Google OAuth, client-side only, no server session cookies. `getSupabaseBrowserClient()` (browser) / `getSupabaseServiceRoleClient()` + `getUserFromRequest()` (server, service role).
+- **Cron-dependent features:** money flow scoring and screeners depend on scheduled `/api/cron/*` routes (Vercel cron, see `vercel.json`) that scrape Stockbit and write to Supabase; each run truncates the relevant table first.
+
+Full details: [Architecture](docs/architecture.md), [Folder Structure](docs/folder-structure.md), [Database](docs/database.md), [Known Issues](docs/known-issues.md), or the top-level [README.md](README.md).
 
 ## Quick Links
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { Badge } from "@/components/ui/badge";
 
 const BASE_COLOR = "#f5f5f5";
 const CARD_BG = "#111111";
@@ -211,7 +212,7 @@ export default function MarketCanvas() {
       <div className="pointer-events-none absolute left-4 top-4 rounded-md border border-border bg-black px-3 py-2">
         <div className="mt-1 flex items-center gap-2">
           <span className="text-sm font-semibold text-emerald-300">+7.24%</span>
-          <span className="rounded-full border border-border px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">Live</span>
+          <Badge>Live</Badge>
         </div>
       </div>
     </div>

@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Star, AlignHorizontalDistributeCenter, ChartPie, LayoutGrid, Workflow, UserRound } from "lucide-react";
+import { Star, AlignHorizontalDistributeCenter, ChartPie, LayoutGrid, UserRound } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HeaderSymbolSearch } from "@/components/header-symbol-search";
 
@@ -12,11 +12,6 @@ const navItems = [
     title: "Explore",
     url: "/explore",
     icon: LayoutGrid,
-  },
-  {
-    title: "Flow",
-    url: "/money-flow",
-    icon: Workflow,
   },
   {
     title: "Supercharts",

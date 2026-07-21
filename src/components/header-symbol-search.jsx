@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Loader2, Clock } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { cn, formatTickerDisplay } from "@/lib/utils";
+import { MOTION } from "@/lib/motion";
 
 const SEARCH_HISTORY_KEY = "aruna_header_symbol_history";
 
@@ -137,11 +138,11 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
-      <DialogContent className="fixed max-w-none h-screen rounded-none p-0 flex flex-col p-4" closeButtonPosition="right">
+      <DialogContent variant="fullscreen" className="p-4" closeButtonPosition="right">
         <DialogHeader className="space-y-1">
           <DialogTitle className="text-base font-semibold">Search Ticker</DialogTitle>
         </DialogHeader>
-        <div className="flex items-center gap-2">
+        <div className="mt-2 flex items-center gap-2">
           <Input
             autoFocus
             value={query}
@@ -163,7 +164,7 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
             {!loading && results.length > 0 && (
               <ul className="divide-y">
                 {results.map((item) => (
-                  <li key={item.symbol}>
+                  <li key={item.symbol} className={MOTION.slideUp}>
                     <button
                       type="button"
                       onClick={() => handleSelect(item.symbol)}
