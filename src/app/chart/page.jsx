@@ -198,6 +198,7 @@ function formatTimestamp(v, { dateOnly = false } = {}) {
 }
 
 const cycleMetaMap = {
+  trump: { label: 'Trump Years', lineKey: 'trumpYears' },
   all: { label: 'All Years', lineKey: 'allYears' },
   pre: { label: 'Pre-Election Year', lineKey: 'preElection' },
   election: { label: 'Election Year', lineKey: 'election' },
@@ -551,6 +552,7 @@ function ElectionCyclePageContent() {
     const isDark = resolvedTheme === 'dark';
     const base = isDark ? '#F9F9F9F9' : '#333333';
     return {
+      trumpYears: base,
       allYears: base,
       preElection: base,
       election: base,
@@ -916,6 +918,19 @@ function ElectionCyclePageContent() {
           data: pattern,
           color: colors.allYears,
         });
+      }
+
+      if (selectedCycles.includes('trump')) {
+        const TRUMP_YEARS = [2017, 2018, 2019, 2020, 2025, 2026];
+        const trumpData = histDaily.filter(r => TRUMP_YEARS.includes(r.year));
+        if (trumpData.length > 0) {
+          linesData.push({
+            name: 'Trump Years',
+            key: 'trumpYears',
+            data: hirschStyleSeasonalPattern(trumpData),
+            color: colors.trumpYears,
+          });
+        }
       }
 
       if (selectedCycles.includes('pre')) {
@@ -4179,6 +4194,7 @@ function ElectionCyclePageContent() {
               <SelectItem className="text-[11px]" value="normal">
                 Normal
               </SelectItem>
+              <SelectItem className="text-[11px]" value="trump,current">Trump Years</SelectItem>
               <SelectItem className="text-[11px]" value="all,current">All Years</SelectItem>
               <SelectItem className="text-[11px]" value="pre,current">Pre-Election</SelectItem>
               <SelectItem className="text-[11px]" value="election,current">Election</SelectItem>
@@ -4333,6 +4349,17 @@ function ElectionCyclePageContent() {
                           height={450}
                           seriesType={chartDisplayType === 'line' ? 'line' : 'candlestick'}
                         />
+                        {isIdxLotSymbol(symbol) && (
+                          <div className="absolute inset-0 pointer-events-none">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src="/prabowo-dance.gif"
+                              alt="IDX"
+                              className="absolute w-16 h-16 lg:w-44 lg:h-44 object-contain opacity-40"
+                              style={{ bottom: '3rem', right: '5rem' }}
+                            />
+                          </div>
+                        )}
                       </div>
                     </>
                   ) : (
@@ -4396,6 +4423,28 @@ function ElectionCyclePageContent() {
                       </AreaChart>
                     </ResponsiveContainer>
                     <ArunaWatermark className="absolute inset-0 flex items-end justify-start bottom-18 left-4" />
+                    {selectedCycles.includes('trump') && (
+                      <div className="absolute inset-0 pointer-events-none">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/trump.gif"
+                          alt="Trump Years"
+                          className="absolute w-32 h-32 lg:w-44 lg:h-44 object-contain opacity-70"
+                          style={{ bottom: '4rem', right: '2.5rem' }}
+                        />
+                      </div>
+                    )}
+                    {['pre', 'election', 'post', 'mid'].some(k => selectedCycles.includes(k)) && (
+                      <div className="absolute inset-0 pointer-events-none">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src="/america-eagle.gif"
+                          alt="Election Cycle"
+                          className="absolute w-32 h-32 lg:w-44 lg:h-44 object-contain opacity-70"
+                          style={{ bottom: '4rem', right: '3rem' }}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>
