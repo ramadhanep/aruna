@@ -4429,8 +4429,8 @@ function ElectionCyclePageContent() {
                         <img
                           src="/trump.gif"
                           alt="Trump Years"
-                          className="absolute w-32 h-32 lg:w-44 lg:h-44 object-contain opacity-70"
-                          style={{ bottom: '4rem', right: '2.5rem' }}
+                          className="absolute w-16 h-16 lg:w-44 lg:h-44 object-contain opacity-40"
+                          style={{ bottom: '4rem', right: '3rem' }}
                         />
                       </div>
                     )}
@@ -4440,8 +4440,8 @@ function ElectionCyclePageContent() {
                         <img
                           src="/america-eagle.gif"
                           alt="Election Cycle"
-                          className="absolute w-32 h-32 lg:w-44 lg:h-44 object-contain opacity-70"
-                          style={{ bottom: '4rem', right: '3rem' }}
+                          className="absolute w-16 h-16 lg:w-44 lg:h-44 object-contain opacity-40"
+                          style={{ bottom: '4rem', right: '3.5rem' }}
                         />
                       </div>
                     )}
