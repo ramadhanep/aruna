@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useMemo, useState, useCallback } 
 import { useAuth } from "@/components/auth-provider";
 
 const TRIAL_STORAGE_KEY = "aruna-trial-state";
-const TRIAL_DURATION_MS = 10 * 60 * 1000;
+const TRIAL_DURATION_MS = 60 * 60 * 1000;
 
 function readStoredTrial() {
   if (typeof window === "undefined") return null;

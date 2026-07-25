@@ -141,7 +141,7 @@ export function NormalCandlestickChart({
           },
         grid: {
           horzLines: {
-            visible: false,
+            color: isDark ? "rgba(148, 163, 184, 0.08)" : "rgba(15, 23, 42, 0.06)",
           },
           vertLines: {
             visible: false,
@@ -160,7 +160,8 @@ export function NormalCandlestickChart({
           },
         },
         rightPriceScale: {
-          borderVisible: false,
+          borderVisible: true,
+          borderColor: isDark ? "rgba(148, 163, 184, 0.2)" : "rgba(15, 23, 42, 0.12)",
           scaleMargins: { top: 0.1, bottom: 0.15 },
           mode: initialScaleMode,
         },

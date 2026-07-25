@@ -28,7 +28,7 @@ export function AppLayoutClient({ children }) {
   const shouldBlockProtectedContent = isProtectedRoute && !canAccessWithoutAuth && (loading || !user);
 
   useEffect(() => {
-    if (!isProtectedRoute || loading || user || (initialized && active)) return;
+    if (!isProtectedRoute || loading || !initialized || user || (initialized && active)) return;
 
     const currentPath =
       typeof window !== "undefined"

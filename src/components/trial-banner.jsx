@@ -41,9 +41,9 @@ export function TrialBanner() {
   }, []);
 
   const urgencyClass = useMemo(() => {
-    if (remainingMs <= 60_000) return "text-white";
-    if (remainingMs <= 3 * 60_000) return "text-white/90";
-    return "text-white/90";
+    if (remainingMs <= 60_000) return "text-red-500 font-semibold";
+    if (remainingMs <= 3 * 60_000) return "text-orange-500";
+    return "text-muted-foreground";
   }, [remainingMs]);
 
   if (!shouldRender) return null;
@@ -56,12 +56,12 @@ export function TrialBanner() {
         isVisible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-4 scale-95 pointer-events-none"
       }`}
     >
-      <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/15 bg-[#DC2626] px-3 py-1.5 text-white shadow-[0_8px_24px_rgba(0,0,0,0.25)]">
-        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/15">
-          <Clock3 className="h-3.5 w-3.5" />
+      <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-border/30 bg-card px-3 py-1.5 text-foreground shadow-[0_8px_24px_rgba(0,0,0,0.25)]">
+        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted">
+          <Clock3 className="h-3.5 w-3.5 text-muted-foreground" />
         </div>
         <div className="flex flex-col leading-none">
-          <span className="text-[12px] font-medium text-white">Free Trial</span>
+          <span className="text-[12px] font-medium text-foreground">Guest Mode</span>
           <span className={`text-[11px] ${urgencyClass}`}>{formatTime(remainingMs)} remaining</span>
         </div>
       </div>

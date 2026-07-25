@@ -4326,7 +4326,7 @@ function ElectionCyclePageContent() {
                     </div>
                   ) : filteredNormalChartData.length > 0 ? (
                     <>
-                      <div className="relative left-1/2 right-1/2 -translate-x-1/2 w-screen max-w-[768px] lg:max-w-[calc(100vw-3rem)]">
+                      <div className="relative left-1/2 right-1/2 -translate-x-1/2 w-screen max-w-[768px] lg:max-w-[900px]">
                         <NormalCandlestickChart
                           candles={normalCandlestickSeries.candles}
                           ema={normalCandlestickSeries.ema}
