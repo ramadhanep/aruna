@@ -4353,9 +4353,9 @@ function ElectionCyclePageContent() {
                           <div className="absolute inset-0 pointer-events-none">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
-                              src="/prabowo-dance.gif"
+                              src="/indonesian-flag.gif"
                               alt="IDX"
-                              className="absolute w-16 h-16 lg:w-44 lg:h-44 object-contain opacity-40"
+                              className="absolute w-16 h-16 lg:w-24 lg:h-24 object-contain opacity-20"
                               style={{ bottom: '3rem', right: '5rem' }}
                             />
                           </div>
@@ -4429,7 +4429,7 @@ function ElectionCyclePageContent() {
                         <img
                           src="/trump.gif"
                           alt="Trump Years"
-                          className="absolute w-16 h-16 lg:w-44 lg:h-44 object-contain opacity-40"
+                          className="absolute w-16 h-16 lg:w-24 lg:h-24 object-contain opacity-30"
                           style={{ bottom: '4rem', right: '3rem' }}
                         />
                       </div>
@@ -4440,7 +4440,7 @@ function ElectionCyclePageContent() {
                         <img
                           src="/america-eagle.gif"
                           alt="Election Cycle"
-                          className="absolute w-16 h-16 lg:w-44 lg:h-44 object-contain opacity-40"
+                          className="absolute w-16 h-16 lg:w-24 lg:h-24 object-contain opacity-30"
                           style={{ bottom: '4rem', right: '3.5rem' }}
                         />
                       </div>
