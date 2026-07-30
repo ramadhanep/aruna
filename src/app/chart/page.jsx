@@ -190,6 +190,19 @@ function ElectionCyclePageContent() {
     chartDisplayType, setChartDisplayType,
     normalFullscreenOpen, setNormalFullscreenOpen,
   } = useChartSeries(symbol, isNormalView, screeningSignal);
+  const colors = useMemo(() => {
+    const isDark = resolvedTheme === 'dark';
+    const base = isDark ? '#F9F9F9F9' : '#333333';
+    return {
+      trumpYears: base,
+      allYears: base,
+      preElection: base,
+      election: base,
+      midTerm: base,
+      postElection: base,
+      current: CURRENT_LINE_COLOR,
+    };
+  }, [resolvedTheme]);
   const { loading, rawLinesData, symbolInfo, assetName, monthlyHeatmap, quarterlyHeatmap } = useChartData(symbol, selectedCycles, scaleChoice, colors.allYears);
   const { fundamentals, fundamentalsLoading, revenuePeriod, setRevenuePeriod } = useChartFundamentals(symbol, infoTab);
 
@@ -211,20 +224,6 @@ function ElectionCyclePageContent() {
   }, [pathname, router]);
 
   const canUseProtectedActions = isAuthenticated;
-
-  const colors = useMemo(() => {
-    const isDark = resolvedTheme === 'dark';
-    const base = isDark ? '#F9F9F9F9' : '#333333';
-    return {
-      trumpYears: base,
-      allYears: base,
-      preElection: base,
-      election: base,
-      midTerm: base,
-      postElection: base,
-      current: CURRENT_LINE_COLOR,
-    };
-  }, [resolvedTheme]);
 
   const primaryChartColor = CURRENT_LINE_COLOR;
   const secondaryChartColor = colors.allYears;
