@@ -2,85 +2,85 @@
 
 **Last Updated**: 2026-07-31
 
-**Summary**: Executed Phase 2 (Chart route decomposition) from
-`docs/MAINTENANCE_PLAN.md`. Reduced `src/app/chart/page.jsx` from 4,736 to
-~3,600 lines by extracting pure helpers to `src/lib/chart-helpers.js`, data
-fetching/persistence to 5 focused hooks under `src/hooks/use-chart-*.js`, and
-the chart header to `src/components/chart-header-bar.jsx`. The pre-existing
-`canUseProtectedActions` ReferenceError was fixed. Lint: 0 errors, 8 warnings
-(same baseline). Build passes.
+**Summary**: Executed Phase 3 (Portfolio decomposition) from
+`docs/MAINTENANCE_PLAN.md`. Reduced `src/app/portfolio-tracker/page.jsx` from
+1,761 to 1,188 lines by extracting storage adapter, metrics library, data hook,
+and mini-chart component. TD-9 migration to canonical `aruna-portfolio`
+implemented. ClearDataButton updated with single-source keys from adapter.
+Lint: 0 errors, 8 warnings (same baseline). Build passes.
 
 ## Files Created
 
 | File | Purpose |
 |---|---|
-| `src/lib/chart-helpers.js` | Constants, technical indicators (RSI, EMA, StochRSI, Livermore), formatters, matchers |
-| `src/hooks/use-chart-state.js` | URL param ↔ state sync for symbol/cycles/tab + localStorage persistence |
-| `src/hooks/use-chart-data.js` | Seasonal chart data fetching via `/api/finance` |
-| `src/hooks/use-chart-series.js` | Normal candlestick series via `/api/price-series` + Heikin Ashi, EMA, Livermore |
-| `src/hooks/use-chart-fundamentals.js` | Lazy fundamentals fetch with per-symbol cache ref |
-| `src/hooks/use-chart-screening.js` | Screening signal from Supabase + realtime subscription |
-| `src/components/chart-header-bar.jsx` | Symbol name, cycle selector, favorite star |
+| `src/lib/portfolio-storage.js` | Canonical `aruna-portfolio` adapter, one-time migration from legacy keys, `PORTFOLIO_STORAGE_KEYS` export |
+| `src/lib/portfolio-metrics.js` | Pure calculation functions (holdings metrics, sort, summary, allocations, formatValue) |
+| `src/hooks/use-portfolio-data.js` | Portfolio data lifecycle: entries loading (guest/remote), price/FX fetching, mini-series building. Exports `getDefaultPortfolio` |
+| `src/components/portfolio-mini-chart.jsx` | Pure SVG sparkline component (4 props) |
 
 ## Files Modified
 
 | File | Change |
 |---|---|
-| `src/app/chart/page.jsx` | Removed 1,100+ lines of inline helpers, effects, chart computations. Now composes hooks + ChartHeaderBar. |
-| `docs/MAINTENANCE_PLAN.md` | Checked off all Phase 2 definition-of-done items |
-| `docs/TECH_DEBT.md` | Marked TD-1 as resolved |
-| `docs/folder-structure.md` | Added new chart hooks, component, and lib module |
+| `src/app/portfolio-tracker/page.jsx` | Removed 573 lines of inline storage helpers, callbacks, effects, calculations, and MiniChart. Now composes hook + lib + components. `useIsMobile()` replaces inline matchMedia. |
+| `src/components/clear-data-button.jsx` | Imports `PORTFOLIO_STORAGE_KEYS` from adapter. Replaced stale/wrong hardcoded keys. |
+| `docs/folder-structure.md` | Added new files |
+| `docs/state-management.md` | Canonical `aruna-portfolio` schema documented |
+| `docs/conventions.md` | Legacy key migration note |
+| `docs/architecture.md` | New lib modules in layer descriptions |
+| `docs/MAINTENANCE_PLAN.md` | Checked off all Phase 3 DoD items |
+| `docs/TECH_DEBT.md` | Marked TD-2, TD-9 as resolved |
 
 ## Architecture Changes
 
-- **New lib module pattern**: `src/lib/chart-helpers.js` — pure calculation
-  functions with no React dependency. Follows existing `seasonalData.js` pattern.
-- **New hook pattern**: 5 focused hooks under `src/hooks/use-chart-*.js`, each
-  with a single responsibility (state, data, series, fundamentals, screening).
-  Hooks use `fetchEncodedJson()` for API calls (consistent with all other data
-  access) and `queueMicrotask` for lint-compliant state deferral.
-- **Phase 4 interface preserved**: No route-local provider constants created.
-  API calls go through `fetchEncodedJson()` only.
+- **Storage adapter pattern**: `src/lib/portfolio-storage.js` is the sole
+  entry point for portfolio persistence. No component reads/writes localStorage
+  directly for portfolio data. Exports key constants for ClearDataButton.
+- **Metrics lib pattern**: `src/lib/portfolio-metrics.js` contains pure
+  calculation functions with zero React dependency. Follows `chart-helpers.js`
+  pattern from Phase 2.
+- **Single data hook**: `src/hooks/use-portfolio-data.js` aggregates the
+  portfolio data lifecycle (entries, prices, FX, mini-series) into one hook.
+  UI-only state (sort, dialog, form, search, visibility) stays in the page.
+  Pull-to-refresh touch handlers stay inline in the page (UI concern).
+- **Shared mobile hook reused**: `useIsMobile()` from `src/hooks/use-mobile.js`
+  replaces inline matchMedia effect.
+- **`formatValue` extracted**: Previously marked `ponytail: state-coupled` in
+  Phase 0, now extracted to metrics lib with `currency/idrPerUsd/sgdPerUsd`
+  as explicit parameters.
 
 ## Validation Results
 
 - `npm run lint`: **0 errors, 8 warnings** — same baseline (all `no-img-element`, deferred to Phase 6).
 - `npm run build`: Passed. All routes unchanged.
 
-## Pre-Existing Bug Fixed
-
-`canUseProtectedActions` was referenced at 4 call sites but never defined,
-causing a `ReferenceError` when clicking favorite or add-to-portfolio. Fixed
-with `const canUseProtectedActions = isAuthenticated;`.
-
 ## Items Skipped / Deferred
 
 | Item | Rationale |
 |---|---|
-| `renderTradingPlanTab`, `renderProfileTab`, etc. (6 tab panels) | Keep as internal render functions. They share ~10 format callbacks tightly coupled to component state. Extracting them now would require threading formatters through props without improving cohesion. Deferred to Phase 6 if needed. |
-| Full-screen dialog component extraction | Coupled to inline timeframe bar rendering; small benefit for the extraction cost. |
-| Remaining 8 `no-img-element` warnings | Deferred to Phase 6 per plan. |
+| Overview card extraction | Would need 15+ props, no reuse potential. Deferred to Phase 6 if page grows unmanageable. |
+| Holdings card extraction | Tightly coupled to sort/edit/delete/empty-state/auth wiring. Deferred to Phase 6. |
+| Form dialog extraction | 15+ form state vars, tightly coupled to page. Deferred to Phase 6. |
+| Symbol search consolidation with `add-asset-modal.jsx` | Phase 4 (TD-4) scope. Both page and component have identical `searchSymbols` wrapper. |
+| `sidebar_state` cookie vs localStorage doc fix | Not portfolio-related. |
+| `aruna_watchlist` underscore bug in ClearDataButton | Not portfolio-related. |
 
-## Blockers for Phase 3
+## Blockers for Next Phase
 
-- None. Phase 1 and 2 check off the two route-decomposition prerequisites.
-- TD-9 is approved (Option B — one-time migration to canonical `aruna-portfolio`).
+- None. Phase 4 can proceed when ready.
 
 ## Next Recommended Task
 
-Execute Phase 3 (Portfolio decomposition). The portfolio page is the next
-largest concentration of technical debt (1,761 lines). The TD-9 storage
-strategy is already approved.
+Execute Phase 4 (Shared data access consolidation — TD-3, TD-4, TD-12). The
+portfolio and chart routes now have clean boundaries for shared helpers.
 
 ## Important Notes
 
-- The `filteredNormalChartData` useMemo in `useChartSeries` sets `changePct` to
-  `null` when the computed `firstClose` is null/zero. This is slightly different
-  from the original code which computed `changePct` from `firstClose` regardless
-  — but the original JSX never displayed `changePct` directly (it was stored in
-  meta for potential use). Behaviour is preserved.
-- `useChartData` receives `baseLineColor` from the page's `colors.allYears`
-  (theme-dependent). The effect skips this as a dependency to match the original
-  behavior where `fetchDataAndBuildChart` did not re-run on theme change. If
-  theme-dependent line colors are desired on toggle, add `baseLineColor` to the
-  effect dependency array.
+- The `dataReady` flag in `usePortfolioData` starts `false` and becomes `true`
+  one render after the initial portfolio load completes. The page's entries
+  persist effect checks `dataReady` to avoid persisting during hydration.
+- Legacy portfolio keys remain in `localStorage` after migration but are no
+  longer read by the application. `ClearDataButton` removes them.
+- `fetchSymbolPrice` is defined locally in the page (not exported from the hook)
+  for form autofill. It duplicates the pattern in `use-portfolio-data.js`'s
+  module-level `fetchPrice`. Phase 4 should consolidate into a shared client helper.

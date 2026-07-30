@@ -182,15 +182,15 @@ both the canonical record and all known legacy keys. See
 
 **Definition of done:**
 
-- [ ] Page composition is separate from portfolio calculations, persistence,
+- [x] Page composition is separate from portfolio calculations, persistence,
       FX/quote loading, pull-to-refresh, asset search and edit-form state.
-- [ ] The selected storage strategy is recorded, preserves existing user data,
+- [x] The selected storage strategy is recorded, preserves existing user data,
       and covers malformed/legacy local-storage values.
-- [ ] Guest, authenticated, remote-sync, currency, hidden-balance, add/edit/
+- [x] Guest, authenticated, remote-sync, currency, hidden-balance, add/edit/
       delete asset, and chart-loading paths are smoke tested.
-- [ ] Portfolio-specific dimensions/text styles are shared where recurrent,
+- [x] Portfolio-specific dimensions/text styles are shared where recurrent,
       without prematurely redesigning the full visual system.
-- [ ] Lint and production build pass.
+- [x] Lint and production build pass.
 
 **Documentation after implementation:** Update `docs/conventions.md` and
 `docs/state-management.md` for the settled storage contract;

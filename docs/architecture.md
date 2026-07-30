@@ -52,8 +52,8 @@ Aruna is a **Next.js 16 App Router** application with:
 ### 3. Library Layer — `src/lib/*`
 
 - **API Client** — `api-client.js` — Fetch wrapper that decodes XOR-obfuscated responses.
-- **Business Logic** — `money-flow.js`, `msci-calculations.js`, `seasonalData.js` — Calculation helpers.
-- **Data Access** — `supabase-browser.js`, `supabase-server.js` — Supabase client singletons.
+- **Business Logic** — `money-flow.js`, `msci-calculations.js`, `seasonalData.js`, `portfolio-metrics.js` — Calculation helpers.
+- **Data Access** — `supabase-browser.js`, `supabase-server.js`, `portfolio-storage.js` — Supabase client singletons and localStorage portfolio adapter.
 - **Utilities** — `utils.js` — Formatting, class merging, color generation.
 - **Configuration** — `stock-universe.js`, `default-watchlist.js`, `tools-menu.js` — Static data.
 

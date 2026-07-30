@@ -74,6 +74,8 @@ Exceptions (no XOR encoding):
 | `aruna-trial-state` | Trial `{ startedAt, expiresAt }` state (60-minute guest trial) |
 | `sidebar_state` | Sidebar collapsed/expanded |
 
+Portfolio persistence is centralized in `src/lib/portfolio-storage.js`. Legacy keys (`portfolio_currency`, `portfolio_visibility_hidden`, `aruna_guest_portfolio`, `aruna_guest_portfolio_seeded`) are migrated to `aruna-portfolio` on first load and no longer read directly by components.
+
 ## CSS Conventions
 
 - Tailwind v4 with `@theme inline` for design tokens.

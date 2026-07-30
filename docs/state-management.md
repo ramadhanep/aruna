@@ -44,6 +44,18 @@ const {
 
 **Sync strategy**: Local-first. Remote data overwrites local on sign-in. Local changes are pushed to remote via `syncWatchlist()` / `syncPortfolio()`.
 
+**Portfolio canonical schema (`aruna-portfolio`)**:
+```json
+{
+  "entries": [{ "symbol": "AAPL", "name": "Apple Inc.", "amount": 50, "unit": "share", "avgPrice": 175, "type": "digital" }],
+  "currency": "IDR | USD | SGD",
+  "visibilityHidden": false
+}
+```
+- One-time migration from legacy keys (`portfolio_currency`, `portfolio_visibility_hidden`, `aruna_guest_portfolio`, `aruna_guest_portfolio_seeded`) on first load.
+- All persistence goes through `src/lib/portfolio-storage.js`. No component accesses `localStorage` directly for portfolio data.
+- `ClearDataButton` removes canonical record and all legacy portfolio keys.
+
 ### 3. Theme — `ThemeProvider` (next-themes)
 
 - Persisted to `localStorage` key `aruna-theme`.

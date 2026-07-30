@@ -24,21 +24,14 @@ tree. This is an audit only; no implementation changes were made.
   URL-state wiring, and layout only. Pre-existing `canUseProtectedActions`
   ReferenceError fixed.
 
-### TD-2 — Portfolio functionality is similarly concentrated in one page
+### TD-2 — Portfolio functionality is similarly concentrated in one page (RESOLVED in Phase 3)
 
-- **Reference:** `src/app/portfolio-tracker/page.jsx:25-1761` (1,761 lines);
-  storage helpers at `63-145`, search/fetching around `95-145` and `267-529`,
-  calculations and UI thereafter.
-- **What is wrong:** Route-level code contains portfolio domain state,
-  persistence, FX fetching, search, pull-to-refresh, chart creation, dialog
-  forms and rendering.
-- **Why it matters:** It duplicates functionality elsewhere and violates the
-  intended pages → components/lib dependency shape. It also has two
-  `set-state-in-effect` lint errors (`427`, `447`).
-- **Suggested fix:** Extract portfolio storage, quote/FX access, calculations,
-  and form/search state into `src/lib/` and hooks; retain a thin page plus
-  portfolio feature components.
-- **Effort:** L
+- **Resolution:** `src/app/portfolio-tracker/page.jsx` reduced from 1,761 to 1,188 lines.
+  Persistence extracted to `src/lib/portfolio-storage.js`. Pure calculations extracted to
+  `src/lib/portfolio-metrics.js`. Data orchestration extracted to
+  `src/hooks/use-portfolio-data.js`. `PortfolioMiniChart` extracted to
+  `src/components/portfolio-mini-chart.jsx`. Page now composes hooks and lib modules;
+  remaining inline code is UI state (dialog, form, search, sort) and JSX layout.
 
 ### TD-3 — Quote/asset-logo acquisition is duplicated across two API routes
 
@@ -114,18 +107,13 @@ tree. This is an audit only; no implementation changes were made.
   animation metadata is now stable per symbol across re-renders.
 - **Effort:** M
 
-### TD-9 — Local-storage keys deviate from the documented registry (RESOLVED — decision recorded)
+### TD-9 — Local-storage keys deviate from the documented registry (RESOLVED)
 
-- **Reference:** `src/app/portfolio-tracker/page.jsx:25-28`.
-- **Decision:** Option B — one-time migration to canonical `aruna-portfolio`.
-  On first portfolio load, legacy keys (`portfolio_currency`,
-  `portfolio_visibility_hidden`, `aruna_guest_portfolio`,
-  `aruna_guest_portfolio_seeded`) are read once, converted to canonical schema,
-  and persisted as `aruna-portfolio`. No dual-write, no permanent compatibility
-  layer. All subsequent reads/writes use the canonical record only.
-- **Implementation required in Phase 3:** Portfolio storage adapter, canonical
-  schema, migration logic on first load, and `ClearDataButton` update.
-  See `docs/PHASE_EXECUTION_PLAN.md` for full policy.
+- **Resolution:** Implemented in Phase 3. `src/lib/portfolio-storage.js` handles
+  canonical `aruna-portfolio` schema with one-time migration from legacy keys.
+  `ClearDataButton` imports `PORTFOLIO_STORAGE_KEYS` from the adapter for a
+  single source of truth. No dual-write or permanent compatibility layer.
+  All persistence centralized behind the adapter.
 
 ### TD-10 — Dead, unreferenced modules remain in the component layer [RESOLVED]
 
