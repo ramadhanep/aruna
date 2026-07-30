@@ -13,11 +13,10 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { PORTFOLIO_STORAGE_KEYS } from "@/lib/portfolio-storage";
 
 const STORAGE_KEYS = [
-  "aruna_portfolio",
-  "aruna_portfolio_updated_at",
-  "portfolio_currency",
+  ...PORTFOLIO_STORAGE_KEYS,
   "aruna_watchlist",
   "aruna_watchlist_updated_at",
   "aruna_search_history",

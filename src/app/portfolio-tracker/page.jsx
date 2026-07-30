@@ -18,36 +18,11 @@ import { formatTickerDisplay, formatUSD, formatIDR, formatSGD, formatByCurrency 
 import { useTrial } from '@/components/trial-provider';
 import { GoogleGlyph } from '@/components/google-glyph';
 import { getRecentUnixRange, MOBILE_BREAKPOINT } from '@/lib/time';
+import { loadPortfolio, savePortfolio } from '@/lib/portfolio-storage';
 
 // Dynamic chart component to keep page light and avoid SSR issues
 const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { ssr: false });
 
-// LocalStorage keys
-const PORTFOLIO_CURRENCY_KEY = 'portfolio_currency';
-const PORTFOLIO_VISIBILITY_KEY = 'portfolio_visibility_hidden';
-const GUEST_PORTFOLIO_KEY = 'aruna_guest_portfolio';
-const GUEST_PORTFOLIO_SEEDED_KEY = 'aruna_guest_portfolio_seeded';
-const CURRENCY_META = {
-  IDR: {
-    code: 'IDR',
-    flag: '🇮🇩',
-    label: 'Indonesian Rupiah',
-    description: 'Mata uang resmi Indonesia.',
-  },
-  USD: {
-    code: 'USD',
-    flag: '🇺🇸',
-    label: 'United States Dollar',
-    description: 'Mata uang resmi Amerika Serikat.',
-  },
-  SGD: {
-    code: 'SGD',
-    flag: '🇸🇬',
-    label: 'Singapore Dollar',
-    description: 'Mata uang resmi Singapura.',
-  },
-};
-const SUPPORTED_CURRENCIES = Object.keys(CURRENCY_META);
 const DEFAULT_PORTFOLIO_ENTRIES = [
   { symbol: 'BTC-USD', name: 'Bitcoin', amount: 1, unit: 'share', avgPrice: 65000, type: 'digital' },
   { symbol: 'NVDA', name: 'NVIDIA Corporation', amount: 100, unit: 'share', avgPrice: 120, type: 'digital' },
@@ -58,36 +33,6 @@ const DEFAULT_PORTFOLIO_ENTRIES = [
 
 function getDefaultPortfolio() {
   return DEFAULT_PORTFOLIO_ENTRIES.map((entry) => ({ ...entry }));
-}
-
-// Guest portfolio localStorage helpers
-function loadGuestPortfolio() {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = localStorage.getItem(GUEST_PORTFOLIO_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : null;
-  } catch (e) {
-    return null;
-  }
-}
-
-function saveGuestPortfolio(entries) {
-  try {
-    localStorage.setItem(GUEST_PORTFOLIO_KEY, JSON.stringify(entries));
-  } catch (e) {
-    console.warn('Failed to save guest portfolio', e);
-  }
-}
-
-function hasGuestPortfolioBeenSeeded() {
-  if (typeof window === 'undefined') return false;
-  try { return localStorage.getItem(GUEST_PORTFOLIO_SEEDED_KEY) === 'true'; } catch { return false; }
-}
-
-function markGuestPortfolioSeeded() {
-  try { localStorage.setItem(GUEST_PORTFOLIO_SEEDED_KEY, 'true'); } catch { /* ignore */ }
 }
 
 // Minimal asset search (reuses existing API route if present)
@@ -104,44 +49,6 @@ async function searchSymbols(query) {
   } catch (e) {
     console.warn('Symbol search failed', e);
     return [];
-  }
-}
-
-function loadCurrencyPreference() {
-  if (typeof window === 'undefined') return 'IDR';
-  try {
-    const raw = localStorage.getItem(PORTFOLIO_CURRENCY_KEY);
-    if (SUPPORTED_CURRENCIES.includes(raw)) {
-      return raw;
-    }
-    return 'IDR';
-  } catch (e) {
-    return 'IDR';
-  }
-}
-
-function saveCurrencyPreference(currency) {
-  try {
-    localStorage.setItem(PORTFOLIO_CURRENCY_KEY, currency);
-  } catch (e) {
-    console.warn('Failed to save currency preference', e);
-  }
-}
-
-function loadPortfolioVisibility() {
-  if (typeof window === 'undefined') return false;
-  try {
-    return localStorage.getItem(PORTFOLIO_VISIBILITY_KEY) === 'true';
-  } catch (e) {
-    return false;
-  }
-}
-
-function savePortfolioVisibility(hidden) {
-  try {
-    localStorage.setItem(PORTFOLIO_VISIBILITY_KEY, hidden ? 'true' : 'false');
-  } catch (e) {
-    console.warn('Failed to persist portfolio visibility', e);
   }
 }
 
@@ -209,7 +116,7 @@ export default function PortfolioTrackerPage() {
   const router = useRouter();
   const [entries, setEntries] = useState([]);
   const [holdingsSort, setHoldingsSort] = useState('alpha');
-  const [currency, setCurrency] = useState(() => loadCurrencyPreference());
+  const [currency, setCurrency] = useState(() => { const d = loadPortfolio(); return d?.currency ?? 'IDR'; });
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
   const [symbolQuery, setSymbolQuery] = useState('');
@@ -225,7 +132,7 @@ export default function PortfolioTrackerPage() {
   const justSelectedRef = React.useRef(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
-  const [isPortfolioHidden, setIsPortfolioHidden] = useState(() => loadPortfolioVisibility());
+  const [isPortfolioHidden, setIsPortfolioHidden] = useState(() => { const d = loadPortfolio(); return d?.visibilityHidden ?? false; });
   const [portfolioReady, setPortfolioReady] = useState(false);
   const [isMobileExperience, setIsMobileExperience] = useState(false);
   const [portfolioMiniSeries, setPortfolioMiniSeries] = useState([]);
@@ -420,23 +327,22 @@ export default function PortfolioTrackerPage() {
     if (isAuthenticated) return; // handled by remote effect below
 
     queueMicrotask(() => {
-      const saved = loadGuestPortfolio();
-      if (saved !== null) {
+      const data = loadPortfolio();
+      if (data !== null) {
         hydratePortfolioRef.current = true;
-        setEntries(saved);
-      } else if (!hasGuestPortfolioBeenSeeded()) {
-        markGuestPortfolioSeeded();
+        setEntries(data.entries);
+        setCurrency(data.currency);
+        setIsPortfolioHidden(data.visibilityHidden);
+      } else {
         const defaults = getDefaultPortfolio();
         hydratePortfolioRef.current = true;
         setEntries(defaults);
-        saveGuestPortfolio(defaults);
-      } else {
-        hydratePortfolioRef.current = true;
-        setEntries([]);
+        savePortfolio({ entries: defaults, currency, visibilityHidden: isPortfolioHidden });
       }
       setInitialLoading(false);
       setPortfolioReady(true);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, isAuthenticated]);
 
   // Authenticated mode: load from remote
@@ -459,8 +365,9 @@ export default function PortfolioTrackerPage() {
       if (!remotePortfolioSeedRef.current) {
         remotePortfolioSeedRef.current = true;
         // On first sign-in, import guest portfolio if it exists, otherwise seed defaults
-        const guestData = loadGuestPortfolio();
-        const initialEntries = (guestData && guestData.length > 0) ? guestData : getDefaultPortfolio();
+        const data = loadPortfolio();
+        const guestEntries = data?.entries ?? [];
+        const initialEntries = guestEntries.length > 0 ? guestEntries : getDefaultPortfolio();
         hydratePortfolioRef.current = true;
         setEntries(initialEntries);
         setPortfolioReady(true);
@@ -475,10 +382,11 @@ export default function PortfolioTrackerPage() {
   useEffect(() => {
     if (!isAuthenticated || !portfolioLoaded || guestSyncedRef.current) return;
     if (Array.isArray(remotePortfolio) && remotePortfolio.length === 0) {
-      const guestData = loadGuestPortfolio();
-      if (guestData && guestData.length > 0) {
+      const data = loadPortfolio();
+      const guestEntries = data?.entries ?? [];
+      if (guestEntries.length > 0) {
         guestSyncedRef.current = true;
-        syncPortfolio(guestData).catch(() => null);
+        syncPortfolio(guestEntries).catch(() => null);
       }
     }
   }, [isAuthenticated, portfolioLoaded, remotePortfolio, syncPortfolio]);
@@ -495,7 +403,7 @@ export default function PortfolioTrackerPage() {
       syncPortfolio(entries).catch(() => { });
     } else {
       // Guest mode: persist to localStorage
-      saveGuestPortfolio(entries);
+      savePortfolio({ entries, currency, visibilityHidden: isPortfolioHidden });
     }
 
     const digitalEntries = entries.filter((e) => e.type !== 'cash');
@@ -516,16 +424,17 @@ export default function PortfolioTrackerPage() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entries, isAuthenticated, refreshPrices, syncPortfolio, portfolioReady]);
 
   // Persist currency preference
   useEffect(() => {
-    saveCurrencyPreference(currency);
-  }, [currency]);
+    savePortfolio({ entries, currency, visibilityHidden: isPortfolioHidden });
+  }, [currency, entries, isPortfolioHidden]);
 
   useEffect(() => {
-    savePortfolioVisibility(isPortfolioHidden);
-  }, [isPortfolioHidden]);
+    savePortfolio({ entries, currency, visibilityHidden: isPortfolioHidden });
+  }, [isPortfolioHidden, entries, currency]);
 
   // Search debounce
   useEffect(() => {
@@ -1406,7 +1315,7 @@ export default function PortfolioTrackerPage() {
                       const defaults = getDefaultPortfolio();
                       hydratePortfolioRef.current = true;
                       setEntries(defaults);
-                      if (!isAuthenticated) saveGuestPortfolio(defaults);
+                      if (!isAuthenticated) savePortfolio({ entries: defaults, currency, visibilityHidden: isPortfolioHidden });
                     }}
                     className="rounded-full bg-foreground text-background hover:bg-foreground/90 text-xs h-9"
                   >
