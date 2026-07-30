@@ -41,8 +41,10 @@ Certain features are blurred/locked for unauthenticated users:
 |---|---|---|
 | `/api/cron/*` | CRON_SECRET | Bearer token check |
 | `/api/delete-account` | User session | Bearer token → `getUserFromRequest()` |
-| `/api/discussions` (POST) | User session | Bearer token → Supabase Auth |
+| `/api/discussions` (POST, DELETE) | User session | Cookie session — `createServerClient()` (`@supabase/ssr`) reads the Supabase session cookie via `cookies()`, not a Bearer token |
 | All other APIs | None | Public (data is obfuscated) |
+
+Two distinct server-side auth mechanisms coexist in this codebase: Bearer-token (cron, delete-account) and cookie-session (discussions). Don't assume one covers all API routes.
 
 ### 4. Supabase RLS Policies
 

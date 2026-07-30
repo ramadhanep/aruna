@@ -73,12 +73,13 @@ import { cn } from '../../lib/utils';
 
 ## Code Style Rules
 
-- No semicolons (standard in this codebase).
-- Single quotes for strings.
+- Semicolons are used throughout — not omitted (verified: `trial-provider.jsx`, `utils.js`, `discussions/route.js` all use them consistently).
+- Quote style is mixed, not a strict single-quote convention — both `'...'` and `"..."` appear across files (and within the same file, e.g. `utils.js`). No enforced rule; match the surrounding file when editing.
 - Trailing commas in multiline objects/arrays.
 - 2-space indentation.
 - JSX uses parentheses for multiline return statements.
 - Class name merging via `cn()` utility (clsx + tailwind-merge).
+- No ESLint stylistic rule enforces any of the above — `eslint.config.mjs` only pulls in `eslint-config-next`. These are observed conventions, not linted rules.
 
 ## Dependency Rules
 

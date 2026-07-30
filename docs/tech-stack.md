@@ -49,7 +49,6 @@
 |---|---|---|
 | `recharts` | ^2.15.4 | Area, bar, composed, heatmap charts |
 | `lightweight-charts` | ^5.0.9 | TradingView-style candlestick/line charts |
-| `framer-motion` | ^12.38.0 | Animations and transitions |
 
 ## Development & Build
 
@@ -77,6 +76,6 @@
 | Asset | Location |
 |---|---|
 | Service Worker | `public/sw.js` |
-| Manifest | `/api/manifest.json` (dynamic Route Handler) |
+| Manifest | `/manifest.json` (dynamic Route Handler at `src/app/manifest.json/route.js`, not under `/api/`) |
 | Offline page | `/offline` |
 | App icons | `/aruna.png` (multi-size via manifest) |

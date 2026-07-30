@@ -11,7 +11,7 @@ All API routes are Next.js [Route Handlers](https://nextjs.org/docs/app/building
 
 ## Response Encoding
 
-All API responses (except `/api/discussions` and `/api/cron/*`) are XOR-obfuscated:
+All API responses (except `/api/cron/*`) are XOR-obfuscated. This includes `/api/discussions`.
 
 ```
 Server: encodePayload(data) → base64(xor(json, key))
@@ -141,7 +141,7 @@ Response: `{ data: [{ symbol, momentum, ... }], metadata }`
 
 ### `GET /api/discussions`
 
-Get discussion messages. (Plain JSON, not XOR-encoded.)
+Get discussion messages. XOR-encoded like other endpoints.
 
 | Query Param | Description |
 |---|---|
@@ -149,7 +149,7 @@ Get discussion messages. (Plain JSON, not XOR-encoded.)
 
 ### `POST /api/discussions`
 
-Post a message. (Plain JSON.)
+Post a message. Requires an authenticated Supabase session (cookie-based, via `@supabase/ssr`'s `createServerClient()` — not a Bearer token).
 
 | Body Field | Type | Required | Description |
 |---|---|---|---|
@@ -159,7 +159,7 @@ Post a message. (Plain JSON.)
 
 ### `DELETE /api/discussions`
 
-Delete own message.
+Delete own message. Same cookie-session auth as `POST`.
 
 | Query Param | Description |
 |---|---|

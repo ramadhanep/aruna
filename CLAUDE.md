@@ -22,10 +22,10 @@ curl -H "Authorization: Bearer <CRON_SECRET>" http://localhost:3000/api/cron/mon
 
 - **Dependency flow:** `Pages (src/app/*) → Components (src/components/*) → Lib (src/lib/*)`. API routes (`src/app/api/*/route.js`) import lib directly. Lib has no dependencies on components/pages. Components never import API route modules — they call `fetchEncodedJson()`.
 - **API as proxy:** all external calls (Yahoo Finance, Stockbit, Supabase) go through Next.js API routes, never from the browser directly.
-- **Response obfuscation:** every API response except `/api/discussions` and `/api/cron/*` is XOR-encoded via `encodePayload()` (`src/lib/secure-payload.js`) inside a `{"payload": "..."}` envelope, keyed by `SECURE_PAYLOAD_KEY`. Client decodes with `fetchEncodedJson()` from `@/lib/api-client`. This is obfuscation, not real security.
+- **Response obfuscation:** every API response except `/api/cron/*` is XOR-encoded via `encodePayload()` (`src/lib/secure-payload.js`) inside a `{"payload": "..."}` envelope, keyed by `SECURE_PAYLOAD_KEY`. Client decodes with `fetchEncodedJson()` from `@/lib/api-client`. This is obfuscation, not real security. `/api/discussions` is included — GET/POST/DELETE all encode their responses.
 - **Local-first data:** watchlist/portfolio default to `localStorage`; sync to Supabase (`watchlists`, `portfolios` tables) is optional, merged in `auth-provider.jsx` on sign-in.
 - **No server-side route protection** in `src/middleware.js` — it only applies CORS to `/api/*` (currently permissive/decorative). Access control is API-level bearer checks (cron `CRON_SECRET`, delete-account user token) + RLS + client-side feature gating.
-- **Auth:** Supabase Google OAuth, client-side only, no server session cookies. `getSupabaseBrowserClient()` (browser) / `getSupabaseServiceRoleClient()` + `getUserFromRequest()` (server, service role).
+- **Auth:** Supabase Google OAuth. Client-side reads: `getSupabaseBrowserClient()`. Two server-side auth patterns coexist: (1) Bearer-token — `getSupabaseServiceRoleClient()` + `getUserFromRequest()` for `delete-account` and `CRON_SECRET` checks for cron routes; (2) cookie-session — `/api/discussions` POST/DELETE use `createServerClient()` from `@supabase/ssr` with `cookies()` (`next/headers`) to read the real Supabase session cookie. Don't assume "no server session cookies" project-wide — that only holds for the Bearer-token routes.
 - **Cron-dependent features:** money flow scoring and screeners depend on scheduled `/api/cron/*` routes (Vercel cron, see `vercel.json`) that scrape Stockbit and write to Supabase; each run truncates the relevant table first.
 
 Full details: [Architecture](docs/architecture.md), [Folder Structure](docs/folder-structure.md), [Database](docs/database.md), [Known Issues](docs/known-issues.md), or the top-level [README.md](README.md).
@@ -71,7 +71,7 @@ Full details: [Architecture](docs/architecture.md), [Folder Structure](docs/fold
 - Preserve existing architecture patterns. Do not introduce new paradigms without ADR.
 - Maintain naming consistency across the codebase.
 - No duplicate business logic. Reuse from `src/lib/` utilities.
-- All API responses (except `/api/discussions` and `/api/cron/*`) must be XOR-obfuscated via `encodePayload()`.
+- All API responses (except `/api/cron/*`) must be XOR-obfuscated via `encodePayload()`.
 - Client components use `"use client"` directive; server components are default.
 - Theme uses `next-themes` with `dark` default. CSS variables in `globals.css`.
 - Run `npm run lint` before committing. ESLint config at `eslint.config.mjs`.

@@ -53,9 +53,6 @@ Schema changes are applied directly via Supabase SQL Editor. No migration tool (
 ### Deno / Supabase Edge Functions
 A `supabase/functions/` directory is referenced in some configurations but no Edge Functions are active.
 
-### Flutter App Archive
-The `aruna/` directory contains a discontinued Flutter mobile app with iOS build artifacts (~600MB). This increases repository size and should be cleaned up.
-
 ### MSCI Data Is Manually Seeded
 MSCI stock data is seeded manually via `supabase/msci_seed.sql` (referenced in setup). No automated process keeps MSCI data current.
 

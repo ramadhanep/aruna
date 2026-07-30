@@ -13,9 +13,10 @@
 
 ## Server-Side Auth
 
-- **Service role client**: `getSupabaseServiceRoleClient()` in `lib/supabase-server.js` — uses `SUPABASE_SERVICE_ROLE_KEY` for privileged access.
-- **Token validation**: `getUserFromRequest(request)` extracts `Authorization: Bearer <token>` header and validates via `supabase.auth.getUser(token)`.
-- No server-side session cookies — all API auth is via Bearer token.
+Two patterns coexist:
+
+- **Bearer-token** (most routes): `getSupabaseServiceRoleClient()` in `lib/supabase-server.js` uses `SUPABASE_SERVICE_ROLE_KEY` for privileged access. `getUserFromRequest(request)` extracts `Authorization: Bearer <token>` and validates via `supabase.auth.getUser(token)`. Used by `/api/delete-account` and (with `CRON_SECRET` instead of a user token) `/api/cron/*`.
+- **Cookie-session** (`/api/discussions` POST/DELETE only): `createServerClient()` from `@supabase/ssr` reads/writes the Supabase auth session via `cookies()` (`next/headers`), then calls `supabase.auth.getUser()` with no token argument — the session comes from the cookie, not a header.
 
 ## OAuth Flow
 
@@ -56,7 +57,7 @@ After sign-in, `AuthProvider`:
 
 - No server-side route protection — middleware only applies CORS.
 - Protected routes check auth state client-side in `AppLayoutClient`.
-- API-level auth only for cron (Bearer token check) and delete-account (user token check).
+- API-level auth: cron and delete-account use Bearer-token checks; `/api/discussions` POST/DELETE use a cookie-based Supabase session instead (see Server-Side Auth above).
 - Supabase RLS policies protect user-owned tables.
 - XOR cipher is **not cryptography** — obfuscation only.
 - Google OAuth `access_type=offline` and `prompt=consent` are requested.

@@ -57,9 +57,9 @@ const {
 
 ### 5. Trial State — `TrialProvider` (React Context)
 
-- Persisted to `localStorage` key `aruna_trial_end`.
-- Tracks trial expiry timestamp.
-- Provides `isTrialActive()` check.
+- Persisted to `localStorage` key `aruna-trial-state`, storing `{ startedAt, expiresAt }`.
+- 60-minute guest trial (`TRIAL_DURATION_MS = 60 * 60 * 1000` in `trial-provider.jsx`).
+- Provides `isTrialActive()` check, plus `restartTrial()`/`expireTrial()` for manual control.
 
 ### 6. Page-Level Data — Component State
 

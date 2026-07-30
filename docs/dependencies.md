@@ -7,7 +7,7 @@
 | `next` | ^16.0.8 | Framework — routing, SSR, API routes | Everywhere |
 | `react` / `react-dom` | 19.2.0 | UI framework | Everywhere |
 | `@supabase/supabase-js` | ^2.79.0 | Supabase client (auth, DB, storage) | `lib/supabase-browser.js`, `lib/supabase-server.js` |
-| `@supabase/ssr` | ^0.8.0 | SSR-safe Supabase client (not actively used) | Reserved |
+| `@supabase/ssr` | ^0.8.0 | SSR-safe Supabase client — actively used | `src/app/api/discussions/route.js` (`createServerClient()` for cookie-session auth on POST/DELETE) |
 | `yahoo-finance2` | ^3.14.3 | Market data — quotes, charts, fundamentals, search | `/api/finance`, `/api/quotes`, `/api/price-series`, `/api/fundamentals`, `/api/symbol-search`, `/api/screeners` |
 | `tailwindcss` | ^4 | Utility-first CSS framework | All components |
 | `@tailwindcss/postcss` | ^4 | PostCSS integration for Tailwind | `postcss.config.mjs` |
@@ -16,7 +16,6 @@
 | `lucide-react` | ^0.548.0 | Icon set | All components |
 | `recharts` | ^2.15.4 | Area, bar, composed, heatmap charts | Chart page, portfolio pie |
 | `lightweight-charts` | ^5.0.9 | TradingView-style candlestick charts | `components/normal-candlestick-chart.jsx` |
-| `framer-motion` | ^12.38.0 | Animations | Various components |
 | `class-variance-authority` | ^0.7.1 | Component variant classes | `components/ui/button.jsx`, `components/ui/label.jsx` |
 | `clsx` | ^2.1.1 | Conditional class name construction | `lib/utils.js` (via `cn()`) |
 | `tailwind-merge` | ^3.3.1 | Tailwind class conflict resolution | `lib/utils.js` (via `cn()`) |
@@ -53,10 +52,6 @@
 | Pluang CDN | US stock SVG logos | `/api/finance`, `/api/quotes` |
 | Ajaib API | IDX stock snapshots | `/api/bubbles` (via Supabase) |
 | Bibit API | Alternative IDX stock data | `/api/bubbles` (via Supabase) |
-
-## Not Used (Available but Unused)
-
-- `@supabase/ssr` — Installed but not actively used; all API routes use service-role client.
 
 ## Adding New Dependencies
 

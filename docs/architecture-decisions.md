@@ -111,17 +111,16 @@
 - Google-only OAuth — no email/password, Apple, or other providers.
 - Client-side auth only — no server-side session cookies.
 
-## ADR-007: Monorepo with Flutter (Discontinued)
+## ADR-007: Monorepo with Flutter (Discontinued, Now Removed)
 
-**Status**: Deprecated
+**Status**: Superseded
 
-**Decision**: The `aruna/` directory contains a Flutter mobile app that was the original client. Development has shifted entirely to the Next.js PWA.
+**Decision**: An `aruna/` directory once contained a Flutter mobile app that was the original client. Development shifted entirely to the Next.js PWA, and the Flutter directory has since been removed from the repository — it no longer exists at the repo root.
 
 **Reason**: PWA approach provides cross-platform coverage (iOS, Android, Web) from a single codebase. Faster iteration. No app store submission.
 
 **Tradeoffs**:
-- Flutter code is present but not maintained.
-- Build artifacts can be cleaned up to reduce repository size.
+- None remaining — the cleanup this ADR anticipated has already happened.
 
 ## ADR-008: Hardcoded USD/IDR Exchange Rate
 

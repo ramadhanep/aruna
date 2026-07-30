@@ -24,11 +24,11 @@
 - ✅ Auto logo sync from Pluang CDN to Supabase storage
 - ✅ Batch quote API with mini-chart data
 - ✅ Bruno/Postman API collection (`aruna-api.json`)
+- ✅ Pricing page (`src/app/pricing/page.jsx`)
+- ✅ Trial-based feature gating (`TrialProvider`, `TrialGuard`, `TrialBanner`)
 
 ## In Progress
 
-- 🔄 Pricing and subscription page
-- 🔄 Trial-based feature gating
 - 🔄 Documentation system (this project)
 
 ## Planned
