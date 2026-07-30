@@ -453,7 +453,12 @@ export default function ExplorePage() {
   const [msciLoading, setMsciLoading] = useState(true);
   const [rotationData, setRotationData] = useState(null);
   const [rotationLoading, setRotationLoading] = useState(true);
-  const [showInstallButton, setShowInstallButton] = useState(false);
+  const [showInstallButton, setShowInstallButton] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true;
+    return !isStandalone;
+  });
   const [activeMarketTab, setActiveMarketTab] = useState("indonesia");
   const [marketTimeframe, setMarketTimeframe] = useState("1W");
   const [activeMarketQuotes, setActiveMarketQuotes] = useState({});
@@ -645,23 +650,21 @@ export default function ExplorePage() {
   }, []);
 
   useEffect(() => {
-    loadSnapshots();
+    setTimeout(() => loadSnapshots(), 0);
   }, [loadSnapshots]);
 
   useEffect(() => {
-    loadActiveMarketQuotes(activeMarketTab, marketTimeframe);
+    setTimeout(() => loadActiveMarketQuotes(activeMarketTab, marketTimeframe), 0);
   }, [activeMarketTab, marketTimeframe, loadActiveMarketQuotes]);
 
   useEffect(() => {
-    loadMsci();
-    loadRotation();
+    setTimeout(() => {
+      loadMsci();
+      loadRotation();
+    }, 0);
   }, [loadMsci, loadRotation]);
 
   useEffect(() => {
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-      window.navigator.standalone === true;
-    setShowInstallButton(!isStandalone);
-
     const handler = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);

@@ -38,7 +38,8 @@ export function AuthProvider({ children }) {
   const supabase = useMemo(() => getSupabaseBrowserClient(), []);
   const [session, setSession] = useState(null);
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const supabaseExists = Boolean(supabase);
+  const [loading, setLoading] = useState(() => !supabaseExists);
   const [remoteWatchlist, setRemoteWatchlist] = useState(null);
   const [remoteWatchlistUpdatedAt, setRemoteWatchlistUpdatedAt] = useState(null);
   const [watchlistLoaded, setWatchlistLoaded] = useState(false);
@@ -47,10 +48,7 @@ export function AuthProvider({ children }) {
   const [portfolioLoaded, setPortfolioLoaded] = useState(false);
 
   useEffect(() => {
-    if (!supabase) {
-      setLoading(false);
-      return;
-    }
+    if (!supabase) return;
 
     let isMounted = true;
 
@@ -131,12 +129,14 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (!user) {
-      setRemoteWatchlist(null);
-      setRemoteWatchlistUpdatedAt(null);
-      setWatchlistLoaded(false);
-      setRemotePortfolio(null);
-      setRemotePortfolioUpdatedAt(null);
-      setPortfolioLoaded(false);
+      queueMicrotask(() => {
+        setRemoteWatchlist(null);
+        setRemoteWatchlistUpdatedAt(null);
+        setWatchlistLoaded(false);
+        setRemotePortfolio(null);
+        setRemotePortfolioUpdatedAt(null);
+        setPortfolioLoaded(false);
+      });
       return;
     }
 
@@ -203,8 +203,10 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     if (!user) return;
-    refreshRemoteWatchlist();
-    refreshRemotePortfolio();
+    setTimeout(() => {
+      refreshRemoteWatchlist();
+      refreshRemotePortfolio();
+    }, 0);
   }, [user, refreshRemoteWatchlist, refreshRemotePortfolio]);
 
   const signInWithGoogle = useCallback(
@@ -343,7 +345,8 @@ export function AuthProvider({ children }) {
   }, [supabase, user]);
 
   const deleteAccount = useCallback(async () => {
-    if (!session?.access_token) {
+    const token = session?.access_token;
+    if (!token) {
       throw new Error("No active session");
     }
 
@@ -351,7 +354,7 @@ export function AuthProvider({ children }) {
       const { response, data } = await fetchEncodedJson("/api/delete-account", {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -364,7 +367,7 @@ export function AuthProvider({ children }) {
       console.warn("Failed to delete account", error);
       throw error;
     }
-  }, [session?.access_token, signOut]);
+  }, [session, signOut]);
 
   const value = useMemo(
     () => ({

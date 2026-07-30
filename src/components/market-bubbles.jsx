@@ -13,10 +13,10 @@ export function MarketBubbles({ fullScreen = false }) {
   const [dimensions, setDimensions] = useState({ width: 400, height: 800 });
   const [bubblePositions, setBubblePositions] = useState({});
   const [isDragging, setIsDragging] = useState(false);
+  const [draggedCode, setDraggedCode] = useState(null);
   const dragInfoRef = useRef(null);
   const svgRef = useRef(null);
   const containerRef = useRef(null);
-  const initialPositionsRef = useRef({});
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -38,7 +38,6 @@ export function MarketBubbles({ fullScreen = false }) {
         const { data } = await fetchEncodedJson(`/api/bubbles?timeframe=${timeframe}`);
         setStocks(data?.stocks || []);
         setBubblePositions({});
-        initialPositionsRef.current = {};
       } catch (error) {
         console.error("Failed to fetch stocks:", error);
       } finally {
@@ -177,16 +176,19 @@ export function MarketBubbles({ fullScreen = false }) {
       const finalX = storedPos?.x ?? bubble.x;
       const finalY = storedPos?.y ?? bubble.y;
 
-      if (!initialPositionsRef.current[bubble.code]) {
-        initialPositionsRef.current[bubble.code] = { x: bubble.x, y: bubble.y };
+      let h = 0;
+      for (let i = 0; i < bubble.code.length; i++) {
+        h = ((h << 5) - h) + bubble.code.charCodeAt(i);
+        h |= 0;
       }
+      const seed = Math.abs(h);
 
       return {
         ...bubble,
         x: finalX,
         y: finalY,
-        animDelay: Math.random() * 3,
-        animDuration: 4 + Math.random() * 2,
+        animDelay: (seed % 3000) / 1000,
+        animDuration: 4 + (Math.abs(seed * 7 + 13) % 2000) / 1000,
       };
     });
 
@@ -201,6 +203,7 @@ export function MarketBubbles({ fullScreen = false }) {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(true);
+    setDraggedCode(bubble.code);
 
     const svg = svgRef.current;
     if (!svg) return;
@@ -287,6 +290,7 @@ export function MarketBubbles({ fullScreen = false }) {
 
   const handlePointerUp = useCallback(() => {
     setIsDragging(false);
+    setDraggedCode(null);
     dragInfoRef.current = null;
   }, []);
 
@@ -441,7 +445,7 @@ export function MarketBubbles({ fullScreen = false }) {
               const codeY = bubble.y + radius * 0.15;
               const percentY = bubble.y + radius * 0.45;
 
-              const isBeingDragged = isDragging && dragInfoRef.current?.code === bubble.code;
+              const isBeingDragged = isDragging && draggedCode === bubble.code;
 
               return (
                 <g

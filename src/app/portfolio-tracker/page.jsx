@@ -419,52 +419,56 @@ export default function PortfolioTrackerPage() {
     if (authLoading) return;
     if (isAuthenticated) return; // handled by remote effect below
 
-    const saved = loadGuestPortfolio();
-    if (saved !== null) {
-      hydratePortfolioRef.current = true;
-      setEntries(saved);
-    } else if (!hasGuestPortfolioBeenSeeded()) {
-      markGuestPortfolioSeeded();
-      const defaults = getDefaultPortfolio();
-      hydratePortfolioRef.current = true;
-      setEntries(defaults);
-      saveGuestPortfolio(defaults);
-    } else {
-      hydratePortfolioRef.current = true;
-      setEntries([]);
-    }
-    setInitialLoading(false);
-    setPortfolioReady(true);
+    queueMicrotask(() => {
+      const saved = loadGuestPortfolio();
+      if (saved !== null) {
+        hydratePortfolioRef.current = true;
+        setEntries(saved);
+      } else if (!hasGuestPortfolioBeenSeeded()) {
+        markGuestPortfolioSeeded();
+        const defaults = getDefaultPortfolio();
+        hydratePortfolioRef.current = true;
+        setEntries(defaults);
+        saveGuestPortfolio(defaults);
+      } else {
+        hydratePortfolioRef.current = true;
+        setEntries([]);
+      }
+      setInitialLoading(false);
+      setPortfolioReady(true);
+    });
   }, [authLoading, isAuthenticated]);
 
   // Authenticated mode: load from remote
   useEffect(() => {
     if (authLoading || !isAuthenticated) return;
 
-    if (!portfolioLoaded) {
-      setPortfolioReady(false);
-      return;
-    }
+    queueMicrotask(() => {
+      if (!portfolioLoaded) {
+        setPortfolioReady(false);
+        return;
+      }
 
-    if (Array.isArray(remotePortfolio)) {
-      hydratePortfolioRef.current = true;
-      setEntries(remotePortfolio);
-      setPortfolioReady(true);
-      return;
-    }
+      if (Array.isArray(remotePortfolio)) {
+        hydratePortfolioRef.current = true;
+        setEntries(remotePortfolio);
+        setPortfolioReady(true);
+        return;
+      }
 
-    if (!remotePortfolioSeedRef.current) {
-      remotePortfolioSeedRef.current = true;
-      // On first sign-in, import guest portfolio if it exists, otherwise seed defaults
-      const guestData = loadGuestPortfolio();
-      const initialEntries = (guestData && guestData.length > 0) ? guestData : getDefaultPortfolio();
-      hydratePortfolioRef.current = true;
-      setEntries(initialEntries);
-      setPortfolioReady(true);
-      syncPortfolio(initialEntries)
-        .catch(() => null)
-        .finally(() => { remotePortfolioSeedRef.current = false; });
-    }
+      if (!remotePortfolioSeedRef.current) {
+        remotePortfolioSeedRef.current = true;
+        // On first sign-in, import guest portfolio if it exists, otherwise seed defaults
+        const guestData = loadGuestPortfolio();
+        const initialEntries = (guestData && guestData.length > 0) ? guestData : getDefaultPortfolio();
+        hydratePortfolioRef.current = true;
+        setEntries(initialEntries);
+        setPortfolioReady(true);
+        syncPortfolio(initialEntries)
+          .catch(() => null)
+          .finally(() => { remotePortfolioSeedRef.current = false; });
+      }
+    });
   }, [authLoading, isAuthenticated, portfolioLoaded, remotePortfolio, syncPortfolio]);
 
   // On sign-in with existing remote data: offer to import local if remote is empty

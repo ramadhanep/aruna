@@ -60,7 +60,12 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [pullDistance, setPullDistance] = useState(0);
-  const [showInstallButton, setShowInstallButton] = useState(false);
+  const [showInstallButton, setShowInstallButton] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches ||
+      window.navigator.standalone === true;
+    return !isStandalone;
+  });
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [manageDialogOpen, setManageDialogOpen] = useState(false);
   const touchStartY = useRef(0);
@@ -119,13 +124,11 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!watchlistReady) {
-      setLoading(true);
-      setQuotes([]);
+      queueMicrotask(() => setQuotes([]));
       return;
     }
     let cancelled = false;
     const init = async () => {
-      setLoading(true);
       await loadQuotes();
       if (!cancelled) {
         setLoading(false);
@@ -138,43 +141,42 @@ export default function HomePage() {
   }, [loadQuotes, watchlistReady]);
 
   useEffect(() => {
-    if (authLoading) {
-      setWatchlistReady(false);
-      return;
-    }
+    if (authLoading) return;
 
-    if (!isAuthenticated) {
-      if (!areWatchlistsEqual(DEFAULT_WATCHLIST, watchlist)) {
-        setWatchlist(getDefaultWatchlist());
+    queueMicrotask(() => {
+      if (!isAuthenticated) {
+        if (!areWatchlistsEqual(DEFAULT_WATCHLIST, watchlist)) {
+          setWatchlist(getDefaultWatchlist());
+        }
+        setWatchlistReady(true);
+        return;
       }
-      setWatchlistReady(true);
-      return;
-    }
 
-    if (!watchlistLoaded) {
-      setWatchlistReady(false);
-      return;
-    }
-
-    if (Array.isArray(remoteWatchlist)) {
-      if (!areWatchlistsEqual(remoteWatchlist, watchlist)) {
-        setWatchlist(remoteWatchlist);
+      if (!watchlistLoaded) {
+        setWatchlistReady(false);
+        return;
       }
-      setWatchlistReady(true);
-      return;
-    }
 
-    if (!remoteDefaultSeedRef.current) {
-      remoteDefaultSeedRef.current = true;
-      const defaults = getDefaultWatchlist();
-      setWatchlist(defaults);
-      setWatchlistReady(true);
-      syncWatchlist(defaults)
-        .catch(() => null)
-        .finally(() => {
-          remoteDefaultSeedRef.current = false;
-        });
-    }
+      if (Array.isArray(remoteWatchlist)) {
+        if (!areWatchlistsEqual(remoteWatchlist, watchlist)) {
+          setWatchlist(remoteWatchlist);
+        }
+        setWatchlistReady(true);
+        return;
+      }
+
+      if (!remoteDefaultSeedRef.current) {
+        remoteDefaultSeedRef.current = true;
+        const defaults = getDefaultWatchlist();
+        setWatchlist(defaults);
+        setWatchlistReady(true);
+        syncWatchlist(defaults)
+          .catch(() => null)
+          .finally(() => {
+            remoteDefaultSeedRef.current = false;
+          });
+      }
+    });
   }, [
     isAuthenticated,
     watchlistLoaded,
@@ -186,10 +188,6 @@ export default function HomePage() {
 
   // Check if app is installable
   useEffect(() => {
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
-      window.navigator.standalone === true;
-    setShowInstallButton(!isStandalone);
-
     const handler = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);

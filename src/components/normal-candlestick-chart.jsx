@@ -327,7 +327,10 @@ export function NormalCandlestickChart({
     showTimeScale,
     emaColor,
     livermoreUpperColor,
-    livermoreLowerColor,    seriesType,  ]);
+    livermoreLowerColor,
+    showLivermoreKey,
+    seriesType,
+  ]);
 
   useEffect(() => {
     priceScaleTypeRef.current = priceScaleType;

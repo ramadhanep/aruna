@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState, useMemo, useEffect, useRef } from "react";
+import { Suspense, useState, useMemo, useEffect, useRef, useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -115,15 +115,14 @@ function AccountSidebarContent({ onClose }) {
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState(null);
-  const [mounted, setMounted] = useState(false);
+  const isClient = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Defer theme-derived values until after client mount to prevent hydration mismatch
-  const activeThemeMode = mounted ? (theme === "dark" ? "dark" : "light") : null;
-  const isDark = mounted ? theme === "dark" : false;
+  const activeThemeMode = isClient ? (theme === "dark" ? "dark" : "light") : null;
+  const isDark = isClient ? theme === "dark" : false;
   const redirectHandledRef = useRef(false);
   const rawRedirect = searchParams?.get("redirect") || null;
   const redirectParam = rawRedirect && rawRedirect.startsWith("/") ? rawRedirect : null;
@@ -238,7 +237,7 @@ function AccountSidebarContent({ onClose }) {
               <div className="rounded-2xl  px-3 py-2">
                 <p className="uppercase tracking-wide text-foreground/60 dark:text-white/60">Server</p>
                 <p className="text-sm font-semibold text-foreground dark:text-white">
-                  {mounted && supabaseConfigured ? "Connected" : "Offline"}
+                  {isClient && supabaseConfigured ? "Connected" : "Offline"}
                 </p>
               </div>
             </div>

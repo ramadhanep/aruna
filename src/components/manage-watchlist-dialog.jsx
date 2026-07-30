@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Trash2, Plus, X, ArrowBigUpDash, ArrowBigDownDash } from "lucide-react";
 import {
   Dialog,
@@ -21,9 +21,8 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
   const [isSearching, setIsSearching] = useState(false);
   const searchTimeoutRef = useRef(null);
 
-  useEffect(() => {
-    if (open) {
-      // Ensure items are sorted by order when opening
+  const handleOpenChange = useCallback((nextOpen) => {
+    if (nextOpen) {
       const sorted = Array.isArray(watchlist)
         ? [...watchlist].sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
         : [];
@@ -31,15 +30,13 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
       setSearchQuery("");
       setSearchResults([]);
     }
-  }, [open, watchlist]);
+    onOpenChange(nextOpen);
+  }, [watchlist, onOpenChange]);
 
   // Search for symbols (debounced)
   useEffect(() => {
     const normalizedQuery = searchQuery.trim();
-    if (!normalizedQuery) {
-      setSearchResults([]);
-      return;
-    }
+    if (!normalizedQuery) return;
 
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -116,7 +113,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent variant="fullscreen" closeButtonPosition="right">
         <DialogHeader className="p-6 pb-4">
           <DialogTitle className="text-base font-semibold">Manage Watchlist</DialogTitle>
@@ -147,7 +144,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
             </div>
 
             {/* Search Results */}
-            {searchResults.length > 0 && (
+            {searchQuery.trim() && searchResults.length > 0 && (
               <div className="absolute top-full inset-x-0 z-20 mt-2 border rounded-md divide-y max-h-[200px] overflow-y-auto bg-card shadow-md">
                 {searchResults.map((result) => (
                   <button

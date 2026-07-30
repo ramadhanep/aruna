@@ -52,12 +52,22 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
   const justSelectedRef = React.useRef(false);
   const hasInitialized = React.useRef(false);
 
+  const handleOpenChange = useCallback((nextOpen) => {
+    onOpenChange(nextOpen);
+    if (!nextOpen) {
+      hasInitialized.current = false;
+      setForm({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '' });
+      setSymbolQuery('');
+      setSymbolResults([]);
+    }
+  }, [onOpenChange]);
+
   // Auto-fetch price when modal opens with initialSymbol
   useEffect(() => {
     if (open && initialSymbol && !hasInitialized.current) {
       hasInitialized.current = true;
+      queueMicrotask(() => setLoadingPrice(true));
       (async () => {
-        setLoadingPrice(true);
         try {
           // Fetch name from Yahoo Finance
           const { startDate, endDate } = getRecentUnixRange();
@@ -85,14 +95,6 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
           setLoadingPrice(false);
         }
       })();
-    }
-    
-    // Reset when modal closes
-    if (!open) {
-      hasInitialized.current = false;
-      setForm({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '' });
-      setSymbolQuery('');
-      setSymbolResults([]);
     }
   }, [open, initialSymbol]);
 
@@ -169,7 +171,7 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent variant="fullscreen" closeButtonPosition="right">
         <div className="flex items-center gap-2 p-4 border-b">
           <DialogTitle className="text-base">Add Asset</DialogTitle>

@@ -92,15 +92,17 @@ export function TrialProvider({ children }) {
     if (loading) return;
 
     if (user) {
-      setTrial({
-        initialized: true,
-        isGuest: false,
-        startedAt: null,
-        expiresAt: null,
-        isActive: false,
-        isExpired: false,
-        remainingMs: 0,
-        remainingSeconds: 0,
+      queueMicrotask(() => {
+        setTrial({
+          initialized: true,
+          isGuest: false,
+          startedAt: null,
+          expiresAt: null,
+          isActive: false,
+          isExpired: false,
+          remainingMs: 0,
+          remainingSeconds: 0,
+        });
       });
       return;
     }
@@ -112,7 +114,9 @@ export function TrialProvider({ children }) {
       writeStoredTrial({ startedAt: next.startedAt, expiresAt: next.expiresAt });
     }
 
-    setTrial({ ...next, initialized: true, isGuest: true });
+    queueMicrotask(() => {
+      setTrial({ ...next, initialized: true, isGuest: true });
+    });
   }, [loading, user]);
 
   useEffect(() => {

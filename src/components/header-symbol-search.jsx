@@ -17,30 +17,28 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState([]);
-  const [history, setHistory] = useState([]);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  const [history, setHistory] = useState(() => {
+    if (typeof window === "undefined") return [];
     try {
       const stored = window.localStorage.getItem(SEARCH_HISTORY_KEY);
-      if (stored) {
-        setHistory(JSON.parse(stored));
-      }
-    } catch (error) {
-      console.warn("Failed to load symbol history", error);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
     }
-  }, []);
+  });
 
   useEffect(() => {
     const normalizedQuery = query.trim();
     if (!normalizedQuery) {
-      setResults([]);
-      setLoading(false);
+      queueMicrotask(() => {
+        setResults([]);
+        setLoading(false);
+      });
       return;
     }
 
     const controller = new AbortController();
-    setLoading(true);
+    queueMicrotask(() => setLoading(true));
 
     const timeout = setTimeout(async () => {
       try {

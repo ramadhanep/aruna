@@ -2480,7 +2480,7 @@ function ElectionCyclePageContent() {
       syncWatchlist(next).catch(() => { });
       return next;
     });
-  }, [isAuthenticated, redirectToSignIn, symbol, syncWatchlist]);
+  }, [redirectToSignIn, symbol, syncWatchlist]);
 
   const renderProfileTab = () => {
     if (fundamentalsLoading) {

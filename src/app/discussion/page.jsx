@@ -271,29 +271,31 @@ export default function DiscussionPage() {
     };
   }, []);
 
-  const fetchMessages = useCallback(async () => {
-    if (!user) return; // Don't fetch if not authenticated
-
-    try {
-      const { data } = await fetchEncodedJson('/api/discussions?limit=100');
-      setMessages(data?.messages || []);
-      setTimeout(scrollToBottom, 100);
-    } catch (err) {
-      console.error('Failed to fetch messages:', err);
-    } finally {
-      setMessagesLoading(false);
-    }
-  }, [scrollToBottom, user]);
-
   useEffect(() => {
     if (!user) return;
+    let cancelled = false;
 
-    fetchMessages();
+    const doFetch = async () => {
+      try {
+        const { data } = await fetchEncodedJson('/api/discussions?limit=100');
+        if (cancelled) return;
+        setMessages(data?.messages || []);
+        setTimeout(scrollToBottom, 100);
+      } catch (err) {
+        console.error('Failed to fetch messages:', err);
+      } finally {
+        if (!cancelled) setMessagesLoading(false);
+      }
+    };
 
-    // Auto-refresh every 10 seconds
-    const interval = setInterval(fetchMessages, 10000);
-    return () => clearInterval(interval);
-  }, [fetchMessages, user]);
+    doFetch();
+
+    const interval = setInterval(doFetch, 10000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [user, scrollToBottom]);
 
   // Show loading while checking auth, but keep the discussion experience available for trial users.
   if (authLoading) {
