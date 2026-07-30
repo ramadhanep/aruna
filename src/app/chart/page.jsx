@@ -179,7 +179,6 @@ function ElectionCyclePageContent() {
   const chartState = useChartState();
   const { symbol, setSymbol, selectedCycles, setSelectedCycles, infoTab, setInfoTab, infoTabRef, requestedInfoTab, isNormalView, searchParams, pathname, router, searchParamsString } = chartState;
   const { screeningSignal } = useChartScreening(supabase, symbol);
-  const { loading, rawLinesData, symbolInfo, assetName, monthlyHeatmap, quarterlyHeatmap } = useChartData(symbol, selectedCycles, scaleChoice, colors.allYears);
   const {
     normalTimeframe, setNormalTimeframe,
     normalSeriesLoading, normalSeriesError,
@@ -191,6 +190,7 @@ function ElectionCyclePageContent() {
     chartDisplayType, setChartDisplayType,
     normalFullscreenOpen, setNormalFullscreenOpen,
   } = useChartSeries(symbol, isNormalView, screeningSignal);
+  const { loading, rawLinesData, symbolInfo, assetName, monthlyHeatmap, quarterlyHeatmap } = useChartData(symbol, selectedCycles, scaleChoice, colors.allYears);
   const { fundamentals, fundamentalsLoading, revenuePeriod, setRevenuePeriod } = useChartFundamentals(symbol, infoTab);
 
   const [portfolioDialogOpen, setPortfolioDialogOpen] = useState(false);
@@ -211,19 +211,6 @@ function ElectionCyclePageContent() {
   }, [pathname, router]);
 
   const canUseProtectedActions = isAuthenticated;
-  const screeningSignalDateLabel = screeningSignal?.signal_date
-    ? formatScreeningTimestamp(screeningSignal.signal_date)
-    : null;
-  const tradingPlanPayload = screeningSignal?.trading_plan ?? null;
-  const screeningCategory = screeningSignal?.category ?? null;
-  const lotEligible = useMemo(() => isIdxLotSymbol(symbol), [symbol]);
-  const hasTradingPlan = Boolean(tradingPlanPayload);
-  const infoTabs = useMemo(() => {
-    if (hasTradingPlan) {
-      return [{ value: 'trading-plan', label: 'TRADING PLAN' }, ...BASE_INFO_TABS];
-    }
-    return BASE_INFO_TABS;
-  }, [hasTradingPlan]);
 
   const colors = useMemo(() => {
     const isDark = resolvedTheme === 'dark';
@@ -244,7 +231,19 @@ function ElectionCyclePageContent() {
   const beatColor = 'rgb(22, 163, 74)'; // tailwind green-600
   const missColor = 'rgb(220, 38, 38)'; // tailwind red-600
 
-
+  const screeningSignalDateLabel = screeningSignal?.signal_date
+    ? formatScreeningTimestamp(screeningSignal.signal_date)
+    : null;
+  const tradingPlanPayload = screeningSignal?.trading_plan ?? null;
+  const screeningCategory = screeningSignal?.category ?? null;
+  const lotEligible = useMemo(() => isIdxLotSymbol(symbol), [symbol]);
+  const hasTradingPlan = Boolean(tradingPlanPayload);
+  const infoTabs = useMemo(() => {
+    if (hasTradingPlan) {
+      return [{ value: 'trading-plan', label: 'TRADING PLAN' }, ...BASE_INFO_TABS];
+    }
+    return BASE_INFO_TABS;
+  }, [hasTradingPlan]);
 
   useEffect(() => {
     if (!tradingPlanPayload) {
