@@ -114,18 +114,18 @@ tree. This is an audit only; no implementation changes were made.
   animation metadata is now stable per symbol across re-renders.
 - **Effort:** M
 
-### TD-9 — Local-storage keys deviate from the documented registry
+### TD-9 — Local-storage keys deviate from the documented registry (RESOLVED — decision recorded)
 
 - **Reference:** `src/app/portfolio-tracker/page.jsx:25-28`.
-- **What is wrong:** It uses `portfolio_currency`, `portfolio_visibility_hidden`,
-  `aruna_guest_portfolio`, and `aruna_guest_portfolio_seeded`; the conventions
-  document establishes `aruna-portfolio` for local guest portfolio state.
-- **Why it matters:** The actual persistence contract has drifted from the
-  ground-truth documentation and is fragmented across four unregistered keys.
-- **Suggested fix:** Consolidate portfolio persistence behind the documented
-  `aruna-portfolio` record (or update the agreed convention before changing
-  behaviour) and centralize key declarations.
-- **Effort:** M
+- **Decision:** Option B — one-time migration to canonical `aruna-portfolio`.
+  On first portfolio load, legacy keys (`portfolio_currency`,
+  `portfolio_visibility_hidden`, `aruna_guest_portfolio`,
+  `aruna_guest_portfolio_seeded`) are read once, converted to canonical schema,
+  and persisted as `aruna-portfolio`. No dual-write, no permanent compatibility
+  layer. All subsequent reads/writes use the canonical record only.
+- **Implementation required in Phase 3:** Portfolio storage adapter, canonical
+  schema, migration logic on first load, and `ClearDataButton` update.
+  See `docs/PHASE_EXECUTION_PLAN.md` for full policy.
 
 ### TD-10 — Dead, unreferenced modules remain in the component layer [RESOLVED]
 

@@ -156,8 +156,9 @@ changes. Update `docs/ai-session-handoff.md`.
 remote data, form/search state, and visual sections while preserving existing
 user data.
 
-**Scope:** TD-2 and the portfolio portion of UI-8/UI-9. TD-9 is a required
-decision gate, not an automatic cleanup.
+**Scope:** TD-2 and the portfolio portion of UI-8/UI-9. TD-9 storage
+strategy is already approved (Option B — one-time migration to canonical
+`aruna-portfolio`).
 
 **Files touched:** `src/app/portfolio-tracker/page.jsx`,
 `src/app/portfolio-tracker/pie.jsx`, `src/components/add-asset-modal.jsx`;
@@ -170,17 +171,14 @@ keys or stored shapes.
 
 **Effort:** L.
 
-**Product decision required — TD-9:** Existing users may have data under
-`portfolio_currency`, `portfolio_visibility_hidden`, `aruna_guest_portfolio`,
-and `aruna_guest_portfolio_seeded`, whereas conventions document
-`aruna-portfolio`. Choose one of the following before implementation:
-
-1. retain the current keys and correct/document the registry;
-2. migrate to a canonical record with a one-time, idempotent read-old/write-new
-   migration and rollback/retention plan; or
-3. intentionally support both keys for a defined deprecation window.
-
-Do **not** silently rename or delete keys: that risks losing user portfolios.
+**Approved TD-9 decision:** Option B — one-time migration to canonical
+`aruna-portfolio`. On first portfolio load, read legacy keys
+(`portfolio_currency`, `portfolio_visibility_hidden`, `aruna_guest_portfolio`,
+`aruna_guest_portfolio_seeded`), convert to canonical schema, and persist as
+`aruna-portfolio`. All subsequent reads/writes use the canonical record only.
+No dual-write or permanent compatibility layer. `ClearDataButton` must remove
+both the canonical record and all known legacy keys. See
+`docs/PHASE_EXECUTION_PLAN.md` for full policy.
 
 **Definition of done:**
 

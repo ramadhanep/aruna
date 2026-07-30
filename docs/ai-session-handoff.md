@@ -64,13 +64,13 @@ with `const canUseProtectedActions = isAuthenticated;`.
 ## Blockers for Phase 3
 
 - None. Phase 1 and 2 check off the two route-decomposition prerequisites.
-- TD-9 product decision (portfolio storage keys) must be made before Phase 3 implementation begins.
+- TD-9 is approved (Option B — one-time migration to canonical `aruna-portfolio`).
 
 ## Next Recommended Task
 
 Execute Phase 3 (Portfolio decomposition). The portfolio page is the next
-largest concentration of technical debt (1,761 lines). The TD-9 product
-decision must be approved first.
+largest concentration of technical debt (1,761 lines). The TD-9 storage
+strategy is already approved.
 
 ## Important Notes
 

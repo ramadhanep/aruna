@@ -8,10 +8,8 @@ product-review waiting time.
 
 ```text
 P0 Quick wins ──> P1 Effect/purity baseline ──> ┬─> P2 Chart decomposition ─────┐
-                                                 │                                ├─> P4 Shared access ─> P5 UI polish ─> P6 Componentization
-                                                 └─> P3 Portfolio decomposition ──┘
-                                                       ↑
-                                             TD-9 product decision gate
+                                                  │                                ├─> P4 Shared access ─> P5 UI polish ─> P6 Componentization
+                                                  └─> P3 Portfolio decomposition ──┘
 
 P7 Cron decision/restoration (independent; external decision gate)
 ```
@@ -232,9 +230,7 @@ extraction, and again at phase close. Run the chart matrix after each UI slice.
 
 **Execution order and atomic tasks**
 
-1. **Stop at the TD-9 decision gate.** Approve one storage option below,
-   including canonical schema, migration window and clear-data behaviour.
-2. Create a browser-fixture matrix for no storage, malformed JSON, each legacy
+1. Create a browser-fixture matrix for no storage, malformed JSON, each legacy
    key combination, guest portfolio, authenticated portfolio and remote
    overwrite-on-sign-in.
 3. Extract pure portfolio calculations, currency conversion and display helpers.
@@ -254,10 +250,11 @@ extraction, and again at phase close. Run the chart matrix after each UI slice.
 adapter; possibly `src/lib/default-watchlist.js` only if shared starter-data
 conventions are formalized.
 
-**Rollback risk:** High, and **critical for user data** after any storage-key
-change. Never remove old keys in the migration release. A failed migration must
-fall back to the last valid legacy record and preserve it for at least the
-approved deprecation window.
+**Rollback risk:** High, and **critical for user data** during migration.
+A failed migration must fall back to the last valid legacy record. Legacy keys
+are read-once during migration; the canonical record is authoritative after
+the first successful write. Clear Data must remove both canonical and legacy
+keys.
 
 **Testing checklist**
 
@@ -273,13 +270,12 @@ approved deprecation window.
 - [ ] Pie/mini-chart loading and asset search still work after extraction.
 
 **Checkpoints:** lint after each adapter/hook/component slice; build and full
-storage fixture matrix before merging. Require explicit product sign-off before
-task 4 if Options B/C are chosen.
+storage fixture matrix before merging.
 
 **Documentation checklist**
 
-- [ ] `docs/conventions.md` and `docs/state-management.md`: exact approved
-      key(s), schema, migration/deprecation policy and clear-data scope.
+- [ ] `docs/conventions.md` and `docs/state-management.md`: canonical
+      `aruna-portfolio` schema and clear-data scope.
 - [ ] `docs/application-flow.md` and `README.md`: if observable persistence
       behaviour changes.
 - [ ] `docs/architecture.md`, `docs/folder-structure.md`,
@@ -288,14 +284,46 @@ task 4 if Options B/C are chosen.
 
 **Recommended commits**
 
-1. `docs: approve portfolio local-storage contract and migration policy`
-2. `refactor(portfolio): extract calculations and storage adapter`
+1. `refactor(portfolio): extract calculations and storage adapter`
 3. `refactor(portfolio): extract data hooks and asset form`
 4. `refactor(portfolio): extract visual sections and simplify route`
 5. `test: add portfolio storage migration fixtures` (if a test harness is
    introduced; otherwise retain an executable/manual test protocol document)
 
-## TD-9 — Local-storage decision analysis
+## TD-9 — Local-storage decision (APPROVED: Option B)
+
+**Decision:** One-time migration to canonical `aruna-portfolio`. This is a
+small personal project with a very small active user base. Long-term
+maintainability is preferred over preserving legacy storage indefinitely.
+
+### Implementation policy
+
+- Introduce a single canonical `localStorage` record named `aruna-portfolio`.
+- Introduce a dedicated portfolio storage adapter responsible for all
+  persistence. The rest of the application must never access `localStorage`
+  directly for portfolio data.
+
+### Migration policy (on first portfolio load)
+
+1. Attempt to load `aruna-portfolio`.
+2. If it exists and is valid, use it.
+3. Otherwise, read the legacy portfolio keys (`portfolio_currency`,
+   `portfolio_visibility_hidden`, `aruna_guest_portfolio`,
+   `aruna_guest_portfolio_seeded`).
+4. Convert them into the canonical schema.
+5. Save the canonical record.
+6. Continue using only the canonical record for all future reads and writes.
+
+### Constraints
+
+- Do **not** implement dual-read / dual-write synchronisation.
+- Do **not** keep legacy keys synchronised after migration.
+- Do **not** introduce a permanent compatibility layer.
+- Legacy keys may remain in browser storage after migration but must no
+  longer be read or written by the application.
+- `ClearDataButton` must remove both the canonical record and all known
+  legacy keys.
+- All portfolio persistence must be centralised behind the storage adapter.
 
 ### Current persistence inventory
 
@@ -309,94 +337,15 @@ task 4 if Options B/C are chosen.
 | `aruna_install_prompt_shown` | PWA install dialog | Dismissed install prompt | Unregistered in docs. |
 | `aruna_last_election_symbol` | Chart page | Last chart symbol | Unregistered in docs; Clear Data does list it. |
 | `sidebar_state` | shadcn sidebar | Sidebar state cookie, not localStorage | The conventions table calls it local storage; verify/update its storage type. |
-| `portfolio_currency` | Portfolio page | Currency preference | Undocumented legacy/current portfolio key. |
-| `portfolio_visibility_hidden` | Portfolio page | Balance visibility | Undocumented legacy/current portfolio key. |
-| `aruna_guest_portfolio` | Portfolio page | Guest holdings array | Does not match documented `aruna-portfolio`. |
-| `aruna_guest_portfolio_seeded` | Portfolio page | Starter data sentinel | Undocumented and coupled to guest portfolio lifecycle. |
+| `portfolio_currency` | Portfolio page | Currency preference | Legacy — migrated to `aruna-portfolio`. |
+| `portfolio_visibility_hidden` | Portfolio page | Balance visibility | Legacy — migrated to `aruna-portfolio`. |
+| `aruna_guest_portfolio` | Portfolio page | Guest holdings array | Legacy — migrated to `aruna-portfolio`. |
+| `aruna_guest_portfolio_seeded` | Portfolio page | Starter data sentinel | Legacy — migrated to `aruna-portfolio`. |
 
-`ClearDataButton` is a hidden dependency: it removes `aruna_portfolio` and
-`aruna_watchlist` (underscore names), but not the documented hyphenated keys or
-the actual guest portfolio/visibility/seeding keys. It currently cannot fulfill
-its “Clear data” promise for the portfolio data actually in use. It must be
-included in every TD-9 option—not treated as a later cosmetic cleanup.
-
-### Option A — Keep existing keys
-
-Keep `aruna_guest_portfolio`, `aruna_guest_portfolio_seeded`,
-`portfolio_currency`, and `portfolio_visibility_hidden` as the live contract;
-correct documentation and Clear Data to match.
-
-- **Backward compatibility:** Complete; no reads/writes change.
-- **User data safety:** Highest immediate safety because no migration executes.
-  Clear Data must be fixed carefully to target only the known live keys.
-- **Implementation complexity:** Low. Centralize constants and storage access,
-  then correct stale docs.
-- **Rollback difficulty:** Low; constants can return to their existing call
-  sites without converting stored data.
-- **Long-term maintenance:** Moderate/poor. Four keys split one conceptual
-  portfolio, and names conflict with the documented `aruna-*` convention.
-
-### Option B — One-time migration to canonical `aruna-portfolio`
-
-On first portfolio load, read legacy keys, write one canonical versioned record
-to `aruna-portfolio`, then eventually stop reading/removing legacy keys under a
-separate deprecation plan.
-
-- **Backward compatibility:** Good only with an idempotent legacy read and a
-  sufficiently long retention period. Old deployed clients can still write the
-  old keys, creating split-brain data if they coexist with the new release.
-- **User data safety:** Medium. Safe only if writes are atomic enough for the
-  browser context, legacy keys are retained, malformed values are quarantined,
-  and no old key is deleted in the first release.
-- **Implementation complexity:** Medium. Requires record schema/versioning,
-  precedence rules, migration marker/error handling, multi-tab policy and
-  Clear Data coverage.
-- **Rollback difficulty:** Medium/high. Rollback requires reading canonical
-  data back into old shapes or retaining dual-read support; otherwise a rollback
-  can make recent portfolio changes invisible.
-- **Long-term maintenance:** Best after full retirement: one documented key and
-  one schema. The transition itself is riskier than the benefit warrants unless
-  a stable canonical record is a product goal.
-
-### Option C — Dual-read / dual-write migration (**recommended**)
-
-Introduce a versioned canonical `aruna-portfolio` record and a portfolio
-storage adapter. Read canonical first when valid; otherwise reconstruct from
-legacy keys. During a defined deprecation window, write canonical plus legacy
-keys from every portfolio mutation. Retain legacy values, telemetry/logging
-where privacy policy permits, and a documented expiry/release criterion before
-switching to canonical-only writes.
-
-- **Backward compatibility:** Best. Older clients continue to receive updated
-  legacy records while newer clients use canonical data.
-- **User data safety:** Best practical option. A failed canonical write can
-  still leave legacy data; a legacy-only user gets canonical state on next safe
-  load. Define deterministic conflict precedence and preserve both records.
-- **Implementation complexity:** High. Requires an adapter, versioned schema,
-  validation, dual-write error strategy, cross-tab/old-client conflict rules,
-  migration window and Clear Data support for all variants.
-- **Rollback difficulty:** Low/medium during the window because old keys remain
-  current. It becomes medium only after canonical-only cutover.
-- **Long-term maintenance:** Good if the deprecation end date is enforced.
-  Poor if dual-write is allowed to become permanent.
-
-**Recommendation:** Option C, with a time-bounded deprecation plan, is
-appropriate because deployed users may already hold portfolio data under the
-actual legacy keys while documentation promises a different key. It minimizes
-loss and rollback risk. Choose Option A instead if the product does not justify
-the complexity of changing a local-only storage contract; do not choose B
-without a rollback adapter.
-
-**Required design decisions before Options B/C**
-
-1. Canonical record schema: holdings, currency, hidden state, seeded state,
-   schema version and updated timestamp.
-2. Conflict precedence: canonical vs legacy, newer timestamp vs authenticated
-   remote portfolio, and concurrent-tab behaviour.
-3. Write failure policy: what remains authoritative if one dual write fails.
-4. Deprecation duration and criteria for ending legacy writes/reads.
-5. Clear Data scope, confirmation language, and whether it removes retained
-   legacy keys during the migration window.
+`ClearDataButton` is a hidden dependency: it currently removes `aruna_portfolio`
+and `aruna_watchlist` (underscore names), but not the actual legacy keys or
+the canonical `aruna-portfolio`. It must be updated to remove the canonical
+record and all known legacy keys.
 
 ## Phase 4 — Shared data-access/configuration layer
 
@@ -630,8 +579,7 @@ configuration review; manual endpoint checks before relying on the next schedule
 
 1. P1 must finish before P2/P3 so extracted hooks do not copy failing effect
    patterns.
-2. The TD-9 decision and migration test matrix precede any portfolio-key/code
-   change in P3.
+2. The migration test matrix precedes any portfolio-key/code change in P3.
 3. P2/P3 route boundaries precede P4 shared-helper consolidation.
 4. P4’s client helper contract must settle before P5/P6 replace dependent UI
    data states broadly.
@@ -640,11 +588,12 @@ configuration review; manual endpoint checks before relying on the next schedule
 
 ### Hidden dependencies to resolve
 
-- `ClearDataButton` has stale underscore keys and omits actual portfolio keys;
-  it is a data-safety dependency of TD-9, not merely dead/comment cleanup.
+- `ClearDataButton` has stale underscore keys and omits the canonical
+  `aruna-portfolio` and all legacy portfolio keys; it is a data-safety
+  dependency of Phase 3, not merely cosmetic cleanup.
 - Docs currently disagree with code on several non-portfolio keys:
   appearance/install/chart-history keys, and `sidebar_state` storage type.
-  TD-9 documentation work must correct the full registry, not only portfolio.
+  These should be corrected as part of Phase 3 documentation work.
 - `ThemeProvider` explicitly disables theme transitions. Motion standardization
   must preserve that hydration/flash prevention policy.
 - `market-bubbles` is shared by safe-area/touch-target P0, purity P1 and
