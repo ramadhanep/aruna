@@ -47,6 +47,29 @@
 - `promisePool()` for concurrency-limited batch operations (used in `/api/quotes`).
 - Supabase operations use `await` directly with try/catch.
 
+## Effect Patterns
+
+- **External subscriptions** (resize, auth state, media queries) use
+  `useSyncExternalStore` when the subscribed value is read during render
+  (`use-mobile.js`), or `useEffect` with cleanup for imperative subscriptions
+  (`auth-provider.jsx` `onAuthStateChange`).
+- **Data fetching** in effects uses an async IIFE with a `cancelled` boolean
+  guard returned from the cleanup function. State updates (`setState`) after
+  `await` boundaries are safe.
+- **Hydration guards** (client-only booleans) use `useSyncExternalStore` with
+  `() => true` (client) / `() => false` (SSR) snapshots, or `useState` lazy
+  initializers with a `typeof window === "undefined"` guard for localStorage
+  reads.
+- **Dialog/event-driven state** (reset form on close, initialize on open) lives
+  in event handlers, not effects.
+- **Avoid** `setState` calls that execute synchronously in the effect body
+  (before any `await`). Use `queueMicrotask` or `setTimeout(fn, 0)` to defer
+  when a synchronous `setState` is unavoidable at the start of an async
+  operation (e.g., `setLoading(true)` before a fetch).
+- **Cancellation:** For async work in effects, always maintain a `cancelled`
+  flag. For stale-request protection, use a monotonically incrementing
+  `requestId` ref and check it after await.
+
 ## Logging
 
 - `console.warn()` for expected failures (network issues, missing data).

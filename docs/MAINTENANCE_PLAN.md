@@ -92,14 +92,15 @@ but not technically blocking. This phase blocks Phases 2 and 3.
 
 **Definition of done:**
 
-- [ ] `npm run lint` passes with no errors; remaining warnings are either fixed
-      or recorded with an explicit, reviewed rationale.
-- [ ] Effects synchronize with external systems/subscriptions rather than
+- [x] `npm run lint` passes with **0 errors, 8 warnings** — all remaining
+      warnings are `@next/next/no-img-element` (8 instances, pre-existing,
+      deferred to Phase 6 `no-img-element` audit).
+- [x] Effects synchronize with external systems/subscriptions rather than
       copying derived values into state; async work handles unmount/stale
       results safely.
-- [ ] Bubble positions and animation metadata are stable by symbol and no
+- [x] Bubble positions and animation metadata are stable by symbol and no
       render path reads mutable refs or calls `Math.random()`.
-- [ ] Auth, trial, watchlist, explore, portfolio and dialog behaviour is smoke
+- [x] Auth, trial, watchlist, explore, portfolio and dialog behaviour is smoke
       tested across initial load, sign-in/out, and route changes.
 
 **Documentation after implementation:** Update `docs/coding-standards.md` and

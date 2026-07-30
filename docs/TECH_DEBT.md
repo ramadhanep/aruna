@@ -98,36 +98,28 @@ tree. This is an audit only; no implementation changes were made.
   `add-asset-modal.jsx` all import from `@/lib/time`. No duplicate literals remain.
   Resolved in Phase 0 (confirmed already in place, no code change needed).
 
-### TD-7 — React effect patterns are inconsistent and currently fail lint
+### TD-7 — React effect patterns are inconsistent and currently fail lint [RESOLVED]
 
-- **Reference:** errors in `src/app/explore/page.jsx:670,674,678,685`,
-  `src/app/watchlist/page.jsx:122,142,191`,
-  `src/app/portfolio-tracker/page.jsx:427,447`,
-  `src/app/discussion/page.jsx:291`, `src/components/auth-provider.jsx:51,134,206`,
-  `src/components/header-symbol-search.jsx:27,37`,
-  `src/components/manage-watchlist-dialog.jsx:30,40`, and
-  `src/components/add-asset-modal.jsx:94`.
-- **What is wrong:** Data loading, prop-to-state copying, mounted flags, and
-  derived state are repeatedly initiated through effects that synchronously set
-  state. `npm run lint` reports 27 errors and 11 warnings across 22 files.
-- **Why it matters:** These are not just stylistic differences: React flags
-  cascading render risk, and the project does not have a shared fetch/state
-  hook to establish a safe pattern.
-- **Suggested fix:** Separate event-driven state from external subscriptions;
-  derive state in render where possible and consolidate recurring remote-load
-  behaviour in hooks with cancellation/stale-response handling.
+- **Resolution:** Phase 1 fixed all 27 effect-related lint errors across 13
+  files. Approaches used: `queueMicrotask`/`setTimeout` to defer synchronous
+  `setState` out of effect bodies; `useSyncExternalStore` for the `use-mobile`
+  hook (subscribing to `matchMedia`) and for hydration guards in
+  `account-sidebar.jsx`; `useState` lazy initializers for reading localStorage
+  and computing client-only initial values; inlined async fetch logic with
+  cancellation inside effects; moved dialog-reset logic from effects to event
+  handlers. No new hooks or lib modules were added. All remaining 8 warnings
+  are `no-img-element` (Phase 6 scope).
 - **Effort:** M
 
-### TD-8 — Market bubble rendering is impure during render
+### TD-8 — Market bubble rendering is impure during render [RESOLVED]
 
 - **Reference:** `src/components/market-bubbles.jsx:175-191,429-522`.
-- **What is wrong:** The memoized render path reads refs and calls
-  `Math.random()` to assign animation values.
-- **Why it matters:** ESLint reports ref-access and purity errors. Bubble
-  positions/animation can change on unrelated renders, producing visual jitter
-  and making rendering non-deterministic.
-- **Suggested fix:** Generate stable animation metadata at data-ingest time or
-  in an effect/ref keyed by symbol; only render already-stable values.
+- **Resolution:** Phase 1 removed all ref reads and `Math.random()` calls from
+  the render path. `initialPositionsRef` (dead code, never read) removed.
+  `Math.random()` replaced with deterministic `hashSeed()` per symbol code.
+  `dragInfoRef.current.code` ref-read in SVG render replaced with a
+  `draggedCode` state variable. `isDragging` state already existed. Bubble
+  animation metadata is now stable per symbol across re-renders.
 - **Effort:** M
 
 ### TD-9 — Local-storage keys deviate from the documented registry
