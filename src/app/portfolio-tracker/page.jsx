@@ -14,11 +14,12 @@ import { useAuth } from '@/components/auth-provider';
 import { fetchEncodedJson } from '@/lib/api-client';
 import { TickerAvatar } from '@/components/ticker-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatTickerDisplay, formatUSD, formatIDR, formatSGD, formatByCurrency } from '@/lib/utils';
+import { formatTickerDisplay, formatIDR, formatByCurrency } from '@/lib/utils';
 import { useTrial } from '@/components/trial-provider';
 import { GoogleGlyph } from '@/components/google-glyph';
 import { getRecentUnixRange, MOBILE_BREAKPOINT } from '@/lib/time';
 import { loadPortfolio, savePortfolio } from '@/lib/portfolio-storage';
+import { computeHoldingsMetrics, sortHoldings, computePortfolioSummary, computeDigitalAllocation, computeCashTypeAllocation, formatValue, usdToIdr, usdToSgd } from '@/lib/portfolio-metrics';
 
 // Dynamic chart component to keep page light and avoid SSR issues
 const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { ssr: false });
@@ -658,24 +659,6 @@ export default function PortfolioTrackerPage() {
   // Fetch latest prices (simple batch sequential)
   // (Removed duplicated non-hoisted implementations)
 
-  // Compute portfolio metrics
-  const isIDR = useCallback((symbol) => symbol.endsWith('.JK'), []);
-  const isLot = useCallback((unit) => unit === 'lot', []);
-
-  // Convert a value expressed in its native currency to USD
-  const toUSD = useCallback((symbol, pricePerUnit) => {
-    if (pricePerUnit == null) return 0;
-    if (!isIDR(symbol)) return pricePerUnit; // already USD
-    if (fxRate <= 0) return pricePerUnit; // fallback treat as USD if rate missing
-    return pricePerUnit * fxRate; // IDR price * (USD per IDR) = USD
-  }, [fxRate, isIDR]);
-
-  // Get effective amount: if unit is 'lot', convert to shares by multiplying by 100
-  // (effective shares = amount * 100)
-  const getEffectiveAmount = useCallback((amount, unit) => {
-    return isLot(unit) ? amount * 100 : amount;
-  }, [isLot]);
-
   useEffect(() => {
     let cancelled = false;
 
@@ -745,8 +728,8 @@ export default function PortfolioTrackerPage() {
             }
             const activePrice = lastKnownPriceBySymbol[entry.symbol];
             if (typeof activePrice !== 'number') return;
-            const priceInUSD = isIDR(entry.symbol) && fxRate > 0 ? activePrice * fxRate : activePrice;
-            const effectiveAmount = getEffectiveAmount(entry.amount, entry.unit);
+            const priceInUSD = entry.symbol.endsWith('.JK') && fxRate > 0 ? activePrice * fxRate : activePrice;
+            const effectiveAmount = entry.unit === 'lot' ? entry.amount * 100 : entry.amount;
             dailyValue += priceInUSD * effectiveAmount;
           });
 
@@ -772,117 +755,19 @@ export default function PortfolioTrackerPage() {
     return () => {
       cancelled = true;
     };
-  }, [entries, fxRate, getEffectiveAmount, isIDR]);
-
-  // Separate digital and cash assets
-  const digitalAssets = entries.filter(e => e.type !== 'cash');
-  const cashAssets = entries.filter(e => e.type === 'cash');
+  }, [entries, fxRate]);
 
   const holdingsWithMetrics = useMemo(() => {
-    return entries.map((entry, index) => {
-      const isCash = entry.type === 'cash';
-      const effectiveAmount = isCash ? 1 : getEffectiveAmount(entry.amount, entry.unit);
-      const baseValueUSD = isCash
-        ? entry.avgPrice * entry.amount
-        : toUSD(entry.symbol, entry.avgPrice) * effectiveAmount;
-      const livePrice = priceMap[entry.symbol];
-      const currentValueUSD = isCash
-        ? baseValueUSD
-        : (livePrice != null
-          ? toUSD(entry.symbol, livePrice) * effectiveAmount
-          : baseValueUSD);
-      const pnl = currentValueUSD - baseValueUSD;
-      const cashDisplayAmount = isCash
-        ? (typeof entry.nativeAmount === 'number'
-          ? entry.nativeAmount
-          : (entry.cashCurrency === 'IDR' && fxRate > 0
-            ? baseValueUSD / fxRate
-            : (entry.cashCurrency === 'SGD' && sgdPerUsd > 0
-              ? baseValueUSD * sgdPerUsd
-              : baseValueUSD)))
-        : null;
-
-      return {
-        entry,
-        index,
-        isCash,
-        effectiveAmount,
-        baseValueUSD,
-        currentValueUSD,
-        pnl,
-        cashDisplayAmount,
-      };
-    });
-  }, [entries, priceMap, fxRate, sgdPerUsd, getEffectiveAmount, toUSD]);
+    return computeHoldingsMetrics(entries, priceMap, fxRate, sgdPerUsd);
+  }, [entries, priceMap, fxRate, sgdPerUsd]);
 
   const sortedHoldings = useMemo(() => {
-    const digital = holdingsWithMetrics.filter((item) => !item.isCash);
-    const cash = holdingsWithMetrics.filter((item) => item.isCash);
-
-    const compareAlphaDigital = (a, b) =>
-      (a.entry.symbol || '').localeCompare(b.entry.symbol || '');
-    const compareAlphaCash = (a, b) =>
-      (a.entry.category || a.entry.symbol || '').localeCompare(
-        b.entry.category || b.entry.symbol || ''
-      );
-
-    const sortWithFallback = (arr, comparator, fallback) => {
-      arr.sort((a, b) => {
-        const result = comparator(a, b);
-        if (result !== 0) return result;
-        return fallback(a, b);
-      });
-    };
-
-    if (holdingsSort === 'market') {
-      sortWithFallback(
-        digital,
-        (a, b) => b.currentValueUSD - a.currentValueUSD,
-        compareAlphaDigital
-      );
-      sortWithFallback(
-        cash,
-        (a, b) => b.currentValueUSD - a.currentValueUSD,
-        compareAlphaCash
-      );
-    } else if (holdingsSort === 'pnl') {
-      sortWithFallback(
-        digital,
-        (a, b) => (b.pnl ?? 0) - (a.pnl ?? 0),
-        compareAlphaDigital
-      );
-      sortWithFallback(
-        cash,
-        (a, b) => (b.pnl ?? 0) - (a.pnl ?? 0),
-        compareAlphaCash
-      );
-    } else {
-      sortWithFallback(digital, compareAlphaDigital, compareAlphaDigital);
-      sortWithFallback(cash, compareAlphaCash, compareAlphaCash);
-    }
-
-    return [...digital, ...cash];
+    return sortHoldings(holdingsWithMetrics, holdingsSort);
   }, [holdingsWithMetrics, holdingsSort]);
 
-  // Calculate digital assets metrics (in USD)
-  const digitalCost = digitalAssets.reduce((sum, e) => {
-    const effectiveAmount = getEffectiveAmount(e.amount, e.unit);
-    return sum + toUSD(e.symbol, e.avgPrice) * effectiveAmount;
-  }, 0);
-
-  const digitalMarket = digitalAssets.reduce((sum, e) => {
-    const live = priceMap[e.symbol];
-    const costOrLive = live != null ? live : e.avgPrice;
-    const effectiveAmount = getEffectiveAmount(e.amount, e.unit);
-    return sum + toUSD(e.symbol, costOrLive) * effectiveAmount;
-  }, 0);
-
-  const digitalPnL = digitalMarket - digitalCost;
-
-  // Calculate total cash (already in USD)
-  const totalCash = cashAssets.reduce((sum, e) => {
-    return sum + e.avgPrice * e.amount;
-  }, 0);
+  const { digitalMarket, digitalPnL, totalCash, totalNetWorth, totalPnL } = useMemo(() => {
+    return computePortfolioSummary(entries, priceMap, fxRate, sgdPerUsd);
+  }, [entries, priceMap, fxRate, sgdPerUsd]);
 
   // Holdings allocation for chart
   const holdingsAllocation = useMemo(() => {
@@ -895,95 +780,19 @@ export default function PortfolioTrackerPage() {
   }, [holdingsWithMetrics]);
 
   const digitalAllocation = useMemo(() => {
-    const digitalHoldings = holdingsWithMetrics.filter((h) => !h.isCash);
-    return digitalHoldings.map((h) => {
-      return {
-        name: formatTickerDisplay(h.entry.symbol),
-        symbol: h.entry.symbol,
-        logo: logoMap[h.entry.symbol] || null,
-        value: h.currentValueUSD,
-      };
-    });
+    return computeDigitalAllocation(holdingsWithMetrics, logoMap);
   }, [holdingsWithMetrics, logoMap]);
 
   const cashTypeAllocation = useMemo(() => {
-    const totals = new Map();
-    holdingsWithMetrics
-      .filter((h) => h.isCash)
-      .forEach((h) => {
-        const code = h.entry.cashCurrency || 'USD';
-        const prev = totals.get(code) || 0;
-        totals.set(code, prev + h.currentValueUSD);
-      });
-
-    return [...totals.entries()].map(([code, value]) => {
-      return {
-        name: code,
-        value,
-      };
-    });
+    return computeCashTypeAllocation(holdingsWithMetrics);
   }, [holdingsWithMetrics]);
-
-  // Total Net Worth
-  const totalNetWorth = digitalMarket + totalCash;
-  const totalPnL = digitalPnL;
-
-  // Convert USD amount to IDR for display
-  function usdToIdr(usdAmount) {
-    if (idrPerUsd <= 0) return 0;
-    return usdAmount * idrPerUsd;
-  }
-  function usdToSgd(usdAmount) {
-    if (sgdPerUsd <= 0) return 0;
-    return usdAmount * sgdPerUsd;
-  }
-
-  // Format value based on selected currency
-  // ponytail: state-coupled (depends on currency/idrPerUsd/sgdPerUsd), stays local until Phase 3 extraction
-  function formatValue(usdAmount) {
-    const idrAmount = usdToIdr(usdAmount);
-    const sgdAmount = usdToSgd(usdAmount);
-    if (currency === 'IDR') {
-      if (idrPerUsd <= 0) {
-        return {
-          primary: formatUSD(usdAmount),
-          secondary: 'IDR FX unavailable',
-          tertiary: formatSGD(sgdAmount),
-        };
-      }
-      return {
-        primary: formatIDR(idrAmount),
-        secondary: formatUSD(usdAmount),
-        tertiary: formatSGD(sgdAmount),
-      };
-    }
-    if (currency === 'SGD') {
-      if (sgdPerUsd <= 0) {
-        return {
-          primary: formatUSD(usdAmount),
-          secondary: 'SGD FX unavailable',
-          tertiary: formatIDR(idrAmount),
-        };
-      }
-      return {
-        primary: formatSGD(sgdAmount),
-        secondary: formatUSD(usdAmount),
-        tertiary: formatIDR(idrAmount),
-      };
-    }
-    return {
-      primary: formatUSD(usdAmount),
-      secondary: formatIDR(idrAmount),
-      tertiary: formatSGD(sgdAmount),
-    };
-  }
 
   const hiddenPrimaryToken = '••••••';
   const hiddenSecondaryToken = 'Hidden';
   const getDisplayValue = (usdAmount) =>
   (isPortfolioHidden
     ? { primary: hiddenPrimaryToken, secondary: hiddenSecondaryToken, tertiary: hiddenSecondaryToken }
-    : formatValue(usdAmount));
+    : formatValue(usdAmount, currency, idrPerUsd, sgdPerUsd));
   const getPnLColor = (value) => (isPortfolioHidden ? 'text-muted-foreground' : value >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400');
   const totalNetWorthDisplay = getDisplayValue(totalNetWorth);
   const totalPnLDisplay = getDisplayValue(totalPnL);
