@@ -20,13 +20,7 @@ import {
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { TickerAvatar } from "@/components/ticker-avatar";
-import { formatMarketCap, formatPrice } from "@/lib/utils";
-
-function formatPercent(value) {
-  if (value === null || value === undefined) return "-";
-  const prefix = value > 0 ? "+" : "";
-  return `${prefix}${value.toFixed(2)}%`;
-}
+import { formatMarketCap, formatPercent, formatPrice } from "@/lib/utils";
 
 function SegmentControl({ value, onChange, sortBy, onSortChange }) {
   return (
@@ -218,14 +212,14 @@ function StockCard({ stock, isLocked = false }) {
             <p className="text-[10px] text-muted-foreground uppercase tracking-wide">1 Week</p>
             <p className={`text-xs font-semibold flex items-center gap-0.5 ${stock.weekChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {stock.weekChange >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-              {formatPercent(stock.weekChange)}
+              {formatPercent(stock.weekChange, { fractionDigits: 2, fallback: "-", showPositiveSign: true })}
             </p>
           </div>
           <div className="space-y-0.5">
             <p className="text-[10px] text-muted-foreground uppercase tracking-wide">1 Month</p>
             <p className={`text-xs font-semibold flex items-center gap-0.5 ${stock.monthChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {stock.monthChange >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
-              {formatPercent(stock.monthChange)}
+              {formatPercent(stock.monthChange, { fractionDigits: 2, fallback: "-", showPositiveSign: true })}
             </p>
           </div>
         </div>
@@ -249,7 +243,7 @@ function MiniStockCard({ stock }) {
       <div className="flex-1 min-w-0">
         <p className="text-xs font-bold truncate">{stock.code}</p>
         <p className={`text-[10px] font-semibold ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
-          {formatPercent(stock.weekChange)}
+          {formatPercent(stock.weekChange, { fractionDigits: 2, fallback: "-", showPositiveSign: true })}
         </p>
       </div>
     </div>

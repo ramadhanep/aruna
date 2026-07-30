@@ -1,6 +1,5 @@
 import * as React from "react"
-
-const MOBILE_BREAKPOINT = 1024
+import { MOBILE_BREAKPOINT } from "@/lib/time"
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = React.useState(undefined)

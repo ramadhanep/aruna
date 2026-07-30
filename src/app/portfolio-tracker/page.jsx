@@ -14,9 +14,10 @@ import { useAuth } from '@/components/auth-provider';
 import { fetchEncodedJson } from '@/lib/api-client';
 import { TickerAvatar } from '@/components/ticker-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatTickerDisplay } from '@/lib/utils';
+import { formatTickerDisplay, formatUSD, formatIDR, formatSGD, formatByCurrency } from '@/lib/utils';
 import { useTrial } from '@/components/trial-provider';
 import { GoogleGlyph } from '@/components/google-glyph';
+import { getRecentUnixRange, MOBILE_BREAKPOINT } from '@/lib/time';
 
 // Dynamic chart component to keep page light and avoid SSR issues
 const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { ssr: false });
@@ -26,7 +27,6 @@ const PORTFOLIO_CURRENCY_KEY = 'portfolio_currency';
 const PORTFOLIO_VISIBILITY_KEY = 'portfolio_visibility_hidden';
 const GUEST_PORTFOLIO_KEY = 'aruna_guest_portfolio';
 const GUEST_PORTFOLIO_SEEDED_KEY = 'aruna_guest_portfolio_seeded';
-const MOBILE_BREAKPOINT = 1024;
 const CURRENCY_META = {
   IDR: {
     code: 'IDR',
@@ -271,8 +271,7 @@ export default function PortfolioTrackerPage() {
   // Fetch latest prices (simple batch sequential)
   const fetchPrice = useCallback(async (symbol) => {
     try {
-      const endDate = Math.floor(Date.now() / 1000);
-      const startDate = endDate - 60 * 60 * 24 * 5; // last ~5 days window
+      const { startDate, endDate } = getRecentUnixRange();
       const { response, data } = await fetchEncodedJson(
         `/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`
       );
@@ -314,8 +313,7 @@ export default function PortfolioTrackerPage() {
   const [loadingSearch, setLoadingSearch] = useState(false);
 
   const refreshFxRates = useCallback(async () => {
-    const endDate = Math.floor(Date.now() / 1000);
-    const startDate = endDate - 60 * 60 * 24 * 5;
+    const { startDate, endDate } = getRecentUnixRange();
 
     const [idrResponse, sgdResponse] = await Promise.all([
       fetchEncodedJson(`/api/finance?symbol=IDR=X&startDate=${startDate}&endDate=${endDate}`),
@@ -1017,16 +1015,6 @@ export default function PortfolioTrackerPage() {
   const totalNetWorth = digitalMarket + totalCash;
   const totalPnL = digitalPnL;
 
-  function formatUSD(v) {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
-  }
-  function formatIDR(v) {
-    return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v);
-  }
-  function formatSGD(v) {
-    return new Intl.NumberFormat('en-SG', { style: 'currency', currency: 'SGD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
-  }
-
   // Convert USD amount to IDR for display
   function usdToIdr(usdAmount) {
     if (idrPerUsd <= 0) return 0;
@@ -1037,13 +1025,8 @@ export default function PortfolioTrackerPage() {
     return usdAmount * sgdPerUsd;
   }
 
-  function formatByCurrency(code, amount) {
-    if (code === 'IDR') return formatIDR(amount);
-    if (code === 'SGD') return formatSGD(amount);
-    return formatUSD(amount);
-  }
-
   // Format value based on selected currency
+  // ponytail: state-coupled (depends on currency/idrPerUsd/sgdPerUsd), stays local until Phase 3 extraction
   function formatValue(usdAmount) {
     const idrAmount = usdToIdr(usdAmount);
     const sgdAmount = usdToSgd(usdAmount);
@@ -1094,7 +1077,6 @@ export default function PortfolioTrackerPage() {
   const digitalMarketDisplay = getDisplayValue(digitalMarket);
   const digitalPnLDisplay = getDisplayValue(digitalPnL);
   const totalCashDisplay = getDisplayValue(totalCash);
-  const selectedCurrencyMeta = CURRENCY_META[currency] || CURRENCY_META.IDR;
   const idrFxDisplay = idrPerUsd > 0 ? formatIDR(idrPerUsd) : 'loading...';
 
   if (authLoading) {
@@ -1231,7 +1213,6 @@ export default function PortfolioTrackerPage() {
                 <p className="text-sm text-muted-foreground mb-1">Total Net Worth</p>
                 <p className="text-xl font-bold tracking-tight">{totalNetWorthDisplay.primary}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{totalNetWorthDisplay.secondary}</p>
-                {/* {!isPortfolioHidden && <p className="text-[10px] text-muted-foreground mt-0.5">{totalNetWorthDisplay.tertiary}</p>} */}
                 <div className="mt-1 flex items-center gap-1">
                   <span className={`text-xs font-medium ${getPnLColor(totalPnL)}`}>
                     {isPortfolioHidden ? hiddenSecondaryToken : `${totalPnL >= 0 ? '+' : ''}${totalPnLDisplay.primary}`}
@@ -1256,22 +1237,6 @@ export default function PortfolioTrackerPage() {
                 )}
               </div>
             </div>
-
-            {/* <div className="rounded-2xl border border-border/40 bg-muted/20 p-3">
-              <div className="flex items-start gap-2">
-                <div>
-                  <p className="text-xs font-medium">{selectedCurrencyMeta.flag} {selectedCurrencyMeta.code} · {selectedCurrencyMeta.label}</p>
-                  <p className="text-[11px] text-muted-foreground">{selectedCurrencyMeta.description}</p>
-                </div>
-              </div>
-              <div className="mt-2 grid grid-cols-1 gap-1.5">
-                {SUPPORTED_CURRENCIES.map((code) => (
-                  <p key={code} className="text-[10px] text-muted-foreground">
-                    {CURRENCY_META[code].flag} {CURRENCY_META[code].code}: {CURRENCY_META[code].label}
-                  </p>
-                ))}
-              </div>
-            </div> */}
 
             <div className="flex flex-col gap-2">
               <div className="rounded-xl border border-border/20">

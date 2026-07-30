@@ -75,7 +75,7 @@ export function MobileBottomNav() {
 
   return (
     <nav
-      className={cn("fixed bottom-3 left-1/2 -translate-x-1/2 z-50 border border-border bg-card p-1.5 rounded-full transition-all duration-200 w-[300px]", isMinimized && "translate-y-2 -translate-x-1/2 opacity-95")}
+      className={cn("fixed bottom-safe left-1/2 -translate-x-1/2 z-50 border border-border bg-card p-1.5 rounded-full transition-all duration-200 w-[300px]", isMinimized && "translate-y-2 -translate-x-1/2 opacity-95")}
       style={{
         transformOrigin: "center bottom",
         willChange: "transform, opacity",

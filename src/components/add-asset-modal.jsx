@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } fr
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { fetchEncodedJson } from '@/lib/api-client';
 import { formatTickerDisplay } from '@/lib/utils';
+import { getRecentUnixRange } from '@/lib/time';
 
 async function searchSymbols(query) {
   if (!query) return [];
@@ -26,8 +27,7 @@ async function searchSymbols(query) {
 
 async function fetchPrice(symbol) {
   try {
-    const endDate = Math.floor(Date.now() / 1000);
-    const startDate = endDate - 60 * 60 * 24 * 5;
+    const { startDate, endDate } = getRecentUnixRange();
     const { response, data } = await fetchEncodedJson(
       `/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`
     );
@@ -60,8 +60,7 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
         setLoadingPrice(true);
         try {
           // Fetch name from Yahoo Finance
-          const endDate = Math.floor(Date.now() / 1000);
-          const startDate = endDate - 60 * 60 * 24 * 5;
+          const { startDate, endDate } = getRecentUnixRange();
           const { response, data } = await fetchEncodedJson(
             `/api/finance?symbol=${initialSymbol}&startDate=${startDate}&endDate=${endDate}`
           );

@@ -81,16 +81,16 @@
 │   │   ├── app-layout-client.jsx    # Layout shell (nav, sidebar, chrome)
 │   │   ├── auth-provider.jsx        # Auth context + watchlist/portfolio sync
 │   │   ├── account-sidebar.jsx      # Slide-out account panel
-│   │   ├── desktop-sidebar.jsx      # Desktop left navigation
 │   │   ├── desktop-navbar.jsx       # Desktop top navigation bar
 │   │   ├── mobile-bottom-nav.jsx    # Mobile bottom tab bar
 │   │   ├── header-symbol-search.jsx  # Global symbol search dialog
 │   │   ├── header-account-menu.jsx  # Mobile header account button
 │   │   ├── market-bubbles.jsx       # Canvas-based bubble visualization
-│   │   ├── market-canvas.jsx        # Landing page decoration
 │   │   ├── normal-candlestick-chart.jsx  # lightweight-charts wrapper
 │   │   ├── money-flow-card.jsx      # Expandable money flow report card
 │   │   ├── ticker-avatar.jsx        # Symbol logo with fallback
+│   │   ├── ticker-row.jsx           # Shared symbol row (logo, name, price, change)
+│   │   ├── ticker-row-skeleton.jsx  # Loading skeleton matching ticker-row.jsx
 │   │   ├── trending-marquee.jsx     # Auto-scrolling trending symbols
 │   │   ├── manage-watchlist-dialog.jsx  # Add/remove/reorder symbols
 │   │   ├── add-asset-modal.jsx      # Add asset to portfolio

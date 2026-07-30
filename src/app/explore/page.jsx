@@ -15,7 +15,7 @@ import { TickerRow } from "@/components/ticker-row";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { TrendingMarquee } from "@/components/trending-marquee";
 import { MiniChart } from "@/components/mini-chart";
-import { cn, formatTickerDisplay } from "@/lib/utils";
+import { cn, formatPercent, formatPrice, formatTickerDisplay } from "@/lib/utils";
 
 const SUPABASE_STORAGE_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public`;
 
@@ -215,21 +215,6 @@ function getCategoryDisplayOrder() {
   return CATEGORY_ORDER;
 }
 
-function formatCompactNumber(value) {
-  const numeric = Number(value || 0);
-  if (!Number.isFinite(numeric)) return "0";
-  return new Intl.NumberFormat("en-US", {
-    notation: "compact",
-    maximumFractionDigits: 2,
-  }).format(numeric);
-}
-
-function formatPercent(value, digits = 2) {
-  if (value == null || Number.isNaN(Number(value))) return "—";
-  const numeric = Number(value);
-  const sign = numeric > 0 ? "+" : "";
-  return `${sign}${numeric.toFixed(digits)}%`;
-}
 
 function formatLocalDateTimeLabel(value) {
   if (!value) return "";
@@ -297,13 +282,6 @@ function isSameCalendarDay(dateA, dateB = new Date()) {
   );
 }
 
-function formatPrice(value) {
-  if (value == null || Number.isNaN(Number(value))) return "—";
-  return Number(value).toLocaleString("en-US", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
 
 function normalizePick(item) {
   if (!item) return null;
@@ -428,7 +406,7 @@ function MarketPulseMarquee({ items }) {
               className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted/40 transition-colors"
             >
               <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
-              <span className="text-xs font-bold tabular-nums">{q ? formatPrice(q.price) : "—"}</span>
+              <span className="text-xs font-bold tabular-nums">{q ? formatPrice(q.price, { locale: "en-US", minimumFractionDigits: 2, maximumFractionDigits: 2, zeroIsEmpty: false }) : "—"}</span>
               {q && typeof q.changePercent === "number" ? (
                 <span className={`text-[11px] font-semibold flex items-center gap-0.5 ${isPos ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
                   {isPos ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
@@ -449,7 +427,7 @@ function MarketPulseMarquee({ items }) {
               className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted/40 transition-colors"
             >
               <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
-              <span className="text-xs font-bold tabular-nums">{q ? formatPrice(q.price) : "—"}</span>
+              <span className="text-xs font-bold tabular-nums">{q ? formatPrice(q.price, { locale: "en-US", minimumFractionDigits: 2, maximumFractionDigits: 2, zeroIsEmpty: false }) : "—"}</span>
               {q && typeof q.changePercent === "number" ? (
                 <span className={`text-[11px] font-semibold flex items-center gap-0.5 ${isPos ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
                   {isPos ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
@@ -1116,7 +1094,7 @@ export default function ExplorePage() {
                 className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted/40 transition-colors"
               >
                 <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
-                <span className="text-xs font-bold tabular-nums">{q ? formatPrice(q.price) : "—"}</span>
+                <span className="text-xs font-bold tabular-nums">{q ? formatPrice(q.price, { locale: "en-US", minimumFractionDigits: 2, maximumFractionDigits: 2, zeroIsEmpty: false }) : "—"}</span>
                 {q && typeof q.changePercent === "number" ? (
                   <span className={`text-[11px] font-semibold flex items-center gap-0.5 ${isPos ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
                     {isPos ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
@@ -1216,7 +1194,7 @@ export default function ExplorePage() {
                   <div className="mt-3 flex items-end justify-between gap-2">
                     <div>
                       <p className="text-base font-bold text-foreground tabular-nums">
-                        {q ? formatPrice(q.price) : "—"}
+                        {q ? formatPrice(q.price, { locale: "en-US", minimumFractionDigits: 2, maximumFractionDigits: 2, zeroIsEmpty: false }) : "—"}
                       </p>
                       <p className={`text-xs font-semibold mt-0.5 ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400"}`}>
                         {tfChange !== null
@@ -1451,7 +1429,7 @@ export default function ExplorePage() {
                   )}
                   <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
                     {typeof section.averageChange === "number" ? (
-                      <span>Average move {formatPercent(section.averageChange)}</span>
+                      <span>Average move {formatPercent(section.averageChange, { fractionDigits: 2, showPositiveSign: true })}</span>
                     ) : null}
                     {section.snapshot?.metadata?.batchProcessed != null && (
                       <span>Batch {section.snapshot.metadata.batchProcessed} symbols</span>

@@ -97,7 +97,7 @@ export function AppLayoutClient({ children }) {
         
         {/* Mobile Header (Hidden on lg+) */}
         {!hideDefaultMobileChrome && !shouldBlockProtectedContent && (
-          <header className="lg:hidden relative z-40 shrink-0 border-b border-border bg-background/95 backdrop-blur">
+          <header className="pt-safe lg:hidden relative z-40 shrink-0 border-b border-border bg-background/95 backdrop-blur">
             <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3 px-4">
               <HeaderAccountMenu onOpenSidebar={() => setSidebarOpen(true)} />
               <div className="flex flex-1 items-center justify-center gap-1.5">
@@ -110,7 +110,7 @@ export function AppLayoutClient({ children }) {
         )}
 
         {needsBackHeader && !shouldBlockProtectedContent && (
-          <header className="lg:hidden relative z-40 shrink-0 border-b border-border bg-background/95 backdrop-blur">
+          <header className="pt-safe lg:hidden relative z-40 shrink-0 border-b border-border bg-background/95 backdrop-blur">
             <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between px-3">
               <button
                 type="button"
@@ -126,7 +126,7 @@ export function AppLayoutClient({ children }) {
           </header>
         )}
         
-        <main className={`flex-1 ${hideDefaultMobileChrome ? "pb-0" : "pb-24"} lg:pb-8 relative z-0 w-full ${isLandingPage ? "" : "flex justify-center"}`}>
+        <main className={`flex-1 ${hideDefaultMobileChrome ? "pb-0" : "pb-nav-safe"} lg:pb-8 relative z-0 w-full ${isLandingPage ? "" : "flex justify-center"}`}>
           <div className={isLandingPage ? "w-full" : "p-4 w-full max-w-[768px] lg:max-w-[1400px] lg:px-6"}>
             {mainContent}
           </div>

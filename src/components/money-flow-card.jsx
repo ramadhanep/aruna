@@ -7,7 +7,7 @@ import { AccordionItem, AccordionTrigger, AccordionContent } from "@/components/
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { Badge } from "@/components/ui/badge";
-import { formatTickerDisplay } from "@/lib/utils";
+import { formatCompactNumber, formatPercent, formatPrice, formatTickerDisplay } from "@/lib/utils";
 
 const signalStyles = {
   "Strong Accumulation": "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
@@ -22,29 +22,6 @@ const riskStyles = {
   HIGH: "bg-orange-500/10 text-orange-500 border-orange-500/20",
   CRITICAL: "bg-rose-500/10 text-rose-500 border-rose-500/20",
 };
-
-function formatCompactNumber(value) {
-  const numeric = Number(value || 0);
-  if (!Number.isFinite(numeric)) return "0";
-  return new Intl.NumberFormat("en-US", {
-    notation: "compact",
-    maximumFractionDigits: 1,
-  }).format(numeric);
-}
-
-function formatPercent(value, fractionDigits = 2) {
-  const numeric = Number(value || 0);
-  if (!Number.isFinite(numeric)) return "0.00%";
-  return `${numeric.toFixed(fractionDigits)}%`;
-}
-
-function formatPrice(value) {
-  if (value == null || Number.isNaN(Number(value))) return "—";
-  return Number(value).toLocaleString("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  });
-}
 
 function SignalBadge({ signal }) {
   const className = signalStyles[signal] || signalStyles.Neutral;
@@ -168,7 +145,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                 <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">Price</p>
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold tabular-nums">
-                    {formatPrice(report.current_price || 0)}
+                    {formatPrice(report.current_price || 0, { locale: "en-US", zeroIsEmpty: false })}
                   </p>
                 </div>
               </div>
@@ -194,7 +171,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
               <>
                 <div className="flex items-center justify-between p-2 bg-black/5 dark:bg-white/5 rounded-lg">
                   <span className="text-[10px] text-muted-foreground dark:text-white/70">Top 3 Buy</span>
-                  <span className="text-xs font-semibold">{formatPercent(report.top3_percent)}</span>
+                  <span className="text-xs font-semibold">{formatPercent(report.top3_percent, { fractionDigits: 2, nullAsZero: true })}</span>
                 </div>
 
                 <div className="space-y-1.5">
@@ -204,7 +181,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                   </div>
                   <div className="flex items-center justify-between text-[10px]">
                     <span className="text-muted-foreground dark:text-white/70">Absorption Strength</span>
-                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatPercent(report?.absorption_strength?.value)}</span>
+                    <span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatPercent(report?.absorption_strength?.value, { fractionDigits: 2, nullAsZero: true })}</span>
                   </div>
                 </div>
 
@@ -245,7 +222,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                 </div>
                 <div className="rounded-lg px-2 py-1.5">
                   <p className="text-muted-foreground">Concentration</p>
-                  <p className="font-semibold">{formatPercent(report?.broker_concentration?.top3_buy_percent)}</p>
+                  <p className="font-semibold">{formatPercent(report?.broker_concentration?.top3_buy_percent, { fractionDigits: 2, nullAsZero: true })}</p>
                   <p className="text-[10px] text-muted-foreground">{report?.broker_concentration?.interpretation || "-"}</p>
                 </div>
               </div>
@@ -298,7 +275,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                 <div className="rounded-lg px-2 py-1.5">
                   <p className="text-muted-foreground">Price vs MA20</p>
                   <p className={`font-semibold ${Number(screenerSnapshot?.derived?.price_vs_ma20_pct || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
-                    {formatPercent(screenerSnapshot?.derived?.price_vs_ma20_pct)}
+                    {formatPercent(screenerSnapshot?.derived?.price_vs_ma20_pct, { fractionDigits: 2, nullAsZero: true })}
                   </p>
                 </div>
                 <div className="rounded-lg px-2 py-1.5">
@@ -374,12 +351,12 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                         {/* Buy Side */}
                         <TableCell className="text-[11px] font-bold px-2.5 text-emerald-600 dark:text-emerald-400">{row.bCode}</TableCell>
                         <TableCell className="text-[11px] text-right px-2.5 tabular-nums">{row.bVal === 0 ? '-' : formatCompactNumber(row.bVal)}</TableCell>
-                        <TableCell className="text-[11px] text-right px-2.5 font-medium text-emerald-600 dark:text-emerald-400 tabular-nums">{row.bAvg > 0 ? formatPrice(row.bAvg) : '-'}</TableCell>
+                        <TableCell className="text-[11px] text-right px-2.5 font-medium text-emerald-600 dark:text-emerald-400 tabular-nums">{row.bAvg > 0 ? formatPrice(row.bAvg, { locale: "en-US", zeroIsEmpty: false }) : '-'}</TableCell>
 
                         {/* Sell Side */}
                         <TableCell className="text-[11px] font-bold text-center px-2.5 border-l border-border/20 text-rose-500 dark:text-rose-400">{row.sCode}</TableCell>
                         <TableCell className="text-[11px] text-right px-2.5 text-rose-500 dark:text-rose-400 tabular-nums">{row.sVal === 0 ? '-' : formatCompactNumber(row.sVal)}</TableCell>
-                        <TableCell className="text-[11px] text-right px-2.5 font-medium text-rose-600 dark:text-rose-400 tabular-nums">{row.sAvg > 0 ? formatPrice(row.sAvg) : '-'}</TableCell>
+                        <TableCell className="text-[11px] text-right px-2.5 font-medium text-rose-600 dark:text-rose-400 tabular-nums">{row.sAvg > 0 ? formatPrice(row.sAvg, { locale: "en-US", zeroIsEmpty: false }) : '-'}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

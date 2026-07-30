@@ -380,17 +380,15 @@ export function MarketBubbles({ fullScreen = false }) {
   if (fullScreen) {
     return (
       <div className="w-full h-screen flex flex-col overflow-hidden" ref={containerRef}>
-        <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 gap-2">
-          <Link href="/" className="flex items-center gap-2 shrink-0">
-            <div className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
-              <ArrowLeft className="size-6 text-muted-foreground" />
-            </div>
+        <div className="pt-safe absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 gap-2">
+          <Link href="/" className="flex h-11 w-11 items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 transition-colors shrink-0" aria-label="Go back">
+            <ArrowLeft className="size-6 text-muted-foreground" />
           </Link>
 
           <div className="flex-1 flex gap-2 p-1 bg-muted/30 rounded-full max-w-[200px]">
             <button
               onClick={() => setTimeframe("weekly")}
-              className={`py-2 flex-1 rounded-full text-xs font-semibold transition-all ${timeframe === "weekly"
+              className={`min-h-11 flex items-center justify-center flex-1 rounded-full text-xs font-semibold transition-all ${timeframe === "weekly"
                   ? "bg-card border-border text-foreground dark:text-white"
                   : "hover:bg-muted"
                 }`}
@@ -399,7 +397,7 @@ export function MarketBubbles({ fullScreen = false }) {
             </button>
             <button
               onClick={() => setTimeframe("monthly")}
-              className={`py-2 flex-1 rounded-full text-xs font-semibold transition-all ${timeframe === "monthly"
+              className={`min-h-11 flex items-center justify-center flex-1 rounded-full text-xs font-semibold transition-all ${timeframe === "monthly"
                   ? "bg-card border-border text-foreground dark:text-white"
                   : "hover:bg-muted"
                 }`}
@@ -410,8 +408,8 @@ export function MarketBubbles({ fullScreen = false }) {
 
           <button
             onClick={handleDownload}
-            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors shrink-0"
-            title="Download as image"
+            className="h-11 w-11 rounded-lg bg-white/5 hover:bg-white/10 transition-colors shrink-0"
+            aria-label="Download as image"
           >
             <Download className="size-6 text-muted-foreground" />
           </button>

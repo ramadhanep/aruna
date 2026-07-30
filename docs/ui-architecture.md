@@ -17,7 +17,6 @@ RootLayout (src/app/layout.jsx)
     ├── Mobile Header (hidden on lg+)
     ├── Page Content
     ├── MobileBottomNav (hidden on lg+)
-    └── DesktopSidebar (optional, hidden)
 ```
 
 ## Responsive Breakpoints
@@ -63,7 +62,7 @@ RootLayout (src/app/layout.jsx)
 
 - **Framework**: Tailwind CSS v4.
 - **Design tokens**: CSS custom properties in `globals.css` (`:root` and `.dark`).
-- **Color space**: `oklch()`.
+- **Color space**: plain hex values (e.g. `--background: #f7f7f3`, `.dark`'s `--background: #000000`), not `oklch()`. Monochrome palette with one accent blue (`#3b82f6`) used sparingly for rings/links.
 - **Theme**: Dark by default (`defaultTheme="dark"`).
 - **Component variants**: `class-variance-authority` (cva) for button variants.
 - **Class merging**: `cn()` utility (clsx + tailwind-merge).
@@ -107,6 +106,27 @@ Backdrop blur utility classes defined as custom CSS.
   animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 ```
+
+## Safe-Area Support (PWA)
+
+- `layout.jsx` viewport metadata includes `viewportFit: 'cover'` — enables
+  `env(safe-area-inset-*)` in CSS for installed PWAs on notched iOS devices.
+- Utility classes in `globals.css`:
+  - `.pt-safe` — `padding-top: max(0px, env(safe-area-inset-top))`
+  - `.pb-safe` — `padding-bottom: max(0.5rem, env(safe-area-inset-bottom))`
+  - `.bottom-safe` — `bottom: max(0.75rem, env(safe-area-inset-bottom))`
+  - `.pb-nav-safe` — `padding-bottom: max(6rem, calc(6rem + env(safe-area-inset-bottom)))`
+  - `.top-safe-header` — `top: calc(3.5rem + env(safe-area-inset-top))`
+- Fixed-position headers and full-screen tool chrome must use `.pt-safe`.
+  Bottom navigation must use `.bottom-safe` or `.pb-safe`.
+- Centered modals (dialog) do not need safe-area classes.
+
+## Mobile Touch Targets
+
+- Interactive controls in fixed tool headers must meet 44×44 CSS px minimum
+  touch target (Apple HIG / WCAG). Achieved via `h-11 w-11` (44px) for icon
+  buttons, `min-h-11` for text toggle buttons.
+- 24px icon size is preserved inside 44px hit areas.
 
 ## Component Architecture
 

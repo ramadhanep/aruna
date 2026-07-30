@@ -54,38 +54,6 @@ function LoadingState() {
   );
 }
 
-function ScoreSummary({ summary }) {
-  if (!summary) return null;
-
-  return (
-    <div className="grid grid-cols-2 gap-2">
-      <Card className="rounded-2xl border-emerald-500/20 bg-emerald-500/5">
-        <CardContent className="p-3">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Avg Score</p>
-          <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{Number(summary.average_score || 0).toFixed(2)}</p>
-        </CardContent>
-      </Card>
-      <Card className="rounded-2xl border-emerald-500/20 bg-emerald-500/5">
-        <CardContent className="p-3">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Total Stocks</p>
-          <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300">{summary.total_stocks || 0}</p>
-        </CardContent>
-      </Card>
-      <Card className="rounded-2xl border-emerald-500/20 bg-emerald-500/5">
-        <CardContent className="p-3">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Avg Absorption</p>
-          <p className="text-sm font-semibold">{Number(summary.average_absorption || 0).toFixed(2)}%</p>
-        </CardContent>
-      </Card>
-      <Card className="rounded-2xl border-amber-500/20 bg-amber-500/5">
-        <CardContent className="p-3">
-          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">High Risk</p>
-          <p className="text-sm font-semibold">{summary.high_risk_count || 0}</p>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
 const timeframeOptions = [
   { key: "weekly", label: "Weekly" },
   { key: "monthly", label: "Monthly" },
@@ -111,37 +79,6 @@ const riskVariantMap = {
   HIGH: "danger",
   CRITICAL: "danger",
 };
-
-function formatCompactNumber(value) {
-  const numeric = Number(value || 0);
-  if (!Number.isFinite(numeric)) return "0";
-  return new Intl.NumberFormat("en-US", {
-    notation: "compact",
-    maximumFractionDigits: 2,
-  }).format(numeric);
-}
-
-function formatPercent(value, fractionDigits = 2) {
-  const numeric = Number(value || 0);
-  if (!Number.isFinite(numeric)) return "0.00%";
-  return `${numeric.toFixed(fractionDigits)}%`;
-}
-
-function formatDecimalPercent(value, fractionDigits = 2) {
-  const numeric = Number(value || 0) * 100;
-  if (!Number.isFinite(numeric)) return "0.00%";
-  return `${numeric >= 0 ? "+" : ""}${numeric.toFixed(fractionDigits)}%`;
-}
-
-function formatCurrency(value) {
-  const numeric = Number(value || 0);
-  if (!Number.isFinite(numeric)) return "Rp 0";
-  return `Rp ${new Intl.NumberFormat("en-US", {
-    notation: "compact",
-    maximumFractionDigits: 2,
-  }).format(numeric)}`;
-}
-
 
 function ReportList({ reports }) {
   if (!reports.length) {
@@ -169,8 +106,6 @@ export default function MoneyFlowPage() {
   const [timeframe, setTimeframe] = useState("weekly");
   const [sortBy, setSortBy] = useState("score");
   const [sortOrder, setSortOrder] = useState("desc");
-  const [minScoreInput, setMinScoreInput] = useState("0");
-  const [minScore, setMinScore] = useState(0);
   const [payload, setPayload] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -186,7 +121,7 @@ export default function MoneyFlowPage() {
           timeframe,
           sort: sortBy,
           order: sortOrder,
-          min_score: String(minScore),
+          min_score: "0",
           limit: "150",
         });
 
@@ -214,7 +149,7 @@ export default function MoneyFlowPage() {
     return () => {
       cancelled = true;
     };
-  }, [timeframe, sortBy, sortOrder, minScore]);
+  }, [timeframe, sortBy, sortOrder]);
 
   const reports = useMemo(() => payload?.reports || [], [payload]);
   const positiveSignals = useMemo(
@@ -226,11 +161,6 @@ export default function MoneyFlowPage() {
     const total = reports.reduce((sum, item) => sum + Number(item?.volume_spike || 0), 0);
     return total / reports.length;
   }, [reports]);
-  const activeSortLabel = useMemo(
-    () => sortOptions.find((option) => option.key === sortBy)?.label || "Money Flow Score",
-    [sortBy]
-  );
-
   return (
     <div className="flex flex-col gap-4 pb-4">
       <div className="flex flex-col gap-4">
@@ -290,39 +220,6 @@ export default function MoneyFlowPage() {
             </DropdownMenu>
           </div>
 
-          {/* <div className="hidden lg:flex items-center gap-2 rounded-2xl border border-border/40 bg-background/80 p-2">
-            <div className="w-36">
-              <Input
-                value={minScoreInput}
-                onChange={(event) => setMinScoreInput(event.target.value)}
-                placeholder="Min score"
-                className="h-9 rounded-xl border-border/40 text-sm"
-              />
-            </div>
-            <Button
-              type="button"
-              size="sm"
-              className="rounded-xl"
-              onClick={() => setMinScore(Number(minScoreInput || 0))}
-            >
-              Apply
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="rounded-xl text-xs"
-              onClick={() => {
-                setMinScoreInput("0");
-                setMinScore(0);
-              }}
-            >
-              Reset
-            </Button>
-            <div className="ml-auto text-xs text-muted-foreground">
-              Sort: <span className="font-semibold text-foreground">{activeSortLabel}</span>
-            </div>
-          </div> */}
         </div>
       </div>
 
@@ -364,8 +261,6 @@ export default function MoneyFlowPage() {
             </CardContent>
           </Card>
         )}
-
-        {/* {!error && <ScoreSummary summary={payload?.summary} />} */}
 
         {loading && !error && <LoadingState />}
         {!loading && !error && <ReportList reports={reports} />}

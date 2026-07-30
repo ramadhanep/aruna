@@ -154,11 +154,9 @@ export default function IdxRotationPage() {
   return (
     <div className="fixed inset-0 w-screen h-screen overflow-hidden">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 gap-2">
-        <Link href="/" className="flex items-center gap-2 shrink-0">
-          <div className="p-1.5 rounded-lg bg-accent hover:bg-accent/80 transition-colors">
-            <ArrowLeft className="size-6 text-muted-foreground" />
-          </div>
+      <div className="pt-safe absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 gap-2">
+        <Link href="/" className="flex h-11 w-11 items-center justify-center rounded-lg bg-accent hover:bg-accent/80 transition-colors shrink-0" aria-label="Go back">
+          <ArrowLeft className="size-6 text-muted-foreground" />
         </Link>
 
         <div className="flex-1 text-center">
@@ -168,15 +166,15 @@ export default function IdxRotationPage() {
 
         <button
           onClick={handleDownload}
-          className="p-1.5 rounded-lg bg-accent hover:bg-accent/80 transition-colors shrink-0"
-          title="Download as image"
+          className="h-11 w-11 rounded-lg bg-accent hover:bg-accent/80 transition-colors shrink-0"
+          aria-label="Download as image"
         >
           <Download className="size-6 text-muted-foreground" />
         </button>
       </div>
 
       {/* Summary Stats */}
-      <div className="absolute top-14 left-0 right-0 z-40 flex justify-center gap-2 px-3">
+      <div className="top-safe-header absolute left-0 right-0 z-40 flex justify-center gap-2 px-3">
         {Object.entries(QUADRANT_COLORS).map(([key, value]) => (
           <div key={key} className="flex items-center gap-1.5 border border-border bg-card rounded-md px-2.5 py-1">
             <div

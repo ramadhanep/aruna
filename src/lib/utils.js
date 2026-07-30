@@ -79,11 +79,18 @@ export function formatMarketCap(value) {
  * @param {number} value - Price value
  * @returns {string} Formatted price
  */
-export function formatPrice(value) {
-  if (!value) return '—';
-  return value.toLocaleString('id-ID', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
+export function formatPrice(value, {
+  locale = 'id-ID',
+  minimumFractionDigits = 0,
+  maximumFractionDigits = 0,
+  fallback = '—',
+  zeroIsEmpty = true,
+} = {}) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric) || (zeroIsEmpty && numeric === 0)) return fallback;
+  return numeric.toLocaleString(locale, {
+    minimumFractionDigits,
+    maximumFractionDigits,
   });
 }
 
@@ -92,7 +99,47 @@ export function formatPrice(value) {
  * @param {number} value - Percentage value
  * @returns {string} Formatted percentage
  */
-export function formatPercent(value) {
-  if (value == null) return '—';
-  return `${value.toFixed(1)}%`;
+export function formatPercent(value, {
+  fractionDigits = 1,
+  fallback = '—',
+  showPositiveSign = false,
+  nullAsZero = false,
+} = {}) {
+  const numeric = value == null && nullAsZero ? 0 : Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  const sign = showPositiveSign && numeric > 0 ? '+' : '';
+  return `${sign}${numeric.toFixed(fractionDigits)}%`;
+}
+
+export function formatCompactNumber(value, { maximumFractionDigits = 1, fallback = '0' } = {}) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return fallback;
+  return new Intl.NumberFormat('en-US', {
+    notation: 'compact',
+    maximumFractionDigits,
+  }).format(numeric);
+}
+
+export function formatDecimalPercent(value, { fractionDigits = 2, fallback = '0.00%' } = {}) {
+  const numeric = Number(value || 0) * 100;
+  if (!Number.isFinite(numeric)) return fallback;
+  return `${numeric >= 0 ? '+' : ''}${numeric.toFixed(fractionDigits)}%`;
+}
+
+export function formatUSD(value) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+}
+
+export function formatIDR(value) {
+  return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+}
+
+export function formatSGD(value) {
+  return new Intl.NumberFormat('en-SG', { style: 'currency', currency: 'SGD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
+}
+
+export function formatByCurrency(code, amount) {
+  if (code === 'IDR') return formatIDR(amount);
+  if (code === 'SGD') return formatSGD(amount);
+  return formatUSD(amount);
 }

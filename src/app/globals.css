@@ -145,10 +145,46 @@
     transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease;
   }
 
-  /* Safe area padding for iOS */
+  /* Safe area spacing for installed iOS PWAs. */
+  .pt-safe {
+    padding-top: 0;
+  }
+
+  .pb-safe {
+    padding-bottom: 0.5rem;
+  }
+
+  .bottom-safe {
+    bottom: 0.75rem;
+  }
+
+  .pb-nav-safe {
+    padding-bottom: 6rem;
+  }
+
+  .top-safe-header {
+    top: 3.5rem;
+  }
+
   @supports(padding: max(0px)) {
+    .pt-safe {
+      padding-top: max(0px, env(safe-area-inset-top));
+    }
+
     .pb-safe {
       padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+    }
+
+    .bottom-safe {
+      bottom: max(0.75rem, env(safe-area-inset-bottom));
+    }
+
+    .pb-nav-safe {
+      padding-bottom: max(6rem, calc(6rem + env(safe-area-inset-bottom)));
+    }
+
+    .top-safe-header {
+      top: calc(3.5rem + env(safe-area-inset-top));
     }
   }
 

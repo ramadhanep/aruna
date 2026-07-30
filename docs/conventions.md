@@ -43,8 +43,9 @@ export async function GET(request) {
 ```
 
 Exceptions (no XOR encoding):
-- `/api/discussions` — plain JSON for real-time Supabase integration.
 - `/api/cron/*` — plain JSON for cron job responses.
+
+`/api/discussions` is NOT an exception — its GET/POST/DELETE all use `encodePayload()` like every other data route.
 
 ## XOR Payload Convention
 
@@ -70,16 +71,14 @@ Exceptions (no XOR encoding):
 | `aruna-watchlist` | Local watchlist (guest mode) |
 | `aruna-portfolio` | Local portfolio (guest mode) |
 | `aruna_header_symbol_history` | Recent symbol search history |
-| `aruna_trial_end` | Trial expiry timestamp |
+| `aruna-trial-state` | Trial `{ startedAt, expiresAt }` state (60-minute guest trial) |
 | `sidebar_state` | Sidebar collapsed/expanded |
 
 ## CSS Conventions
 
 - Tailwind v4 with `@theme inline` for design tokens.
-- CSS variables in `:root` and `.dark` for theming.
-- `oklch()` color space.
+- CSS variables in `:root` and `.dark` for theming — plain hex values (e.g. `--background: #f7f7f3`), not `oklch()`.
 - Custom animations defined as `@keyframes` in `globals.css`.
-- `glass` and `liquid-glass` utility classes for backdrop blur.
 - No CSS modules — Tailwind only.
 - `!important` overrides for third-party widget styling (e.g., `#tv-attr-logo`).
 
@@ -100,5 +99,6 @@ The project uses **JavaScript** (no TypeScript). Data shapes are documented impl
 
 - Supabase table types: defined by SQL schema in `supabase/setup.sql`.
 - API response shapes: documented in `aruna-api.json` (Bruno/Postman collection).
-- Formatters: `formatPrice`, `formatMarketCap`, `formatPercent` in `lib/utils.js`.
+- Formatters: `formatPrice`, `formatMarketCap`, `formatPercent`, `formatCompactNumber`, `formatDecimalPercent`, `formatUSD`, `formatIDR`, `formatSGD`, `formatByCurrency` in `lib/utils.js`.
+- Shared responsive/date constants: `MOBILE_BREAKPOINT` (1024), `RECENT_PRICE_LOOKBACK_DAYS` (5), `getRecentUnixRange()` in `lib/time.js`.
 - No JSDoc annotations.

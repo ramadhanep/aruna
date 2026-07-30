@@ -3,6 +3,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { Clock3 } from "lucide-react";
 import { useTrial } from "@/components/trial-provider";
+import { MOBILE_BREAKPOINT } from "@/lib/time";
 
 function formatTime(ms) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -22,7 +23,7 @@ export function TrialBanner() {
 
   useEffect(() => {
     const handleScrollAndResize = () => {
-      const mobile = window.innerWidth < 1024;
+      const mobile = window.innerWidth < MOBILE_BREAKPOINT;
       setIsMobileOrTablet(mobile);
       if (mobile) {
         setIsHeaderVisible(window.scrollY < 56);

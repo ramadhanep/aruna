@@ -137,12 +137,10 @@ aruna/
 │   │   ├── app-layout-client.jsx  # Layout shell: mobile header, desktop navbar, sidebar
 │   │   ├── auth-provider.jsx      # Auth context: session, watchlist/portfolio sync
 │   │   ├── account-sidebar.jsx    # Slide-out account panel (auth, theme, data, delete)
-│   │   ├── desktop-sidebar.jsx    # Desktop left nav
 │   │   ├── desktop-navbar.jsx     # Desktop top bar
 │   │   ├── mobile-bottom-nav.jsx  # Mobile bottom tab bar
 │   │   ├── header-symbol-search.jsx  # Global symbol search dialog
 │   │   ├── market-bubbles.jsx     # D3-style bubble visualisation (canvas)
-│   │   ├── market-canvas.jsx      # Landing page canvas decoration
 │   │   ├── normal-candlestick-chart.jsx  # lightweight-charts wrapper
 │   │   ├── money-flow-card.jsx    # Expandable money flow report card
 │   │   ├── ticker-avatar.jsx      # Symbol logo with fallback
@@ -174,7 +172,7 @@ aruna/
 **Non-standard decisions worth noting:**
 - `app/account/page.jsx` is a stub that redirects to `/` — the actual account UI lives in `components/account-sidebar.jsx`.
 - `app/manifest.json/route.js` is a Route Handler that generates the PWA manifest dynamically, placed inside a directory named `manifest.json/` which is unconventional.
-- All API responses (except `/api/discussions` and `/api/cron/*`) are XOR-obfuscated via `encodePayload()` and must be decoded client-side with `fetchEncodedJson()`. The wrapper key is `payload`.
+- All API responses (except `/api/cron/*`) are XOR-obfuscated via `encodePayload()` and must be decoded client-side with `fetchEncodedJson()`. The wrapper key is `payload`.
 
 ---
 
@@ -184,7 +182,7 @@ aruna/
 
 | Route | Description | Key Components | Supabase Tables |
 |---|---|---|---|
-| `/` | Landing page with Vanta clouds hero and feature intro | `MarketCanvas`, `AuthProvider` | — |
+| `/` | Landing page with hero and feature intro | `AuthProvider` | — |
 | `/explore` | Market dashboard: index quotes, global markets, screener results | `TrendingMarquee`, `TickerAvatar`, `MoneyFlowCard` | `screening_snapshots`, `trending_stocks`, `money_flow_reports` |
 | `/chart` | Seasonal chart analysis, election cycles, heatmaps, fundamentals, analyst ratings, candlestick chart | `NormalCandlestickChart`, `AddAssetModal`, `SymbolSearchDialog`, `ArunaWatermark` | — (Yahoo Finance via `/api/finance`, `/api/fundamentals`) |
 | `/watchlist` | Tracked symbols with live 1D/1W quotes and mini spark charts | `ManageWatchlistDialog`, `TrendingMarquee`, `TickerAvatar` | `watchlists` (via `AuthProvider`) |
