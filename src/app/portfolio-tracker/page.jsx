@@ -17,24 +17,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatTickerDisplay, formatIDR, formatByCurrency } from '@/lib/utils';
 import { useTrial } from '@/components/trial-provider';
 import { GoogleGlyph } from '@/components/google-glyph';
-import { getRecentUnixRange, MOBILE_BREAKPOINT } from '@/lib/time';
+import { getRecentUnixRange } from '@/lib/time';
 import { loadPortfolio, savePortfolio } from '@/lib/portfolio-storage';
-import { computeHoldingsMetrics, sortHoldings, computePortfolioSummary, computeDigitalAllocation, computeCashTypeAllocation, formatValue, usdToIdr, usdToSgd } from '@/lib/portfolio-metrics';
+import { computeHoldingsMetrics, sortHoldings, computePortfolioSummary, computeDigitalAllocation, computeCashTypeAllocation, formatValue } from '@/lib/portfolio-metrics';
+import { usePortfolioData, getDefaultPortfolio } from '@/hooks/use-portfolio-data';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 // Dynamic chart component to keep page light and avoid SSR issues
 const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { ssr: false });
-
-const DEFAULT_PORTFOLIO_ENTRIES = [
-  { symbol: 'BTC-USD', name: 'Bitcoin', amount: 1, unit: 'share', avgPrice: 65000, type: 'digital' },
-  { symbol: 'NVDA', name: 'NVIDIA Corporation', amount: 100, unit: 'share', avgPrice: 120, type: 'digital' },
-  { symbol: 'AAPL', name: 'Apple Inc.', amount: 50, unit: 'share', avgPrice: 175, type: 'digital' },
-  { symbol: 'BBCA.JK', name: 'Bank Central Asia Tbk', amount: 1000, unit: 'lot', avgPrice: 7500, type: 'digital' },
-  { symbol: 'CASH_IDR', name: 'Cash (IDR)', amount: 1, unit: 'unit', avgPrice: 30000, type: 'cash', category: 'Cash (IDR)', cashCurrency: 'IDR', nativeAmount: 500000000 },
-];
-
-function getDefaultPortfolio() {
-  return DEFAULT_PORTFOLIO_ENTRIES.map((entry) => ({ ...entry }));
-}
 
 // Minimal asset search (reuses existing API route if present)
 async function searchSymbols(query) {
@@ -115,34 +105,7 @@ function PortfolioMiniChart({ data, isPositive, width = 92, height = 44, fullWid
 
 export default function PortfolioTrackerPage() {
   const router = useRouter();
-  const [entries, setEntries] = useState([]);
-  const [holdingsSort, setHoldingsSort] = useState('alpha');
-  const [currency, setCurrency] = useState(() => { const d = loadPortfolio(); return d?.currency ?? 'IDR'; });
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [editingIndex, setEditingIndex] = useState(null);
-  const [symbolQuery, setSymbolQuery] = useState('');
-  const [symbolResults, setSymbolResults] = useState([]);
-  const [assetType, setAssetType] = useState('digital'); // 'digital' or 'cash'
-  const [form, setForm] = useState({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '', type: 'digital', category: '', cashCurrency: 'IDR' });
-  const [priceMap, setPriceMap] = useState({}); // { symbol: currentPrice }
-  const [logoMap, setLogoMap] = useState({}); // { symbol: logoUrl }
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [fxRate, setFxRate] = useState(0); // USD per IDR (e.g., 1/16500 = 0.0000606)
-  const [idrPerUsd, setIdrPerUsd] = useState(0); // IDR per USD (e.g., 16500)
-  const [sgdPerUsd, setSgdPerUsd] = useState(0); // SGD per USD (e.g., 1.34)
-  const justSelectedRef = React.useRef(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [pullDistance, setPullDistance] = useState(0);
-  const [isPortfolioHidden, setIsPortfolioHidden] = useState(() => { const d = loadPortfolio(); return d?.visibilityHidden ?? false; });
-  const [portfolioReady, setPortfolioReady] = useState(false);
-  const [isMobileExperience, setIsMobileExperience] = useState(false);
-  const [portfolioMiniSeries, setPortfolioMiniSeries] = useState([]);
-  const [portfolioMiniLoading, setPortfolioMiniLoading] = useState(false);
-  const touchStartY = React.useRef(0);
-  const containerRef = React.useRef(null);
-  const remotePortfolioSeedRef = React.useRef(false);
-  const hydratePortfolioRef = React.useRef(true);
-  const guestSyncedRef = React.useRef(false);
+  const isMobile = useIsMobile();
   const {
     user,
     loading: authLoading,
@@ -156,6 +119,31 @@ export default function PortfolioTrackerPage() {
   const isAuthenticated = Boolean(user);
   const [authError, setAuthError] = useState(null);
   const [signingIn, setSigningIn] = useState(false);
+  const [holdingsSort, setHoldingsSort] = useState('alpha');
+  const [currency, setCurrency] = useState(() => { const d = loadPortfolio(); return d?.currency ?? 'IDR'; });
+  const [isPortfolioHidden, setIsPortfolioHidden] = useState(() => { const d = loadPortfolio(); return d?.visibilityHidden ?? false; });
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [symbolQuery, setSymbolQuery] = useState('');
+  const [symbolResults, setSymbolResults] = useState([]);
+  const [assetType, setAssetType] = useState('digital');
+  const [form, setForm] = useState({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '', type: 'digital', category: '', cashCurrency: 'IDR' });
+  const justSelectedRef = React.useRef(false);
+  const [loadingSearch, setLoadingSearch] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const touchStartY = React.useRef(0);
+  const containerRef = React.useRef(null);
+
+  const {
+    entries, setEntries,
+    priceMap, setPriceMap,
+    logoMap, setLogoMap,
+    fxRate, idrPerUsd, sgdPerUsd,
+    initialLoading, isRefreshing, setIsRefreshing, dataReady,
+    portfolioMiniSeries, portfolioMiniLoading,
+    refreshPrices, refreshFxRates,
+  } = usePortfolioData();
+
   const handleGoogleSignIn = useCallback(async () => {
     setAuthError(null);
     setSigningIn(true);
@@ -172,99 +160,15 @@ export default function PortfolioTrackerPage() {
     }
   }, [signInWithGoogle, supabaseConfigured]);
 
-  useEffect(() => {
-    if (authLoading) return;
-  }, [authLoading]);
-
-  // Fetch latest prices (simple batch sequential)
-  const fetchPrice = useCallback(async (symbol) => {
-    try {
-      const { startDate, endDate } = getRecentUnixRange();
-      const { response, data } = await fetchEncodedJson(
-        `/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`
-      );
-      if (!response.ok) return null;
-      const series = data.data || [];
-      if (series.length === 0) return null;
-      const validLast = series.slice().reverse().find(s => s?.adjclose != null);
-      const logo = data?.meta?.logo || null;
-      return {
-        price: validLast?.adjclose ?? null,
-        logo,
-      };
-    } catch (e) {
-      return null;
-    }
-  }, []);
-
-  const refreshPrices = useCallback(async (list) => {
-    const uniqueSymbols = [...new Set(list.map(e => e.symbol))];
-    const updates = {};
-    const logos = {};
-    for (const sym of uniqueSymbols) {
-      const result = await fetchPrice(sym);
-      if (!result) continue;
-      if (result.price != null) {
-        updates[sym] = result.price;
-      }
-      if (result.logo) {
-        logos[sym] = result.logo;
-      }
-    }
-    if (Object.keys(updates).length) {
-      setPriceMap(pm => ({ ...pm, ...updates }));
-    }
-    if (Object.keys(logos).length) {
-      setLogoMap((prev) => ({ ...prev, ...logos }));
-    }
-  }, [fetchPrice]);
-  const [loadingSearch, setLoadingSearch] = useState(false);
-
-  const refreshFxRates = useCallback(async () => {
-    const { startDate, endDate } = getRecentUnixRange();
-
-    const [idrResponse, sgdResponse] = await Promise.all([
-      fetchEncodedJson(`/api/finance?symbol=IDR=X&startDate=${startDate}&endDate=${endDate}`),
-      fetchEncodedJson(`/api/finance?symbol=SGD=X&startDate=${startDate}&endDate=${endDate}`),
-    ]);
-
-    const idrSeries = idrResponse.data?.data || [];
-    if (idrResponse.response.ok && idrSeries.length > 0) {
-      const idrLast = idrSeries.slice().reverse().find(s => s?.adjclose != null)?.adjclose;
-      if (idrLast) {
-        setIdrPerUsd(idrLast);
-        setFxRate(1 / idrLast);
-      }
-    }
-
-    const sgdSeries = sgdResponse.data?.data || [];
-    if (sgdResponse.response.ok && sgdSeries.length > 0) {
-      const sgdLast = sgdSeries.slice().reverse().find(s => s?.adjclose != null)?.adjclose;
-      if (sgdLast) {
-        setSgdPerUsd(sgdLast);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-    const media = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`);
-    const updateMode = () => setIsMobileExperience(media.matches);
-    updateMode();
-    media.addEventListener('change', updateMode);
-    return () => media.removeEventListener('change', updateMode);
-  }, []);
-
   // Pull to refresh handler
   const handleRefresh = useCallback(async () => {
     if (isRefreshing) return;
     const digitalEntries = entries.filter(e => e.type !== 'cash');
-    if (digitalEntries.length === 0) return; // Only refresh if there are digital assets
+    if (digitalEntries.length === 0) return;
 
     setIsRefreshing(true);
     try {
       await refreshFxRates();
-      // Refresh prices only for digital assets
       await refreshPrices(digitalEntries);
     } catch (e) {
       console.warn('Refresh failed', e);
@@ -272,163 +176,45 @@ export default function PortfolioTrackerPage() {
       setIsRefreshing(false);
       setPullDistance(0);
     }
-  }, [isRefreshing, entries, refreshFxRates, refreshPrices]);
+  }, [isRefreshing, entries, refreshFxRates, refreshPrices, setIsRefreshing]);
 
-  // Pull to refresh touch handlers
   const handleTouchStart = useCallback((e) => {
-    if (!isMobileExperience) return;
+    if (!isMobile) return;
     if (containerRef.current && containerRef.current.scrollTop === 0) {
       touchStartY.current = e.touches[0].clientY;
     }
-  }, [isMobileExperience]);
+  }, [isMobile]);
 
   const handleTouchMove = useCallback((e) => {
-    if (!isMobileExperience) return;
+    if (!isMobile) return;
     if (isRefreshing || touchStartY.current === 0 || !containerRef.current) return;
     if (containerRef.current.scrollTop > 0) {
       touchStartY.current = 0;
       setPullDistance(0);
       return;
     }
-
     const touchY = e.touches[0].clientY;
     const distance = touchY - touchStartY.current;
-
-    if (distance > 0) {
-      setPullDistance(Math.min(distance, 150));
-    }
-  }, [isMobileExperience, isRefreshing]);
+    if (distance > 0) setPullDistance(Math.min(distance, 150));
+  }, [isMobile, isRefreshing]);
 
   const handleTouchEnd = useCallback(() => {
-    if (!isMobileExperience) return;
-    if (pullDistance > 80) {
-      handleRefresh();
-    } else {
-      setPullDistance(0);
-    }
+    if (!isMobile) return;
+    if (pullDistance > 80) handleRefresh();
+    else setPullDistance(0);
     touchStartY.current = 0;
-  }, [isMobileExperience, pullDistance, handleRefresh]);
+  }, [isMobile, pullDistance, handleRefresh]);
 
-  // Initial load handled by lazy initializer above
-
-  // Fetch FX rates once on mount
+  // Persist entries on user-initiated change
   useEffect(() => {
-    (async () => {
-      try {
-        await refreshFxRates();
-      } catch (e) {
-        console.warn('FX rate fetch failed', e);
-      }
-    })();
-  }, [refreshFxRates]);
-
-  // Guest mode: load from localStorage, seed starter portfolio once
-  useEffect(() => {
-    if (authLoading) return;
-    if (isAuthenticated) return; // handled by remote effect below
-
-    queueMicrotask(() => {
-      const data = loadPortfolio();
-      if (data !== null) {
-        hydratePortfolioRef.current = true;
-        setEntries(data.entries);
-        setCurrency(data.currency);
-        setIsPortfolioHidden(data.visibilityHidden);
-      } else {
-        const defaults = getDefaultPortfolio();
-        hydratePortfolioRef.current = true;
-        setEntries(defaults);
-        savePortfolio({ entries: defaults, currency, visibilityHidden: isPortfolioHidden });
-      }
-      setInitialLoading(false);
-      setPortfolioReady(true);
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [authLoading, isAuthenticated]);
-
-  // Authenticated mode: load from remote
-  useEffect(() => {
-    if (authLoading || !isAuthenticated) return;
-
-    queueMicrotask(() => {
-      if (!portfolioLoaded) {
-        setPortfolioReady(false);
-        return;
-      }
-
-      if (Array.isArray(remotePortfolio)) {
-        hydratePortfolioRef.current = true;
-        setEntries(remotePortfolio);
-        setPortfolioReady(true);
-        return;
-      }
-
-      if (!remotePortfolioSeedRef.current) {
-        remotePortfolioSeedRef.current = true;
-        // On first sign-in, import guest portfolio if it exists, otherwise seed defaults
-        const data = loadPortfolio();
-        const guestEntries = data?.entries ?? [];
-        const initialEntries = guestEntries.length > 0 ? guestEntries : getDefaultPortfolio();
-        hydratePortfolioRef.current = true;
-        setEntries(initialEntries);
-        setPortfolioReady(true);
-        syncPortfolio(initialEntries)
-          .catch(() => null)
-          .finally(() => { remotePortfolioSeedRef.current = false; });
-      }
-    });
-  }, [authLoading, isAuthenticated, portfolioLoaded, remotePortfolio, syncPortfolio]);
-
-  // On sign-in with existing remote data: offer to import local if remote is empty
-  useEffect(() => {
-    if (!isAuthenticated || !portfolioLoaded || guestSyncedRef.current) return;
-    if (Array.isArray(remotePortfolio) && remotePortfolio.length === 0) {
-      const data = loadPortfolio();
-      const guestEntries = data?.entries ?? [];
-      if (guestEntries.length > 0) {
-        guestSyncedRef.current = true;
-        syncPortfolio(guestEntries).catch(() => null);
-      }
-    }
-  }, [isAuthenticated, portfolioLoaded, remotePortfolio, syncPortfolio]);
-
-  // Persist changes and refresh prices when entries mutate
-  useEffect(() => {
-    if (!portfolioReady) {
-      return;
-    }
-
-    if (hydratePortfolioRef.current) {
-      hydratePortfolioRef.current = false;
-    } else if (isAuthenticated) {
-      syncPortfolio(entries).catch(() => { });
+    if (!dataReady) return;
+    if (isAuthenticated) {
+      syncPortfolio(entries).catch(() => {});
     } else {
-      // Guest mode: persist to localStorage
       savePortfolio({ entries, currency, visibilityHidden: isPortfolioHidden });
     }
+  }, [entries, isAuthenticated, syncPortfolio, dataReady, currency, isPortfolioHidden]);
 
-    const digitalEntries = entries.filter((e) => e.type !== 'cash');
-    let cancelled = false;
-
-    (async () => {
-      try {
-        if (digitalEntries.length > 0) {
-          await refreshPrices(digitalEntries);
-        }
-      } finally {
-        if (!cancelled) {
-          setInitialLoading(false);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [entries, isAuthenticated, refreshPrices, syncPortfolio, portfolioReady]);
-
-  // Persist currency preference
   useEffect(() => {
     savePortfolio({ entries, currency, visibilityHidden: isPortfolioHidden });
   }, [currency, entries, isPortfolioHidden]);
@@ -440,7 +226,6 @@ export default function PortfolioTrackerPage() {
   // Search debounce
   useEffect(() => {
     const handle = setTimeout(async () => {
-      // Skip search if we just selected a symbol
       if (justSelectedRef.current) {
         justSelectedRef.current = false;
         return;
@@ -462,6 +247,21 @@ export default function PortfolioTrackerPage() {
     setAssetType('digital');
   }
 
+  async function fetchSymbolPrice(symbol) {
+    try {
+      const { startDate, endDate } = getRecentUnixRange();
+      const { response, data } = await fetchEncodedJson(
+        `/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`
+      );
+      if (!response.ok) return null;
+      const series = data.data || [];
+      if (series.length === 0) return null;
+      const validLast = series.slice().reverse().find(s => s?.adjclose != null);
+      const logo = data?.meta?.logo || null;
+      return { price: validLast?.adjclose ?? null, logo };
+    } catch { return null; }
+  }
+
   // User selected a symbol from search results: set symbol, name, unit (lot for .JK),
   // and try to autofill avgPrice with latest market price
   async function handleSelectSymbol(result) {
@@ -470,7 +270,7 @@ export default function PortfolioTrackerPage() {
     const isJk = symbol.endsWith('.JK');
     let latestResult = null;
     try {
-      latestResult = await fetchPrice(symbol);
+      latestResult = await fetchSymbolPrice(symbol);
       if (latestResult?.price != null) {
         setPriceMap((pm) => ({ ...pm, [symbol]: latestResult.price }));
       }
@@ -598,7 +398,7 @@ export default function PortfolioTrackerPage() {
       if (isNaN(avgPriceNum) || avgPriceNum <= 0) {
         avgPriceNum = null;
         try {
-          const result = await fetchPrice(form.symbol);
+          const result = await fetchSymbolPrice(form.symbol);
           if (result?.price != null) {
             avgPriceNum = result.price;
             setPriceMap((pm) => ({
@@ -812,8 +612,8 @@ export default function PortfolioTrackerPage() {
 
   if (initialLoading) {
     return (
-      <div className={`flex flex-col gap-4 ${isMobileExperience ? 'pb-28' : ''}`}>
-        <Card className={isMobileExperience ? 'rounded-3xl' : ''}>
+      <div className={`flex flex-col gap-4 ${isMobile ? 'pb-28' : ''}`}>
+        <Card className={isMobile ? 'rounded-3xl' : ''}>
           <CardHeader className="flex flex-row items-center justify-between pb-2 gap-2">
             <Skeleton className="h-4 w-20 rounded-md" />
             <div className="flex items-center gap-2">
@@ -844,17 +644,17 @@ export default function PortfolioTrackerPage() {
           <Skeleton className="h-3 w-28 rounded-md mx-auto" />
         </div>
 
-        <Card className={`h-full ${isMobileExperience ? 'rounded-3xl' : ''}`}>
+        <Card className={`h-full ${isMobile ? 'rounded-3xl' : ''}`}>
           <CardHeader className="flex items-center justify-between">
             <Skeleton className="h-4 w-20 rounded-md" />
             <Skeleton className="h-8 w-8 rounded-md" />
           </CardHeader>
           <CardContent>
-            <div className={`space-y-2 ${isMobileExperience ? 'mb-20' : 'mb-4'}`}>
-              {[...Array(isMobileExperience ? 4 : 5)].map((_, idx) => (
+            <div className={`space-y-2 ${isMobile ? 'mb-20' : 'mb-4'}`}>
+              {[...Array(isMobile ? 4 : 5)].map((_, idx) => (
                 <div
                   key={`holding-${idx}`}
-                  className={`flex items-center gap-3 p-2 rounded-xl min-h-16 border ${isMobileExperience ? 'bg-background/80 border-border/40' : 'border-border/20'}`}
+                  className={`flex items-center gap-3 p-2 rounded-xl min-h-16 border ${isMobile ? 'bg-background/80 border-border/40' : 'border-border/20'}`}
                 >
                   <div className="flex flex-1 min-w-0 items-center gap-2 px-1 py-2">
                     <Skeleton className="h-8 w-8 rounded-lg" />
@@ -882,7 +682,7 @@ export default function PortfolioTrackerPage() {
   return (
     <div
       ref={containerRef}
-      className={`flex flex-col gap-4 ${isMobileExperience ? 'pb-28' : 'lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start'}`}
+      className={`flex flex-col gap-4 ${isMobile ? 'pb-28' : 'lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start'}`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
@@ -900,8 +700,8 @@ export default function PortfolioTrackerPage() {
         </div>
       )}
 
-      <div className={`${isMobileExperience ? '' : 'lg:col-span-4'} flex flex-col gap-4`}>
-        <Card className={isMobileExperience ? 'rounded-3xl' : ''}>
+      <div className={`${isMobile ? '' : 'lg:col-span-4'} flex flex-col gap-4`}>
+        <Card className={isMobile ? 'rounded-3xl' : ''}>
           <CardHeader className="flex flex-row items-center justify-between pb-2 gap-2">
             <CardTitle className="font-semibold text-sm">Overview</CardTitle>
             <div className="flex items-center gap-2 shrink-0">
@@ -1055,8 +855,8 @@ export default function PortfolioTrackerPage() {
         </div>
       </div>
 
-      <div className={`${isMobileExperience ? '' : 'lg:col-span-8'}`}>
-        <Card className={`h-full ${isMobileExperience ? 'rounded-3xl' : ''}`}>
+      <div className={`${isMobile ? '' : 'lg:col-span-8'}`}>
+        <Card className={`h-full ${isMobile ? 'rounded-3xl' : ''}`}>
           <CardHeader className="flex items-center justify-between">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               Holdings
@@ -1122,7 +922,6 @@ export default function PortfolioTrackerPage() {
                   <Button
                     onClick={() => {
                       const defaults = getDefaultPortfolio();
-                      hydratePortfolioRef.current = true;
                       setEntries(defaults);
                       if (!isAuthenticated) savePortfolio({ entries: defaults, currency, visibilityHidden: isPortfolioHidden });
                     }}
@@ -1145,7 +944,7 @@ export default function PortfolioTrackerPage() {
               </div>
             )}
             {entries.length > 0 && (
-              <div className={`space-y-2 ${isMobileExperience ? 'mb-20' : 'mb-4'}`}>
+              <div className={`space-y-2 ${isMobile ? 'mb-20' : 'mb-4'}`}>
                 {sortedHoldings.map(({ entry, index: originalIndex, isCash, currentValueUSD, pnl, cashDisplayAmount }) => {
                   const formatted = getDisplayValue(currentValueUSD);
                   const livePnl = isCash ? 0 : pnl;
@@ -1156,7 +955,7 @@ export default function PortfolioTrackerPage() {
                   return (
                     <div
                       key={originalIndex}
-                      className={`flex items-center gap-3 p-2 rounded-2xl min-h-16 transition-colors border ${isMobileExperience ? 'bg-background/80 border-border/40' : 'border-border/20 hover:bg-muted/30'}`}
+                      className={`flex items-center gap-3 p-2 rounded-2xl min-h-16 transition-colors border ${isMobile ? 'bg-background/80 border-border/40' : 'border-border/20 hover:bg-muted/30'}`}
                     >
                       {isCash ? (
                         <div className="flex flex-1 min-w-0 items-center gap-2 px-1 py-2">
@@ -1438,7 +1237,7 @@ export default function PortfolioTrackerPage() {
 
       <Button
         size="icon"
-        className={`fixed ${isMobileExperience ? 'bottom-24 right-4' : 'bottom-8 right-8'} h-14 w-14 rounded-full bg-emerald-700 z-40`}
+        className={`fixed ${isMobile ? 'bottom-24 right-4' : 'bottom-8 right-8'} h-14 w-14 rounded-full bg-emerald-700 z-40`}
         onClick={openAdd}
       >
         <Plus className="size-6 text-white" />
