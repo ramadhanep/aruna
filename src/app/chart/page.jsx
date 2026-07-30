@@ -16,6 +16,41 @@ import {
   getWinRateCellStyle,
 } from '@/lib/seasonalData';
 import {
+  CURRENT_LINE_COLOR,
+  SCREENING_CATEGORIES,
+  areWatchlistsEqual,
+  matchScreeningEntry,
+  formatScreeningTimestamp,
+  formatTimestamp,
+  cycleMetaMap,
+  DAY_IN_MS,
+  NORMAL_TIMEFRAME_OPTIONS,
+  INTRADAY_TIMEFRAMES,
+  BASE_INFO_TABS,
+  TP_FALLBACK_META,
+  INFO_TAB_QUERY_LOOKUP,
+  normalizeInfoTabParam,
+  infoTabToQueryValue,
+  EMA_PERIOD,
+  EMA_COLOR,
+  BUY_SIGNAL_COLOR,
+  LIVERMORE_LOOKBACK,
+  LIVERMORE_UPPER_COLOR,
+  LIVERMORE_LOWER_COLOR,
+  computeRSI,
+  smoothSeries,
+  computeStochasticRSI,
+  calculateEMA,
+  computeLivermoreKeyLevels,
+  isCryptoTicker,
+  isIdxLotSymbol,
+  toFiniteNumber,
+  getDefaultCyclesForSymbol,
+  getDayOfYear,
+  getReturnCellStyle,
+  getQuarterDateRange,
+} from '@/lib/chart-helpers';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -36,21 +71,23 @@ import { useAuth } from "@/components/auth-provider";
 import { NormalCandlestickChart } from "@/components/normal-candlestick-chart";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useChartState } from '@/hooks/use-chart-state';
+import { useChartData } from '@/hooks/use-chart-data';
+import { useChartSeries } from '@/hooks/use-chart-series';
+import { useChartFundamentals } from '@/hooks/use-chart-fundamentals';
+import { useChartScreening } from '@/hooks/use-chart-screening';
 import { Badge } from "@/components/ui/badge";
 import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist";
 import { ArunaWatermark } from "@/components/aruna-watermark";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { formatTickerDisplay } from "@/lib/utils";
+import { ChartHeaderBar } from "@/components/chart-header-bar";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-const CURRENT_LINE_COLOR = 'oklch(59.6% 0.145 163.225)';
-
-const SCREENING_CATEGORIES = ['idx', 'us', 'crypto'];
 
 /**
  * Semicircle gauge chart for analyst rating.
@@ -123,335 +160,9 @@ function AnalystGaugeChart({ score }) {
   );
 }
 
-function areWatchlistsEqual(a = [], b = []) {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) {
-    if (a[i].symbol !== b[i].symbol || (a[i].order ?? i) !== (b[i].order ?? i)) {
-      return false;
-    }
-  }
-  return true;
-}
 
-function matchScreeningEntry(results, targetSymbol) {
-  if (!Array.isArray(results) || !targetSymbol) return null;
-  const normalizedTarget = targetSymbol.trim().toUpperCase();
-  if (!normalizedTarget) return null;
-  for (const candidate of results) {
-    if (!candidate) continue;
-    if (typeof candidate === 'string') {
-      if (candidate.trim().toUpperCase() === normalizedTarget) {
-        return { symbol: candidate, signal_date: null, is_warning: false, trading_plan: null };
-      }
-      continue;
-    }
-    if (
-      typeof candidate === 'object' &&
-      typeof candidate.symbol === 'string' &&
-      candidate.symbol.trim().toUpperCase() === normalizedTarget
-    ) {
-      return {
-        symbol: candidate.symbol,
-        signal_date: candidate.signal_date ?? null,
-        is_warning: Boolean(candidate.is_warning),
-        trading_plan: candidate.trading_plan ?? null,
-      };
-    }
-  }
-  return null;
-}
-
-function formatScreeningTimestamp(value) {
-  if (!value) return null;
-  const date = value instanceof Date ? value : new Date(value);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleString(undefined, {
-    day: 'numeric',
-    month: 'short',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
-}
-
-/**
- * Formats a date/datetime value as a clean ISO 8601-style string in the client's local timezone.
- * @param {string|number|Date} v - A date string, Unix timestamp (ms), or Date object
- * @param {{ dateOnly?: boolean }} options
- * @returns {string|null}
- */
-function formatTimestamp(v, { dateOnly = false } = {}) {
-  if (!v) return null;
-  try {
-    const d = new Date(v);
-    if (Number.isNaN(d.getTime())) return null;
-    const pad = (n) => String(n).padStart(2, '0');
-    const year = d.getFullYear();
-    const month = pad(d.getMonth() + 1);
-    const day = pad(d.getDate());
-    if (dateOnly) return `${year}-${month}-${day}`;
-    const hours = pad(d.getHours());
-    const minutes = pad(d.getMinutes());
-    return `${year}-${month}-${day} ${hours}:${minutes}`;
-  } catch {
-    return null;
-  }
-}
-
-const cycleMetaMap = {
-  trump: { label: 'Trump Years', lineKey: 'trumpYears' },
-  all: { label: 'All Years', lineKey: 'allYears' },
-  pre: { label: 'Pre-Election Year', lineKey: 'preElection' },
-  election: { label: 'Election Year', lineKey: 'election' },
-  mid: { label: 'Mid-Term Year', lineKey: 'midTerm' },
-  post: { label: 'Post-Election Year', lineKey: 'postElection' },
-};
-
-const DAY_IN_MS = 24 * 60 * 60 * 1000;
-
-const NORMAL_TIMEFRAME_OPTIONS = [
-  { value: '15m', label: '15m' },
-  { value: '1h', label: '1h' },
-  { value: '2h', label: '2h' },
-  { value: '4h', label: '4h' },
-  { value: 'D', label: '1D' },
-  { value: 'W', label: '1W' },
-  { value: 'M', label: '1M' },
-];
-
-const INTRADAY_TIMEFRAMES = new Set(['15m', '1h', '2h', '4h']);
-
-const BASE_INFO_TABS = [
-  { value: 'keystats', label: 'KEYSTATS' },
-  { value: 'analysis', label: 'ANALYSIS' },
-  { value: 'financials', label: 'FINANCIALS' },
-  { value: 'seasonality', label: 'SEASONALITY' },
-  { value: 'profile', label: 'ABOUT' },
-];
-
-// Fallback rationale/action metadata for take-profit targets missing the newer, richer
-// trading-plan fields (e.g. plans generated before this schema existed).
-const TP_FALLBACK_META = [
-  { reason: 'Momentum Target', sellPercent: 30, action: 'Move Stop Loss to Breakeven' },
-  { reason: 'Momentum Target', sellPercent: 40, action: 'Trail Stop to EMA20' },
-  { reason: 'Momentum Target', sellPercent: 30, action: 'Exit Remaining Position' },
-];
-
-const INFO_TAB_QUERY_LOOKUP = {
-  tradingplan: 'trading-plan',
-  keystats: 'keystats',
-  analysis: 'analysis',
-  financials: 'financials',
-  seasonality: 'seasonality',
-  profile: 'profile',
-  about: 'profile',
-};
-
-function normalizeInfoTabParam(value) {
-  if (!value) return null;
-  const sanitized = String(value).replace(/[^a-zA-Z]/g, '').toLowerCase();
-  if (!sanitized) return null;
-  return INFO_TAB_QUERY_LOOKUP[sanitized] ?? null;
-}
-
-function infoTabToQueryValue(value) {
-  if (!value) return null;
-  const str = String(value);
-  if (str === 'trading-plan') return 'tradingPlan';
-  return str.replace(/-([a-z])/g, (_, char) => char.toUpperCase());
-}
-
-const EMA_PERIOD = 31;
-const EMA_COLOR = '#0ea5e9';
-const BUY_SIGNAL_COLOR = '#10b981'; // emerald-500, matches candlestick up/bullish color
-const LIVERMORE_LOOKBACK = 31;
-const LIVERMORE_UPPER_COLOR = '#f97316';
-const LIVERMORE_LOWER_COLOR = '#6b7380';
-
-function computeRSI(values = [], period = 14) {
-  const output = new Array(values.length).fill(null);
-  if (values.length <= period) {
-    return output;
-  }
-
-  let gainSum = 0;
-  let lossSum = 0;
-  let avgGain = null;
-  let avgLoss = null;
-
-  for (let i = 1; i < values.length; i++) {
-    const current = values[i];
-    const prev = values[i - 1];
-    if (!Number.isFinite(current) || !Number.isFinite(prev)) {
-      continue;
-    }
-    const change = current - prev;
-    const gain = change > 0 ? change : 0;
-    const loss = change < 0 ? -change : 0;
-
-    if (i <= period) {
-      gainSum += gain;
-      lossSum += loss;
-      if (i === period) {
-        avgGain = gainSum / period;
-        avgLoss = lossSum / period;
-        output[i] = avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
-      }
-    } else if (avgGain != null && avgLoss != null) {
-      avgGain = (avgGain * (period - 1) + gain) / period;
-      avgLoss = (avgLoss * (period - 1) + loss) / period;
-      if (avgLoss === 0) {
-        output[i] = 100;
-      } else {
-        const rs = avgGain / avgLoss;
-        output[i] = 100 - 100 / (1 + rs);
-      }
-    }
-  }
-
-  return output;
-}
-
-function smoothSeries(values = [], period = 3) {
-  const result = new Array(values.length).fill(null);
-  const window = [];
-  let sum = 0;
-  let count = 0;
-
-  for (let i = 0; i < values.length; i++) {
-    const value = values[i];
-    const numeric = Number.isFinite(value) ? value : null;
-    window.push(numeric);
-    if (numeric != null) {
-      sum += numeric;
-      count += 1;
-    }
-    if (window.length > period) {
-      const removed = window.shift();
-      if (removed != null) {
-        sum -= removed;
-        count -= 1;
-      }
-    }
-    if (window.length === period && count === period) {
-      result[i] = sum / period;
-    }
-  }
-
-  return result;
-}
-
-function computeStochasticRSI(values = [], stochasticLength = 14, rsiLength = 14, smoothK = 3, smoothD = 3) {
-  const rsiValues = computeRSI(values, rsiLength);
-  const rawK = new Array(values.length).fill(null);
-
-  for (let i = 0; i < rsiValues.length; i++) {
-    const currentRsi = rsiValues[i];
-    if (!Number.isFinite(currentRsi)) continue;
-    const start = i - stochasticLength + 1;
-    if (start < 0) continue;
-    let min = Infinity;
-    let max = -Infinity;
-    let valid = true;
-    for (let j = start; j <= i; j++) {
-      const value = rsiValues[j];
-      if (!Number.isFinite(value)) {
-        valid = false;
-        break;
-      }
-      if (value < min) min = value;
-      if (value > max) max = value;
-    }
-    if (!valid || !Number.isFinite(min) || !Number.isFinite(max) || max === min) {
-      continue;
-    }
-    rawK[i] = ((currentRsi - min) / (max - min)) * 100;
-  }
-
-  const smoothKValues = smoothSeries(rawK, smoothK);
-  const smoothDValues = smoothSeries(smoothKValues, smoothD);
-  return { k: smoothKValues, d: smoothDValues };
-}
-
-function calculateEMA(values = [], period = 13) {
-  if (!Array.isArray(values) || values.length === 0) {
-    return [];
-  }
-  const multiplier = 2 / (period + 1);
-  let emaValue = null;
-  return values.map((value) => {
-    if (!Number.isFinite(value)) {
-      return null;
-    }
-    emaValue = emaValue == null ? value : value * multiplier + emaValue * (1 - multiplier);
-    return emaValue;
-  });
-}
-
-function computeLivermoreKeyLevels(points = [], lookback = 31) {
-  if (!Array.isArray(points) || points.length === 0) {
-    return { upper: [], lower: [], lookup: {} };
-  }
-  const upper = [];
-  const lower = [];
-  const lookup = {};
-  const highs = [];
-  const lows = [];
-  points.forEach((point) => {
-    if (!point || typeof point.time !== 'number') return;
-    const high = Number.isFinite(point.high) ? point.high : null;
-    const low = Number.isFinite(point.low) ? point.low : null;
-    if (high == null || low == null) {
-      lookup[point.time] = { upper: null, lower: null };
-      return;
-    }
-    highs.push(high);
-    lows.push(low);
-    if (highs.length > lookback) highs.shift();
-    if (lows.length > lookback) lows.shift();
-    const highest = Math.max(...highs);
-    const lowest = Math.min(...lows);
-    const upperValue = Number.isFinite(highest) ? Number(highest.toFixed(6)) : null;
-    const lowerValue = Number.isFinite(lowest) ? Number(lowest.toFixed(6)) : null;
-    lookup[point.time] = { upper: upperValue, lower: lowerValue };
-    if (upperValue != null) {
-      upper.push({ time: point.time, value: upperValue });
-    }
-    if (lowerValue != null) {
-      lower.push({ time: point.time, value: lowerValue });
-    }
-  });
-  return { upper, lower, lookup };
-}
-
-function isCryptoTicker(symbol = '') {
-  const upper = symbol.toUpperCase();
-  return upper.includes('-USD') || upper.startsWith('CRYPTO:');
-}
-
-function isIdxLotSymbol(symbol = '') {
-  return /\.JK$/i.test(symbol?.trim?.() ?? '');
-}
-
-function toFiniteNumber(value) {
-  if (value === '' || value == null) return null;
-  const numeric = Number(value);
-  return Number.isFinite(numeric) ? numeric : null;
-}
-
-function getDefaultCyclesForSymbol() {
-  return ['normal'];
-}
-
-function getDayOfYear(date) {
-  const start = new Date(date.getFullYear(), 0, 0);
-  const diff = date - start + (start.getTimezoneOffset() - date.getTimezoneOffset()) * 60000;
-  return Math.floor(diff / DAY_IN_MS);
-}
 
 function ElectionCyclePageContent() {
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const router = useRouter();
   const { resolvedTheme } = useTheme();
   const {
     supabase,
@@ -464,52 +175,33 @@ function ElectionCyclePageContent() {
     syncPortfolio,
   } = useAuth();
   const isAuthenticated = Boolean(user);
-  const symbolParam = searchParams.get('symbol');
-  const cycleParam = searchParams.get('cycle');
-  const tabParam = searchParams.get('tab');
-  const searchParamsString = searchParams.toString();
-  const requestedInfoTab = normalizeInfoTabParam(tabParam);
-  const LAST_SYMBOL_KEY = 'aruna_last_election_symbol';
-  const getInitialSymbol = () => {
-    if (symbolParam) return symbolParam;
-    if (typeof window !== 'undefined') {
-      const last = localStorage.getItem(LAST_SYMBOL_KEY);
-      if (last) return last;
-    }
-    return 'MSFT';
-  };
-  const initialSymbol = getInitialSymbol();
-  const [symbol, setSymbol] = useState(initialSymbol);
-  const [scaleChoice, setScaleChoice] = useState('linear');
-  const [loading, setLoading] = useState(false);
-  const [rawLinesData, setRawLinesData] = useState([]);
-  const [normalTimeframe, setNormalTimeframe] = useState('D');
-  const [normalSeries, setNormalSeries] = useState([]);
-  const [normalSeriesLoading, setNormalSeriesLoading] = useState(false);
-  const [normalSeriesError, setNormalSeriesError] = useState(null);
-  const [symbolInfo, setSymbolInfo] = useState(null);
-  const [assetName, setAssetName] = useState('');
-  const [monthlyHeatmap, setMonthlyHeatmap] = useState({ rows: [], average: {}, winRate: {} });
-  const [quarterlyHeatmap, setQuarterlyHeatmap] = useState({ rows: [], average: {}, winRate: {} });
+
+  const chartState = useChartState();
+  const { symbol, setSymbol, selectedCycles, setSelectedCycles, infoTab, setInfoTab, infoTabRef, requestedInfoTab, isNormalView, searchParams, pathname, router, searchParamsString } = chartState;
+  const { screeningSignal } = useChartScreening(supabase, symbol);
+  const { loading, rawLinesData, symbolInfo, assetName, monthlyHeatmap, quarterlyHeatmap } = useChartData(symbol, selectedCycles, scaleChoice, colors.allYears);
+  const {
+    normalTimeframe, setNormalTimeframe,
+    normalSeriesLoading, normalSeriesError,
+    filteredNormalChartData, normalCandlestickSeries,
+    normalChartReady, buySignalMarkers, stochasticChartData,
+    isIntradayTimeframe, normalTimeframeLabel,
+    scaleChoice, setScaleChoice,
+    showLivermoreKey, setShowLivermoreKey,
+    chartDisplayType, setChartDisplayType,
+    normalFullscreenOpen, setNormalFullscreenOpen,
+  } = useChartSeries(symbol, isNormalView, screeningSignal);
+  const { fundamentals, fundamentalsLoading, revenuePeriod, setRevenuePeriod } = useChartFundamentals(symbol, infoTab);
+
   const [portfolioDialogOpen, setPortfolioDialogOpen] = useState(false);
   const [portfolioEntries, setPortfolioEntries] = useState([]);
-  const [fundamentals, setFundamentals] = useState(null);
-  const [fundamentalsLoading, setFundamentalsLoading] = useState(false);
-  const fundamentalsCacheRef = useRef({});
-  const [revenuePeriod, setRevenuePeriod] = useState('quarterly');
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
-  const [showLivermoreKey, setShowLivermoreKey] = useState(false);
-  const [chartDisplayType, setChartDisplayType] = useState('heikinAshi'); // 'candle' | 'heikinAshi' | 'line'
   const [watchlist, setWatchlist] = useState(() => getDefaultWatchlist());
-  const [screeningSignal, setScreeningSignal] = useState(null);
-  const [infoTab, setInfoTab] = useState(() => requestedInfoTab || 'keystats');
-  const infoTabRef = useRef(infoTab);
   const [tradingPlanEntryInput, setTradingPlanEntryInput] = useState('');
   const [tradingPlanBalanceInput, setTradingPlanBalanceInput] = useState('');
   const [tradingPlanRiskPercentInput, setTradingPlanRiskPercentInput] = useState('1');
-  const [normalFullscreenOpen, setNormalFullscreenOpen] = useState(false);
-  const remoteWatchlistSeedRef = React.useRef(false);
-  const remotePortfolioSeedRef = React.useRef(false);
+  const remoteWatchlistSeedRef = useRef(false);
+  const remotePortfolioSeedRef = useRef(false);
   const redirectToSignIn = useCallback(() => {
     const currentPath =
       typeof window !== 'undefined'
@@ -518,22 +210,7 @@ function ElectionCyclePageContent() {
     router.push(`/signin?redirect=${encodeURIComponent(currentPath)}`);
   }, [pathname, router]);
 
-  const [selectedCycles, setSelectedCycles] = useState(() => {
-    if (cycleParam) {
-      const parsed = cycleParam.split(',').map((item) => item.trim()).filter(Boolean);
-      if (parsed.length > 0) {
-        return parsed;
-      }
-    }
-    return getDefaultCyclesForSymbol(initialSymbol);
-  });
-  const isNormalView = selectedCycles.length === 1 && selectedCycles[0] === 'normal';
-  const normalTimeframeOption = useMemo(
-    () => NORMAL_TIMEFRAME_OPTIONS.find((option) => option.value === normalTimeframe),
-    [normalTimeframe]
-  );
-  const normalTimeframeLabel = normalTimeframeOption?.label ?? normalTimeframe.toUpperCase();
-  const isIntradayTimeframe = INTRADAY_TIMEFRAMES.has(normalTimeframe);
+  const canUseProtectedActions = isAuthenticated;
   const screeningSignalDateLabel = screeningSignal?.signal_date
     ? formatScreeningTimestamp(screeningSignal.signal_date)
     : null;
@@ -567,150 +244,7 @@ function ElectionCyclePageContent() {
   const beatColor = 'rgb(22, 163, 74)'; // tailwind green-600
   const missColor = 'rgb(220, 38, 38)'; // tailwind red-600
 
-  // Update symbol when URL param changes
-  useEffect(() => {
-    if (symbolParam && symbolParam !== symbol) {
-      setSymbol(symbolParam);
-      if (cycleParam) {
-        const parsed = cycleParam.split(',').map((item) => item.trim()).filter(Boolean);
-        if (parsed.length > 0) {
-          setSelectedCycles(parsed);
-        } else {
-          setSelectedCycles(getDefaultCyclesForSymbol(symbolParam));
-        }
-      } else {
-        setSelectedCycles(getDefaultCyclesForSymbol(symbolParam));
-      }
-    } else if (cycleParam) {
-      const parsed = cycleParam.split(',').map((item) => item.trim()).filter(Boolean);
-      if (parsed.length > 0) {
-        setSelectedCycles(parsed);
-      }
-    }
-  }, [symbolParam, symbol, cycleParam]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined' || !pathname) return;
-    const params = new URLSearchParams(searchParamsString);
-    let dirty = false;
-
-    const normalizedCycles = selectedCycles.join(',');
-    const currentCycle = params.get('cycle') ?? '';
-    if (normalizedCycles) {
-      if (currentCycle !== normalizedCycles) {
-        params.set('cycle', normalizedCycles);
-        dirty = true;
-      }
-    } else if (currentCycle) {
-      params.delete('cycle');
-      dirty = true;
-    }
-
-    const tabQueryValue = infoTabToQueryValue(infoTab);
-    const currentTab = params.get('tab') ?? '';
-    if (tabQueryValue) {
-      if (currentTab !== tabQueryValue) {
-        params.set('tab', tabQueryValue);
-        dirty = true;
-      }
-    } else if (currentTab) {
-      params.delete('tab');
-      dirty = true;
-    }
-
-    if (!dirty) return;
-    const query = params.toString();
-    const nextUrl = query ? `${pathname}?${query}` : pathname;
-    router.replace(nextUrl, { scroll: false });
-  }, [selectedCycles, infoTab, searchParamsString, pathname, router]);
-
-  const loadScreeningSignal = useCallback(async () => {
-    if (!supabase) {
-      setScreeningSignal(null);
-      return;
-    }
-    const normalizedSymbol = typeof symbol === 'string' ? symbol.trim().toUpperCase() : '';
-    if (!normalizedSymbol) {
-      setScreeningSignal(null);
-      return;
-    }
-    try {
-      const { data, error } = await supabase
-        .from('screening_snapshots')
-        .select('category, results')
-        .in('category', SCREENING_CATEGORIES);
-      if (error) throw error;
-
-      let found = null;
-      data?.some((snapshot) => {
-        const match = matchScreeningEntry(snapshot.results, normalizedSymbol);
-        if (match) {
-          found = { ...match, category: snapshot.category };
-          return true;
-        }
-        return false;
-      });
-      setScreeningSignal(found);
-    } catch (error) {
-      console.warn('Failed to load screening snapshots', error);
-      setScreeningSignal(null);
-    }
-  }, [supabase, symbol]);
-
-  useEffect(() => {
-    loadScreeningSignal();
-  }, [loadScreeningSignal]);
-
-  useEffect(() => {
-    if (!supabase) return;
-    const channel = supabase
-      .channel('election_cycle_screening')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'screening_snapshots' },
-        () => {
-          loadScreeningSignal();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [supabase, loadScreeningSignal]);
-
-  useEffect(() => {
-    setScreeningSignal(null);
-  }, [symbol]);
-
-  useEffect(() => {
-    infoTabRef.current = infoTab;
-  }, [infoTab]);
-
-  useEffect(() => {
-    if (!requestedInfoTab) {
-      return;
-    }
-    const available = infoTabs.some((tab) => tab.value === requestedInfoTab);
-    if (!available) {
-      return;
-    }
-    if (infoTabRef.current === requestedInfoTab) {
-      return;
-    }
-    setInfoTab(requestedInfoTab);
-  }, [requestedInfoTab, infoTabs]);
-
-  useEffect(() => {
-    const isTabAvailable = infoTabs.some((tab) => tab.value === infoTab);
-    if (isTabAvailable || (requestedInfoTab && requestedInfoTab === infoTab)) {
-      return;
-    }
-    const fallback = infoTabs[0]?.value ?? 'keystats';
-    if (fallback && fallback !== infoTab) {
-      setInfoTab(fallback);
-    }
-  }, [infoTabs, infoTab, requestedInfoTab]);
 
   useEffect(() => {
     if (!tradingPlanPayload) {
@@ -729,13 +263,6 @@ function ElectionCyclePageContent() {
       tradingPlanPayload.risk_percent != null ? String(tradingPlanPayload.risk_percent) : '1'
     );
   }, [tradingPlanPayload]);
-
-  // Persist last viewed symbol
-  useEffect(() => {
-    try {
-      localStorage.setItem(LAST_SYMBOL_KEY, symbol);
-    } catch { }
-  }, [symbol]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -775,11 +302,6 @@ function ElectionCyclePageContent() {
   ]);
 
   useEffect(() => {
-    fetchDataAndBuildChart();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbol, selectedCycles]);
-
-  useEffect(() => {
     if (!isAuthenticated) {
       setPortfolioEntries([]);
       return;
@@ -811,264 +333,7 @@ function ElectionCyclePageContent() {
     syncPortfolio,
   ]);
 
-  // Lazy-load fundamentals only when the user switches to a tab that needs them
-  // Cache per symbol so switching tabs back doesn't re-fetch
-  useEffect(() => {
-    if (!symbol) {
-      return;
-    }
 
-    // Only fetch for tabs that need fundamentals data
-    const needsFundamentals = ['keystats', 'analysis', 'profile', 'financials'].includes(infoTab);
-    if (!needsFundamentals) {
-      return;
-    }
-
-    // Check cache — skip fetch if we already have data for this symbol
-    if (fundamentalsCacheRef.current[symbol]) {
-      setFundamentals(fundamentalsCacheRef.current[symbol]);
-      setFundamentalsLoading(false);
-      return;
-    }
-
-    let cancelled = false;
-    setFundamentals(null);
-    setFundamentalsLoading(true);
-    setRevenuePeriod('quarterly');
-
-    (async () => {
-      try {
-        const { response, data } = await fetchEncodedJson(
-          `/api/fundamentals?symbol=${encodeURIComponent(symbol)}`
-        );
-        if (!response.ok) {
-          throw new Error(data?.error || 'Failed to load fundamentals');
-        }
-        if (!cancelled) {
-          setFundamentals(data);
-          // Cache the result for this symbol
-          fundamentalsCacheRef.current[symbol] = data;
-        }
-      } catch (error) {
-        console.warn('Failed to fetch fundamentals', error);
-        if (!cancelled) {
-          setFundamentals(null);
-        }
-      } finally {
-        if (!cancelled) {
-          setFundamentalsLoading(false);
-        }
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [symbol, infoTab]);
-
-  useEffect(() => {
-    if (!fundamentals) return;
-    const annual = fundamentals.analysis?.revenue?.annual;
-    if (revenuePeriod === 'annual' && (!annual || annual.length === 0)) {
-      setRevenuePeriod('quarterly');
-    }
-  }, [fundamentals, revenuePeriod]);
-
-  async function fetchDataAndBuildChart() {
-    setLoading(true);
-    try {
-      const startDate = Math.floor(new Date('1971-01-01').getTime() / 1000);
-      const endDate = Math.floor(Date.now() / 1000);
-
-      const { response, data } = await fetchEncodedJson(
-        `/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`
-      );
-
-      if (!response.ok) {
-        throw new Error(data?.error || 'Failed to fetch data');
-      }
-
-      let rawData = (data.data || []).map(row => ({
-        date: row.date,
-        adjclose: row.adjclose,
-      }));
-
-      rawData = rawData.filter(row => row.adjclose !== null);
-
-      const currentYear = new Date().getFullYear();
-      const histRaw = rawData.filter(row => new Date(row.date).getFullYear() < currentYear);
-      const currentRaw = rawData.filter(row => new Date(row.date).getFullYear() === currentYear);
-
-      let histDaily = computeDailyReturns(histRaw);
-      histDaily = removeIncompleteYears(histDaily, 200);
-      histDaily = histDaily.map(row => ({
-        ...row,
-        cycle: getElectionCycleLabel(row.year),
-      }));
-
-      const currentDaily = computeDailyReturns(currentRaw);
-      const linesData = [];
-
-      if (selectedCycles.includes('all') && histDaily.length > 0) {
-        const firstYear = Math.min(...histDaily.map(r => r.year));
-        const pattern = hirschStyleSeasonalPattern(histDaily);
-        linesData.push({
-          name: `All Years (${firstYear}-${currentYear - 1})`,
-          key: 'allYears',
-          data: pattern,
-          color: colors.allYears,
-        });
-      }
-
-      if (selectedCycles.includes('trump')) {
-        const TRUMP_YEARS = [2017, 2018, 2019, 2020, 2025, 2026];
-        const trumpData = histDaily.filter(r => TRUMP_YEARS.includes(r.year));
-        if (trumpData.length > 0) {
-          linesData.push({
-            name: 'Trump Years',
-            key: 'trumpYears',
-            data: hirschStyleSeasonalPattern(trumpData),
-            color: colors.trumpYears,
-          });
-        }
-      }
-
-      if (selectedCycles.includes('pre')) {
-        const preData = histDaily.filter(r => r.cycle === 'Pre-Election Year');
-        if (preData.length > 0) {
-          linesData.push({
-            name: 'Pre-Election Year',
-            key: 'preElection',
-            data: hirschStyleSeasonalPattern(preData),
-            color: colors.preElection,
-          });
-        }
-      }
-
-      if (selectedCycles.includes('election')) {
-        const elecData = histDaily.filter(r => r.cycle === 'Election Year');
-        if (elecData.length > 0) {
-          linesData.push({
-            name: 'Election Year',
-            key: 'election',
-            data: hirschStyleSeasonalPattern(elecData),
-            color: colors.election,
-          });
-        }
-      }
-
-      if (selectedCycles.includes('mid')) {
-        const midData = histDaily.filter(r => r.cycle === 'Mid-Term Year');
-        if (midData.length > 0) {
-          linesData.push({
-            name: 'Mid-Term Year',
-            key: 'midTerm',
-            data: hirschStyleSeasonalPattern(midData),
-            color: colors.midTerm,
-          });
-        }
-      }
-
-      if (selectedCycles.includes('post')) {
-        const postData = histDaily.filter(r => r.cycle === 'Post-Election Year');
-        if (postData.length > 0) {
-          linesData.push({
-            name: 'Post-Election Year',
-            key: 'postElection',
-            data: hirschStyleSeasonalPattern(postData),
-            color: colors.postElection,
-          });
-        }
-      }
-
-      if (selectedCycles.includes('current') && currentDaily.length > 0) {
-        let pattern = computeSingleYearPattern(currentDaily, currentYear);
-        pattern = forwardFillSingleYear(pattern);
-        if (pattern.length > 0) {
-          linesData.push({
-            name: `Current Year (${currentYear} YTD)`,
-            key: 'current',
-            data: pattern,
-            color: colors.current,
-          });
-        }
-      }
-
-      // Simpan raw linesData saja, transformasi akan dilakukan di useMemo
-      setRawLinesData(linesData);
-
-      const symbolName = data.meta?.name || symbol;
-      setAssetName(symbolName);
-
-      let currentPrice = null;
-      let startPrice = null;
-      let predictedPrice = null;
-      let predictedPct = null;
-      let dailyChange = null;
-      let dailyChangePct = null;
-
-      if (rawData.length > 0) {
-        currentPrice = rawData[rawData.length - 1].adjclose;
-        if (rawData.length > 1) {
-          const previousPrice = rawData[rawData.length - 2].adjclose;
-          if (previousPrice != null) {
-            dailyChange = currentPrice - previousPrice;
-            if (previousPrice !== 0) {
-              dailyChangePct = (dailyChange / previousPrice) * 100;
-            }
-          }
-        }
-      }
-
-      if (currentRaw.length > 0) {
-        startPrice = currentRaw[0].adjclose;
-      }
-
-      const currentCycleLabel = getElectionCycleLabel(currentYear);
-      const cycleKeyMap = {
-        'Pre-Election Year': 'preElection',
-        'Election Year': 'election',
-        'Mid-Term Year': 'midTerm',
-        'Post-Election Year': 'postElection',
-      };
-      const targetKey = cycleKeyMap[currentCycleLabel];
-      const benchmarkLine = linesData.find(line => line.key === targetKey);
-
-      if (benchmarkLine && benchmarkLine.data.length > 0 && startPrice) {
-        const lastPoint = benchmarkLine.data[benchmarkLine.data.length - 1];
-        if (scaleChoice === 'linear') {
-          predictedPct = lastPoint.pctChangeYtd;
-          predictedPrice = startPrice * (1.0 + predictedPct / 100.0);
-        }
-      }
-
-      const marketState = data.meta?.marketState ? String(data.meta.marketState).toUpperCase() : 'CLOSED';
-      const isMarketOpen = ['REGULAR', 'OPEN', 'TRADING'].some(state => marketState.includes(state));
-
-      setSymbolInfo({
-        logo: data.meta?.logo,
-        name: symbolName,
-        currentPrice,
-        predictedPrice,
-        predictedPct,
-        dailyChange,
-        dailyChangePct,
-        isMarketOpen,
-        currency: data.meta?.currency,
-      });
-
-      const monthlyReturns = calculateMonthlyReturns(rawData);
-      const quarterlyReturns = calculateQuarterlyReturns(rawData);
-
-      setMonthlyHeatmap(formatMonthlyHeatmap(monthlyReturns, 10));
-      setQuarterlyHeatmap(formatQuarterlyHeatmap(quarterlyReturns, 10));
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      alert('Failed to fetch data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }
 
   const formatTick = (dayOfYear) => {
     const date = new Date(2000, 0, 1);
@@ -1101,27 +366,11 @@ function ElectionCyclePageContent() {
     return `${value.toFixed(0)}%`;
   };
 
-  function getReturnCellStyle(value) {
-    if (value == null || isNaN(value)) return {};
-    const abs = Math.abs(value);
-    const t = Math.min(1, abs / 10);
-    const alpha = (0.15 + t * 0.65).toFixed(2);
-    if (value > 0) return { backgroundColor: `rgba(34, 197, 94, ${alpha})`, color: t > 0.3 ? 'white' : undefined };
-    if (value < 0) return { backgroundColor: `rgba(239, 68, 68, ${alpha})`, color: t > 0.3 ? 'white' : undefined };
-    return {};
-  }
+
 
   const [quarterFilter, setQuarterFilter] = useState('all');
 
-  const getQuarterDateRange = (quarter) => {
-    switch (quarter) {
-      case 'Q1': return [1, 90];
-      case 'Q2': return [91, 181];
-      case 'Q3': return [182, 273];
-      case 'Q4': return [274, 365];
-      default: return [1, 365];
-    }
-  };
+
 
   // Transform raw data berdasarkan scaleChoice (tidak perlu re-fetch)
   const chartData = useMemo(() => {
@@ -1235,99 +484,6 @@ function ElectionCyclePageContent() {
     };
   }, [symbol, normalTimeframe, isNormalView]);
 
-  const filteredNormalChartData = useMemo(() => {
-    if (!isNormalView || !Array.isArray(normalSeries) || normalSeries.length === 0) {
-      return [];
-    }
-    const sorted = [...normalSeries]
-      .filter(
-        (point) =>
-          point &&
-          typeof point.timestamp === 'number' &&
-          Number.isFinite(point.timestamp)
-      )
-      .sort((a, b) => a.timestamp - b.timestamp);
-    if (sorted.length === 0) return [];
-
-    const baseTimestamp = sorted[0].timestamp;
-    let prevHeikinOpen = null;
-    let prevHeikinClose = null;
-
-    const normalizedPoints = [];
-
-    sorted.forEach((point) => {
-      const close =
-        typeof point.close === 'number' && Number.isFinite(point.close)
-          ? point.close
-          : typeof point.price === 'number' && Number.isFinite(point.price)
-            ? point.price
-            : null;
-      if (close == null) {
-        return;
-      }
-
-      const open =
-        typeof point.open === 'number' && Number.isFinite(point.open) ? point.open : close;
-      const high =
-        typeof point.high === 'number' && Number.isFinite(point.high)
-          ? point.high
-          : Math.max(open, close);
-      const low =
-        typeof point.low === 'number' && Number.isFinite(point.low)
-          ? point.low
-          : Math.min(open, close);
-
-      const heikinClose = (open + high + low + close) / 4;
-      const heikinOpen =
-        prevHeikinOpen == null || prevHeikinClose == null
-          ? (open + close) / 2
-          : (prevHeikinOpen + prevHeikinClose) / 2;
-      const heikinHigh = Math.max(high, heikinOpen, heikinClose);
-      const heikinLow = Math.min(low, heikinOpen, heikinClose);
-      prevHeikinOpen = heikinOpen;
-      prevHeikinClose = heikinClose;
-
-      normalizedPoints.push({
-        timestamp: point.timestamp,
-        elapsed: point.timestamp - baseTimestamp,
-        price: close,
-        open,
-        high,
-        low,
-        close,
-        interpolated: false,
-        volume:
-          typeof point.volume === 'number' && Number.isFinite(point.volume)
-            ? point.volume
-            : null,
-        heikinOpen,
-        heikinHigh,
-        heikinLow,
-        heikinClose,
-      });
-    });
-
-    if (normalizedPoints.length === 0) {
-      return [];
-    }
-
-    const closingPrices = normalizedPoints.map((point) => point.close);
-    const ema20Series = calculateEMA(closingPrices, EMA_PERIOD);
-    const firstClose =
-      closingPrices.find((value) => typeof value === 'number' && Number.isFinite(value)) ?? null;
-
-    return normalizedPoints.map((point, index) => {
-      const ema20 = Number.isFinite(ema20Series[index]) ? ema20Series[index] : point.close;
-      const changePct =
-        firstClose && firstClose !== 0 ? ((point.close - firstClose) / firstClose) * 100 : null;
-      return {
-        ...point,
-        changePct,
-        ema20,
-      };
-    });
-  }, [isNormalView, normalSeries]);
-
   const portfolioPosition = useMemo(() => {
     if (!symbol || !Array.isArray(portfolioEntries) || portfolioEntries.length === 0) {
       return null;
@@ -1402,121 +558,6 @@ function ElectionCyclePageContent() {
       pct: symbolInfo.dailyChangePct
     };
   }, [symbolInfo?.dailyChange, symbolInfo?.dailyChangePct]);
-
-  const normalCandlestickSeries = useMemo(() => {
-    if (!isNormalView || filteredNormalChartData.length === 0) {
-      return {
-        candles: [],
-        ema: [],
-        livermore: { upper: [], lower: [] },
-        meta: {},
-        stochastic: { k: [], d: [] },
-        chartDisplayType,
-      };
-    }
-    const candles = [];
-    const ema = [];
-    const meta = {};
-    const livermoreSource = [];
-    const closingValues = filteredNormalChartData.map((point) => {
-      if (typeof point.close === 'number' && Number.isFinite(point.close)) {
-        return point.close;
-      }
-      if (typeof point.price === 'number' && Number.isFinite(point.price)) {
-        return point.price;
-      }
-      return null;
-    });
-    const stochasticValues = computeStochasticRSI(closingValues, 14, 14, 3, 3);
-    const stochasticK = [];
-    const stochasticD = [];
-    filteredNormalChartData.forEach((point, index) => {
-      if (typeof point.timestamp !== 'number') return;
-      const time = Math.floor(point.timestamp / 1000);
-      if (!Number.isFinite(time)) return;
-      const actualOpen =
-        typeof point.open === 'number' && Number.isFinite(point.open) ? point.open : point.price;
-      const actualClose =
-        typeof point.close === 'number' && Number.isFinite(point.close) ? point.close : point.price;
-      const actualHigh =
-        typeof point.high === 'number' && Number.isFinite(point.high)
-          ? point.high
-          : Math.max(actualOpen, actualClose);
-      const actualLow =
-        typeof point.low === 'number' && Number.isFinite(point.low)
-          ? point.low
-          : Math.min(actualOpen, actualClose);
-
-      let open, close, high, low;
-      if (chartDisplayType === 'heikinAshi') {
-        open = typeof point.heikinOpen === 'number' && Number.isFinite(point.heikinOpen) ? point.heikinOpen : actualOpen;
-        close = typeof point.heikinClose === 'number' && Number.isFinite(point.heikinClose) ? point.heikinClose : actualClose;
-        high = typeof point.heikinHigh === 'number' && Number.isFinite(point.heikinHigh) ? point.heikinHigh : actualHigh;
-        low = typeof point.heikinLow === 'number' && Number.isFinite(point.heikinLow) ? point.heikinLow : actualLow;
-      } else {
-        open = actualOpen;
-        close = actualClose;
-        high = actualHigh;
-        low = actualLow;
-      }
-
-      candles.push({ time, open, high, low, close });
-      if (typeof point.ema20 === 'number' && Number.isFinite(point.ema20)) {
-        ema.push({ time, value: point.ema20 });
-      } else {
-        ema.push({ time, value: close });
-      }
-      livermoreSource.push({ time, high: actualHigh, low: actualLow });
-      meta[time] = {
-        timestamp: point.timestamp,
-        open,
-        high,
-        low,
-        close,
-        actualOpen,
-        actualHigh,
-        actualLow,
-        actualClose,
-        ema20:
-          typeof point.ema20 === 'number' && Number.isFinite(point.ema20) ? point.ema20 : close,
-        livermoreUpper: null,
-        livermoreLower: null,
-        changePct:
-          typeof point.changePct === 'number' && Number.isFinite(point.changePct)
-            ? point.changePct
-            : null,
-      };
-
-      const kValue = stochasticValues.k[index];
-      const dValue = stochasticValues.d[index];
-      if (Number.isFinite(kValue)) {
-        stochasticK.push({ time, value: Number(kValue.toFixed(2)) });
-      }
-      if (Number.isFinite(dValue)) {
-        stochasticD.push({ time, value: Number(dValue.toFixed(2)) });
-      }
-    });
-
-    const livermoreLevels = computeLivermoreKeyLevels(livermoreSource, LIVERMORE_LOOKBACK);
-    Object.entries(livermoreLevels.lookup).forEach(([timeKey, values]) => {
-      if (!values) return;
-      if (meta[timeKey]) {
-        meta[timeKey].livermoreUpper = values.upper ?? null;
-        meta[timeKey].livermoreLower = values.lower ?? null;
-      }
-    });
-
-    return {
-      candles,
-      ema,
-      livermore: { upper: livermoreLevels.upper, lower: livermoreLevels.lower },
-      meta,
-      stochastic: { k: stochasticK, d: stochasticD },
-      chartDisplayType,
-    };
-  }, [filteredNormalChartData, isNormalView, chartDisplayType]);
-
-  const normalChartReady = normalCandlestickSeries.candles.length > 0;
 
   const renderTimeframeButtons = ({ includeFullscreenToggle = false } = {}) => (
     <>
@@ -1654,62 +695,7 @@ function ElectionCyclePageContent() {
     </DropdownMenu>
   );
 
-  const stochasticChartData = useMemo(() => {
-    const combined = new Map();
-    (normalCandlestickSeries.stochastic?.k ?? []).forEach(({ time, value }) => {
-      combined.set(time, { time, k: value });
-    });
-    (normalCandlestickSeries.stochastic?.d ?? []).forEach(({ time, value }) => {
-      const merged = combined.get(time) ?? { time };
-      merged.d = value;
-      combined.set(time, merged);
-    });
-    const sorted = Array.from(combined.values()).sort((a, b) => a.time - b.time);
-    return sorted.slice(-400);
-  }, [normalCandlestickSeries.stochastic]);
 
-  const showIntradayScale = isIntradayTimeframe;
-  useEffect(() => {
-    if (!isNormalView && normalFullscreenOpen) {
-      setNormalFullscreenOpen(false);
-    }
-  }, [isNormalView, normalFullscreenOpen]);
-  const buySignalMarkers = useMemo(() => {
-    if (
-      !isNormalView ||
-      !screeningSignal?.signal_date ||
-      filteredNormalChartData.length === 0
-    ) {
-      return [];
-    }
-    const signalDate = new Date(screeningSignal.signal_date);
-    if (Number.isNaN(signalDate.getTime())) {
-      return [];
-    }
-    const signalMs = signalDate.getTime();
-    let closest = null;
-    let minDelta = Infinity;
-    filteredNormalChartData.forEach((point) => {
-      if (typeof point.timestamp !== 'number') return;
-      const delta = Math.abs(point.timestamp - signalMs);
-      if (delta < minDelta) {
-        minDelta = delta;
-        closest = Math.floor(point.timestamp / 1000);
-      }
-    });
-    if (closest == null) {
-      return [];
-    }
-    return [
-      {
-        time: closest,
-        position: 'belowBar',
-        shape: 'arrowUp',
-        color: BUY_SIGNAL_COLOR,
-        text: 'Buy',
-      },
-    ];
-  }, [filteredNormalChartData, screeningSignal?.signal_date, isNormalView]);
   const hasCycleChartData = chartData.chartArray && chartData.chartArray.length > 0;
   const showChartSection =
     !loading &&
@@ -2480,7 +1466,7 @@ function ElectionCyclePageContent() {
       syncWatchlist(next).catch(() => { });
       return next;
     });
-  }, [redirectToSignIn, symbol, syncWatchlist]);
+  }, [redirectToSignIn, symbol, syncWatchlist, canUseProtectedActions]);
 
   const renderProfileTab = () => {
     if (fundamentalsLoading) {
@@ -4151,72 +3137,15 @@ function ElectionCyclePageContent() {
 
   return (
     <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start pb-8">
-      <div className="lg:col-span-12 flex justify-between gap-2 mb-4 lg:mb-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <h1
-            className="text-base font-semibold uppercase cursor-pointer transition-colors hover:text-primary flex items-center gap-1"
-            onClick={() => setSearchDialogOpen(true)}
-            role="button"
-            tabIndex={0}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') {
-                event.preventDefault();
-                setSearchDialogOpen(true);
-              }
-            }}
-          >
-            {formatTickerDisplay(symbol)} <ChevronDown className="size-4 dark:text-white/70" />
-          </h1>
-          <span className="text-muted">|</span>
-          {symbol.endsWith('.JK') && (
-            <span className="dark:text-white/70 text-xs">🇮🇩</span>
-          )}
-          {symbol.endsWith('-USD') && (
-            <span className="dark:text-white/70 text-xs flex items-center gap-1"><Bitcoin className="size-4 text-amber-600" /></span>
-          )}
-          {['QQQ', 'SPY'].some((s) => symbol.endsWith(s)) && (
-            <span className="dark:text-white/70 text-xs">🇺🇸</span>
-          )}
-          {['AAPL', 'MSFT', 'GOOGL', 'GOOG', 'AMZN', 'META', 'NVDA', 'AVGO'].some((s) => symbol.endsWith(s)) && (
-            <span className="dark:text-white/70 text-xs flex items-center gap-1">🇺🇸</span>
-          )}
-        </div>
-        <div className="flex gap-3">
-          <Select
-            className="w-full"
-            value={selectedCycles.join(',')}
-            onValueChange={(value) => setSelectedCycles(value.split(','))}
-          >
-            <SelectTrigger className="h-8 text-[11px]">
-              <SelectValue placeholder="Select cycles" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem className="text-[11px]" value="normal">
-                Normal
-              </SelectItem>
-              <SelectItem className="text-[11px]" value="trump,current">Trump Years</SelectItem>
-              <SelectItem className="text-[11px]" value="all,current">All Years</SelectItem>
-              <SelectItem className="text-[11px]" value="pre,current">Pre-Election</SelectItem>
-              <SelectItem className="text-[11px]" value="election,current">Election</SelectItem>
-              <SelectItem className="text-[11px]" value="post,current">Post-Election</SelectItem>
-              <SelectItem className="text-[11px]" value="mid,current">Mid-Term</SelectItem>
-            </SelectContent>
-          </Select>
-          <button
-            type="button"
-            onClick={toggleFavorite}
-            aria-pressed={isFavorite}
-            aria-label={isFavorite ? `Remove ${symbol} from favorites` : `Add ${symbol} to favorites`}
-            className={`rounded-full p-1 transition-colors ${isFavorite ? 'text-amber-600 hover:text-amber-400' : 'text-muted-foreground hover:text-foreground'}`}
-          >
-            <Star
-              className="size-5.5"
-              strokeWidth={isFavorite ? 1.2 : 1.5}
-              fill={isFavorite ? 'currentColor' : 'none'}
-            />
-          </button>
-        </div>
-      </div>
+      <ChartHeaderBar
+        symbol={symbol}
+        assetName={assetName}
+        isFavorite={isFavorite}
+        onToggleFavorite={toggleFavorite}
+        onSearchOpen={() => setSearchDialogOpen(true)}
+        selectedCycles={selectedCycles}
+        onCyclesChange={setSelectedCycles}
+      />
 
       <div className="lg:col-span-8 flex flex-col gap-2">
         {loading && (
@@ -4336,7 +3265,7 @@ function ElectionCyclePageContent() {
                           currency={symbolInfo?.currency}
                           formatPrice={formatPriceValue}
                           isDark={resolvedTheme === 'dark'}
-                          showTimeScale={showIntradayScale}
+                          showTimeScale={isIntradayTimeframe}
                           showSeconds={normalTimeframe === '15m'}
                           emaColor={EMA_COLOR}
                           livermoreKey={normalCandlestickSeries.livermore}
@@ -4487,7 +3416,7 @@ function ElectionCyclePageContent() {
                         currency={symbolInfo?.currency}
                         formatPrice={formatPriceValue}
                         isDark={resolvedTheme === 'dark'}
-                        showTimeScale={showIntradayScale}
+                        showTimeScale={isIntradayTimeframe}
                         showSeconds={normalTimeframe === '15m'}
                         emaColor={EMA_COLOR}
                         livermoreKey={normalCandlestickSeries.livermore}
