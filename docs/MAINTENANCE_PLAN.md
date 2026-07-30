@@ -133,16 +133,16 @@ this phase.
 
 **Definition of done:**
 
-- [ ] The route owns URL/search-param handling and feature composition only;
+- [x] The route owns URL/search-param handling and feature composition only;
       pure calculations and browser persistence/fetch state have named homes.
-- [ ] Chart panels, trading plan, fundamentals, seasonal views and dialogs are
+- [x] Chart panels, trading plan, fundamentals, seasonal views and dialogs are
       independently readable components with explicit props.
-- [ ] Reusable logic has no dependency on pages/components; components never
+- [x] Reusable logic has no dependency on pages/components; components never
       import API route modules and use `fetchEncodedJson()` through approved
       helpers.
-- [ ] Existing chart states—normal/seasonal modes, symbol change, watchlist,
+- [x] Existing chart states—normal/seasonal modes, symbol change, watchlist,
       portfolio action, dialog and error/loading paths—are smoke tested.
-- [ ] Lint and production build pass; no regressions in Suspense wrapping for
+- [x] Lint and production build pass; no regressions in Suspense wrapping for
       `useSearchParams`.
 
 **Documentation after implementation:** Update `docs/architecture.md`,

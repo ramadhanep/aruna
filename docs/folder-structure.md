@@ -104,9 +104,15 @@
 │   │   ├── aruna-watermark.jsx      # SVG watermark overlay
 │   │   ├── google-glyph.jsx         # Google logo SVG for sign-in
 │   │   ├── clear-data-button.jsx    # Clear local + remote data
-│   │   └── mode-toggle.jsx          # Theme toggle (light/dark)
+│   │   ├── mode-toggle.jsx          # Theme toggle (light/dark)
+│   │   └── chart-header-bar.jsx     # Chart symbol header with cycle selector
 │   ├── hooks/
-│   │   └── use-mobile.js            # Mobile breakpoint detection (1024px)
+│   │   ├── use-mobile.js            # Mobile breakpoint detection (1024px)
+│   │   ├── use-chart-state.js       # Chart URL param ↔ state sync + localStorage
+│   │   ├── use-chart-data.js        # Seasonal chart data fetching
+│   │   ├── use-chart-series.js      # Normal candlestick series + indicators
+│   │   ├── use-chart-fundamentals.js # Lazy fundamentals with cache
+│   │   └── use-chart-screening.js   # Screening signal + realtime subscription
 │   └── lib/
 │       ├── api-client.js            # fetchEncodedJson — XOR-decoded fetch
 │       ├── secure-payload.js        # XOR cipher encode/decode
@@ -121,6 +127,7 @@
 │       ├── default-watchlist.js     # Default watchlist for guest users
 │       ├── tools-menu.js            # TOOLS_ITEMS config for nav
 │       ├── utils.js                 # cn(), formatTickerDisplay(), formatMarketCap(), etc.
+│       ├── chart-helpers.js         # Chart-specific constants, technical indicators, formatters
 │       └── lightweight-charts-loader.js  # Dynamic import for lightweight-charts
 ├── public/                          # Static assets
 │   ├── aruna.png                    # App icon / logo

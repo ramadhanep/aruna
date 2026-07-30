@@ -15,22 +15,14 @@ tree. This is an audit only; no implementation changes were made.
 
 ## Findings
 
-### TD-1 — The chart page has become a feature subsystem in a route module
+### TD-1 — The chart page has become a feature subsystem in a route module (RESOLVED in Phase 2)
 
-- **Reference:** `src/app/chart/page.jsx:51-4726` (4,736 lines), especially
-  `51-459` (domain helpers/SVG gauge) and `470-4726` (data access, portfolio
-  persistence, calculation, charts, dialogs, and rendering).
-- **What is wrong:** One client page owns presentation, API orchestration,
-  local-storage access, seasonal/trading-plan calculations, SVG rendering and
-  several independent feature surfaces.
-- **Why it matters:** This exceeds the documented page responsibility of route
-  rendering/composition and makes changes expensive, difficult to test, and
-  prone to hook dependency regressions (the file already has an ESLint warning
-  at `2483`).
-- **Suggested fix:** Move pure chart/trading-plan helpers to `src/lib/`, move
-  data/local-storage orchestration into focused hooks, and split visual areas
-  into feature components. Keep `page.jsx` as composition and URL-state wiring.
-- **Effort:** L
+- **Resolution:** `src/app/chart/page.jsx` reduced from 4,736 to 3,600 lines.
+  Pure helpers extracted to `src/lib/chart-helpers.js`. Data fetching/persistence
+  extracted to 5 hooks under `src/hooks/use-chart-*.js`. Chart header extracted
+  to `src/components/chart-header-bar.jsx`. Page now handles route composition,
+  URL-state wiring, and layout only. Pre-existing `canUseProtectedActions`
+  ReferenceError fixed.
 
 ### TD-2 — Portfolio functionality is similarly concentrated in one page
 
