@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth-provider";
 import { GoogleGlyph } from "@/components/google-glyph";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, ShieldAlert } from "lucide-react";
 
 function SignInContent() {
@@ -91,8 +92,13 @@ export default function SignInPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <div className="flex min-h-[calc(100vh-10rem)] flex-col justify-center items-center">
+          <div className="w-full max-w-md rounded-lg border border-border bg-card px-6 py-7 space-y-3">
+            <Skeleton className="h-3 w-24 rounded-full" />
+            <Skeleton className="h-5 w-44 rounded-full" />
+            <Skeleton className="h-3 w-64 rounded-full" />
+            <Skeleton className="h-11 w-full rounded-full mt-4" />
+          </div>
         </div>
       }
     >

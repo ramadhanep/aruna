@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function AccountSidebarContent({ onClose }) {
   const {
@@ -346,8 +347,17 @@ export function AccountSidebar({ open, onClose }) {
       >
         <Suspense
           fallback={
-            <div className="flex items-center justify-center h-full">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <div className="p-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-9 w-9 rounded-full" />
+                <div className="space-y-1.5">
+                  <Skeleton className="h-3 w-28 rounded-full" />
+                  <Skeleton className="h-3 w-20 rounded-full" />
+                </div>
+              </div>
+              <Skeleton className="h-24 w-full rounded-2xl" />
+              <Skeleton className="h-24 w-full rounded-2xl" />
+              <Skeleton className="h-24 w-full rounded-2xl" />
             </div>
           }
         >
