@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { encodePayload } from '@/lib/secure-payload';
+import { getIdxLogoUrl } from '@/lib/supabase-storage';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -82,7 +83,7 @@ export async function GET(request) {
         monthChange: stock.price_1_month_pct_change,
         momentumScore: parseFloat(momentumScore.toFixed(2)),
         status,
-        logo_url: `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/idx/${stock.code}.png`,
+        logo_url: getIdxLogoUrl(stock.code),
       };
     });
 

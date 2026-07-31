@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, Lock, Download, Flame, ChevronDown, ChevronUp, ChevronRight, Clock, Globe, Zap, BarChart3, ArrowUpRight, ArrowDownRight, Gem, Magnet, Rotate3D, Axe, MessageCircleMore, Radar, Droplets } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
+import { SUPABASE_STORAGE_BASE } from "@/lib/supabase-storage";
 import { MOTION } from "@/lib/motion";
 import { TickerRowSkeleton } from "@/components/ticker-row-skeleton";
 import { TickerRow } from "@/components/ticker-row";
@@ -16,8 +17,6 @@ import { TickerAvatar } from "@/components/ticker-avatar";
 import { TrendingMarquee } from "@/components/trending-marquee";
 import { MiniChart } from "@/components/mini-chart";
 import { cn, formatPercent, formatPrice, formatTickerDisplay } from "@/lib/utils";
-
-const SUPABASE_STORAGE_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public`;
 
 const CATEGORY_LABELS = {
   idx: "IDX 🇮🇩",

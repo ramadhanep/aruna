@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Loader2, ArrowLeft, Download } from "lucide-react";
 import { ArunaWatermark } from "./aruna-watermark";
 import { fetchEncodedJson } from "@/lib/api-client";
+import { getIdxLogoUrl } from "@/lib/supabase-storage";
 
 export function MarketBubbles({ fullScreen = false }) {
   const [stocks, setStocks] = useState([]);
@@ -476,7 +477,7 @@ export function MarketBubbles({ fullScreen = false }) {
 
                   {showLogo && (
                     <image
-                      href={`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/idx/${bubble.code}.png`}
+                      href={getIdxLogoUrl(bubble.code)}
                       x={bubble.x - logoSize / 2}
                       y={logoY - logoSize / 2}
                       width={logoSize}
