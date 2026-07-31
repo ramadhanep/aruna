@@ -111,6 +111,55 @@ async function extractLogoColor(url, theme) {
   });
 }
 
+function PieSection({ title, data, sum, prefix, suffix, config, heightClass = 'h-52' }) {
+  return (
+    <div className="w-full flex flex-col items-center">
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{title}</p>
+      <ChartContainer config={config} className={`w-full ${heightClass}`}>
+        <PieChart margin={{ top: 8, right: 16, bottom: 28, left: 16 }}>
+          <Pie
+            data={data}
+            dataKey="value"
+            nameKey="name"
+            innerRadius={50}
+            outerRadius={80}
+            strokeWidth={2}
+            paddingAngle={2}
+          >
+            {data.map((entry, index) => (
+              <Cell key={`cell-${prefix}-${index}`} fill={entry.fill} />
+            ))}
+          </Pie>
+          <ChartTooltip
+            cursor={false}
+            content={<ChartTooltipContent formatter={(val, name, item) => {
+              const pct = ((item?.value || 0) / sum) * 100;
+              return (
+                <div className="flex w-full items-center justify-between gap-4">
+                  <span className="text-muted-foreground">{item?.name}</span>
+                  <span className="font-mono">{val.toLocaleString()} {suffix} · {pct.toFixed(1)}%</span>
+                </div>
+              );
+            }} />}
+          />
+        </PieChart>
+      </ChartContainer>
+      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-2xs mt-2">
+        {data.map((item, i) => {
+          const pct = (item.value / sum) * 100;
+          return (
+            <div key={`legend-${prefix}-${i}`} className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full" style={{ backgroundColor: item.fill }} />
+              <span className="font-medium text-foreground">{item.name}</span>
+              <span className="text-muted-foreground">{pct.toFixed(1)}%</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function PortfolioPie({
   digitalUSD,
   cashUSD,
@@ -216,203 +265,13 @@ export function PortfolioPie({
 
   return (
     <div className="flex flex-col items-center gap-4">
-      {/* Asset Type Chart */}
-      <div className="w-full flex flex-col items-center">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Asset Type Allocation</p>
-        <ChartContainer config={config} className="w-full h-48">
-          <PieChart margin={{ top: 8, right: 16, bottom: 28, left: 16 }}>
-            <Pie
-              data={assetTypeData}
-              dataKey="value"
-              nameKey="name"
-              innerRadius={50}
-              outerRadius={80}
-              strokeWidth={2}
-              paddingAngle={2}
-            >
-              {assetTypeData.map((entry, index) => (
-                <Cell key={`cell-asset-${index}`} fill={entry.fill} />
-              ))}
-            </Pie>
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent formatter={(val, name, item) => {
-                const pct = ((item?.value || 0) / assetSum) * 100;
-                return (
-                  <div className="flex w-full items-center justify-between gap-4">
-                    <span className="text-muted-foreground">{item?.name}</span>
-                    <span className="font-mono">{val.toLocaleString()} {displaySuffix} · {pct.toFixed(1)}%</span>
-                  </div>
-                );
-              }} />} />
-          </PieChart>
-        </ChartContainer>
-        <div className="flex flex-wrap items-center justify-center gap-4 text-2xs">
-          {assetTypeData.map((item) => {
-            const pct = (item.value / assetSum) * 100;
-            return (
-              <div key={item.key} className="flex items-center gap-1.5">
-                <span
-                  className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: item.fill }}
-                />
-                <span className="font-medium text-foreground">{item.name}</span>
-                <span className="text-muted-foreground">{pct.toFixed(1)}%</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
+      <PieSection title="Asset Type Allocation" data={assetTypeData} sum={assetSum} prefix="asset" suffix={displaySuffix} config={config} heightClass="h-48" />
       <div className="w-full border-t border-border/20" />
-
-      {/* Digital Asset Allocation Chart */}
-      <div className="w-full flex flex-col items-center">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Digital Asset Allocation</p>
-        <ChartContainer config={config} className="w-full h-52">
-          <PieChart margin={{ top: 8, right: 16, bottom: 28, left: 16 }}>
-            <Pie
-              data={digitalData}
-              dataKey="value"
-              nameKey="name"
-              innerRadius={50}
-              outerRadius={80}
-              strokeWidth={2}
-              paddingAngle={2}
-            >
-              {digitalData.map((entry, index) => (
-                <Cell key={`cell-digital-${index}`} fill={entry.fill} />
-              ))}
-            </Pie>
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent formatter={(val, name, item) => {
-                const pct = ((item?.value || 0) / digitalSum) * 100;
-                return (
-                  <div className="flex w-full items-center justify-between gap-4">
-                    <span className="text-muted-foreground">{item?.name}</span>
-                    <span className="font-mono">{val.toLocaleString()} {displaySuffix} · {pct.toFixed(1)}%</span>
-                  </div>
-                );
-              }} />} />
-          </PieChart>
-        </ChartContainer>
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-2xs mt-2">
-          {digitalData.map((item, i) => {
-            const pct = (item.value / digitalSum) * 100;
-            return (
-              <div key={`legend-digital-${i}`} className="flex items-center gap-1.5">
-                <span
-                  className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: item.fill }}
-                />
-                <span className="font-medium text-foreground">{item.name}</span>
-                <span className="text-muted-foreground">{pct.toFixed(1)}%</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
+      <PieSection title="Digital Asset Allocation" data={digitalData} sum={digitalSum} prefix="digital" suffix={displaySuffix} config={config} />
       <div className="w-full border-t border-border/20" />
-
-      {/* Cash Type Allocation Chart */}
-      <div className="w-full flex flex-col items-center">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Cash Type Allocation</p>
-        <ChartContainer config={config} className="w-full h-52">
-          <PieChart margin={{ top: 8, right: 16, bottom: 28, left: 16 }}>
-            <Pie
-              data={cashTypeData}
-              dataKey="value"
-              nameKey="name"
-              innerRadius={50}
-              outerRadius={80}
-              strokeWidth={2}
-              paddingAngle={2}
-            >
-              {cashTypeData.map((entry, index) => (
-                <Cell key={`cell-cashtype-${index}`} fill={entry.fill} />
-              ))}
-            </Pie>
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent formatter={(val, name, item) => {
-                const pct = ((item?.value || 0) / cashTypeSum) * 100;
-                return (
-                  <div className="flex w-full items-center justify-between gap-4">
-                    <span className="text-muted-foreground">{item?.name}</span>
-                    <span className="font-mono">{val.toLocaleString()} {displaySuffix} · {pct.toFixed(1)}%</span>
-                  </div>
-                );
-              }} />} />
-          </PieChart>
-        </ChartContainer>
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-2xs mt-2">
-          {cashTypeData.map((item, i) => {
-            const pct = (item.value / cashTypeSum) * 100;
-            return (
-              <div key={`legend-cashtype-${i}`} className="flex items-center gap-1.5">
-                <span
-                  className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: item.fill }}
-                />
-                <span className="font-medium text-foreground">{item.name}</span>
-                <span className="text-muted-foreground">{pct.toFixed(1)}%</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
+      <PieSection title="Cash Type Allocation" data={cashTypeData} sum={cashTypeSum} prefix="cashtype" suffix={displaySuffix} config={config} />
       <div className="w-full border-t border-border/20" />
-
-      {/* Holdings Chart */}
-      <div className="w-full flex flex-col items-center">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Holdings Allocation</p>
-        <ChartContainer config={config} className="w-full h-52">
-          <PieChart margin={{ top: 8, right: 16, bottom: 28, left: 16 }}>
-            <Pie
-              data={holdingsData}
-              dataKey="value"
-              nameKey="name"
-              innerRadius={50}
-              outerRadius={80}
-              strokeWidth={2}
-              paddingAngle={2}
-            >
-              {holdingsData.map((entry, index) => (
-                <Cell key={`cell-holding-${index}`} fill={entry.fill} />
-              ))}
-            </Pie>
-            <ChartTooltip
-              cursor={false}
-              content={<ChartTooltipContent formatter={(val, name, item) => {
-                const pct = ((item?.value || 0) / holdingsSum) * 100;
-                return (
-                  <div className="flex w-full items-center justify-between gap-4">
-                    <span className="text-muted-foreground">{item?.name}</span>
-                    <span className="font-mono">{val.toLocaleString()} {displaySuffix} · {pct.toFixed(1)}%</span>
-                  </div>
-                );
-              }} />} />
-          </PieChart>
-        </ChartContainer>
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-2xs mt-2">
-          {holdingsData.map((item, i) => {
-            const pct = (item.value / holdingsSum) * 100;
-            return (
-              <div key={`legend-${i}`} className="flex items-center gap-1.5">
-                <span
-                  className="h-2 w-2 rounded-full"
-                  style={{ backgroundColor: item.fill }}
-                />
-                <span className="font-medium text-foreground">{item.name}</span>
-                <span className="text-muted-foreground">{pct.toFixed(1)}%</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      <PieSection title="Holdings Allocation" data={holdingsData} sum={holdingsSum} prefix="holding" suffix={displaySuffix} config={config} />
     </div>
   );
 }

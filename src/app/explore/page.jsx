@@ -342,6 +342,28 @@ function MarketSymbolCardSkeleton() {
   );
 }
 
+function ToolCard({ href, icon, title, subtitle, trailing = "Open →" }) {
+  const className = "group card-hover flex items-center justify-between gap-3 rounded-xl";
+  const content = (
+    <>
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
+          {icon}
+        </div>
+        <div>
+          <div className="text-xs font-semibold text-foreground">{title}</div>
+          <div className="text-[11px] text-muted-foreground">{subtitle}</div>
+        </div>
+      </div>
+      <span className="whitespace-nowrap text-xs font-medium text-foreground">{trailing}</span>
+    </>
+  );
+  if (href.startsWith("#")) {
+    return <a href={href} className={className}>{content}</a>;
+  }
+  return <Link href={href} className={className}>{content}</Link>;
+}
+
 function pickToRowProps(pick, quote) {
   const symbol = typeof pick === "string" ? pick : pick?.symbol;
   const pickData = pick && typeof pick === "object" ? pick : {};
@@ -1211,139 +1233,94 @@ export default function ExplorePage() {
 
         {/* Compact widgets */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Link
+          <ToolCard
             href="/msci"
-            className="group card-hover flex items-center justify-between gap-3 rounded-xl"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
-                <Magnet className="h-4 w-4" />
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-foreground">MSCI Tracker</div>
-                {msciLoading ? (
-                  <Skeleton className="mt-1 h-3 w-28 rounded-full" />
-                ) : msciPreview ? (
-                  <div className="text-[11px] text-muted-foreground">
-                    {msciPreview.totalStocks} candidates
-                    {" · "}Top: <span className="text-emerald-500 font-medium">{formatTickerDisplay(msciPreview.strongest?.ticker) || "—"}</span>
-                  </div>
-                ) : (
-                  <div className="text-[11px] text-muted-foreground">MSCI free-float thresholds</div>
-                )}
-              </div>
-            </div>
-            <span className="whitespace-nowrap text-xs font-medium text-foreground">Open →</span>
-          </Link>
+            icon={<Magnet className="h-4 w-4" />}
+            title="MSCI Tracker"
+            subtitle={
+              msciLoading ? (
+                <Skeleton className="mt-1 h-3 w-28 rounded-full" />
+              ) : msciPreview ? (
+                <span>
+                  {msciPreview.totalStocks} candidates
+                  {" · "}Top: <span className="text-emerald-500 font-medium">{formatTickerDisplay(msciPreview.strongest?.ticker) || "—"}</span>
+                </span>
+              ) : (
+                "MSCI free-float thresholds"
+              )
+            }
+          />
 
-          <Link
+          <ToolCard
             href="/idx-rotation"
-            className="group card-hover flex items-center justify-between gap-3 rounded-xl"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
-                <Rotate3D className="h-4 w-4" />
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-foreground">IDX Rotation</div>
-                {rotationLoading ? (
-                  <Skeleton className="mt-1 h-3 w-28 rounded-full" />
-                ) : rotationPreview ? (
-                  <div className="text-[11px] text-muted-foreground">
-                    Lead: <span className="text-emerald-500 font-medium">{formatTickerDisplay(rotationPreview.strongest?.code) || "—"}</span>
-                    {" · "}Lag: <span className="text-red-500 font-medium">{formatTickerDisplay(rotationPreview.weakest?.code) || "—"}</span>
-                  </div>
-                ) : (
-                  <div className="text-[11px] text-muted-foreground">Sector momentum rotation</div>
-                )}
-              </div>
-            </div>
-            <span className="whitespace-nowrap text-xs font-medium text-foreground">Open →</span>
-          </Link>
+            icon={<Rotate3D className="h-4 w-4" />}
+            title="IDX Rotation"
+            subtitle={
+              rotationLoading ? (
+                <Skeleton className="mt-1 h-3 w-28 rounded-full" />
+              ) : rotationPreview ? (
+                <span>
+                  Lead: <span className="text-emerald-500 font-medium">{formatTickerDisplay(rotationPreview.strongest?.code) || "—"}</span>
+                  {" · "}Lag: <span className="text-red-500 font-medium">{formatTickerDisplay(rotationPreview.weakest?.code) || "—"}</span>
+                </span>
+              ) : (
+                "Sector momentum rotation"
+              )
+            }
+          />
 
-          <Link
+          <ToolCard
             href="/idx-momentum"
-            className="group card-hover flex items-center justify-between gap-3 rounded-xl"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
-                <Axe className="h-4 w-4" />
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-foreground">Momentum</div>
-                <div className="text-[11px] text-muted-foreground">IDX momentum scanner</div>
-              </div>
-            </div>
-            <span className="whitespace-nowrap text-xs font-medium text-foreground">Open →</span>
-          </Link>
+            icon={<Axe className="h-4 w-4" />}
+            title="Momentum"
+            subtitle="IDX momentum scanner"
+          />
 
-          <Link
+          <ToolCard
             href="/discussion"
-            className="group card-hover flex items-center justify-between gap-3 rounded-xl"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
-                <MessageCircleMore className="h-4 w-4" />
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-foreground">Chat</div>
-                <div className="text-[11px] text-muted-foreground">Community discussion</div>
-              </div>
-            </div>
-            <span className="whitespace-nowrap text-xs font-medium text-foreground">Open →</span>
-          </Link>
+            icon={<MessageCircleMore className="h-4 w-4" />}
+            title="Chat"
+            subtitle="Community discussion"
+          />
 
-          <a
+          <ToolCard
             href="#breakout-signals"
-            className="group card-hover flex items-center justify-between gap-3 rounded-xl"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
-                <Zap className="h-4 w-4" />
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-foreground">Technical Breakout</div>
-                <div className="text-[11px] text-muted-foreground">
-                  {breakoutInsights.totalBreakouts} signals
-                  {breakoutInsights.bestGainer ? (
-                    <>
-                      {" · "}Top: <span className="text-emerald-500 font-medium">{formatTickerDisplay(breakoutInsights.bestGainer.symbol)}</span>
-                    </>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-            <span className="whitespace-nowrap text-xs font-medium text-foreground">View →</span>
-          </a>
+            icon={<Zap className="h-4 w-4" />}
+            title="Technical Breakout"
+            subtitle={
+              <span>
+                {breakoutInsights.totalBreakouts} signals
+                {breakoutInsights.bestGainer ? (
+                  <>
+                    {" · "}Top: <span className="text-emerald-500 font-medium">{formatTickerDisplay(breakoutInsights.bestGainer.symbol)}</span>
+                  </>
+                ) : null}
+              </span>
+            }
+            trailing="View →"
+          />
 
-          <Link
+          <ToolCard
             href="/idx-bubbles"
-            className="group card-hover flex items-center justify-between gap-3 rounded-xl"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground/10 text-foreground">
-                <Droplets className="h-4 w-4" />
-              </div>
-              <div>
-                <div className="text-xs font-semibold text-foreground">Top Movers</div>
-                <div className="text-[11px] text-muted-foreground">
-                  {topMoversPreview.bestGainer ? (
-                    <>
-                      Gainer: <span className="text-emerald-500 font-medium">{formatTickerDisplay(topMoversPreview.bestGainer.symbol)}</span>
-                    </>
-                  ) : (
-                    "Market bubble view"
-                  )}
-                  {topMoversPreview.bestLoser ? (
-                    <>
-                      {" · "}Loser: <span className="text-red-500 font-medium">{formatTickerDisplay(topMoversPreview.bestLoser.symbol)}</span>
-                    </>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-            <span className="whitespace-nowrap text-xs font-medium text-foreground">Open →</span>
-          </Link>
+            icon={<Droplets className="h-4 w-4" />}
+            title="Top Movers"
+            subtitle={
+              <span>
+                {topMoversPreview.bestGainer ? (
+                  <>
+                    Gainer: <span className="text-emerald-500 font-medium">{formatTickerDisplay(topMoversPreview.bestGainer.symbol)}</span>
+                  </>
+                ) : (
+                  "Market bubble view"
+                )}
+                {topMoversPreview.bestLoser ? (
+                  <>
+                    {" · "}Loser: <span className="text-red-500 font-medium">{formatTickerDisplay(topMoversPreview.bestLoser.symbol)}</span>
+                  </>
+                ) : null}
+              </span>
+            }
+          />
         </div>
       </section>
 
