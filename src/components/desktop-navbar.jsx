@@ -111,7 +111,7 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
             </button>
 
             {toolsOpen && (
-              <div className={`absolute top-full left-0 mt-2 w-64 rounded-lg border border-border bg-popover py-2 z-50 animate-in fade-in slide-in-from-top-2 ${DURATION_CLASS.fast} shadow-2xl shadow-black/40`}>
+              <div className={`absolute top-full left-0 mt-2 w-64 rounded-lg border border-border bg-popover py-2 z-50 animate-in fade-in slide-in-from-top-2 ${DURATION_CLASS.fast} shadow-lg shadow-black/10`}>
                 {TOOLS_ITEMS.map((item) => {
                   const isActive = pathname === item.url;
                   const Icon = item.icon;

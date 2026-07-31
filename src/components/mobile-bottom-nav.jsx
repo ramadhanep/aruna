@@ -106,7 +106,7 @@ export function MobileBottomNav() {
                 DURATION_CLASS.fast,
                 isActive && "scale-105"
               )} />
-              <span className="text-[10px] font-medium leading-none">{item.title}</span>
+              <span className="text-2xs font-medium leading-none">{item.title}</span>
             </Link>
           );
         })}

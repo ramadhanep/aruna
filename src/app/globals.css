@@ -53,6 +53,9 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 6px);
+
+  --text-2xs: 0.625rem; /* 10px — dense metadata */
+  --text-3xs: 0.5625rem; /* 9px — micro labels */
 }
 
 :root {

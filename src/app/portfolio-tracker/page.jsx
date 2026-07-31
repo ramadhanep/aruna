@@ -26,6 +26,8 @@ import { PortfolioMiniChart } from '@/components/portfolio-mini-chart';
 // Dynamic chart component to keep page light and avoid SSR issues
 const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { ssr: false });
 
+const CURRENCY_SELECT_WIDTH = 'w-[132px]';
+
 export default function PortfolioTrackerPage() {
   const router = useRouter();
   const isMobile = useIsMobile();
@@ -416,7 +418,7 @@ export default function PortfolioTrackerPage() {
             <Skeleton className="h-4 w-20 rounded-md" />
             <div className="flex items-center gap-2">
               <Skeleton className="h-8 w-8 rounded-full" />
-              <Skeleton className="h-8 w-[132px] rounded-md" />
+              <Skeleton className={`h-8 ${CURRENCY_SELECT_WIDTH} rounded-md`} />
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -515,7 +517,7 @@ export default function PortfolioTrackerPage() {
                 {isPortfolioHidden ? <EyeClosed className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </Button>
               <Select value={currency} onValueChange={setCurrency}>
-                <SelectTrigger className="w-[132px] h-8">
+                <SelectTrigger className={`${CURRENCY_SELECT_WIDTH} h-8`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -537,7 +539,7 @@ export default function PortfolioTrackerPage() {
                   <span className={`text-xs font-medium ${getPnLColor(totalPnL)}`}>
                     {isPortfolioHidden ? hiddenSecondaryToken : `${totalPnL >= 0 ? '+' : ''}${totalPnLDisplay.primary}`}
                   </span>
-                  <span className="text-[10px] text-muted-foreground">
+                  <span className="text-2xs text-muted-foreground">
                     {isPortfolioHidden ? hiddenSecondaryToken : `(${totalPnLDisplay.secondary})`}
                   </span>
                 </div>
@@ -572,7 +574,7 @@ export default function PortfolioTrackerPage() {
                           <span className={`text-xs font-medium ${getPnLColor(digitalPnL)}`}>
                             {isPortfolioHidden ? hiddenSecondaryToken : `${digitalPnL >= 0 ? '+' : ''}${digitalPnLDisplay.primary}`}
                           </span>
-                          <span className="text-[10px] text-muted-foreground">
+                          <span className="text-2xs text-muted-foreground">
                             {isPortfolioHidden ? hiddenSecondaryToken : `(${digitalPnLDisplay.secondary})`}
                           </span>
                         </div>
@@ -645,7 +647,7 @@ export default function PortfolioTrackerPage() {
         )}
 
         <div className="rounded-xl border border-border/40 bg-muted/20 px-3 py-2">
-          <p className="text-[10px] text-muted-foreground text-center">
+          <p className="text-2xs text-muted-foreground text-center">
             FX (1 USD): {idrFxDisplay}
           </p>
         </div>
@@ -792,9 +794,9 @@ export default function PortfolioTrackerPage() {
                       <div className="flex items-center gap-2" data-holdings-actions="true">
                         <div className="text-right">
                           <p className="text-sm font-semibold">{formatted.primary}</p>
-                          <p className="text-[10px] text-muted-foreground">{formatted.secondary}</p>
+                          <p className="text-2xs text-muted-foreground">{formatted.secondary}</p>
                           {!isCash && livePnl !== 0 && (
-                            <p className="text-[10px]">
+                            <p className="text-2xs">
                               <span className={getPnLColor(livePnl)}>
                                 {pnlText}
                               </span>

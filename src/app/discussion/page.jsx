@@ -89,7 +89,7 @@ function MessageBubble({ message, isOwn, onDelete, currentUserId }) {
   if (message.isSystem) {
     return (
       <div className="flex justify-center py-1">
-        <p className="text-[10px] italic text-muted-foreground text-center">
+        <p className="text-2xs italic text-muted-foreground text-center">
           {message.content}
         </p>
       </div>
@@ -119,7 +119,7 @@ function MessageBubble({ message, isOwn, onDelete, currentUserId }) {
                 </span>
               </div>
             )}
-            <span className="text-[9px] text-muted-foreground font-medium">
+            <span className="text-3xs text-muted-foreground font-medium">
               {message.user?.name || 'Anonymous'}
             </span>
           </div>
@@ -238,7 +238,7 @@ function EmptyState() {
       </div>
       <div>
         <p className="text-xs text-foreground/60 dark:text-white/60 font-medium">No messages yet</p>
-        <p className="text-[10px] text-muted-foreground mt-0.5">Start the conversation!</p>
+        <p className="text-2xs text-muted-foreground mt-0.5">Start the conversation!</p>
       </div>
     </div>
   );

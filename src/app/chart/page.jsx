@@ -89,6 +89,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const CHART_HEIGHT_CLASS = "h-[380px] lg:h-[500px]";
+
 /**
  * Semicircle gauge chart for analyst rating.
  * score: 1 (Strong Buy) → 5 (Strong Sell), matching Yahoo Finance's recommendationMean scale.
@@ -116,6 +118,7 @@ function AnalystGaugeChart({ score }) {
   const p = score != null ? Math.min(1, Math.max(0, (5 - score) / 4)) : null;
   const needleAngle = p != null ? Math.PI * (1 - p) : null;
   const tip = needleAngle != null ? toPoint(needleAngle, r * 0.68) : null;
+  const activeColor = p != null ? zones[Math.min(4, Math.floor(p * 5))][2] : null;
   // Labels at each zone midpoint, placed outside the arc
   const labelDefs = [
     { angle: Math.PI * 0.9, text: 'Strong\nSell', anchor: 'end', offR: 22 },
@@ -128,9 +131,9 @@ function AnalystGaugeChart({ score }) {
     <svg viewBox="0 0 240 128" className="w-full max-w-[260px] mx-auto select-none">
       {/* Subtle background track */}
       <path d={arc(Math.PI, 0)} fill="none" stroke="currentColor" strokeOpacity={0.07} strokeWidth={trackW + 8} />
-      {/* Colored zone segments */}
-      {zones.map(([a1, a2, col], i) => (
-        <path key={i} d={arc(a1, a2)} fill="none" stroke={col} strokeWidth={trackW} strokeLinecap="butt" />
+      {/* Muted zone segments */}
+      {zones.map(([a1, a2], i) => (
+        <path key={i} d={arc(a1, a2)} fill="none" stroke="currentColor" strokeOpacity={0.12} strokeWidth={trackW} strokeLinecap="butt" />
       ))}
       {/* Zone labels */}
       {labelDefs.map(({ angle, text, anchor, offR }, i) => {
@@ -150,10 +153,10 @@ function AnalystGaugeChart({ score }) {
           <line
             x1={cx} y1={cy}
             x2={tip.x.toFixed(2)} y2={tip.y.toFixed(2)}
-            stroke="currentColor" strokeWidth={2.5} strokeLinecap="round"
+            stroke={activeColor ?? 'currentColor'} strokeWidth={2.5} strokeLinecap="round"
           />
-          <circle cx={cx} cy={cy} r={6} fill="currentColor" />
-          <circle cx={cx} cy={cy} r={3.5} fill="currentColor" opacity="0.2" />
+          <circle cx={cx} cy={cy} r={6} fill={activeColor ?? 'currentColor'} />
+          <circle cx={cx} cy={cy} r={3.5} fill={activeColor ?? 'currentColor'} opacity="0.2" />
         </>
       )}
     </svg>
@@ -1359,7 +1362,7 @@ function ElectionCyclePageContent() {
       const outcomeInfo = formatOutcomeLabel(point.surprise);
       return (
         <g transform={`translate(${x},${y})`}>
-          <text textAnchor="middle" className="fill-muted-foreground text-[10px]">
+          <text textAnchor="middle" className="fill-muted-foreground text-2xs">
             <tspan x={0} dy="0">
               {point.periodLabel}
             </tspan>
@@ -1627,7 +1630,7 @@ function ElectionCyclePageContent() {
                     );
                   })}
                 {governance.governanceEpochDate && (
-                  <p className="text-[10px] text-muted-foreground pt-1">
+                  <p className="text-2xs text-muted-foreground pt-1">
                     As of {formatTimestamp(governance.governanceEpochDate, { dateOnly: true }) ?? '—'}
                   </p>
                 )}
@@ -1687,7 +1690,7 @@ function ElectionCyclePageContent() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 min-w-0">
             {screeningSignalDateLabel && (
-              <span className="text-[10px] text-muted-foreground/70 shrink-0">{screeningSignalDateLabel}</span>
+              <span className="text-2xs text-muted-foreground/70 shrink-0">{screeningSignalDateLabel}</span>
             )}
           </div>
           <Badge variant={tradingPlanQualityTier.variant} className="shrink-0">
@@ -1698,14 +1701,14 @@ function ElectionCyclePageContent() {
         {/* 2. Risk : Reward — the headline metric */}
         <div className="rounded-xl border border-border/60 bg-card px-4 py-3.5 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Risk : Reward</p>
+            <p className="text-2xs uppercase tracking-wide text-muted-foreground mb-0.5">Risk : Reward</p>
             <p className={`text-2xl font-bold leading-none ${rrTone}`}>{rrLabel}</p>
-            <p className="text-[10px] text-muted-foreground mt-1.5">
+            <p className="text-2xs text-muted-foreground mt-1.5">
               Risk {formatPriceValue(tradingPlanRiskPerUnit)} to reach {tradingPlanPrimaryTarget?.label ?? 'target'} · {tradingPlanPrimaryTarget?.reason ?? '—'}
             </p>
           </div>
           <div className="text-right shrink-0">
-            <p className="text-[10px] text-muted-foreground mb-0.5">Range TP1→TP3</p>
+            <p className="text-2xs text-muted-foreground mb-0.5">Range TP1→TP3</p>
             <p className="text-xs font-semibold text-foreground">
               {firstRR != null ? `1:${firstRR.toFixed(1)}` : '—'} → {lastRR != null ? `1:${lastRR.toFixed(1)}` : '—'}
             </p>
@@ -1722,23 +1725,23 @@ function ElectionCyclePageContent() {
           </div>
           <div className="flex items-baseline justify-between gap-2">
             <p className="text-base font-bold text-foreground">{formatPriceValue(tradingPlanEntryPrice)}</p>
-            <p className="text-[10px] text-muted-foreground text-right">
+            <p className="text-2xs text-muted-foreground text-right">
               Buy zone {formatPriceValue(tradingPlanEntryZone.low)}–{formatPriceValue(tradingPlanEntryZone.high)}
             </p>
           </div>
-          <p className="text-[10px] text-muted-foreground">{tradingPlanEntryZone.reason}</p>
+          <p className="text-2xs text-muted-foreground">{tradingPlanEntryZone.reason}</p>
         </div>
 
         {/* 4. Stop Loss */}
         <div className="rounded-xl border border-border/60 p-3 space-y-1">
           <div className="flex items-center justify-between">
             <p className="text-[11px] font-semibold text-foreground">Stop Loss</p>
-            <span className="text-[10px] font-semibold text-red-600 dark:text-red-400">
+            <span className="text-2xs font-semibold text-red-600 dark:text-red-400">
               {tradingPlanStopLossPct != null ? `${tradingPlanStopLossPct.toFixed(2)}%` : '—'}
             </span>
           </div>
           <p className="text-base font-bold text-red-600 dark:text-red-400">{formatPriceValue(tradingPlanStopLossPrice)}</p>
-          <p className="text-[10px] text-muted-foreground">{tradingPlanStopLossReason}</p>
+          <p className="text-2xs text-muted-foreground">{tradingPlanStopLossReason}</p>
         </div>
 
         {/* 5. Take Profit Strategy */}
@@ -1753,15 +1756,15 @@ function ElectionCyclePageContent() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
                     <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{target.label}</span>
-                    <span className="text-[10px] text-muted-foreground truncate">{target.reason}</span>
+                    <span className="text-2xs text-muted-foreground truncate">{target.reason}</span>
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">
+                  <p className="text-2xs text-muted-foreground mt-0.5">
                     Sell {target.sellPercent}% · {target.action}
                   </p>
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-xs font-semibold text-foreground">{formatPriceValue(target.price)}</p>
-                  <p className="text-[10px] text-emerald-600 dark:text-emerald-400">
+                  <p className="text-2xs text-emerald-600 dark:text-emerald-400">
                     {target.pct != null ? `+${target.pct.toFixed(1)}%` : '—'}
                     {target.rMultiple != null ? ` · ${target.rMultiple.toFixed(1)}R` : ''}
                   </p>
@@ -1777,7 +1780,7 @@ function ElectionCyclePageContent() {
 
           <div className="grid grid-cols-2 gap-2.5">
             <div className="space-y-1">
-              <label className="text-[10px] font-medium text-muted-foreground">Account Balance</label>
+              <label className="text-2xs font-medium text-muted-foreground">Account Balance</label>
               <Input
                 type="number"
                 inputMode="decimal"
@@ -1790,7 +1793,7 @@ function ElectionCyclePageContent() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-[10px] font-medium text-muted-foreground">Risk %</label>
+              <label className="text-2xs font-medium text-muted-foreground">Risk %</label>
               <Input
                 type="number"
                 inputMode="decimal"
@@ -1811,7 +1814,7 @@ function ElectionCyclePageContent() {
                 type="button"
                 size="xs"
                 variant={Number(tradingPlanRiskPercentInput) === preset ? 'default' : 'ghost'}
-                className={`px-2 py-0.5 text-[10px] rounded-full ${Number(tradingPlanRiskPercentInput) === preset ? 'shadow-sm' : ''}`}
+                className={`px-2 py-0.5 text-2xs rounded-full ${Number(tradingPlanRiskPercentInput) === preset ? 'shadow-sm' : ''}`}
                 onClick={() => setTradingPlanRiskPercentInput(String(preset))}
               >
                 {preset}%
@@ -1820,7 +1823,7 @@ function ElectionCyclePageContent() {
           </div>
 
           <div className="space-y-1">
-            <label className="text-[10px] font-medium text-muted-foreground">Your Entry Price</label>
+            <label className="text-2xs font-medium text-muted-foreground">Your Entry Price</label>
             <Input
               type="number"
               inputMode="decimal"
@@ -1835,31 +1838,31 @@ function ElectionCyclePageContent() {
 
           <div className="rounded-lg bg-muted/30 p-2.5 grid grid-cols-2 gap-y-2.5 gap-x-2">
             <div>
-              <p className="text-[10px] text-muted-foreground">Max Risk Amount</p>
+              <p className="text-2xs text-muted-foreground">Max Risk Amount</p>
               <p className="text-xs font-semibold text-red-600 dark:text-red-400">{formatPlanCurrencyValue(tradingPlanMaxRiskAmount)}</p>
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground">Position Size</p>
+              <p className="text-2xs text-muted-foreground">Position Size</p>
               <p className="text-xs font-semibold text-foreground">{tradingPlanSizeSummary || '—'}</p>
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground">Position Cost</p>
+              <p className="text-2xs text-muted-foreground">Position Cost</p>
               <p className="text-xs font-semibold text-foreground">{formatPlanCurrencyValue(tradingPlanPositionCost)}</p>
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground">Risk : Reward</p>
+              <p className="text-2xs text-muted-foreground">Risk : Reward</p>
               <p className="text-xs font-semibold text-foreground">
                 {tradingPlanCalculatorRiskReward != null ? `1 : ${tradingPlanCalculatorRiskReward.toFixed(1)}` : '—'}
               </p>
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground">Expected Loss (at SL)</p>
+              <p className="text-2xs text-muted-foreground">Expected Loss (at SL)</p>
               <p className="text-xs font-semibold text-red-600 dark:text-red-400">
                 {formatPlanCurrencyDelta(tradingPlanExpectedLoss != null ? -tradingPlanExpectedLoss : null)}
               </p>
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground">Expected Profit ({tradingPlanPrimaryTarget?.label ?? 'TP'})</p>
+              <p className="text-2xs text-muted-foreground">Expected Profit ({tradingPlanPrimaryTarget?.label ?? 'TP'})</p>
               <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
                 {formatPlanCurrencyDelta(tradingPlanExpectedProfit)}
               </p>
@@ -1873,22 +1876,22 @@ function ElectionCyclePageContent() {
           <ul className="space-y-1">
             {tradingPlanTechnicalConfirmations.map((line, index) => (
               <li key={index} className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
-                <span className="mt-[5px] h-1 w-1 rounded-full bg-emerald-500 shrink-0" />
+                <span className="mt-1.5 h-1 w-1 rounded-full bg-emerald-500 shrink-0" />
                 <span>{line}</span>
               </li>
             ))}
           </ul>
           <div className="grid grid-cols-3 gap-2 pt-1.5 border-t border-border/40">
             <div>
-              <p className="text-[10px] text-muted-foreground">Swing Low</p>
+              <p className="text-2xs text-muted-foreground">Swing Low</p>
               <p className="text-[11px] font-semibold">{formatPriceValue(tradingPlanBasisValues.swing)}</p>
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground">EMA20</p>
+              <p className="text-2xs text-muted-foreground">EMA20</p>
               <p className="text-[11px] font-semibold">{formatPriceValue(tradingPlanBasisValues.ema)}</p>
             </div>
             <div>
-              <p className="text-[10px] text-muted-foreground">ATR(14)</p>
+              <p className="text-2xs text-muted-foreground">ATR(14)</p>
               <p className="text-[11px] font-semibold">{formatPriceValue(tradingPlanBasisValues.atr)}</p>
             </div>
           </div>
@@ -2340,34 +2343,34 @@ function ElectionCyclePageContent() {
               {/* Price target summary cards */}
               <div className="grid grid-cols-3 gap-3">
                 <div className="rounded-xl bg-red-500/8 p-3 text-center">
-                  <p className="text-[10px] font-semibold text-red-500 uppercase tracking-wider">Low</p>
+                  <p className="text-2xs font-semibold text-red-500 uppercase tracking-wider">Low</p>
                   <p className="text-sm font-bold text-foreground mt-1">
                     {lowTarget != null ? formatDetailedCurrency(lowTarget) : '—'}
                   </p>
                   {lowTarget != null && currentPrice != null && (
-                    <p className={`text-[10px] mt-0.5 font-medium ${lowTarget >= currentPrice ? 'text-emerald-600' : 'text-red-500'}`}>
+                    <p className={`text-2xs mt-0.5 font-medium ${lowTarget >= currentPrice ? 'text-emerald-600' : 'text-red-500'}`}>
                       {lowTarget >= currentPrice ? '+' : ''}{(((lowTarget - currentPrice) / currentPrice) * 100).toFixed(1)}%
                     </p>
                   )}
                 </div>
                 <div className="rounded-xl bg-emerald-500/8 p-3 text-center ring-1 ring-emerald-500/20">
-                  <p className="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider">Average</p>
+                  <p className="text-2xs font-semibold text-emerald-600 uppercase tracking-wider">Average</p>
                   <p className="text-sm font-bold text-foreground mt-1">
                     {averageTarget != null ? formatDetailedCurrency(averageTarget) : '—'}
                   </p>
                   {averageTarget != null && currentPrice != null && (
-                    <p className={`text-[10px] mt-0.5 font-medium ${averageTarget >= currentPrice ? 'text-emerald-600' : 'text-red-500'}`}>
+                    <p className={`text-2xs mt-0.5 font-medium ${averageTarget >= currentPrice ? 'text-emerald-600' : 'text-red-500'}`}>
                       {averageTarget >= currentPrice ? '+' : ''}{(((averageTarget - currentPrice) / currentPrice) * 100).toFixed(1)}%
                     </p>
                   )}
                 </div>
                 <div className="rounded-xl bg-emerald-500/8 p-3 text-center">
-                  <p className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">High</p>
+                  <p className="text-2xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">High</p>
                   <p className="text-sm font-bold text-foreground mt-1">
                     {highTarget != null ? formatDetailedCurrency(highTarget) : '—'}
                   </p>
                   {highTarget != null && currentPrice != null && (
-                    <p className={`text-[10px] mt-0.5 font-medium ${highTarget >= currentPrice ? 'text-emerald-600' : 'text-red-500'}`}>
+                    <p className={`text-2xs mt-0.5 font-medium ${highTarget >= currentPrice ? 'text-emerald-600' : 'text-red-500'}`}>
                       {highTarget >= currentPrice ? '+' : ''}{(((highTarget - currentPrice) / currentPrice) * 100).toFixed(1)}%
                     </p>
                   )}
@@ -2406,7 +2409,7 @@ function ElectionCyclePageContent() {
                     </div>
                   )}
                 </div>
-                <div className="flex justify-between text-[10px] text-muted-foreground px-2">
+                <div className="flex justify-between text-2xs text-muted-foreground px-2">
                   <span>Current: {currentPrice != null ? `${formatDetailedCurrency(currentPrice)} ${currencyCode}` : '—'}</span>
                   <span>Target: {averageTarget != null ? `${formatDetailedCurrency(averageTarget)} ${currencyCode}` : '—'}</span>
                 </div>
@@ -2430,7 +2433,7 @@ function ElectionCyclePageContent() {
                   <div className="grid grid-cols-4 gap-2">
                     {consensusColumns.map((entry, idx) => (
                       <div key={`${row.label}-${idx}`} className="rounded-xl bg-muted/40 p-2.5 text-center">
-                        <p className="text-[10px] text-muted-foreground font-medium">{entry.periodLabel}</p>
+                        <p className="text-2xs text-muted-foreground font-medium">{entry.periodLabel}</p>
                         <p className="text-xs font-bold text-foreground mt-1">{row.values[idx]}</p>
                       </div>
                     ))}
@@ -2485,7 +2488,7 @@ function ElectionCyclePageContent() {
                       )}
                     </div>
                     {/* Count row */}
-                    <div className="flex justify-between text-[9px] text-muted-foreground px-0.5">
+                    <div className="flex justify-between text-3xs text-muted-foreground px-0.5">
                       {bars.map(({ value, label }) => (
                         <span key={label} className="tabular-nums">{label}: {value}</span>
                       ))}
@@ -2876,7 +2879,7 @@ function ElectionCyclePageContent() {
                       </div>
                       <div className="text-right shrink-0">
                         <p className={`text-[11px] font-semibold ${actionColor}`}>{actionLabel}</p>
-                        <p className="text-[10px] text-muted-foreground">{formatDate(entry.date)}</p>
+                        <p className="text-2xs text-muted-foreground">{formatDate(entry.date)}</p>
                       </div>
                     </div>
                   );
@@ -2926,50 +2929,50 @@ function ElectionCyclePageContent() {
         {(bestQ != null || bestM != null) && (
           <div className="grid grid-cols-3 gap-2">
             <div className="rounded-xl bg-muted/40 px-3 py-2.5 text-center border border-border/20">
-              <p className="text-[9px] uppercase tracking-wide text-muted-foreground font-medium mb-1">Best Avg</p>
+              <p className="text-3xs uppercase tracking-wide text-muted-foreground font-medium mb-1">Best Avg</p>
               <p className="text-xs font-bold text-emerald-500">
                 {bestQ != null ? `${bestQ >= 0 ? '+' : ''}${bestQ.toFixed(1)}%` : '—'}
               </p>
-              <p className="text-[9px] text-muted-foreground mt-0.5">{bestQIdx >= 0 ? qNames[bestQIdx] : ''}</p>
+              <p className="text-3xs text-muted-foreground mt-0.5">{bestQIdx >= 0 ? qNames[bestQIdx] : ''}</p>
             </div>
             <div className="rounded-xl bg-muted/40 px-3 py-2.5 text-center border border-border/20">
-              <p className="text-[9px] uppercase tracking-wide text-muted-foreground font-medium mb-1">Worst Avg</p>
+              <p className="text-3xs uppercase tracking-wide text-muted-foreground font-medium mb-1">Worst Avg</p>
               <p className={`text-xs font-bold ${worstQ != null && worstQ < 0 ? 'text-red-500' : 'text-emerald-500'}`}>
                 {worstQ != null ? `${worstQ >= 0 ? '+' : ''}${worstQ.toFixed(1)}%` : '—'}
               </p>
-              <p className="text-[9px] text-muted-foreground mt-0.5">{worstQIdx >= 0 ? qNames[worstQIdx] : ''}</p>
+              <p className="text-3xs text-muted-foreground mt-0.5">{worstQIdx >= 0 ? qNames[worstQIdx] : ''}</p>
             </div>
             <div className="rounded-xl bg-muted/40 px-3 py-2.5 text-center border border-border/20">
-              <p className="text-[9px] uppercase tracking-wide text-muted-foreground font-medium mb-1">Q Win Rate</p>
+              <p className="text-3xs uppercase tracking-wide text-muted-foreground font-medium mb-1">Q Win Rate</p>
               <p className={`text-xs font-bold ${qWinRate != null && qWinRate >= 50 ? 'text-emerald-500' : 'text-red-500'}`}>
                 {qWinRate != null ? `${qWinRate}%` : '—'}
               </p>
-              <p className="text-[9px] text-muted-foreground mt-0.5">{qAvgs.filter((v) => v > 0).length}/{qAvgs.length} pos</p>
+              <p className="text-3xs text-muted-foreground mt-0.5">{qAvgs.filter((v) => v > 0).length}/{qAvgs.length} pos</p>
             </div>
           </div>
         )}
         {mAvgs.length > 0 && (
           <div className="grid grid-cols-3 gap-2">
             <div className="rounded-xl bg-muted/40 px-3 py-2.5 text-center border border-border/20">
-              <p className="text-[9px] uppercase tracking-wide text-muted-foreground font-medium mb-1">Best Month</p>
+              <p className="text-3xs uppercase tracking-wide text-muted-foreground font-medium mb-1">Best Month</p>
               <p className="text-xs font-bold text-emerald-500">
                 {bestM != null ? `${bestM >= 0 ? '+' : ''}${bestM.toFixed(1)}%` : '—'}
               </p>
-              <p className="text-[9px] text-muted-foreground mt-0.5">{bestMIdx >= 0 ? monthNames[bestMIdx] : ''}</p>
+              <p className="text-3xs text-muted-foreground mt-0.5">{bestMIdx >= 0 ? monthNames[bestMIdx] : ''}</p>
             </div>
             <div className="rounded-xl bg-muted/40 px-3 py-2.5 text-center border border-border/20">
-              <p className="text-[9px] uppercase tracking-wide text-muted-foreground font-medium mb-1">Worst Month</p>
+              <p className="text-3xs uppercase tracking-wide text-muted-foreground font-medium mb-1">Worst Month</p>
               <p className={`text-xs font-bold ${worstM != null && worstM < 0 ? 'text-red-500' : 'text-emerald-500'}`}>
                 {worstM != null ? `${worstM >= 0 ? '+' : ''}${worstM.toFixed(1)}%` : '—'}
               </p>
-              <p className="text-[9px] text-muted-foreground mt-0.5">{worstMIdx >= 0 ? monthNames[worstMIdx] : ''}</p>
+              <p className="text-3xs text-muted-foreground mt-0.5">{worstMIdx >= 0 ? monthNames[worstMIdx] : ''}</p>
             </div>
             <div className="rounded-xl bg-muted/40 px-3 py-2.5 text-center border border-border/20">
-              <p className="text-[9px] uppercase tracking-wide text-muted-foreground font-medium mb-1">M Win Rate</p>
+              <p className="text-3xs uppercase tracking-wide text-muted-foreground font-medium mb-1">M Win Rate</p>
               <p className={`text-xs font-bold ${mWinRate != null && mWinRate >= 50 ? 'text-emerald-500' : 'text-red-500'}`}>
                 {mWinRate != null ? `${mWinRate}%` : '—'}
               </p>
-              <p className="text-[9px] text-muted-foreground mt-0.5">{mAvgs.filter((v) => v > 0).length}/{mAvgs.length} pos</p>
+              <p className="text-3xs text-muted-foreground mt-0.5">{mAvgs.filter((v) => v > 0).length}/{mAvgs.length} pos</p>
             </div>
           </div>
         )}
@@ -2981,7 +2984,7 @@ function ElectionCyclePageContent() {
             </AccordionTrigger>
             <AccordionContent className="pb-4">
               <div className="overflow-x-auto -mx-4 px-4">
-                <table className="w-full text-[10px]">
+                <table className="w-full text-2xs">
                   <thead>
                     <tr className="border-b">
                       <th className="text-left py-2 px-1 font-medium sticky left-0 bg-background">Year</th>
@@ -3058,7 +3061,7 @@ function ElectionCyclePageContent() {
             </AccordionTrigger>
             <AccordionContent className="pb-4">
               <div className="overflow-x-auto">
-                <table className="w-full text-[9px]">
+                <table className="w-full text-3xs">
                   <thead>
                     <tr className="border-b">
                       <th className="text-left py-2 px-1 font-medium sticky left-0 bg-background">Year</th>
@@ -3164,7 +3167,7 @@ function ElectionCyclePageContent() {
                 </div>
               </CardHeader>
               <CardContent className="px-0 pb-0">
-                <Skeleton className="w-full h-[380px] lg:h-[500px] rounded-xl" />
+                <Skeleton className={`w-full ${CHART_HEIGHT_CLASS} rounded-xl`} />
               </CardContent>
             </Card>
 
@@ -3198,7 +3201,7 @@ function ElectionCyclePageContent() {
                       </div>
                     )}
                     {marketStateInfo ? (
-                      <span className={`flex items-center gap-1 text-[10px] font-medium ${marketStateInfo.tone}`}>
+                      <span className={`flex items-center gap-1 text-2xs font-medium ${marketStateInfo.tone}`}>
                         {MarketStateIcon ? <MarketStateIcon className="h-3 w-3" /> : null}
                         {marketStateInfo.label}
                       </span>
@@ -3231,7 +3234,7 @@ function ElectionCyclePageContent() {
                             )
                           </span>
                           {displayedChange.label && (
-                            <span className="text-[10px] text-muted-foreground">
+                            <span className="text-2xs text-muted-foreground">
                               {displayedChange.label}
                             </span>
                           )}
@@ -3247,7 +3250,7 @@ function ElectionCyclePageContent() {
               <CardContent className={isNormalView ? "px-0 pb-0 overflow-hidden" : "px-0 pb-0 -mr-4 lg:mr-0"}>
                 {isNormalView ? (
                   normalSeriesLoading ? (
-                    <div className="h-[380px] lg:h-[500px]">
+                    <div className={CHART_HEIGHT_CLASS}>
                       <Skeleton className="w-full h-full rounded-xl" />
                     </div>
                   ) : filteredNormalChartData.length > 0 ? (
@@ -3289,12 +3292,12 @@ function ElectionCyclePageContent() {
                       </div>
                     </>
                   ) : (
-                    <div className="flex h-[380px] lg:h-[500px] items-center justify-center text-xs text-muted-foreground">
+                    <div className={`flex ${CHART_HEIGHT_CLASS} items-center justify-center text-xs text-muted-foreground`}>
                       {normalSeriesError || `Price data unavailable for the ${normalTimeframeLabel} timeframe.`}
                     </div>
                   )
                 ) : (
-                  <div className="relative h-[380px] lg:h-[500px]">
+                  <div className={`relative ${CHART_HEIGHT_CLASS}`}>
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart
                         data={filteredChartData}
@@ -3304,7 +3307,7 @@ function ElectionCyclePageContent() {
                           dataKey="dayOfYear"
                           tickFormatter={formatTick}
                           ticks={quarterFilter === 'all' ? [1, 91, 182, 274] : undefined}
-                          className="text-[10px]"
+                          className="text-2xs"
                           height={30}
                         />
                         <YAxis
@@ -3312,7 +3315,7 @@ function ElectionCyclePageContent() {
                           scale={scaleChoice === 'log' ? 'log' : 'linear'}
                           domain={scaleChoice === 'log' ? ['auto', 'auto'] : ['auto', 'auto']}
                           tickFormatter={formatYAxis}
-                          className="text-[10px]"
+                          className="text-2xs"
                           width={45}
                           allowDataOverflow={false}
                         />

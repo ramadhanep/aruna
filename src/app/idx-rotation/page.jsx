@@ -340,15 +340,6 @@ export default function IdxRotationPage() {
 
           return (
             <g key={stock.code}>
-              {/* Glow effect */}
-              <circle
-                cx={stock.cx}
-                cy={stock.cy}
-                r={stock.size * 1.5}
-                fill={color}
-                opacity={isHovered ? 0.3 : 0.1}
-              />
-
               {/* Main dot */}
               <circle
                 cx={stock.cx}
