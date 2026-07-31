@@ -69,7 +69,6 @@ import { AddAssetModal } from "@/components/add-asset-modal";
 import { SymbolSearchDialog } from "@/components/header-symbol-search";
 import { useAuth } from "@/components/auth-provider";
 import { NormalCandlestickChart } from "@/components/normal-candlestick-chart";
-import { fetchEncodedJson } from "@/lib/api-client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useChartState } from '@/hooks/use-chart-state';
 import { useChartData } from '@/hooks/use-chart-data';
@@ -440,50 +439,6 @@ function ElectionCyclePageContent() {
       return nextPoint;
     });
   }, [chartData.chartArray, quarterFilter, scaleChoice]);
-
-  useEffect(() => {
-    if (!symbol || !isNormalView) {
-      setNormalSeriesLoading(false);
-      return;
-    }
-
-    const controller = new AbortController();
-    let cancelled = false;
-
-    async function loadSeries() {
-      setNormalSeriesLoading(true);
-      setNormalSeriesError(null);
-      setNormalSeries([]);
-      try {
-        const params = new URLSearchParams({ symbol, timeframe: normalTimeframe });
-        const { response, data } = await fetchEncodedJson(`/api/price-series?${params.toString()}`, {
-          signal: controller.signal,
-        });
-        if (!response.ok) {
-          throw new Error(data?.error || 'Failed to load price data');
-        }
-        if (!cancelled) {
-          setNormalSeries(Array.isArray(data?.data) ? data.data : []);
-        }
-      } catch (error) {
-        if (error.name === 'AbortError') return;
-        if (!cancelled) {
-          setNormalSeries([]);
-          setNormalSeriesError(error.message || 'Failed to load price data');
-        }
-      } finally {
-        if (!cancelled) {
-          setNormalSeriesLoading(false);
-        }
-      }
-    }
-
-    loadSeries();
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
-  }, [symbol, normalTimeframe, isNormalView]);
 
   const portfolioPosition = useMemo(() => {
     if (!symbol || !Array.isArray(portfolioEntries) || portfolioEntries.length === 0) {

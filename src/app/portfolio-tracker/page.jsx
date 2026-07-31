@@ -133,20 +133,11 @@ export default function PortfolioTrackerPage() {
   // Persist entries on user-initiated change
   useEffect(() => {
     if (!dataReady) return;
+    savePortfolio({ entries, currency, visibilityHidden: isPortfolioHidden });
     if (isAuthenticated) {
       syncPortfolio(entries).catch(() => {});
-    } else {
-      savePortfolio({ entries, currency, visibilityHidden: isPortfolioHidden });
     }
   }, [entries, isAuthenticated, syncPortfolio, dataReady, currency, isPortfolioHidden]);
-
-  useEffect(() => {
-    savePortfolio({ entries, currency, visibilityHidden: isPortfolioHidden });
-  }, [currency, entries, isPortfolioHidden]);
-
-  useEffect(() => {
-    savePortfolio({ entries, currency, visibilityHidden: isPortfolioHidden });
-  }, [isPortfolioHidden, entries, currency]);
 
   // Search debounce
   useEffect(() => {
