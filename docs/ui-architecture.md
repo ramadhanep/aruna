@@ -115,8 +115,19 @@ Loading states reserve the final layout instead of showing centered spinners:
 - `ScatterSkeleton` (`components/scatter-skeleton.jsx`) for the two full-screen
   visualization tools (market bubbles, idx rotation) — a muted dot-field on the
   tool's dark canvas colour.
+- Auth/route gating keeps the app shell (navbar/header/nav) mounted and skeletons
+  the protected content area; sign-in bootstrap and the account sidebar suspend
+  into layout-shaped skeleton cards/rows.
 - Whole-screen/centered `Loader2` is reserved for user-initiated actions, never
   initial load.
+
+### Images
+
+All images use `next/image` (`<Image>`). `next.config.mjs` sets
+`images.unoptimized: true`, so the raw URL is emitted unchanged: `/aruna.png`
+stays in the service-worker precache for offline PWA use, remote avatars need no
+`remotePatterns`, and Vercel image-optimization usage is avoided. The app has no
+large images, so optimization would add cost without benefit.
 
 ### Motion
 

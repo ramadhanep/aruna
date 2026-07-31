@@ -73,6 +73,7 @@
 │   │   │   ├── radio-group.jsx
 │   │   │   ├── select.jsx
 │   │   │   ├── separator.jsx
+│   │   │   ├── segmented-control.jsx # Pill segmented control (single active-state recipe)
 │   │   │   ├── sheet.jsx
 │   │   │   ├── sidebar.jsx          # shadcn sidebar (not actively used)
 │   │   │   ├── skeleton.jsx
@@ -107,6 +108,9 @@
 │   │   ├── clear-data-button.jsx    # Clear local + remote data
 │   │   ├── mode-toggle.jsx          # Theme toggle (light/dark)
 │   │   ├── chart-header-bar.jsx     # Chart symbol header with cycle selector
+│   │   ├── chart-trading-plan-panel.jsx  # Trading-plan feature panel (risk-first sizing calculator)
+│   │   ├── chart-seasonality-panel.jsx   # Seasonality stat cards + heatmap tables
+│   │   ├── analyst-gauge-chart.jsx  # Analyst rating semicircle gauge
 │   │   └── portfolio-mini-chart.jsx # SVG mini sparkline for portfolio overview
 │   ├── hooks/
 │   │   ├── use-mobile.js            # Mobile breakpoint detection (1024px)
@@ -115,6 +119,7 @@
 │   │   ├── use-chart-series.js      # Normal candlestick series + indicators
 │   │   ├── use-chart-fundamentals.js # Lazy fundamentals with cache
 │   │   ├── use-chart-screening.js   # Screening signal + realtime subscription
+│   │   ├── use-pull-to-refresh.js   # Shared pull-to-refresh gesture (window or container scroll)
 │   │   └── use-portfolio-data.js    # Portfolio entries lifecycle, prices, FX, mini-series
 │   └── lib/
 │       ├── api-client.js            # fetchEncodedJson, searchSymbols, fetchLatestQuote — XOR-decoded API access

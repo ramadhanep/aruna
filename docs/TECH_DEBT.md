@@ -145,3 +145,23 @@ tree. This is an audit only; no implementation changes were made.
 - ESLint also reports image-optimization warnings and a few hook-dependency
   warnings; these are useful follow-ups but not architecture deviations by
   themselves.
+
+## Phase 6 follow-up
+
+- **TD-2/UI-8 remainder (componentization)** — resolved under Phase 6 guardrails:
+  `SegmentedControl` primitive (5 sites, 4 divergent active styles → 1), explore
+  tool cards (6×) and portfolio pie sections (4×) deduplicated, chart
+  Trading-Plan/Seasonality panels and `AnalystGaugeChart` extracted. Metric-row,
+  empty-state and change-chip primitives were deliberately not created (no
+  cross-feature reuse); chart Profile/Key Stats/Analysis/Financials tabs stayed
+  in the page (checkpoint decision — one-off grids, no ownership gain).
+- **Lint blind spot (new)** — `no-undef`/`no-unused-vars` were not effective
+  under `eslint-config-next`; this let two undefined-reference bugs ship. Now
+  enforced in `eslint.config.mjs`; ~320 lines of dead code removed across 19
+  files. Also fixed B4 (watchlist `isStandalone`, same class as B2).
+- **`no-img-element` (8 warnings)** — resolved by migrating all 8 `<img>` sites
+  to `next/image` with `images.unoptimized: true`; lint is now 0 errors /
+  0 warnings. Offline `/aruna.png` precache behaviour is preserved (raw URLs
+  emitted; verified in built HTML).
+- **UI-2** — resolved in Phase 6 (shell-mounted auth gating + layout-shaped
+  skeletons for app shell, sign-in bootstrap, account sidebar).

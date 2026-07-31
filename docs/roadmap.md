@@ -48,7 +48,6 @@
 - 🔮 Stock screener custom filters (beyond EMA-31 momentum)
 - 🔮 Real-time price updates via WebSocket
 - 🔮 Dark mode improvements for chart components
-- 🔮 Clean up Flutter app build artifacts from repository
 - 🔮 TypeScript migration (gradual)
 - 🔮 Internationalization (i18n) for Indonesian language support
 - 🔮 Accessibility audit and improvements

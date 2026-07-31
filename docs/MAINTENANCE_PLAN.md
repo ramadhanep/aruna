@@ -326,14 +326,38 @@ abstraction for a single chart’s one-off markup.
 
 **Definition of done:**
 
-- [ ] Feature pages are primarily composition and state wiring; recurring
+- [x] Feature pages are primarily composition and state wiring; recurring
       presentation is in readable components with explicit props.
-- [ ] Repeated Tailwind strings have named component/cva variants where the
+- [x] Repeated Tailwind strings have named component/cva variants where the
       visual behaviour is genuinely shared.
-- [ ] UI primitives retain their shadcn-compatible boundary and depend only on
+- [x] UI primitives retain their shadcn-compatible boundary and depend only on
       `@/lib/utils`; no new UI framework/state library is introduced.
-- [ ] Visual regression smoke tests cover all extracted states; lint and build
+- [x] Visual regression smoke tests cover all extracted states; lint and build
       pass.
+
+**Executed with tightened scope (architectural guardrails):**
+
+- Correctness first: fixed B1 (orphan chart price-series effect — out-of-scope
+  setters, duplicate fetch), B2 (explore install-handler `isStandalone` scope
+  bug), B3 (triplicated portfolio persistence effects), plus B4 (same
+  `isStandalone` bug in watchlist) surfaced by the new lint rules.
+- Lint baseline hardened: `no-undef` and `no-unused-vars` enabled and satisfied;
+  ~320 lines of dead code removed across 19 files.
+- One shared UI primitive created: `SegmentedControl` (5 sites, 4 divergent
+  active styles unified). `getChangeTone()` added to `utils.js` as the single
+  change-color source (fixed red-vs-rose drift). `MetricRow`/`EmptyState`/
+  `ChangeChip` deliberately NOT created — no genuine cross-feature reuse.
+- Chart extraction limited to the two highest-cohesion panels (Trading Plan,
+  Seasonality) plus the `AnalystGaugeChart` move. Profile/Key Stats/Analysis/
+  Financials kept in the page by checkpoint decision: one-off grids bound to
+  page formatters, extraction would be prop-drilling without ownership gain.
+- Other dedup: explore tool cards (6×), portfolio pie sections (4×),
+  `use-pull-to-refresh` hook (2 consumers).
+- UI-2 resolved (shell-mounted auth gating, sign-in bootstrap and sidebar
+  skeletons). `text-1xs` (11px) token replaces 58 arbitrary literals.
+- `no-img-element` audit: all 8 sites migrated to `next/image` with
+  `images.unoptimized: true` (raw URLs preserved for the SW precache; remote
+  avatars need no `remotePatterns`). Lint is now 0 errors / 0 warnings.
 
 **Documentation after implementation:** Update `docs/architecture.md`,
 `docs/folder-structure.md`, `docs/ui-architecture.md`, and

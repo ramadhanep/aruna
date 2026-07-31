@@ -58,3 +58,14 @@ MSCI stock data is seeded manually via `supabase/msci_seed.sql` (referenced in s
 
 ### Vercel Cron Not Configured for Money Flow
 The money flow cron (`/api/cron/money-flow`) has no schedule in `vercel.json`. It must be triggered manually or a schedule must be added.
+
+### No Vercel Cron Schedule at All (Phase 7)
+`vercel.json` is empty — no `/api/cron/*` schedule is configured (not just
+money-flow). Restoring or formally disabling scheduling is the pending Phase 7
+decision in `docs/MAINTENANCE_PLAN.md`.
+
+### Image Optimization Disabled
+`next.config.mjs` sets `images.unoptimized: true`. All images use `next/image`
+but are served unoptimized, which is intentional: URLs pass through unchanged
+(preserving the `/aruna.png` service-worker precache and avoiding Vercel
+image-optimization usage). Revisit only if the app grows real image payloads.

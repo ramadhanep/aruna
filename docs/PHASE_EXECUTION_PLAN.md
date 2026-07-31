@@ -497,27 +497,45 @@ hook changes.
 
 **Testing checklist**
 
-- [ ] Component props cover all existing visual states without feature-specific
+- [x] Component props cover all existing visual states without feature-specific
       conditionals leaking into a generic primitive.
-- [ ] No new UI framework or state library; UI primitives remain shadcn
+- [x] No new UI framework or state library; UI primitives remain shadcn
       compatible and use `cn()`.
-- [ ] Explore/Portfolio/Chart visual and interaction matrices match baseline.
-- [ ] Lint/build pass and bundle/runtime checks show no circular imports.
+- [x] Explore/Portfolio/Chart visual and interaction matrices match baseline.
+- [x] Lint/build pass and bundle/runtime checks show no circular imports.
 
 **Checkpoints:** lint after each feature migration; build before each merge;
 phase-level visual regression after task 4.
 
 **Documentation checklist**
 
-- [ ] `docs/architecture.md`, `docs/folder-structure.md`,
+- [x] `docs/architecture.md`, `docs/folder-structure.md`,
       `docs/ui-architecture.md`, `docs/conventions.md`.
-- [ ] `docs/ai-session-handoff.md`.
+- [x] `docs/ai-session-handoff.md`.
 
 **Recommended commits**
 
 1. `refactor(ui): extract shared explore presentation patterns`
 2. `refactor(ui): extract approved portfolio and chart variants`
 3. `docs: document shared component boundaries`
+
+**Executed as planned, with scope corrections (approval-driven guardrails):**
+
+- Order was correctness-first: the three extraction-leftover runtime bugs (B1,
+  B2, B3) and a fourth (B4, watchlist `isStandalone`) were fixed before any
+  lint tightening or refactor; `no-undef`/`no-unused-vars` were enabled and
+  satisfied before component work began.
+- Only one shared primitive was created (`SegmentedControl`); metric-row,
+  empty-state and change-chip primitives were dropped for lack of genuine
+  cross-feature reuse. `getChangeTone()` replaced a component as the change
+  color fix.
+- Chart extraction was limited to Trading Plan + Seasonality panels plus the
+  gauge move; the other four info tabs stayed in the page after a checkpoint
+  review (single-consumer grids, no ownership gain). Portfolio asset-type toggle
+  and chart quarter-filter controls were intentionally left out of the
+  segmented-control migration (form-toggle idiom / heatmap-matched square style).
+- Commits consolidated to 10 buildable, reviewable boundaries (see
+  `docs/ai-session-handoff.md`).
 
 ## Phase 7 — Cron decision/restoration track
 

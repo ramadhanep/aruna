@@ -19,7 +19,8 @@ Not configured. Deployment is manual via Vercel Git integration or `vercel` CLI.
 
 ## Vercel Configuration
 
-**`vercel.json`** — defines cron job schedules:
+**`vercel.json`** — currently `{}`. No cron schedule is configured. The historical
+schedule below is NOT live and is recorded only as the pending Phase 7 decision:
 
 ```json
 {
@@ -39,6 +40,12 @@ Not configured. Deployment is manual via Vercel Git integration or `vercel` CLI.
   ]
 }
 ```
+
+> **Status (Phase 6):** `vercel.json` is intentionally empty. The schedule above
+> is the previously-used configuration, retained for reference. Restoring it (or
+> formally documenting scheduled refresh as disabled) is the pending Phase 7
+> decision — see `docs/MAINTENANCE_PLAN.md` Phase 7. Do not treat the above as
+> live configuration.
 
 **`public/_headers`** — Vercel headers for service worker:
 
@@ -60,7 +67,10 @@ Vercel cron triggers are configured in `vercel.json`. Each cron job:
 
 ### Scheduled Jobs
 
-| Path | Schedule | Description |
+**None configured.** `vercel.json` is `{}`. If Phase 7 restores a schedule, the
+historical table below is the candidate set:
+
+| Path | Schedule (historical) | Description |
 |---|---|---|
 | `/api/cron/idx` | Daily 02:00 UTC | IDX EMA-31 momentum screener |
 | `/api/cron/us` | Daily 03:00 UTC | US markets momentum screener |
@@ -70,7 +80,7 @@ Vercel cron triggers are configured in `vercel.json`. Each cron job:
 ## PWA Deployment Considerations
 
 - Service worker at `public/sw.js` has its own cache version (`VERSION = '1.3.42'`).
-- Manifest generated dynamically at `/api/manifest.json`.
+- Manifest generated dynamically at `/manifest.json` (`src/app/manifest.json/route.js`).
 - Offline fallback at `/offline`.
 - App icons: `/aruna.png` at multiple resolutions.
 - Update `public/sw.js` version when making PWA cache strategy changes.

@@ -47,14 +47,14 @@ Aruna is a **Next.js 16 App Router** application with:
 ### 2. Component Layer — `src/components/*`
 
 - **UI Components** — `src/components/ui/` — shadcn/ui primitives (Button, Card, Dialog, etc.).
-- **Application Components** — `src/components/` — Auth provider, layout shell, market visualizations, PWA components.
+- **Application Components** — `src/components/` — Auth provider, layout shell, market visualizations, PWA components, plus feature panels extracted from large pages (chart trading-plan/seasonality panels, analyst gauge).
 
 ### 3. Library Layer — `src/lib/*`
 
 - **API Client** — `api-client.js` — Fetch wrapper that decodes XOR-obfuscated responses, plus shared `searchSymbols`/`fetchLatestQuote` data-access helpers.
 - **Business Logic** — `money-flow.js`, `msci-calculations.js`, `seasonalData.js`, `portfolio-metrics.js` — Calculation helpers.
 - **Data Access** — `supabase-browser.js`, `supabase-server.js`, `supabase-storage.js`, `portfolio-storage.js`, `logo-cache.js` — Supabase client singletons, shared storage/CDN bases, server-only logo cache, and the localStorage portfolio adapter.
-- **Utilities** — `utils.js` — Formatting, class merging, color generation.
+- **Utilities** — `utils.js` — Formatting, class merging, color generation, `getChangeTone` change-color pairs.
 - **Configuration** — `stock-universe.js`, `default-watchlist.js`, `tools-menu.js` — Static data.
 
 ### 4. Infrastructure Layer — External Services

@@ -1,5 +1,12 @@
 # Documentation Drift Report
 
+> **Status (updated Phase 6):** Historical audit. The listed drift was corrected
+> across Phases 0–6 (docs fixed in commit `716d4fe` and the Phase 6 doc pass).
+> Residual open items: `docs/deployment.md` cron claims are annotated as pending
+> the Phase 7 cron decision (see `docs/MAINTENANCE_PLAN.md` Phase 7), and
+> `docs/roadmap.md` no longer lists the removed Flutter app. New doc-state
+> findings should be added to this report rather than assumed resolved.
+
 Audited: 22 files in `docs/` + root `CLAUDE.md`, verified against actual source (not against each other).
 
 ## CLAUDE.md — WRONG

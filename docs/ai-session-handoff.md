@@ -2,86 +2,103 @@
 
 **Last Updated**: 2026-07-31
 
-**Summary**: Executed Phase 5 (UI polish system — UI-1, UI-5, UI-7, UI-9,
-UI-10, UI-11) from `docs/MAINTENANCE_PLAN.md`. Full-screen spinners replaced
-with layout-matched skeletons, motion tokens standardized, bottom navigation
-redesigned presentation-only, small typography tokenized, and non-semantic
-color/glow/elevation treatments restrained. UI-2 explicitly deferred to
-Phase 6. Lint: 0 errors, 8 warnings (same baseline). Build passes; `text-2xs`/
-`text-3xs` tokens verified in emitted CSS.
+**Summary**: Executed Phase 6 (componentization, cleanup, accessibility,
+performance and final polish) from `docs/MAINTENANCE_PLAN.md`. Executed
+correctness-first under approved guardrails: fixed four runtime bugs, hardened
+the lint baseline, created one shared UI primitive, extracted the two highest-
+cohesion chart panels, and resolved the deferred UI-2 and `no-img-element`
+items. Lint is now **0 errors / 0 warnings** (previously 0/8). Build passes.
 
 ## Files Created
 
 | File | Purpose |
 |---|---|
-| `src/components/scatter-skeleton.jsx` | Full-screen muted dot-field loading state shared by market bubbles and idx rotation (their final canvas colour is the dark `#09090b`). |
+| `src/components/ui/segmented-control.jsx` | Pill segmented control — single active-state recipe (was 4 divergent styles) |
+| `src/components/chart-trading-plan-panel.jsx` | Trading-plan feature panel (owns inputs, derivations, sizing calculator) |
+| `src/components/chart-seasonality-panel.jsx` | Seasonality stat cards + heatmap tables (internal dedup) |
+| `src/components/analyst-gauge-chart.jsx` | Analyst rating gauge, moved out of the chart page module |
+| `src/hooks/use-pull-to-refresh.js` | Shared pull-to-refresh gesture (window or container scroll strategy) |
 
 ## Files Modified
 
 | File | Change |
 |---|---|
-| `src/components/market-bubbles.jsx` | Loading branch: `Loader2` → `ScatterSkeleton` on dark field. |
-| `src/app/idx-rotation/page.jsx` | Loading branch → `ScatterSkeleton`; removed decorative dot-glow circles (quadrant tints/dot fills kept for semantic grouping). |
-| `src/app/discussion/page.jsx` | `authLoading` full-screen spinner → layout-matched shell skeleton (header row, alternating message rows, input bar). |
-| `src/app/chart/page.jsx` | Normal-series loading → reserved-height skeleton; `text-[10px]`/`text-[9px]` → `text-2xs`/`text-3xs`; `mt-[5px]` → `mt-1.5`; chart container height → `CHART_HEIGHT_CLASS` const (4 sites); analyst gauge: 5 saturated bands → muted track + score-colored needle. |
-| `src/app/portfolio-tracker/page.jsx` | Mini-chart loading `Loader2` → matching `Skeleton`; `text-[10px]` → `text-2xs`; currency-select width → `CURRENCY_SELECT_WIDTH` const (2 sites). |
-| `src/components/mobile-bottom-nav.jsx` | Redesign (presentation-only): fixed `w-[300px]` pill → `w-max` card, `rounded-xl`, `rounded-md` active item, visible `text-2xs` labels, `aria-current`; scroll-minimize + safe-area preserved; dead `matchPaths` branch and unused `TOOLS_ITEMS` import removed. |
-| `src/components/desktop-navbar.jsx` | `duration-200`/`duration-150` → `DURATION_CLASS.fast`; dropdown `shadow-2xl shadow-black/40` → `shadow-lg shadow-black/10`. |
-| `src/components/account-sidebar.jsx` | Overlay/panel `duration-300` → `DURATION_CLASS.base`/`DURATION_CLASS.slow`. |
-| `src/components/ui/sheet.jsx` | Radix `data-state` durations 300/500ms → `DURATION.base`/`DURATION.slow` (250/400ms), still `data-state`-driven. |
-| `src/lib/motion.js` | Added `DURATION_CLASS` — single token→Tailwind-class mapping for custom surfaces. |
-| `src/app/globals.css` | Added `--text-2xs` (10px), `--text-3xs` (9px) theme tokens. |
-| Docs | `MAINTENANCE_PLAN.md`, `PHASE_EXECUTION_PLAN.md`, `UI_AUDIT.md`, `conventions.md`, `ui-architecture.md`, `folder-structure.md`, `ai-session-handoff.md`. |
+| `src/app/chart/page.jsx` | B1 orphan effect deleted (~3,665 → 2,778 lines); trading-plan/seasonality panels extracted; gauge moved; ~30 dead imports/fns removed |
+| `src/app/explore/page.jsx` | B2 install-handler fix; tool cards (6×) deduped; segmented controls migrated; pull-to-refresh hook; `getChangeTone` |
+| `src/app/watchlist/page.jsx` | B4 `isStandalone` scope bug fixed (same class as B2) |
+| `src/app/portfolio-tracker/page.jsx` | B3 persistence effects collapsed to one; pie… (pie.jsx) sections deduped; pull-to-refresh hook; `getChangeTone` |
+| `src/app/portfolio-tracker/pie.jsx` | 4 near-identical pie blocks → one `PieSection` (~418 → ~230 lines) |
+| `src/lib/utils.js` | `getChangeTone()` — single green/red class-pair source |
+| `src/components/app-layout-client.jsx` | UI-2: shell-mounted auth gating, content skeleton (was hidden shell + centered spinner) |
+| `src/app/signin/page.jsx` | UI-2: card-shaped bootstrap skeleton |
+| `src/components/account-sidebar.jsx` | UI-2: sidebar row skeleton; dead `DeleteAccountAction`/`isDark`/imports removed |
+| `src/app/{discussion,idx-rotation,money-flow,msci,tools}/page.jsx` + components | Dead imports/vars removed |
+| `src/middleware.js` | Dead `buildUnauthorizedResponse`/`isServerToServerRequest` removed |
+| `src/lib/{portfolio-metrics,msci-calculations}.js` | Unused `sgdPerUsd` param / `shares_outstanding` destructure removed |
+| `src/app/api/rotation/route.js` | Unused `request` param removed |
+| `eslint.config.mjs` | `no-undef` + `no-unused-vars` enabled (caughtErrors `none` — intentional ignore-catches stay legal) |
+| `src/app/globals.css` | `--text-1xs` (11px) token |
+| `next.config.mjs` | `images.unoptimized: true` |
+| 8 files with `<img>` | Migrated to `next/image` (raw URLs preserved; SW precache intact) |
+| Docs | `MAINTENANCE_PLAN.md`, `PHASE_EXECUTION_PLAN.md`, `TECH_DEBT.md`, `conventions.md`, `ui-architecture.md`, `folder-structure.md`, `architecture.md`, `deployment.md` (cron annotated pending P7), `roadmap.md` (Flutter item removed), `known-issues.md`, `DOCS_DRIFT_REPORT.md` (historical status), `ai-session-handoff.md` |
 
 ## Commits
 
-1. `feat(ui): add layout-matched loading skeletons` (f00fa26)
-2. `refactor(ui): standardize custom motion tokens` (03f8adf)
-3. `feat(ui): redesign responsive mobile bottom navigation` (b023126)
-4. `style(ui): consolidate spacing and restrained visual tokens` (ea39bee)
+1. `fix: resolve runtime bugs from phase extraction leftovers` (36e9ac6) — B1/B2/B3
+2. `lint: enforce no-undef and no-unused-vars, clear flagged dead code` (56fd5b8) — B4 + ~320 lines removed
+3. `feat(ui): add segmented control primitive and change-tone helper` (af47a63)
+4. `refactor: deduplicate repeated feature presentation` (daa7205) — tool cards + pie sections
+5. `refactor: extract shared pull-to-refresh hook` (ff074a8)
+6. `refactor(chart): extract trading-plan and seasonality panels` (970f88e)
+7. `feat(ui): layout-shaped auth and route loading` (cfb0984) — UI-2
+8. `style(ui): tokenize 11px type as text-1xs` (569d6a6)
+9. `chore(img): migrate all img elements to next/image` (e0aef66)
+10. `docs: ...` (pending)
 
 ## Validation Results
 
-- `npm run lint`: **0 errors, 8 warnings** — same baseline (all `no-img-element`, deferred to Phase 6).
-- `npm run build`: passed at C4. `text-2xs{font-size:.625rem}` and `text-3xs{font-size:.5625rem}` confirmed in emitted CSS — pixel-identical to the arbitrary values replaced.
-- Manual smoke: bubble/rotation dark-field skeletons, discussion shell, chart/portfolio reserved-geometry skeletons, bottom-nav labels + active states, reduced-motion paths.
+- `npm run lint`: **0 errors / 0 warnings** (baseline was 0/8 with `no-img-element`).
+- `npm run build`: passes at every commit boundary; 26 routes.
+- `text-1xs{font-size:.6875rem}` confirmed in emitted CSS.
+- `next/image` migration emits raw `src="/aruna.png"` in built HTML (no
+  `/_next/image` rewrites) — service-worker precache intact.
+- Manual smoke: chart trading-plan/seasonality tabs (normal/empty/skeleton),
+  explore tool cards + segmented controls, portfolio single-write persistence +
+  pull-to-refresh, install prompt on mobile tools, auth gating shell, sign-in
+  bootstrap, sidebar skeleton.
 
 ## Items Skipped / Deferred
 
 | Item | Rationale |
 |---|---|
-| UI-2 (auth/route loading: `app-layout-client`, `signin`, `account-sidebar`) | Out of Phase 5 blocking scope; affected components not otherwise touched. Deferred to Phase 6. |
-| `no-img-element` warnings (8) | Phase 6 scope. |
-| `text-[13px]`/`text-[11px]` in desktop-navbar | Not flagged by audit; left as-is to keep the diff minimal. |
-| `w-[92px] h-[44px]` mini-chart skeleton literal | Mirrors `PortfolioMiniChart` defaults (width=92, height=44); the component is the source of truth. |
-| `max-w-[900px]` full-bleed chart wrapper | Intentional edge-to-edge chart behaviour; kept. |
-| Rotation quadrant zone tints | Kept at 8% opacity as spatial reference; only the dot glow was removed. |
+| Chart Profile/Key Stats/Analysis/Financials tab extraction | Checkpoint decision: one-off grids bound to page formatters; extraction = prop-drilling, no ownership gain. Keep in page. |
+| `MetricRow` / `EmptyState` / `ChangeChip` primitives | No genuine cross-feature reuse (guardrail 3); `getChangeTone()` covers the color consistency fix. |
+| Portfolio asset-type toggle → SegmentedControl | Form-toggle idiom (default/outline + icons + flex-1); not part of the divergent pill family. |
+| Chart quarter-filter → SegmentedControl | Square bordered style intentionally matches the seasonality heatmap grid. |
+| Portfolio asset-dialog extraction | Single-feature form, no reuse; size-driven only. |
+| `portfolioPosition` reuse of `portfolio-metrics.js` | Different math (per-symbol lots/PnL vs portfolio summary); medium risk, low reward. |
+| `getDefaultCyclesForSymbol` stub (`chart-helpers.js`) | Behaves intentionally (`['normal']`); fix only if a real cycle default emerges. |
+| Phase 7 (cron schedule decision) | `vercel.json` intentionally empty; schedule recorded as historical in `deployment.md`. |
+| Full `next/image` optimization | Disabled via `images.unoptimized: true` (deliberate; see `known-issues.md`). |
 
 ## Discovered During Implementation
 
-- `mobile-bottom-nav.jsx` had a latent unused `TOOLS_ITEMS` import and a dead
-  `matchPaths` branch (never populated) — both removed.
-- `UI_AUDIT.md` line references predate the P2/P3 line shifts (chart 4,736→
-  ~3,660; portfolio 1,761→~1,040). Noted at the top of the audit file.
+- The React Compiler's `set-state-in-effect` rule only analyses small components
+  (it bailed on the 3,600-line chart page). The trading-plan panel surfaced a
+  pre-existing synchronous setState-in-effect that the page had hidden; fixed
+  with the documented `queueMicrotask` deferral pattern.
+- The B1/B2/B4 undefined-reference bugs all shipped because `no-undef` was not
+  effective under `eslint-config-next`. Enabled; enforced.
+- Phase 6 plan's original "5 segmented sites, 44 text-[11px] sites" shrank as
+  extraction removed duplicates (28 → 58 text-1xs replacements after extending
+  repo-wide for consistency).
 
 ## Blockers for Next Phase
 
-- None. Phase 6 (componentization) can proceed; it inherits the Phase 5 motion,
-  skeleton and token conventions as documented.
+- None. Phase 7 (cron decision) is independent and needs product approval +
+  current Vercel plan limits.
 
 ## Next Recommended Task
 
-Execute Phase 6 (remaining componentization — repeated presentation patterns in
-explore/portfolio/chart, plus the deferred UI-2 and `no-img-element` audit)
-from `docs/MAINTENANCE_PLAN.md`.
-
-## Important Notes
-
-- `ScatterSkeleton` renders the muted dot-field only; callers own the
-  full-screen container and dark canvas background.
-- New tiny-type must use `text-2xs`/`text-3xs`, never new `text-[9px]`/
-  `text-[10px]` literals.
-- Custom surfaces use `DURATION_CLASS`; Radix primitives keep `data-state`
-  animations. `motion.js` remains the only place that defines durations.
-- Working tree is ahead of `origin/master` by Phase 4 (4 commits) + Phase 5
-  (4 commits); push is pending.
+Execute Phase 7 (cron scheduling decision) from `docs/MAINTENANCE_PLAN.md` —
+it requires a product/deployment decision, not code.
