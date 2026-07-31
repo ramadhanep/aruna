@@ -19,6 +19,7 @@ import { GoogleGlyph } from '@/components/google-glyph';
 import { loadPortfolio, savePortfolio } from '@/lib/portfolio-storage';
 import { computeHoldingsMetrics, sortHoldings, computePortfolioSummary, computeDigitalAllocation, computeCashTypeAllocation, formatValue } from '@/lib/portfolio-metrics';
 import { usePortfolioData, getDefaultPortfolio } from '@/hooks/use-portfolio-data';
+import { usePullToRefresh } from '@/hooks/use-pull-to-refresh';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PortfolioMiniChart } from '@/components/portfolio-mini-chart';
 
@@ -51,8 +52,6 @@ export default function PortfolioTrackerPage() {
   const [form, setForm] = useState({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '', type: 'digital', category: '', cashCurrency: 'IDR' });
   const justSelectedRef = React.useRef(false);
   const [loadingSearch, setLoadingSearch] = useState(false);
-  const [pullDistance, setPullDistance] = useState(0);
-  const touchStartY = React.useRef(0);
   const containerRef = React.useRef(null);
 
   const {
@@ -95,36 +94,15 @@ export default function PortfolioTrackerPage() {
       console.warn('Refresh failed', e);
     } finally {
       setIsRefreshing(false);
-      setPullDistance(0);
     }
   }, [isRefreshing, entries, refreshFxRates, refreshPrices, setIsRefreshing]);
 
-  const handleTouchStart = useCallback((e) => {
-    if (!isMobile) return;
-    if (containerRef.current && containerRef.current.scrollTop === 0) {
-      touchStartY.current = e.touches[0].clientY;
-    }
-  }, [isMobile]);
-
-  const handleTouchMove = useCallback((e) => {
-    if (!isMobile) return;
-    if (isRefreshing || touchStartY.current === 0 || !containerRef.current) return;
-    if (containerRef.current.scrollTop > 0) {
-      touchStartY.current = 0;
-      setPullDistance(0);
-      return;
-    }
-    const touchY = e.touches[0].clientY;
-    const distance = touchY - touchStartY.current;
-    if (distance > 0) setPullDistance(Math.min(distance, 150));
-  }, [isMobile, isRefreshing]);
-
-  const handleTouchEnd = useCallback(() => {
-    if (!isMobile) return;
-    if (pullDistance > 80) handleRefresh();
-    else setPullDistance(0);
-    touchStartY.current = 0;
-  }, [isMobile, pullDistance, handleRefresh]);
+  const { pullDistance, handleTouchStart, handleTouchMove, handleTouchEnd } = usePullToRefresh({
+    onRefresh: handleRefresh,
+    isRefreshing,
+    enabled: isMobile,
+    containerRef,
+  });
 
   // Persist entries on user-initiated change
   useEffect(() => {

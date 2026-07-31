@@ -15,6 +15,7 @@ import { TickerAvatar } from "@/components/ticker-avatar";
 import { TrendingMarquee } from "@/components/trending-marquee";
 import { MiniChart } from "@/components/mini-chart";
 import { SegmentedControl } from "@/components/ui/segmented-control";
+import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { cn, formatPercent, formatPrice, formatTickerDisplay, getChangeTone } from "@/lib/utils";
 
 const CATEGORY_LABELS = {
@@ -466,11 +467,8 @@ export default function ExplorePage() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [pullDistance, setPullDistance] = useState(0);
   const [manualLoading, setManualLoading] = useState({ idx: false, us: false, crypto: false });
   const [categoryDisplayOrder] = useState(() => getCategoryDisplayOrder());
-  const touchStartY = useRef(0);
-  const containerRef = useRef(null);
   const coreQuoteRequestRef = useRef(0);
   const activeMarketQuoteRequestRef = useRef(0);
 
@@ -731,50 +729,13 @@ export default function ExplorePage() {
       ]);
     } finally {
       setIsRefreshing(false);
-      setPullDistance(0);
     }
   }, [isRefreshing, loadSnapshots, loadActiveMarketQuotes, activeMarketTab, marketTimeframe]);
 
-  const handleTouchStart = useCallback((event) => {
-    // Check window scroll position, not container scrollTop
-    if (window.scrollY <= 5) {
-      touchStartY.current = event.touches[0].clientY;
-    } else {
-      touchStartY.current = 0;
-    }
-  }, []);
-
-  const handleTouchMove = useCallback(
-    (event) => {
-      if (isRefreshing || touchStartY.current === 0) return;
-
-      // If page scrolled down, immediately cancel pull mode
-      if (window.scrollY > 10) {
-        touchStartY.current = 0;
-        setPullDistance(0);
-        return;
-      }
-
-      const touchY = event.touches[0].clientY;
-      const distance = touchY - touchStartY.current;
-      if (distance > 0) {
-        setPullDistance(Math.min(distance, 150));
-      } else {
-        // If user dragging down, reset
-        setPullDistance(0);
-      }
-    },
-    [isRefreshing]
-  );
-
-  const handleTouchEnd = useCallback(() => {
-    if (pullDistance > 80) {
-      handleRefresh();
-    } else {
-      setPullDistance(0);
-    }
-    touchStartY.current = 0;
-  }, [pullDistance, handleRefresh]);
+  const { pullDistance, handleTouchStart, handleTouchMove, handleTouchEnd } = usePullToRefresh({
+    onRefresh: handleRefresh,
+    isRefreshing,
+  });
 
   const triggerBatch = useCallback(
     async (category) => {
@@ -1070,7 +1031,6 @@ export default function ExplorePage() {
 
   return (
     <div
-      ref={containerRef}
       className={cn("flex flex-col gap-6 pb-12", MOTION.fadeIn)}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
