@@ -33,33 +33,28 @@ tree. This is an audit only; no implementation changes were made.
   `src/components/portfolio-mini-chart.jsx`. Page now composes hooks and lib modules;
   remaining inline code is UI state (dialog, form, search, sort) and JSX layout.
 
-### TD-3 — Quote/asset-logo acquisition is duplicated across two API routes
+### TD-3 — Quote/asset-logo acquisition is duplicated across two API routes (RESOLVED in Phase 4)
 
-- **Reference:** `src/app/api/quotes/route.js:1-145` and
-  `src/app/api/finance/route.js:1-64`.
-- **What is wrong:** Both routes declare the same Supabase/Pluang bases and a
-  near-identical `ensureUsLogo()` implementation (HEAD, CDN download, service
-  role upload, public URL).
-- **Why it matters:** Behaviour, error handling and cache policy can drift; it
-  also leaves route handlers carrying reusable data-access logic.
-- **Suggested fix:** Extract a server-only logo-cache helper under `src/lib/`
-  and use it from both handlers.
-- **Effort:** M
+- **Resolution:** `ensureUsLogo()` extracted to `src/lib/logo-cache.js` as the
+  single server-only implementation (HEAD check → Pluang CDN download →
+  service-role upload → public URL, null on failure). Both
+  `src/app/api/quotes/route.js` and `src/app/api/finance/route.js` import it.
+  Shared storage/CDN bases moved to `src/lib/supabase-storage.js`. Encoded
+  response shapes and logo URLs verified unchanged via live API smoke test.
 
-### TD-4 — Symbol search and short-window price fetching are duplicated in UI
+### TD-4 — Symbol search and short-window price fetching are duplicated in UI (RESOLVED in Phase 4)
 
-- **Reference:** `src/components/add-asset-modal.jsx:10-44`; 
-  `src/app/portfolio-tracker/page.jsx:95-109,267-289`.
-- **What is wrong:** Each implementation independently wraps
-  `/api/symbol-search`, decodes/validates the same response, logs failures and
-  builds finance date windows. `add-asset-modal` repeats its finance request
-  again at `60-84`.
-- **Why it matters:** Client-side data-access policy is inconsistent and error
-  behaviour will diverge. It also puts reusable fetching business logic in a
-  page/component rather than a hook or lib client.
-- **Suggested fix:** Introduce focused API-client helpers/hooks (for example
-  `searchSymbols` and `getLatestPrice`) built on `fetchEncodedJson()`.
-- **Effort:** M
+- **Resolution:** `searchSymbols()` and `fetchLatestQuote()` added to
+  `src/lib/api-client.js`. All duplicate wrappers removed:
+  `add-asset-modal.jsx`, `portfolio-tracker/page.jsx`, `use-portfolio-data.js`
+  (including FX lookups), `manage-watchlist-dialog.jsx`, and
+  `header-symbol-search.jsx` (abort-aware) now use the shared helpers.
+  Also removed the page-local mini-series effect in `portfolio-tracker/page.jsx`
+  that duplicated `use-portfolio-data.js`'s identical effect (double fetch).
+  `searchSymbols` is tolerant (returns `[]`, rethrows only `AbortError`);
+  this also fixed an unhandled-rejection path in `add-asset-modal`.
+  Chart seasonal/series and portfolio mini-series fetches remain separate
+  contracts by design.
 
 ### TD-5 — Formatting helpers are reimplemented in feature files [PARTIALLY RESOLVED]
 
@@ -130,20 +125,19 @@ tree. This is an audit only; no implementation changes were made.
   original audit. Only explanatory `{/* label */}` JSX comments remain (section
   labels, catch-block comments). No code change was needed. Resolved in Phase 0.
 
-### TD-12 — Direct hardcoded external provider URLs/configuration are spread
+### TD-12 — Direct hardcoded external provider URLs/configuration are spread (RESOLVED in Phase 4)
 
-- **Reference:** `src/app/explore/page.jsx:20,32-39,52,69-108`; 
-  `src/app/api/quotes/route.js:5-6`; `src/app/api/finance/route.js:6-7`; 
-  `src/lib/money-flow.js:1,71-72`.
-- **What is wrong:** CDN bases, storage-base construction, provider origin and
-  a large market-symbol/logo catalog live in route/page files. The quote and
-  finance bases are duplicated.
-- **Why it matters:** Provider changes require unrelated feature edits; values
-  that are deployment/provider configuration cannot be centrally reviewed.
-- **Suggested fix:** Put static market catalog data in `src/lib/` and expose
-  provider bases as server config constants (environment variables where
-  deployments should vary). Keep non-secret stable defaults documented.
-- **Effort:** M
+- **Resolution:** `src/lib/supabase-storage.js` is the single source for
+  `SUPABASE_STORAGE_BASE` (derived from existing `NEXT_PUBLIC_SUPABASE_URL`),
+  `PLUANG_CDN_BASE`, `getIdxLogoUrl()`, and `getUsLogoUrl()`. All 7 inline
+  storage-base constructions removed: `quotes`, `finance`, `momentum`,
+  `msci`, `money-flow`, `market-bubbles`, `explore`. No new env surface;
+  `PLUANG_CDN_BASE` stays a stable code constant. The `explore/page.jsx`
+  market catalog was deliberately left in the page: it carries lucide icon
+  components and accent colors (presentation data), and extracting it to
+  `src/lib/` would violate the documented "lib has no dependencies on
+  components" rule. It is single-consumer; only its storage-base literal was
+  centralized.
 
 ## Notes
 

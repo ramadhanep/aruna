@@ -51,9 +51,9 @@ Aruna is a **Next.js 16 App Router** application with:
 
 ### 3. Library Layer — `src/lib/*`
 
-- **API Client** — `api-client.js` — Fetch wrapper that decodes XOR-obfuscated responses.
+- **API Client** — `api-client.js` — Fetch wrapper that decodes XOR-obfuscated responses, plus shared `searchSymbols`/`fetchLatestQuote` data-access helpers.
 - **Business Logic** — `money-flow.js`, `msci-calculations.js`, `seasonalData.js`, `portfolio-metrics.js` — Calculation helpers.
-- **Data Access** — `supabase-browser.js`, `supabase-server.js`, `portfolio-storage.js` — Supabase client singletons and localStorage portfolio adapter.
+- **Data Access** — `supabase-browser.js`, `supabase-server.js`, `supabase-storage.js`, `portfolio-storage.js`, `logo-cache.js` — Supabase client singletons, shared storage/CDN bases, server-only logo cache, and the localStorage portfolio adapter.
 - **Utilities** — `utils.js` — Formatting, class merging, color generation.
 - **Configuration** — `stock-universe.js`, `default-watchlist.js`, `tools-menu.js` — Static data.
 
@@ -93,7 +93,7 @@ Pages (src/app/*) ──► Components (src/components/*) ──► Lib (src/lib
 ## Design Philosophy
 
 1. **API as proxy** — All external API calls go through Next.js API routes, never from the browser directly.
-2. **Response obfuscation** — All API responses (except discussions and cron) are XOR-encoded with `SECURE_PAYLOAD_KEY` to prevent casual inspection.
+2. **Response obfuscation** — All API responses except `/api/cron/*` are XOR-encoded with `SECURE_PAYLOAD_KEY` to prevent casual inspection. `/api/discussions` is included — its GET/POST/DELETE all encode their responses.
 3. **Local-first** — Watchlist and portfolio default to `localStorage`. Cloud sync via Supabase is optional.
 4. **Mobile-first** — Layout adapts from mobile to desktop. PWA support for installability.
 5. **Minimal dependencies** — Avoids heavy state management libraries; uses React Context for auth, localStorage for persistence.

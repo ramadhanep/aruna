@@ -204,6 +204,17 @@ const { response, data } = await fetchEncodedJson('/api/finance?symbol=BBCA.JK')
 // data = decoded response body
 ```
 
+Shared data-access helpers in the same module (single source for symbol
+search and latest-price lookups):
+
+- **`searchSymbols(query, { signal }?)`** — calls `/api/symbol-search`, returns
+  `symbols[]`. Tolerant: returns `[]` on failure; `AbortError` propagates so
+  callers can cancel mid-flight.
+- **`fetchLatestQuote(symbol)`** — calls `/api/finance` over the shared recent
+  window (`getRecentUnixRange()`), returns `{ price, logo, name }` or `null`.
+  Narrow contract: latest quote only. Series/seasonal/historical fetches are
+  separate call sites and must not be folded into this helper.
+
 ## Error Handling
 
 All errors return:

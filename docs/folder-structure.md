@@ -116,10 +116,12 @@
 │   │   ├── use-chart-screening.js   # Screening signal + realtime subscription
 │   │   └── use-portfolio-data.js    # Portfolio entries lifecycle, prices, FX, mini-series
 │   └── lib/
-│       ├── api-client.js            # fetchEncodedJson — XOR-decoded fetch
+│       ├── api-client.js            # fetchEncodedJson, searchSymbols, fetchLatestQuote — XOR-decoded API access
 │       ├── secure-payload.js        # XOR cipher encode/decode
 │       ├── supabase-browser.js      # Browser Supabase client singleton
 │       ├── supabase-server.js       # Service-role Supabase client + getUserFromRequest
+│       ├── supabase-storage.js      # SUPABASE_STORAGE_BASE, PLUANG_CDN_BASE, getIdxLogoUrl, getUsLogoUrl
+│       ├── logo-cache.js            # ensureUsLogo — server-only US logo HEAD/download/upload cache
 │       ├── yahoo-finance.js         # Configured yahoo-finance2 instance
 │       ├── yahoo-raw-log.js         # Dev-only Yahoo API response logging
 │       ├── money-flow.js            # Stockbit URL builders, score calculations

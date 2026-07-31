@@ -221,17 +221,21 @@ and preserve XOR response envelopes/API routes.
 
 **Definition of done:**
 
-- [ ] `ensureUsLogo()` has one server-only implementation shared by quotes and
+- [x] `ensureUsLogo()` has one server-only implementation shared by quotes and
       finance routes, with preserved caching/error behaviour.
-- [ ] Symbol search and latest-price access have one client-facing helper using
+- [x] Symbol search and latest-price access have one client-facing helper using
       `fetchEncodedJson()`; no duplicate decoder/error/date-window wrappers
       remain in UI files.
-- [ ] CDN/storage/provider bases and static market catalog data reside in the
+- [x] CDN/storage/provider bases and static market catalog data reside in the
       appropriate config/lib module; values that vary by deployment are env
       configuration, not duplicated literals.
-- [ ] No API route response encoding, authorization, or public response shape
+      (Scope note: the `explore/page.jsx` market catalog stayed in the page —
+      it is single-consumer presentation data carrying lucide icons, and
+      extracting it to lib would break the documented lib→components layer
+      rule. Only its storage-base literal was centralized.)
+- [x] No API route response encoding, authorization, or public response shape
       changes without an explicit compatibility decision.
-- [ ] Lint, build, and representative quote/finance/symbol-search requests
+- [x] Lint, build, and representative quote/finance/symbol-search requests
       pass.
 
 **Documentation after implementation:** Update `docs/architecture.md`,

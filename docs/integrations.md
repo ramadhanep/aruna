@@ -53,12 +53,20 @@
 
 **Purpose**: Source for US stock logo SVGs.
 
-**Integration**: HTTP fetch in `/api/finance` and `/api/quotes`.
+**Integration**: HTTP fetch in `/api/finance` and `/api/quotes` via the shared
+server-side cache helper `ensureUsLogo()` in `@/lib/logo-cache.js`.
 
 **Flow**:
 1. Check if logo exists in Supabase storage (`us/<symbol>.svg`).
 2. If missing, download from `https://image-cdn.pluang.com/icons/light/global-stocks/<symbol>.svg`.
 3. Upload to Supabase storage with upsert for future use.
+
+**Configuration**: The CDN base is a stable code constant
+(`PLUANG_CDN_BASE`) in `@/lib/supabase-storage.js`, not an env variable — a
+provider change is a code change. The Supabase storage base is derived from the
+existing `NEXT_PUBLIC_SUPABASE_URL` env var in the same module and shared by
+all routes/components via `SUPABASE_STORAGE_BASE`, `getIdxLogoUrl()`, and
+`getUsLogoUrl()`. No new env surface.
 
 ## Ajaib API
 
