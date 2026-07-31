@@ -17,6 +17,7 @@ import { MiniChart } from "@/components/mini-chart";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { cn, formatPercent, formatPrice, formatTickerDisplay, getChangeTone } from "@/lib/utils";
+import { toast } from "@/components/toast";
 
 const CATEGORY_LABELS = {
   idx: "IDX 🇮🇩",
@@ -749,11 +750,11 @@ export default function ExplorePage() {
         const message = data?.status
           ? `${category.toUpperCase()} → ${data.status.toUpperCase()}`
           : `${category.toUpperCase()} → failed`;
-        alert(message);
+        toast(message, { type: "success" });
         await loadSnapshots();
       } catch (error) {
         console.warn("Trigger failed", error);
-        alert(`${category.toUpperCase()} → error`);
+        toast(error?.message || `${category.toUpperCase()} → error`);
       } finally {
         setManualLoading((prev) => ({ ...prev, [category]: false }));
       }

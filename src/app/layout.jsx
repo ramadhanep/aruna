@@ -4,6 +4,7 @@ import { AuthProvider } from "@/components/auth-provider";
 import { AppearanceModeProvider } from "@/components/appearance-mode-provider";
 import { PWARegister } from "@/components/pwa-register";
 import { PWAInstallDialog } from "@/components/pwa-install-dialog";
+import { ToastViewport } from "@/components/toast";
 import { AppLayoutClient } from "@/components/app-layout-client";
 import { TrialProvider } from "@/components/trial-provider";
 import { TrialGuard } from "@/components/trial-guard";
@@ -59,6 +60,7 @@ export default function RootLayout({ children }) {
               <AppearanceModeProvider>
                 <PWARegister />
                 <PWAInstallDialog />
+                <ToastViewport />
                 <TrialGuard>
                   <AppLayoutClient>
                     {children}

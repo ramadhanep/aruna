@@ -94,7 +94,7 @@ function ElectionCyclePageContent() {
       current: CURRENT_LINE_COLOR,
     };
   }, [resolvedTheme]);
-  const { loading, rawLinesData, symbolInfo, assetName, monthlyHeatmap, quarterlyHeatmap } = useChartData(symbol, selectedCycles, scaleChoice, colors.allYears);
+  const { loading, error, retry, rawLinesData, symbolInfo, assetName, monthlyHeatmap, quarterlyHeatmap } = useChartData(symbol, selectedCycles, scaleChoice, colors.allYears);
   const { fundamentals, fundamentalsLoading, revenuePeriod, setRevenuePeriod } = useChartFundamentals(symbol, infoTab);
 
   const [portfolioDialogOpen, setPortfolioDialogOpen] = useState(false);
@@ -2276,6 +2276,15 @@ function ElectionCyclePageContent() {
           </>
         )}
 
+        {!loading && error && (
+          <Card className="flex flex-col items-center gap-4 text-center py-10 bg-transparent border-dashed rounded-xl">
+            <p className="text-sm text-muted-foreground">{error}</p>
+            <Button variant="outline" size="sm" onClick={retry} className="rounded-full">
+              Try Again
+            </Button>
+          </Card>
+        )}
+
         {showChartSection && (
           <>
             <Card className={`bg-transparent border-none rounded-none ${MOTION.fadeIn}`}>
@@ -2454,6 +2463,7 @@ function ElectionCyclePageContent() {
                           src="/trump.gif"
                           alt="Trump Years"
                           className="absolute w-16 h-16 lg:w-24 lg:h-24 object-contain opacity-30"
+                          loading="lazy"
                           style={{ bottom: '4rem', right: '3rem' }}
                         />
                       </div>

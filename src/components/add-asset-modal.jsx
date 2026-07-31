@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } fr
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { searchSymbols, fetchLatestQuote } from '@/lib/api-client';
 import { formatTickerDisplay } from '@/lib/utils';
+import { toast } from '@/components/toast';
 
 export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }) {
   const [symbolQuery, setSymbolQuery] = useState(initialSymbol);
@@ -105,7 +106,7 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
       if (quote?.price != null) avgPriceNum = quote.price;
     }
     if (avgPriceNum == null || isNaN(avgPriceNum)) {
-      alert('Could not determine average price for this symbol. Please enter it manually.');
+      toast('Could not determine average price for this symbol. Please enter it manually.');
       return;
     }
 

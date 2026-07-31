@@ -18,17 +18,22 @@ import { CURRENT_LINE_COLOR } from '@/lib/chart-helpers';
 
 export function useChartData(symbol, selectedCycles, scaleChoice, baseLineColor = '#F9F9F9F9') {
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [attempt, setAttempt] = useState(0);
   const [rawLinesData, setRawLinesData] = useState([]);
   const [symbolInfo, setSymbolInfo] = useState(null);
   const [assetName, setAssetName] = useState('');
   const [monthlyHeatmap, setMonthlyHeatmap] = useState({ rows: [], average: {}, winRate: {} });
   const [quarterlyHeatmap, setQuarterlyHeatmap] = useState({ rows: [], average: {}, winRate: {} });
 
+  const retry = () => setAttempt((current) => current + 1);
+
   useEffect(() => {
     let cancelled = false;
 
     async function fetchDataAndBuildChart() {
       setLoading(true);
+      setError(null);
       try {
         const startDate = Math.floor(new Date('1971-01-01').getTime() / 1000);
         const endDate = Math.floor(Date.now() / 1000);
@@ -218,7 +223,9 @@ export function useChartData(symbol, selectedCycles, scaleChoice, baseLineColor 
         setQuarterlyHeatmap(formatQuarterlyHeatmap(quarterlyReturns, 10));
       } catch (error) {
         console.error('Error fetching data:', error);
-        alert('Failed to fetch data. Please try again.');
+        if (!cancelled) {
+          setError('Failed to load chart data. Please try again.');
+        }
       } finally {
         if (!cancelled) {
           setLoading(false);
@@ -232,7 +239,7 @@ export function useChartData(symbol, selectedCycles, scaleChoice, baseLineColor 
       cancelled = true;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbol, selectedCycles, scaleChoice]);
+  }, [symbol, selectedCycles, scaleChoice, attempt]);
 
-  return { loading, rawLinesData, symbolInfo, assetName, monthlyHeatmap, quarterlyHeatmap };
+  return { loading, error, retry, rawLinesData, symbolInfo, assetName, monthlyHeatmap, quarterlyHeatmap };
 }

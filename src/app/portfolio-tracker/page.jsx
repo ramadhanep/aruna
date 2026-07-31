@@ -23,6 +23,7 @@ import { usePortfolioData, getDefaultPortfolio } from '@/hooks/use-portfolio-dat
 import { usePullToRefresh } from '@/hooks/use-pull-to-refresh';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PortfolioMiniChart } from '@/components/portfolio-mini-chart';
+import { toast } from '@/components/toast';
 
 // Dynamic chart component to keep page light and avoid SSR issues
 const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { ssr: false });
@@ -209,13 +210,13 @@ export default function PortfolioTrackerPage() {
     if (assetType === 'cash') {
       // Cash asset
       if (!form.category.trim()) {
-        alert('Please enter a category for cash asset (e.g., Bank BCA)');
+        toast('Please enter a category for cash asset (e.g., Bank BCA)');
         return;
       }
 
       const nativeAmount = amountNum;
       if (nativeAmount <= 0 || isNaN(nativeAmount)) {
-        alert('Please enter the cash amount');
+        toast('Please enter the cash amount');
         return;
       }
 
@@ -223,13 +224,13 @@ export default function PortfolioTrackerPage() {
       let totalUSD = nativeAmount;
       if (form.cashCurrency === 'IDR') {
         if (fxRate <= 0) {
-          alert('IDR FX rate unavailable. Please refresh to update rates.');
+          toast('IDR FX rate unavailable. Please refresh to update rates.');
           return;
         }
         totalUSD = nativeAmount * fxRate; // IDR * (USD per IDR) = USD
       } else if (form.cashCurrency === 'SGD') {
         if (sgdPerUsd <= 0) {
-          alert('SGD FX rate unavailable. Please refresh to update rates.');
+          toast('SGD FX rate unavailable. Please refresh to update rates.');
           return;
         }
         totalUSD = nativeAmount / sgdPerUsd; // SGD / (SGD per USD) = USD
@@ -260,7 +261,7 @@ export default function PortfolioTrackerPage() {
     } else {
       // Digital asset
       if (!form.symbol) {
-        alert('Please select a symbol');
+        toast('Please select a symbol');
         return;
       }
 
@@ -284,7 +285,7 @@ export default function PortfolioTrackerPage() {
         }
       }
       if (avgPriceNum == null || isNaN(avgPriceNum)) {
-        alert('Could not determine average price for this symbol. Please enter it manually.');
+        toast('Could not determine average price for this symbol. Please enter it manually.');
         return;
       }
 
