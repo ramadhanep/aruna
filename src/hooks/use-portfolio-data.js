@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { loadPortfolio, savePortfolio } from '@/lib/portfolio-storage';
-import { fetchEncodedJson } from '@/lib/api-client';
-import { getRecentUnixRange } from '@/lib/time';
+import { fetchEncodedJson, fetchLatestQuote } from '@/lib/api-client';
 
 const DEFAULT_PORTFOLIO_ENTRIES = [
   { symbol: 'BTC-USD', name: 'Bitcoin', amount: 1, unit: 'share', avgPrice: 65000, type: 'digital' },
@@ -17,23 +16,6 @@ function getDefaultPortfolio() {
 }
 
 export { getDefaultPortfolio };
-
-async function fetchPrice(symbol) {
-  try {
-    const { startDate, endDate } = getRecentUnixRange();
-    const { response, data } = await fetchEncodedJson(
-      `/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`
-    );
-    if (!response.ok) return null;
-    const series = data.data || [];
-    if (series.length === 0) return null;
-    const validLast = series.slice().reverse().find(s => s?.adjclose != null);
-    const logo = data?.meta?.logo || null;
-    return { price: validLast?.adjclose ?? null, logo };
-  } catch {
-    return null;
-  }
-}
 
 export function usePortfolioData() {
   const {
@@ -62,24 +44,15 @@ export function usePortfolioData() {
   const guestSyncedRef = useRef(false);
 
   const refreshFxRates = useCallback(async () => {
-    const { startDate, endDate } = getRecentUnixRange();
-    const [idrResponse, sgdResponse] = await Promise.all([
-      fetchEncodedJson(`/api/finance?symbol=IDR=X&startDate=${startDate}&endDate=${endDate}`),
-      fetchEncodedJson(`/api/finance?symbol=SGD=X&startDate=${startDate}&endDate=${endDate}`),
+    const [idr, sgd] = await Promise.all([
+      fetchLatestQuote('IDR=X'),
+      fetchLatestQuote('SGD=X'),
     ]);
-    const idrSeries = idrResponse.data?.data || [];
-    if (idrResponse.response.ok && idrSeries.length > 0) {
-      const idrLast = idrSeries.slice().reverse().find(s => s?.adjclose != null)?.adjclose;
-      if (idrLast) {
-        setIdrPerUsd(idrLast);
-        setFxRate(1 / idrLast);
-      }
+    if (idr?.price) {
+      setIdrPerUsd(idr.price);
+      setFxRate(1 / idr.price);
     }
-    const sgdSeries = sgdResponse.data?.data || [];
-    if (sgdResponse.response.ok && sgdSeries.length > 0) {
-      const sgdLast = sgdSeries.slice().reverse().find(s => s?.adjclose != null)?.adjclose;
-      if (sgdLast) setSgdPerUsd(sgdLast);
-    }
+    if (sgd?.price) setSgdPerUsd(sgd.price);
   }, []);
 
   const refreshPrices = useCallback(async (list) => {
@@ -87,7 +60,7 @@ export function usePortfolioData() {
     const updates = {};
     const logos = {};
     for (const sym of uniqueSymbols) {
-      const result = await fetchPrice(sym);
+      const result = await fetchLatestQuote(sym);
       if (!result) continue;
       if (result.price != null) updates[sym] = result.price;
       if (result.logo) logos[sym] = result.logo;

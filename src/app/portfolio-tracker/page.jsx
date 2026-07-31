@@ -11,13 +11,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, MoreVertical, Pencil, Trash2, Loader2, CreditCard, TrendingUp, ArrowUpDown, Check, Eye, EyeClosed } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth-provider';
-import { fetchEncodedJson } from '@/lib/api-client';
+import { searchSymbols, fetchLatestQuote } from '@/lib/api-client';
 import { TickerAvatar } from '@/components/ticker-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatTickerDisplay, formatIDR, formatByCurrency } from '@/lib/utils';
 import { useTrial } from '@/components/trial-provider';
 import { GoogleGlyph } from '@/components/google-glyph';
-import { getRecentUnixRange } from '@/lib/time';
 import { loadPortfolio, savePortfolio } from '@/lib/portfolio-storage';
 import { computeHoldingsMetrics, sortHoldings, computePortfolioSummary, computeDigitalAllocation, computeCashTypeAllocation, formatValue } from '@/lib/portfolio-metrics';
 import { usePortfolioData, getDefaultPortfolio } from '@/hooks/use-portfolio-data';
@@ -26,23 +25,6 @@ import { PortfolioMiniChart } from '@/components/portfolio-mini-chart';
 
 // Dynamic chart component to keep page light and avoid SSR issues
 const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { ssr: false });
-
-// Minimal asset search (reuses existing API route if present)
-async function searchSymbols(query) {
-  if (!query) return [];
-  try {
-    const { response, data } = await fetchEncodedJson(
-      `/api/symbol-search?q=${encodeURIComponent(query)}`
-    );
-    if (!response.ok) {
-      throw new Error(data?.error || 'Search failed');
-    }
-    return data.symbols || [];
-  } catch (e) {
-    console.warn('Symbol search failed', e);
-    return [];
-  }
-}
 
 export default function PortfolioTrackerPage() {
   const router = useRouter();
@@ -188,38 +170,18 @@ export default function PortfolioTrackerPage() {
     setAssetType('digital');
   }
 
-  async function fetchSymbolPrice(symbol) {
-    try {
-      const { startDate, endDate } = getRecentUnixRange();
-      const { response, data } = await fetchEncodedJson(
-        `/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`
-      );
-      if (!response.ok) return null;
-      const series = data.data || [];
-      if (series.length === 0) return null;
-      const validLast = series.slice().reverse().find(s => s?.adjclose != null);
-      const logo = data?.meta?.logo || null;
-      return { price: validLast?.adjclose ?? null, logo };
-    } catch { return null; }
-  }
-
   // User selected a symbol from search results: set symbol, name, unit (lot for .JK),
   // and try to autofill avgPrice with latest market price
   async function handleSelectSymbol(result) {
     const symbol = result.symbol;
     const name = result.name || '';
     const isJk = symbol.endsWith('.JK');
-    let latestResult = null;
-    try {
-      latestResult = await fetchSymbolPrice(symbol);
-      if (latestResult?.price != null) {
-        setPriceMap((pm) => ({ ...pm, [symbol]: latestResult.price }));
-      }
-      if (latestResult?.logo) {
-        setLogoMap((prev) => ({ ...prev, [symbol]: latestResult.logo }));
-      }
-    } catch (e) {
-      // ignore
+    const latestResult = await fetchLatestQuote(symbol);
+    if (latestResult?.price != null) {
+      setPriceMap((pm) => ({ ...pm, [symbol]: latestResult.price }));
+    }
+    if (latestResult?.logo) {
+      setLogoMap((prev) => ({ ...prev, [symbol]: latestResult.logo }));
     }
     setForm((f) => ({
       ...f,
@@ -338,23 +300,19 @@ export default function PortfolioTrackerPage() {
       let avgPriceNum = parseFloat(form.avgPrice);
       if (isNaN(avgPriceNum) || avgPriceNum <= 0) {
         avgPriceNum = null;
-        try {
-          const result = await fetchSymbolPrice(form.symbol);
-          if (result?.price != null) {
-            avgPriceNum = result.price;
-            setPriceMap((pm) => ({
-              ...pm,
-              [form.symbol]: result.price,
+        const result = await fetchLatestQuote(form.symbol);
+        if (result?.price != null) {
+          avgPriceNum = result.price;
+          setPriceMap((pm) => ({
+            ...pm,
+            [form.symbol]: result.price,
+          }));
+          if (result.logo) {
+            setLogoMap((prev) => ({
+              ...prev,
+              [form.symbol]: result.logo,
             }));
-            if (result.logo) {
-              setLogoMap((prev) => ({
-                ...prev,
-                [form.symbol]: result.logo,
-              }));
-            }
           }
-        } catch (err) {
-          // ignore
         }
       }
       if (avgPriceNum == null || isNaN(avgPriceNum)) {
@@ -396,107 +354,6 @@ export default function PortfolioTrackerPage() {
     return form.unit;
   }, [form.symbol, form.unit]);
   const unitLocked = form.symbol.endsWith('.JK');
-
-  // Fetch latest prices (simple batch sequential)
-  // (Removed duplicated non-hoisted implementations)
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const buildMiniSeries = async () => {
-      const digital = entries.filter((entry) => entry.type !== 'cash');
-      const cashTotalUSD = entries
-        .filter((entry) => entry.type === 'cash')
-        .reduce((sum, entry) => sum + (entry.avgPrice * entry.amount), 0);
-
-      if (digital.length === 0) {
-        setPortfolioMiniSeries(cashTotalUSD > 0 ? [cashTotalUSD, cashTotalUSD] : []);
-        return;
-      }
-
-      setPortfolioMiniLoading(true);
-      try {
-        const endDate = Math.floor(Date.now() / 1000);
-        const startDate = endDate - 60 * 60 * 24 * 45;
-        const uniqueSymbols = [...new Set(digital.map((entry) => entry.symbol))];
-
-        const responses = await Promise.all(
-          uniqueSymbols.map((symbol) =>
-            fetchEncodedJson(
-              `/api/finance?symbol=${encodeURIComponent(symbol)}&startDate=${startDate}&endDate=${endDate}`
-            )
-          )
-        );
-
-        const seriesBySymbol = {};
-        const allDatesSet = new Set();
-        uniqueSymbols.forEach((symbol, idx) => {
-          const payload = responses[idx];
-          const points = (payload?.data?.data || [])
-            .filter((row) => row?.date && typeof row?.adjclose === 'number')
-            .map((row) => ({ date: row.date.slice(0, 10), price: row.adjclose }));
-          if (points.length > 0) {
-            seriesBySymbol[symbol] = points;
-            points.forEach((row) => allDatesSet.add(row.date));
-          }
-        });
-
-        const orderedDates = [...allDatesSet].sort((a, b) => a.localeCompare(b));
-        if (orderedDates.length === 0) {
-          setPortfolioMiniSeries([]);
-          return;
-        }
-
-        const lastKnownPriceBySymbol = {};
-        const mapByDateBySymbol = {};
-        uniqueSymbols.forEach((symbol) => {
-          const rows = seriesBySymbol[symbol] || [];
-          mapByDateBySymbol[symbol] = new Map(rows.map((row) => [row.date, row.price]));
-          if (rows.length > 0) {
-            lastKnownPriceBySymbol[symbol] = rows[0].price;
-          }
-        });
-
-        const values = orderedDates.map((dateKey) => {
-          let dailyValue = cashTotalUSD;
-
-          digital.forEach((entry) => {
-            const dateMap = mapByDateBySymbol[entry.symbol];
-            if (!dateMap) return;
-            const nextPrice = dateMap.get(dateKey);
-            if (typeof nextPrice === 'number') {
-              lastKnownPriceBySymbol[entry.symbol] = nextPrice;
-            }
-            const activePrice = lastKnownPriceBySymbol[entry.symbol];
-            if (typeof activePrice !== 'number') return;
-            const priceInUSD = entry.symbol.endsWith('.JK') && fxRate > 0 ? activePrice * fxRate : activePrice;
-            const effectiveAmount = entry.unit === 'lot' ? entry.amount * 100 : entry.amount;
-            dailyValue += priceInUSD * effectiveAmount;
-          });
-
-          return dailyValue;
-        });
-
-        if (!cancelled) {
-          setPortfolioMiniSeries(values.slice(-30));
-        }
-      } catch (error) {
-        if (!cancelled) {
-          console.warn('Failed to build portfolio mini chart series', error);
-          setPortfolioMiniSeries([]);
-        }
-      } finally {
-        if (!cancelled) {
-          setPortfolioMiniLoading(false);
-        }
-      }
-    };
-
-    buildMiniSeries();
-    return () => {
-      cancelled = true;
-    };
-  }, [entries, fxRate]);
 
   const holdingsWithMetrics = useMemo(() => {
     return computeHoldingsMetrics(entries, priceMap, fxRate, sgdPerUsd);

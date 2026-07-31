@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Loader2, Clock } from "lucide-react";
-import { fetchEncodedJson } from "@/lib/api-client";
+import { searchSymbols } from "@/lib/api-client";
 import { cn, formatTickerDisplay } from "@/lib/utils";
 import { MOTION } from "@/lib/motion";
 
@@ -42,16 +42,10 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
 
     const timeout = setTimeout(async () => {
       try {
-        const { response, data } = await fetchEncodedJson(
-          `/api/symbol-search?q=${encodeURIComponent(normalizedQuery)}`,
-          {
-            signal: controller.signal,
-          }
-        );
-        if (!response.ok) {
-          throw new Error(data?.error || "Search failed");
-        }
-        setResults(Array.isArray(data.symbols) ? data.symbols.slice(0, 12) : []);
+        const results = await searchSymbols(normalizedQuery, {
+          signal: controller.signal,
+        });
+        setResults(results.slice(0, 12));
       } catch (error) {
         if (error.name !== "AbortError") {
           console.warn("Symbol search error", error);

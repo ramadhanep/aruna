@@ -5,43 +5,8 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { fetchEncodedJson } from '@/lib/api-client';
+import { searchSymbols, fetchLatestQuote } from '@/lib/api-client';
 import { formatTickerDisplay } from '@/lib/utils';
-import { getRecentUnixRange } from '@/lib/time';
-
-async function searchSymbols(query) {
-  if (!query) return [];
-  try {
-    const { response, data } = await fetchEncodedJson(
-      `/api/symbol-search?q=${encodeURIComponent(query)}`
-    );
-    if (!response.ok) {
-      throw new Error(data?.error || 'Search failed');
-    }
-    return data.symbols || [];
-  } catch (e) {
-    console.warn('Symbol search failed', e);
-    return [];
-  }
-}
-
-async function fetchPrice(symbol) {
-  try {
-    const { startDate, endDate } = getRecentUnixRange();
-    const { response, data } = await fetchEncodedJson(
-      `/api/finance?symbol=${symbol}&startDate=${startDate}&endDate=${endDate}`
-    );
-    if (!response.ok) {
-      throw new Error(data?.error || 'Failed to fetch price');
-    }
-    const series = data.data || [];
-    if (series.length === 0) return null;
-    const last = series[series.length - 1];
-    return last.adjclose ?? null;
-  } catch (e) {
-    return null;
-  }
-}
 
 export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }) {
   const [symbolQuery, setSymbolQuery] = useState(initialSymbol);
@@ -70,16 +35,12 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
       (async () => {
         try {
           // Fetch name from Yahoo Finance
-          const { startDate, endDate } = getRecentUnixRange();
-          const { response, data } = await fetchEncodedJson(
-            `/api/finance?symbol=${initialSymbol}&startDate=${startDate}&endDate=${endDate}`
-          );
-          if (response.ok) {
-            const name = data.meta?.name || initialSymbol;
-            const series = data.data || [];
-            const price = series.length > 0 ? series[series.length - 1].adjclose : null;
+          const info = await fetchLatestQuote(initialSymbol);
+          if (info) {
+            const name = info.name || initialSymbol;
+            const price = info.price;
             const isJk = initialSymbol.endsWith('.JK');
-            
+
             setForm({
               symbol: initialSymbol,
               name: name,
@@ -118,12 +79,8 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
     const symbol = result.symbol;
     const name = result.name || '';
     const isJk = symbol.endsWith('.JK');
-    let latest = null;
-    try {
-      latest = await fetchPrice(symbol);
-    } catch (e) {
-      // ignore
-    }
+    const quote = await fetchLatestQuote(symbol);
+    const latest = quote?.price ?? null;
     setForm(f => ({ ...f, symbol, name, unit: isJk ? 'lot' : f.unit, avgPrice: latest != null ? String(latest) : f.avgPrice }));
     justSelectedRef.current = true;
     setSymbolQuery(symbol);
@@ -144,12 +101,8 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
     let avgPriceNum = parseFloat(form.avgPrice);
     if (isNaN(avgPriceNum) || avgPriceNum <= 0) {
       avgPriceNum = null;
-      try {
-        const p = await fetchPrice(form.symbol);
-        if (p != null) avgPriceNum = p;
-      } catch (err) {
-        // ignore
-      }
+      const quote = await fetchLatestQuote(form.symbol);
+      if (quote?.price != null) avgPriceNum = quote.price;
     }
     if (avgPriceNum == null || isNaN(avgPriceNum)) {
       alert('Could not determine average price for this symbol. Please enter it manually.');
