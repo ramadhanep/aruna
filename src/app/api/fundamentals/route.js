@@ -128,17 +128,17 @@ export async function GET(request) {
   }
 
   let summaryModules = null;
+  const modules = [
+    'earnings',
+    'assetProfile',
+    'summaryDetail',
+    'defaultKeyStatistics',
+    'financialData',
+    'recommendationTrend',
+    'calendarEvents',
+    'upgradeDowngradeHistory',
+  ];
   try {
-    const modules = [
-      'earnings',
-      'assetProfile',
-      'summaryDetail',
-      'defaultKeyStatistics',
-      'financialData',
-      'recommendationTrend',
-      'calendarEvents',
-      'upgradeDowngradeHistory',
-    ];
     summaryModules = await yahooFinance.quoteSummary(symbolKey, {
       modules,
     });
@@ -149,7 +149,28 @@ export async function GET(request) {
       payload: summaryModules,
     });
   } catch (error) {
-    console.warn(`Failed to fetch fundamentals summary for ${symbolKey}`, error);
+    if (error?.name === 'FailedYahooValidationError') {
+      // Yahoo schema drift (e.g. a new enum value) fails the whole summary
+      // even though the payload is otherwise usable. Retry without validation
+      // so the fundamentals fetch survives upstream schema changes.
+      console.warn(`Yahoo schema validation failed for ${symbolKey}, retrying without validation`, error);
+      try {
+        summaryModules = await yahooFinance.quoteSummary(symbolKey, {
+          modules,
+          validateResult: false,
+        });
+        await writeYahooRawLog({
+          endpoint: 'fundamentals-quoteSummary-unvalidated',
+          symbol: symbolKey,
+          requestParams: { modules, validateResult: false },
+          payload: summaryModules,
+        });
+      } catch (retryError) {
+        console.warn(`Retry without validation also failed for ${symbolKey}`, retryError);
+      }
+    } else {
+      console.warn(`Failed to fetch fundamentals summary for ${symbolKey}`, error);
+    }
   }
 
   const earningsSummary = summaryModules?.earnings ?? null;
