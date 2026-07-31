@@ -129,66 +129,78 @@ function AccountSidebarContent({ onClose }) {
         <section className="space-y-3">
           <p className="text-1xs font-semibold uppercase tracking-wide text-muted-foreground">Profile</p>
           <div className="rounded-3xl bg-card border border-border/30 px-4 py-5 text-foreground">
-            <div className="flex items-center gap-3">
-              <div className="h-14 w-14 overflow-hidden rounded-full border border-black/10 dark:border-white/20 ">
-                {avatarUrl ? (
-                  <Image
-                    src={avatarUrl}
-                    alt={fullName || "User avatar"}
-                    width={56}
-                    height={56}
-                    className="h-full w-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-xs text-foreground/80 dark:text-white/80">
-                    <UserRound className="h-5 w-5" />
+            {isClient ? (
+              <>
+                <div className="flex items-center gap-3">
+                  <div className="h-14 w-14 overflow-hidden rounded-full border border-black/10 dark:border-white/20 ">
+                    {avatarUrl ? (
+                      <Image
+                        src={avatarUrl}
+                        alt={fullName || "User avatar"}
+                        width={56}
+                        height={56}
+                        className="h-full w-full object-cover"
+                        referrerPolicy="no-referrer"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-xs text-foreground/80 dark:text-white/80">
+                        <UserRound className="h-5 w-5" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold">
+                      {user ? fullName : "You're browsing in guest mode"}
+                    </p>
+                    <p className="text-1xs text-foreground/80 dark:text-white/80 truncate">
+                      {user ? primaryEmail : "Sign in to sync watchlist & portfolio"}
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-2 text-1xs">
+                  <div className="rounded-2xl  px-3 py-2">
+                    <p className="uppercase tracking-wide text-foreground/60 dark:text-white/60">Mode</p>
+                    <p className="text-sm font-semibold text-foreground dark:text-white">{user ? "Synced" : "Guest"}</p>
+                  </div>
+                  <div className="rounded-2xl  px-3 py-2">
+                    <p className="uppercase tracking-wide text-foreground/60 dark:text-white/60">Server</p>
+                    <p className="text-sm font-semibold text-foreground dark:text-white">
+                      {supabaseConfigured ? "Connected" : "Offline"}
+                    </p>
+                  </div>
+                </div>
+                {loading ? (
+                  <div className="mt-4 flex items-center justify-center">
+                    <Loader2 className="h-5 w-5 animate-spin text-foreground/70 dark:text-white/70" />
+                  </div>
+                ) : user ? null : (
+                  <div className="mt-4 space-y-3 rounded-2xl bg-black/1 dark:bg-white/1 px-4 py-4">
+                    <p className="text-1xs text-foreground/80 dark:text-white/80">
+                      Sign in with Google to sync your watchlist and portfolio securely.
+                    </p>
+                    <Button
+                      type="button"
+                      onClick={handleGoogleSignIn}
+                      className="w-full justify-center gap-3 rounded-full bg-foreground text-[12px] font-semibold text-background hover:bg-foreground/90"
+                    >
+                      <GoogleGlyph />
+                      <span>Sign in with Google</span>
+                    </Button>
+                    {authError ? (
+                      <div className="rounded-2xl bg-red-600/15 px-3 py-2 text-1xs text-red-100">
+                        {authError}
+                      </div>
+                    ) : null}
                   </div>
                 )}
-              </div>
-              <div className="min-w-0">
-                <p className="text-sm font-semibold">
-                  {user ? fullName : "You're browsing in guest mode"}
-                </p>
-                <p className="text-1xs text-foreground/80 dark:text-white/80 truncate">
-                  {user ? primaryEmail : "Sign in to sync watchlist & portfolio"}
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-2 text-1xs">
-              <div className="rounded-2xl  px-3 py-2">
-                <p className="uppercase tracking-wide text-foreground/60 dark:text-white/60">Mode</p>
-                <p className="text-sm font-semibold text-foreground dark:text-white">{user ? "Synced" : "Guest"}</p>
-              </div>
-              <div className="rounded-2xl  px-3 py-2">
-                <p className="uppercase tracking-wide text-foreground/60 dark:text-white/60">Server</p>
-                <p className="text-sm font-semibold text-foreground dark:text-white">
-                  {isClient && supabaseConfigured ? "Connected" : "Offline"}
-                </p>
-              </div>
-            </div>
-            {loading ? (
-              <div className="mt-4 flex items-center justify-center">
-                <Loader2 className="h-5 w-5 animate-spin text-foreground/70 dark:text-white/70" />
-              </div>
-            ) : user ? null : (
-              <div className="mt-4 space-y-3 rounded-2xl bg-black/1 dark:bg-white/1 px-4 py-4">
-                <p className="text-1xs text-foreground/80 dark:text-white/80">
-                  Sign in with Google to sync your watchlist and portfolio securely.
-                </p>
-                <Button
-                  type="button"
-                  onClick={handleGoogleSignIn}
-                  className="w-full justify-center gap-3 rounded-full bg-foreground text-[12px] font-semibold text-background hover:bg-foreground/90"
-                >
-                  <GoogleGlyph />
-                  <span>Sign in with Google</span>
-                </Button>
-                {authError ? (
-                  <div className="rounded-2xl bg-red-600/15 px-3 py-2 text-1xs text-red-100">
-                    {authError}
-                  </div>
-                ) : null}
+              </>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-14 w-14 rounded-full" />
+                <div className="min-w-0 space-y-1.5">
+                  <Skeleton className="h-4 w-32 rounded-full" />
+                  <Skeleton className="h-3 w-44 rounded-full" />
+                </div>
               </div>
             )}
           </div>

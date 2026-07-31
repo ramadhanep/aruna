@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth-provider";
 import { Loader2, UserRound } from "lucide-react";
@@ -19,6 +20,11 @@ function buildInitials(user) {
 
 export function HeaderAccountMenu({ onOpenSidebar }) {
   const { user, loading } = useAuth();
+  const isHydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
   const initials = user ? buildInitials(user) : null;
   const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture || null;
 
@@ -34,10 +40,12 @@ export function HeaderAccountMenu({ onOpenSidebar }) {
       size="icon"
       className="h-9 w-9 rounded-full bg-muted/50"
       aria-label="Open account"
-      disabled={loading}
+      disabled={loading && isHydrated}
       onClick={handleClick}
     >
-      {loading ? (
+      {!isHydrated ? (
+        <UserRound className="h-4 w-4" />
+      ) : loading ? (
         <Loader2 className="h-4 w-4 animate-spin" />
       ) : avatarUrl ? (
         <Image
