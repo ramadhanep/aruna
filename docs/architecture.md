@@ -88,7 +88,7 @@ Pages (src/app/*) ──► Components (src/components/*) ──► Lib (src/lib
 | `src/components/*` | Feature components | UI components, lib |
 | `src/lib/*` | Business logic, data access | External packages only |
 | `src/hooks/*` | React hooks | React, lib |
-| `src/middleware.js` | Request interception | Next.js only |
+| `src/proxy.js` | Request interception (CORS, screener rate limit) | Next.js only |
 
 ## Design Philosophy
 

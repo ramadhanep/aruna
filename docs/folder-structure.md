@@ -5,7 +5,7 @@
 ├── CLAUDE.md                        # AI entry point — read first
 ├── docs/                            # Project documentation
 ├── src/                             # Application source code
-│   ├── middleware.js                 # CORS enforcement for /api/* routes
+│   ├── proxy.js                      # Request interception (CORS + screener rate limit) — renamed from middleware.js in Next 16
 │   ├── app/                         # Next.js App Router
 │   │   ├── layout.jsx               # Root layout (providers, PWA, theme)
 │   │   ├── page.jsx                 # Landing page (redirects to /explore)
@@ -15,7 +15,7 @@
 │   │   ├── explore/                 # Market dashboard
 │   │   │   └── page.jsx             # Dashboard with categories, money flow, tools
 │   │   ├── chart/                   # Supercharts (seasonal, candlestick, fundamentals)
-│   │   │   └── page.jsx             # Main chart analysis page (4685 lines)
+│   │   │   └── page.jsx             # Main chart analysis page (~2780 lines)
 │   │   ├── watchlist/               # Tracked symbols with live quotes
 │   │   │   └── page.jsx
 │   │   ├── portfolio-tracker/       # Portfolio P&L tracker
@@ -144,13 +144,11 @@
 ├── public/                          # Static assets
 │   ├── aruna.png                    # App icon / logo
 │   ├── aruna-black.png              # Dark variant logo
-│   ├── sw.js                        # PWA service worker
+│   ├── sw.js                        # PWA service worker (VERSION must match app version)
 │   ├── _headers                     # Vercel headers for service worker
-│   ├── chart-mockup.png             # Landing page assets
-│   ├── dashboard-mockup.png
-│   ├── landing.png
-│   ├── portfolio-mockup.png
-│   └── *.svg                        # Next.js default icons
+│   ├── trump.gif                    # Election-cycle watermark (chart page)
+│   ├── indonesian-flag.gif          # Election-cycle watermark (chart page)
+│   └── america-eagle.gif            # Election-cycle watermark (chart page)
 ├── supabase/
 │   └── setup.sql                    # Complete DB setup (schema, RLS, seeds)
 ├── .env.template                    # Environment variable template

@@ -55,7 +55,7 @@ After sign-in, `AuthProvider`:
 
 ## Security Considerations
 
-- No server-side route protection — middleware only applies CORS.
+- No server-side route protection — proxy only applies CORS (plus a per-IP rate limit on `/api/screeners`).
 - Protected routes check auth state client-side in `AppLayoutClient`.
 - API-level auth: cron and delete-account use Bearer-token checks; `/api/discussions` POST/DELETE use a cookie-based Supabase session instead (see Server-Side Auth above).
 - Supabase RLS policies protect user-owned tables.

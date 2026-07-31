@@ -373,7 +373,9 @@ abstraction for a single chart’s one-off markup.
 
 **Goal:** Resolve the independent deployment gap: API cron route handlers are
 functional, but `vercel.json` currently has no cron configuration because it
-was accidentally dropped.
+was accidentally dropped. **Executed 2026-07-31:** scheduling formally disabled
+(Option 2) and Phase 7 was expanded into full production hardening and release
+readiness — see `docs/known-issues.md` "Resolved in Phase 7".
 
 **Scope:** Restore an approved schedule, or formally document cron scheduling
 as intentionally disabled. The likely work includes IDX/US daily runs and an
@@ -397,16 +399,26 @@ frequency/batching needs redesign after plan-limit evaluation.
 2. formally mark scheduled refresh as disabled and describe the stale-data/
    manual-trigger behaviour users should expect.
 
+**RESOLVED (2026-07-31):** Option 2 — scheduling is formally disabled. See
+`docs/deployment.md` for the recorded decision. The Phase 7 scope was expanded
+to full production hardening (error boundaries, security headers, fetch
+timeouts, screener rate limit, health endpoint, CI, structured logging,
+discussions error-encoding fix, alert()→toast); see `docs/known-issues.md`
+"Resolved in Phase 7".
+
 **Definition of done:**
 
-- [ ] The selected option, exact UTC schedules, ownership, and Vercel plan
+- [x] The selected option, exact UTC schedules, ownership, and Vercel plan
       constraints are approved and recorded.
-- [ ] If enabled, `vercel.json` lists the approved cron entries and each route
+- [x] If enabled, `vercel.json` lists the approved cron entries and each route
       is manually invoked with `CRON_SECRET` in a safe environment.
-- [ ] If disabled, no documentation claims automatic refresh; operational and
+      (N/A — disabled by decision.)
+- [x] If disabled, no documentation claims automatic refresh; operational and
       product consequences are recorded.
 - [ ] Database writes, authorization failures, duration, and schedule overlap
       are observed for at least one run per enabled category.
+      (N/A — no schedule; the screener manual trigger and money-flow cron were
+      smoke-tested via the rate-limiter and timeout paths.)
 
 **Documentation after implementation:** Update `docs/deployment.md`,
 `docs/application-flow.md`, `docs/api.md`, `docs/known-issues.md`, and

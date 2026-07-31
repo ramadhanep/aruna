@@ -2,120 +2,81 @@
 
 **Last Updated**: 2026-07-31
 
-**Summary**: Executed Phase 6 (componentization, cleanup, accessibility,
-performance and final polish) from `docs/MAINTENANCE_PLAN.md`. Executed
-correctness-first under approved guardrails: fixed four runtime bugs, hardened
-the lint baseline, created one shared UI primitive, extracted the two highest-
-cohesion chart panels, and resolved the deferred UI-2 and `no-img-element`
-items. Lint is now **0 errors / 0 warnings** (previously 0/8). Build passes.
+**Summary**: Executed **Phase 7 — Production Hardening & Release Readiness**
+per the approved assessment (docs/PHASE_EXECUTION_PLAN.md + assessment).
+Architecture preserved; no refactoring. All changes verified with
+`npm run lint` (0/0) and `npm run build` (pass, 27 routes, proxy warning gone).
+
+Product decisions recorded this phase:
+- **Cron scheduling: disabled** (Hobby 2/day limit considered). `vercel.json`
+  stays `{}`. Manual-trigger is the documented behavior. See
+  `docs/deployment.md`.
+- **Screener access: public + minimal per-IP rate limit** (20/min) in
+  `src/proxy.js`. No token-bucket; fixed-window counter, cron UA exempt.
+- **Observability: no external platform.** Structured JSON logs only.
 
 ## Files Created
 
 | File | Purpose |
 |---|---|
-| `src/components/ui/segmented-control.jsx` | Behavior-focused segmented control: maps options to `Button`s, owns selection state/`aria-pressed`/disabled; composes `Button` for the layout contract (visual recipes passed per-site) |
-| `src/components/chart-trading-plan-panel.jsx` | Trading-plan feature panel (owns inputs, derivations, sizing calculator) |
-| `src/components/chart-seasonality-panel.jsx` | Seasonality stat cards + heatmap tables (internal dedup) |
-| `src/components/analyst-gauge-chart.jsx` | Analyst rating gauge, moved out of the chart page module |
-| `src/hooks/use-pull-to-refresh.js` | Shared pull-to-refresh gesture (window or container scroll strategy) |
+| `src/app/error.jsx` | Client error boundary (in-app retry) |
+| `src/app/global-error.jsx` | Root-layout fallback boundary |
+| `src/components/toast.jsx` | Dependency-free toast (`toast()` + `ToastViewport`), mounted in root layout |
+| `src/app/api/health/route.js` | Lightweight liveness probe (plain JSON) |
+| `.github/workflows/ci.yml` | lint + build on push/PR with placeholder envs |
+| `src/proxy.js` | Replaces `middleware.js` (Next 16 proxy convention) + screener rate limiter |
 
 ## Files Modified
 
 | File | Change |
 |---|---|
-| `src/app/chart/page.jsx` | B1 orphan effect deleted (~3,665 → 2,778 lines); trading-plan/seasonality panels extracted; gauge moved; ~30 dead imports/fns removed |
-| `src/app/explore/page.jsx` | B2 install-handler fix; tool cards (6×) deduped; segmented controls migrated; pull-to-refresh hook; `getChangeTone` |
-| `src/app/watchlist/page.jsx` | B4 `isStandalone` scope bug fixed (same class as B2) |
-| `src/app/portfolio-tracker/page.jsx` | B3 persistence effects collapsed to one; pie… (pie.jsx) sections deduped; pull-to-refresh hook; `getChangeTone` |
-| `src/app/portfolio-tracker/pie.jsx` | 4 near-identical pie blocks → one `PieSection` (~418 → ~230 lines) |
-| `src/lib/utils.js` | `getChangeTone()` — single green/red class-pair source |
-| `src/components/app-layout-client.jsx` | UI-2: shell-mounted auth gating, content skeleton (was hidden shell + centered spinner) |
-| `src/app/signin/page.jsx` | UI-2: card-shaped bootstrap skeleton |
-| `src/components/account-sidebar.jsx` | UI-2: sidebar row skeleton; dead `DeleteAccountAction`/`isDark`/imports removed |
-| `src/app/{discussion,idx-rotation,money-flow,msci,tools}/page.jsx` + components | Dead imports/vars removed |
-| `src/middleware.js` | Dead `buildUnauthorizedResponse`/`isServerToServerRequest` removed |
-| `src/lib/{portfolio-metrics,msci-calculations}.js` | Unused `sgdPerUsd` param / `shares_outstanding` destructure removed |
-| `src/app/api/rotation/route.js` | Unused `request` param removed |
-| `eslint.config.mjs` | `no-undef` + `no-unused-vars` enabled (caughtErrors `none` — intentional ignore-catches stay legal) |
-| `src/app/globals.css` | `--text-1xs` (11px) token |
-| `next.config.mjs` | `images.unoptimized: true` |
-| 8 files with `<img>` | Migrated to `next/image` (raw URLs preserved; SW precache intact) |
-| Docs | `MAINTENANCE_PLAN.md`, `PHASE_EXECUTION_PLAN.md`, `TECH_DEBT.md`, `conventions.md`, `ui-architecture.md`, `folder-structure.md`, `architecture.md`, `deployment.md` (cron annotated pending P7), `roadmap.md` (Flutter item removed), `known-issues.md`, `DOCS_DRIFT_REPORT.md` (historical status), `ai-session-handoff.md` |
-
-## Commits
-
-1. `fix: resolve runtime bugs from phase extraction leftovers` (36e9ac6) — B1/B2/B3
-2. `lint: enforce no-undef and no-unused-vars, clear flagged dead code` (56fd5b8) — B4 + ~320 lines removed
-3. `feat(ui): add segmented control primitive and change-tone helper` (af47a63)
-4. `refactor: deduplicate repeated feature presentation` (daa7205) — tool cards + pie sections
-5. `refactor: extract shared pull-to-refresh hook` (ff074a8)
-6. `refactor(chart): extract trading-plan and seasonality panels` (970f88e)
-7. `feat(ui): layout-shaped auth and route loading` (cfb0984) — UI-2
-8. `style(ui): tokenize 11px type as text-1xs` (569d6a6)
-9. `chore(img): migrate all img elements to next/image` (e0aef66)
-10. `docs: ...` (pending)
+| `next.config.mjs` | Security `headers()`: nosniff, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, HSTS, report-only CSP |
+| `src/lib/yahoo-finance.js` | 20s `AbortSignal.timeout` + structured request log (source/status/duration) |
+| `src/app/api/cron/[category]/route.js` | Base-URL validation (500 if unset), 55s timeout, structured success/error logs |
+| `src/app/api/cron/money-flow/route.js` | Truncate-after-success (was truncate-before-fetch), 20s timeouts per fetch, summary log |
+| `src/app/api/discussions/route.js` | All error responses now `payload: encodePayload({ error })` |
+| `src/lib/api-client.js` | `fetchEncodedJson(url, init, timeoutMs?)` — 30s default timeout; non-encoded `{ error }` bodies throw the real message |
+| `src/hooks/use-chart-data.js` + `chart/page.jsx` | Fetch failure → `error` state + "Try Again" card (replaces `alert()`) |
+| 5 alert() call sites | `add-asset-modal`, `discussion`, `portfolio-tracker` (×6), `explore` (×2) → `toast()` |
+| `src/app/layout.jsx` | `<ToastViewport />` mounted |
+| `src/app/chart/page.jsx` | `trump.gif` img `loading="lazy"` |
+| `public/sw.js` | `VERSION` → `1.7.56` (aligned to package.json); `/explore` added to APP_SHELL |
+| `public/` | Removed 9 dead assets (mockup PNGs + starter SVGs) |
+| `.env` | Removed dead `AI_GATEWAY_URL/KEY`, `AI_MODEL`; deleted empty `src/lib/ai/` |
+| Docs | `deployment.md` (cron decision, health, CI, headers), `api.md` (health, rate limit, client timeout), `known-issues.md` (resolutions + new items), `roadmap.md`, `environment.md`, `authentication.md`, `architecture.md`, `application-flow.md`, `folder-structure.md`, `architecture-decisions.md`, `MAINTENANCE_PLAN.md` (P7 resolved), `DOCS_DRIFT_REPORT.md` (archived), `CLAUDE.md`, `README.md`, `ai-session-handoff.md` |
 
 ## Validation Results
 
-- `npm run lint`: **0 errors / 0 warnings** (baseline was 0/8 with `no-img-element`).
-- `npm run build`: passes at every commit boundary; 26 routes.
-- `text-1xs{font-size:.6875rem}` confirmed in emitted CSS.
-- `next/image` migration emits raw `src="/aruna.png"` in built HTML (no
-  `/_next/image` rewrites) — service-worker precache intact.
-- Manual smoke: chart trading-plan/seasonality tabs (normal/empty/skeleton),
-  explore tool cards + segmented controls, portfolio single-write persistence +
-  pull-to-refresh, install prompt on mobile tools, auth gating shell, sign-in
-  bootstrap, sidebar skeleton.
+- `npm run lint`: **0 errors / 0 warnings**.
+- `npm run build`: **passes, 0 warnings** — 27 routes; `ƒ Proxy (Middleware)`
+  confirms the rename; the `middleware`-deprecation warning is gone.
+- Live smoke test (`npm start`, production build):
+  - `/api/health` → `{"status":"ok","timestamp":...}`.
+  - Page response carries all 6 security headers (incl. CSP report-only).
+  - Screener limiter: 20× `400`, then `429` + `Retry-After: 60`;
+    `/api/health` unaffected; `User-Agent: aruna-cron` exempt.
+- Rate-limiter logic verified via cheap invalid-category path
+  (`/api/screeners/foo` = instant 400) — no real Yahoo batches triggered.
 
 ## Items Skipped / Deferred
 
 | Item | Rationale |
 |---|---|
-| Chart Profile/Key Stats/Analysis/Financials tab extraction | Checkpoint decision: one-off grids bound to page formatters; extraction = prop-drilling, no ownership gain. Keep in page. |
-| `MetricRow` / `EmptyState` / `ChangeChip` primitives | No genuine cross-feature reuse (guardrail 3); `getChangeTone()` covers the color consistency fix. |
-| Portfolio asset-type toggle → SegmentedControl | Form-toggle idiom (default/outline + icons + flex-1); not part of the divergent pill family. |
-| Chart quarter-filter → SegmentedControl | Square bordered style intentionally matches the seasonality heatmap grid. |
-| Portfolio asset-dialog extraction | Single-feature form, no reuse; size-driven only. |
-| `portfolioPosition` reuse of `portfolio-metrics.js` | Different math (per-symbol lots/PnL vs portfolio summary); medium risk, low reward. |
-| `getDefaultCyclesForSymbol` stub (`chart-helpers.js`) | Behaves intentionally (`['normal']`); fix only if a real cycle default emerges. |
-| Phase 7 (cron schedule decision) | `vercel.json` intentionally empty; schedule recorded as historical in `deployment.md`. |
-| Full `next/image` optimization | Disabled via `images.unoptimized: true` (deliberate; see `known-issues.md`). |
-
-## Post-Phase-6 Visual Audit (SegmentedControl correction)
-
-A manual review found visual regressions from the initial single-recipe
-`SegmentedControl` (commit `af47a63`): category-tab labels wrapped (raw
-`<button>` lacked Button's `whitespace-nowrap`/`inline-flex`), icon/text
-alignment broke, inactive pills lost `bg-muted/50`, mobile horizontal scroll
-was lost, and the monochrome `bg-foreground` active recipe was forced to blue
-`bg-primary`. `text-1xs` itself was pixel-neutral (0.6875rem == 11px).
-
-Fix (uncommitted at review time): `SegmentedControl` rewritten as a
-behavior-focused wrapper that composes the existing `Button` (restoring its
-layout contract) and exposes `variant`/`size`/`className` +
-`activeClassName`/`inactiveClassName` so each feature keeps its baseline
-recipe. Sites reverted to their baseline wrappers/gaps; the pie asset-type
-legend spacing was restored via a `legendClassName` prop. No functional
-behavior changed.
-
-## Discovered During Implementation
-
-- The React Compiler's `set-state-in-effect` rule only analyses small components
-  (it bailed on the 3,600-line chart page). The trading-plan panel surfaced a
-  pre-existing synchronous setState-in-effect that the page had hidden; fixed
-  with the documented `queueMicrotask` deferral pattern.
-- The B1/B2/B4 undefined-reference bugs all shipped because `no-undef` was not
-  effective under `eslint-config-next`. Enabled; enforced.
-- Phase 6 plan's original "5 segmented sites, 44 text-[11px] sites" shrank as
-  extraction removed duplicates (28 → 58 text-1xs replacements after extending
-  repo-wide for consistency).
+| Root `loading.jsx` | Existing per-feature skeletons + shell gating already cover loading; a generic shell would double-render. |
+| `trump.gif` re-encode (3.1MB) | No ffmpeg/gifsicle/ImageMagick in environment; `loading="lazy"` added instead. Documented in known-issues. |
+| Strict CSP | Report-only first; Next/Tailwind inline styles need a production report audit before enforcing. |
+| Full API rate limiting | Only `/api/screeners` limited this phase (product decision). |
+| Sentry/external monitoring | Explicitly out of scope per Phase 7 constraints. |
+| Client retry logic | Timeout added; auto-retry deferred (users have Try Again / pull-to-refresh). |
 
 ## Blockers for Next Phase
 
-- None. Phase 7 (cron decision) is independent and needs product approval +
-  current Vercel plan limits.
+- None. Phase 7 scope complete.
 
 ## Next Recommended Task
 
-Execute Phase 7 (cron scheduling decision) from `docs/MAINTENANCE_PLAN.md` —
-it requires a product/deployment decision, not code.
+Release to production: deploy, then walk the manual verification checklist in
+the Phase 7 assessment (error boundary on bad symbol, 429 behavior, health
+probe, PWA offline cold-launch to `/explore`, sw.js update flow). Then retire
+the remaining Known Issues (testing infra, live FX rate, full rate limiting,
+external monitoring) as prioritized in `docs/roadmap.md`.

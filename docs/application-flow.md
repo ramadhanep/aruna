@@ -22,9 +22,11 @@
 Browser ──GET /api/finance?symbol=BBCA.JK──► Next.js Route Handler
                                                     │
                                           ┌─────────┴─────────┐
-                                          │  middleware.js     │
+                                          │  proxy.js           │
                                           │  - CORS headers    │
                                           │  - Allowed origins │
+                                          │  - Screener rate   │
+                                          │    limit (429)     │
                                           └─────────┬─────────┘
                                                     │
                                           ┌─────────┴─────────┐

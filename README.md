@@ -93,7 +93,7 @@ aruna/
 ├── supabase/
 │   └── setup.sql            # Complete DB setup: schema + migrations + seed data
 ├── src/
-│   ├── middleware.js        # CORS enforcement for /api/* routes
+│   ├── proxy.js            # Request interception: CORS + screener rate limit
 │   ├── app/
 │   │   ├── layout.jsx       # Root layout: ThemeProvider, AuthProvider, PWA
 │   │   ├── page.jsx         # Landing page (Vanta clouds hero)
@@ -249,7 +249,7 @@ All tables have RLS enabled. Source of truth: [supabase/setup.sql](supabase/setu
 
 ### Protected routes / gating
 
-There is **no server-side route protection in middleware** — the middleware only applies CORS headers to `/api/*`. All access control is:
+There is **no server-side route protection in proxy** — `src/proxy.js` only applies CORS headers to `/api/*` and rate-limits the `/api/screeners` batches. All access control is:
 
 1. **API-level:** Cron routes check `Authorization: Bearer <CRON_SECRET>`. Delete-account checks for a valid user bearer token.
 2. **Client-level:** Certain features (earnings/revenue charts in `/chart`, some money-flow details) are blurred/locked behind a `Lock` icon for unauthenticated users.
@@ -266,14 +266,14 @@ There is **no server-side route protection in middleware** — the middleware on
 | `NEXT_PUBLIC_SUPABASE_URL` | ✅ Required | Browser + server clients, multiple API routes | Public Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ Required | Browser Supabase client, discussions API | Public anon key for client-side auth |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ Required | Server API routes (screeners, bubbles, msci, discussions, cron, delete-account) | Never expose to the browser |
-| `APP_URL` | ✅ Required | `next.config.mjs` exposes as `NEXT_PUBLIC_APP_URL`; middleware CORS; cron routes | Production base URL, e.g. `https://aruna.app` |
-| `NEXT_PUBLIC_APP_URL` | ✅ Required | Middleware CORS allowlist; manifest route; cron base URL resolution | Same value as `APP_URL`; set explicitly or via `next.config.mjs` |
+| `APP_URL` | ✅ Required | `next.config.mjs` exposes as `NEXT_PUBLIC_APP_URL`; proxy CORS; cron routes | Production base URL, e.g. `https://aruna.app` |
+| `NEXT_PUBLIC_APP_URL` | ✅ Required | Proxy CORS allowlist; manifest route; cron base URL resolution | Same value as `APP_URL`; set explicitly or via `next.config.mjs` |
 | `SECURE_PAYLOAD_KEY` | ✅ Required | `lib/secure-payload.js` — XOR-obfuscates all API responses | Must match on server and client |
 | `CRON_SECRET` | ✅ Required | `api/cron/[category]` and `api/cron/money-flow` — bearer token auth | Used by Vercel cron or external scheduler |
 | `STOCKBIT_AUTHORIZATION_BEARER` | ✅ Required (for money flow) | `api/cron/money-flow` — authenticates to private Stockbit API | Bearer token from a Stockbit account session |
 | `STOCKBIT_SCREENER_TEMPLATE_ID` | Optional | `api/cron/money-flow` | Defaults to `"5461641"` if unset |
-| `API_ALLOWED_ORIGINS` | Optional | `middleware.js` CORS allowlist | Comma-separated list of allowed origins |
-| `VERCEL_URL` | Optional (auto-set) | Middleware CORS; cron base URL resolution | Automatically injected by Vercel |
+| `API_ALLOWED_ORIGINS` | Optional | `proxy.js` CORS allowlist | Comma-separated list of allowed origins |
+| `VERCEL_URL` | Optional (auto-set) | Proxy CORS; cron base URL resolution | Automatically injected by Vercel |
 | `NEXT_PUBLIC_APP_NAME` | Optional | `layout.jsx`, `manifest.json/route.js` | Defaults to `"Aruna"` via `next.config.mjs` |
 | `NEXT_PUBLIC_APP_VERSION` | Optional | `account-sidebar.jsx` version display | Set to `"1.7.56"` via `next.config.mjs` |
 
@@ -285,7 +285,7 @@ There is **no server-side route protection in middleware** — the middleware on
 
 - **XOR cipher is not cryptography.** `lib/secure-payload.js` uses a simple XOR with a repeating key. This provides obfuscation only — anyone with the `SECURE_PAYLOAD_KEY` (or who reverse-engineers the pattern) can read all API responses. It is not a substitute for HTTPS or signed JWTs.
 - ~~**`HIDUP_JOKOWI` as the API response envelope key.**~~ ✅ Resolved — renamed to `payload`.
-- **CORS enforcement is partially commented out in middleware.** The strict origin-blocking (`buildUnauthorizedResponse`) is currently disabled, and the middleware unconditionally passes all requests with CORS headers. This makes the CORS configuration decorative, not protective.
+- **CORS enforcement is partially commented out in proxy.** The strict origin-blocking (`buildUnauthorizedResponse`) is currently disabled, and the proxy unconditionally passes all requests with CORS headers. This makes the CORS configuration decorative, not protective.
 - ~~**`SUPABASE_STORAGE_BASE` is hardcoded.**~~ ✅ Resolved — now derived from `process.env.NEXT_PUBLIC_SUPABASE_URL`.
 - **Stockbit API scraping.** The money flow cron authenticates to `https://exodus.stockbit.com` (a private/undocumented API) using a user bearer token. This is fragile and may violate Stockbit's ToS.
 

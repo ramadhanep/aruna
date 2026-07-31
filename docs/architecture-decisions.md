@@ -142,7 +142,7 @@
 
 **Status**: Known Debt
 
-**Decision**: Strict CORS origin blocking is commented out in `middleware.js`.
+**Decision**: Strict CORS origin blocking is commented out in `src/proxy.js` (formerly `middleware.js`).
 
 **Reason**: During development, strict CORS caused issues with various tooling and development workflows. The CORS headers are still applied, but unauthorized origins are not blocked.
 

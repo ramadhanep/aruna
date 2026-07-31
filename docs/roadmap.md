@@ -26,6 +26,14 @@
 - ✅ Bruno/Postman API collection (`aruna-api.json`)
 - ✅ Pricing page (`src/app/pricing/page.jsx`)
 - ✅ Trial-based feature gating (`TrialProvider`, `TrialGuard`, `TrialBanner`)
+- ✅ Error boundaries (`error.jsx`, `global-error.jsx`)
+- ✅ Security headers (CSP report-only, HSTS, frame/type/referrer/permissions)
+- ✅ Screener rate limiting (20 req/min/IP in `src/proxy.js`)
+- ✅ Liveness health endpoint (`/api/health`)
+- ✅ CI gate (GitHub Actions: lint + build)
+- ✅ Structured request logging (Yahoo + cron summary lines)
+- ✅ Cron scheduling decision (disabled, documented)
+- ✅ Fetch timeouts (Yahoo/Stockbit/cron/client)
 
 ## In Progress
 
@@ -33,12 +41,11 @@
 
 ## Planned
 
-- 📋 Testing infrastructure (Jest/Vitest + Playwright)
+- 📋 Testing infrastructure (Jest/Vitest + Playwright + E2E)
 - 📋 Live USD/IDR exchange rate for MSCI calculations
-- 📋 Money flow cron schedule in `vercel.json`
-- 📋 Rate limiting for API routes
-- 📋 Error monitoring (Sentry or similar)
+- 📋 Full API rate limiting (all routes, not just screeners)
 - 📋 Database migrations tooling
+- 📋 External error monitoring (Sentry or similar) — deferred beyond Phase 7
 
 ## Future Improvements
 

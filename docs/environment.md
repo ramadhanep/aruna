@@ -7,7 +7,7 @@
 | `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Browser + server, all API routes | Public Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Browser Supabase client, discussions API | Public anon key |
 | `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Server API routes (screeners, bubbles, msci, discussions, cron, delete-account) | Never expose to browser |
-| `APP_URL` | ✅ | `next.config.mjs` → `NEXT_PUBLIC_APP_URL`, middleware CORS | Production base URL |
+| `APP_URL` | ✅ | `next.config.mjs` → `NEXT_PUBLIC_APP_URL`, proxy CORS | Production base URL |
 | `SECURE_PAYLOAD_KEY` | ✅ | XOR cipher for API response obfuscation | Must match server and client |
 | `CRON_SECRET` | ✅ | Cron endpoint bearer token auth | Used by Vercel cron scheduler |
 

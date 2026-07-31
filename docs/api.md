@@ -11,7 +11,9 @@ All API routes are Next.js [Route Handlers](https://nextjs.org/docs/app/building
 
 ## Response Encoding
 
-All API responses (except `/api/cron/*`) are XOR-obfuscated. This includes `/api/discussions`.
+All API responses (except `/api/cron/*` and `/api/health`) are XOR-obfuscated.
+This includes `/api/discussions` — success and error responses both use the
+`{ payload: ... }` envelope.
 
 ```
 Server: encodePayload(data) → base64(xor(json, key))
@@ -137,6 +139,13 @@ Get screener results by market category.
 
 Response: `{ data: [{ symbol, momentum, ... }], metadata }`
 
+**Rate limit:** this endpoint runs heavy batch compute (full universe fetch
+from Yahoo + Supabase writes). `src/proxy.js` caps anonymous triggers at
+**20 requests/min/IP** and returns `429` with a `Retry-After` header beyond
+that. The internal cron trigger (`User-Agent: aruna-cron`) is exempt. The
+limiter is per-instance in-memory — sufficient for casual abuse, not
+distributed bots.
+
 ## Community Endpoints
 
 ### `GET /api/discussions`
@@ -193,9 +202,19 @@ Trigger full Stockbit money flow analysis.
 
 Both require `Authorization: Bearer <CRON_SECRET>`.
 
+> **Scheduling:** no Vercel cron schedule is configured (Phase 7 decision).
+> These routes must be invoked manually with `CRON_SECRET`.
+
+## Health Endpoint (Plain JSON)
+
+### `GET /api/health`
+
+Liveness probe for uptime monitors. Returns `{ "status": "ok", "timestamp": "<ISO>" }`.
+No external-dependency checks; plain JSON like the cron routes.
+
 ## HTTP Client (Browser)
 
-**`fetchEncodedJson(url, init?)`** from `@/lib/api-client.js`:
+**`fetchEncodedJson(url, init?, timeoutMs?)`** from `@/lib/api-client.js`:
 
 ```javascript
 import { fetchEncodedJson } from '@/lib/api-client';
@@ -203,6 +222,12 @@ import { fetchEncodedJson } from '@/lib/api-client';
 const { response, data } = await fetchEncodedJson('/api/finance?symbol=BBCA.JK');
 // data = decoded response body
 ```
+
+- Applies a **30s client-side timeout** (`AbortSignal.timeout`) unless the
+  caller passes its own `signal` (e.g. `searchSymbols` for cancellation).
+- Decodes the `{ payload }` envelope; if the body is a non-encoded
+  `{ error: "..." }` (rate-limit 429s, misconfigured routes), the real error
+  message is thrown instead of a generic decode failure.
 
 Shared data-access helpers in the same module (single source for symbol
 search and latest-price lookups):

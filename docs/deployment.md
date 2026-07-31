@@ -19,8 +19,10 @@ Not configured. Deployment is manual via Vercel Git integration or `vercel` CLI.
 
 ## Vercel Configuration
 
-**`vercel.json`** — currently `{}`. No cron schedule is configured. The historical
-schedule below is NOT live and is recorded only as the pending Phase 7 decision:
+**`vercel.json`** — currently `{}`. **Cron scheduling is intentionally disabled
+(Phase 7 decision, 2026-07-31).** No automatic refresh runs; screener and
+money-flow data stays stale until triggered manually. The historical schedule
+below is recorded for reference only and is NOT live:
 
 ```json
 {
@@ -41,11 +43,11 @@ schedule below is NOT live and is recorded only as the pending Phase 7 decision:
 }
 ```
 
-> **Status (Phase 6):** `vercel.json` is intentionally empty. The schedule above
-> is the previously-used configuration, retained for reference. Restoring it (or
-> formally documenting scheduled refresh as disabled) is the pending Phase 7
-> decision — see `docs/MAINTENANCE_PLAN.md` Phase 7. Do not treat the above as
-> live configuration.
+> **Status (Phase 7):** scheduling is deliberately off. Re-enabling requires
+> a product decision against current Vercel plan cron limits (Hobby: max 2
+> daily). Users see manual-trigger behavior: the explore page runs screener
+> batches on demand (rate-limited to 20/min/IP), and `/api/cron/money-flow`
+> must be invoked manually with `CRON_SECRET`.
 
 **`public/_headers`** — Vercel headers for service worker:
 
@@ -55,20 +57,27 @@ schedule below is NOT live and is recorded only as the pending Phase 7 decision:
   Service-Worker-Allowed: /
 ```
 
+**Security headers** are applied to every response via `next.config.mjs`
+`headers()`: `X-Content-Type-Options`, `X-Frame-Options: DENY`,
+`Referrer-Policy`, `Permissions-Policy`, `Strict-Transport-Security`, and a
+report-only CSP (`Content-Security-Policy-Report-Only`).
+
 ## Environment Variables on Vercel
 
 All variables from `docs/environment.md` must be set in Vercel project settings. `VERCEL_URL` is auto-injected.
 
 ## Cron Jobs
 
-Vercel cron triggers are configured in `vercel.json`. Each cron job:
+Vercel cron triggers would be configured in `vercel.json` (currently empty —
+**scheduling is disabled**, see Vercel Configuration above). If a schedule is
+restored, each cron job:
 1. Sends a GET request to the configured path.
 2. Includes `Authorization: Bearer <CRON_SECRET>` header (Vercel injects this from the `CRON_SECRET` env var).
 
 ### Scheduled Jobs
 
-**None configured.** `vercel.json` is `{}`. If Phase 7 restores a schedule, the
-historical table below is the candidate set:
+**None configured.** `vercel.json` is `{}` by Phase 7 decision. The
+historical table below is the candidate set if scheduling is ever restored:
 
 | Path | Schedule (historical) | Description |
 |---|---|---|
@@ -77,9 +86,24 @@ historical table below is the candidate set:
 | `/api/cron/crypto` | Daily 04:00 UTC | Crypto momentum screener |
 | `/api/cron/money-flow` | Not scheduled in vercel.json | Stockbit money flow analysis (trigger manually or add schedule) |
 
+## Health Checks
+
+`GET /api/health` returns `{ "status": "ok", "timestamp": "<ISO>" }` — a
+lightweight liveness probe for uptime monitors. Plain JSON (not XOR-encoded,
+like the cron routes) so external monitors can read it. It intentionally does
+not check external dependencies (Supabase, Yahoo, Stockbit).
+
+## CI/CD
+
+GitHub Actions workflow at `.github/workflows/ci.yml` runs `npm run lint` and
+`npm run build` on push/PR with placeholder env vars (build-time values only;
+runtime secrets stay in Vercel project settings).
+
 ## PWA Deployment Considerations
 
-- Service worker at `public/sw.js` has its own cache version (`VERSION = '1.3.42'`).
+- Service worker at `public/sw.js` — `VERSION` must stay in sync with the app
+  version in `package.json` (currently `1.7.56`) and be bumped on every cache
+  strategy change.
 - Manifest generated dynamically at `/manifest.json` (`src/app/manifest.json/route.js`).
 - Offline fallback at `/offline`.
 - App icons: `/aruna.png` at multiple resolutions.
@@ -91,6 +115,10 @@ historical table below is the candidate set:
 
 ## Monitoring
 
-- No monitoring/alerting configured.
-- Yahoo Finance API failures logged to `console.error`.
+- No external monitoring/alerting platform (Sentry etc.) — intentionally out
+  of scope for Phase 7.
+- Structured JSON request logging: every Yahoo call is logged with `source:
+  "yahoo"`, URL, status, and duration; cron runs log a summary line
+  (`source: "cron-trigger"` / `"money-flow-cron"`) with status and counts.
+- `GET /api/health` is the liveness probe for external uptime monitors.
 - Cron job success/failure returned in HTTP response (no external notification).
