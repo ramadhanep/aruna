@@ -101,9 +101,12 @@ Portfolio persistence is centralized in `src/lib/portfolio-storage.js`. Legacy k
   Avoid whole-screen/centered `Loader2` as an initial state.
 - Repeated page-local dimensions get a named constant (e.g. `CHART_HEIGHT_CLASS`,
   `CURRENCY_SELECT_WIDTH`) rather than repeated literals.
-- `SegmentedControl` (`src/components/ui/segmented-control.jsx`) is the single
-  recipe for pill segmented controls (active = `bg-primary`). Reuse it instead of
-  hand-rolling per-page active-state styles.
+- `SegmentedControl` (`src/components/ui/segmented-control.jsx`) is a
+  behavior-focused helper: it maps options onto `Button`s, owns the selection
+  state (`aria-pressed`, `onClick`, `disabled`), and composes the existing
+  `Button` layout contract. It does not impose a shared visual style — each
+  feature passes its own `variant`/`size`/`className` plus per-state
+  `activeClassName`/`inactiveClassName` recipes.
 - `getChangeTone(value)` from `src/lib/utils.js` is the single green/red class-pair
   source for signed change colors. Never hand-roll `text-emerald-600 dark:...`
   ternaries or deviate to rose/red without a dark variant.

@@ -13,7 +13,7 @@ items. Lint is now **0 errors / 0 warnings** (previously 0/8). Build passes.
 
 | File | Purpose |
 |---|---|
-| `src/components/ui/segmented-control.jsx` | Pill segmented control — single active-state recipe (was 4 divergent styles) |
+| `src/components/ui/segmented-control.jsx` | Behavior-focused segmented control: maps options to `Button`s, owns selection state/`aria-pressed`/disabled; composes `Button` for the layout contract (visual recipes passed per-site) |
 | `src/components/chart-trading-plan-panel.jsx` | Trading-plan feature panel (owns inputs, derivations, sizing calculator) |
 | `src/components/chart-seasonality-panel.jsx` | Seasonality stat cards + heatmap tables (internal dedup) |
 | `src/components/analyst-gauge-chart.jsx` | Analyst rating gauge, moved out of the chart page module |
@@ -80,6 +80,23 @@ items. Lint is now **0 errors / 0 warnings** (previously 0/8). Build passes.
 | `getDefaultCyclesForSymbol` stub (`chart-helpers.js`) | Behaves intentionally (`['normal']`); fix only if a real cycle default emerges. |
 | Phase 7 (cron schedule decision) | `vercel.json` intentionally empty; schedule recorded as historical in `deployment.md`. |
 | Full `next/image` optimization | Disabled via `images.unoptimized: true` (deliberate; see `known-issues.md`). |
+
+## Post-Phase-6 Visual Audit (SegmentedControl correction)
+
+A manual review found visual regressions from the initial single-recipe
+`SegmentedControl` (commit `af47a63`): category-tab labels wrapped (raw
+`<button>` lacked Button's `whitespace-nowrap`/`inline-flex`), icon/text
+alignment broke, inactive pills lost `bg-muted/50`, mobile horizontal scroll
+was lost, and the monochrome `bg-foreground` active recipe was forced to blue
+`bg-primary`. `text-1xs` itself was pixel-neutral (0.6875rem == 11px).
+
+Fix (uncommitted at review time): `SegmentedControl` rewritten as a
+behavior-focused wrapper that composes the existing `Button` (restoring its
+layout contract) and exposes `variant`/`size`/`className` +
+`activeClassName`/`inactiveClassName` so each feature keeps its baseline
+recipe. Sites reverted to their baseline wrappers/gaps; the pie asset-type
+legend spacing was restored via a `legendClassName` prop. No functional
+behavior changed.
 
 ## Discovered During Implementation
 

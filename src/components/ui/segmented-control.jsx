@@ -1,44 +1,46 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-const sizeClasses = {
-  xs: "px-2 py-0.5 text-2xs",
-  sm: "px-2.5 py-1 text-xs",
-  lg: "px-4 py-2 text-xs",
-};
+const DEFAULT_ACTIVE_CLASS = "bg-primary text-primary-foreground hover:bg-primary/90";
+const DEFAULT_INACTIVE_CLASS = "text-muted-foreground hover:bg-muted/60 hover:text-foreground";
 
-export function SegmentedControl({ value, onValueChange, options, size = "sm", shell = false, className }) {
+/**
+ * Behavior-focused segmented control: maps options onto `Button`s, owns the
+ * selection state, and exposes it accessibly via `aria-pressed`. Visual
+ * recipes are passed through to `Button` (variant/size/className per state)
+ * so each feature keeps its own look — no shared visual style is forced.
+ */
+export function SegmentedControl({
+  value,
+  onValueChange,
+  options,
+  variant,
+  size,
+  className,
+  activeClassName = DEFAULT_ACTIVE_CLASS,
+  inactiveClassName = DEFAULT_INACTIVE_CLASS,
+}) {
   return (
-    <div
-      className={cn(
-        "inline-flex items-center gap-1",
-        shell && "rounded-full border bg-muted/40 p-0.5",
-        className
-      )}
-    >
+    <>
       {options.map((option) => {
         const active = value === option.value;
         return (
-          <button
+          <Button
             key={option.value}
             type="button"
+            variant={variant}
+            size={size}
             disabled={option.disabled}
             aria-pressed={active}
             onClick={() => onValueChange(option.value)}
-            className={cn(
-              "rounded-full font-semibold transition-colors",
-              sizeClasses[size],
-              active
-                ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-              option.disabled && "pointer-events-none opacity-40"
-            )}
+            className={cn(className, active ? activeClassName : inactiveClassName)}
           >
             {option.label}
-          </button>
+          </Button>
         );
       })}
-    </div>
+    </>
   );
 }

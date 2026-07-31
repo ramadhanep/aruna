@@ -1472,16 +1472,20 @@ function ElectionCyclePageContent() {
                           </p>
                         )}
                       </div>
-                      <SegmentedControl
-                        value={revenuePeriod}
-                        onValueChange={setRevenuePeriod}
-                        size="sm"
-                        shell
-                        options={[
-                          { value: 'annual', label: 'Annual', disabled: !hasAnnualRevenue },
-                          { value: 'quarterly', label: 'Quarterly' },
-                        ]}
-                      />
+                      <div className="inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5">
+                        <SegmentedControl
+                          value={revenuePeriod}
+                          onValueChange={setRevenuePeriod}
+                          variant="ghost"
+                          className="px-2 py-1 text-xs rounded-full"
+                          activeClassName="bg-foreground text-background hover:bg-foreground/90 dark:hover:bg-foreground/90 shadow-sm"
+                          inactiveClassName="text-foreground hover:bg-accent hover:text-accent-foreground"
+                          options={[
+                            { value: 'annual', label: 'Annual', disabled: !hasAnnualRevenue },
+                            { value: 'quarterly', label: 'Quarterly' },
+                          ]}
+                        />
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="h-[260px]">

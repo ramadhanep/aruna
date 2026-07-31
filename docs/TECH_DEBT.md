@@ -149,12 +149,14 @@ tree. This is an audit only; no implementation changes were made.
 ## Phase 6 follow-up
 
 - **TD-2/UI-8 remainder (componentization)** — resolved under Phase 6 guardrails:
-  `SegmentedControl` primitive (5 sites, 4 divergent active styles → 1), explore
-  tool cards (6×) and portfolio pie sections (4×) deduplicated, chart
-  Trading-Plan/Seasonality panels and `AnalystGaugeChart` extracted. Metric-row,
-  empty-state and change-chip primitives were deliberately not created (no
-  cross-feature reuse); chart Profile/Key Stats/Analysis/Financials tabs stayed
-  in the page (checkpoint decision — one-off grids, no ownership gain).
+  `SegmentedControl` (behavior-focused wrapper composing `Button`; visual
+  recipes stay per-feature after a post-Phase-6 audit found the initial
+  single-recipe version regressed feature-specific styling), explore tool cards
+  (6×) and portfolio pie sections (4×) deduplicated, chart Trading-Plan/
+  Seasonality panels and `AnalystGaugeChart` extracted. Metric-row, empty-state
+  and change-chip primitives were deliberately not created (no cross-feature
+  reuse); chart Profile/Key Stats/Analysis/Financials tabs stayed in the page
+  (checkpoint decision — one-off grids, no ownership gain).
 - **Lint blind spot (new)** — `no-undef`/`no-unused-vars` were not effective
   under `eslint-config-next`; this let two undefined-reference bugs ship. Now
   enforced in `eslint.config.mjs`; ~320 lines of dead code removed across 19

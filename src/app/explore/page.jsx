@@ -1079,12 +1079,14 @@ export default function ExplorePage() {
       {/* ───── Market Categories (Tabbed) ───── */}
       <section className="w-full">
         <div className="flex flex-col md:flex-row justify-between items-center gap-2 w-full">
-          <div className="w-full overflow-x-auto scrollbar-hide mb-4">
+          <div className="flex items-center gap-2 mb-4 overflow-x-auto scrollbar-hide w-full">
             <SegmentedControl
               value={activeMarketTab}
               onValueChange={setActiveMarketTab}
-              size="lg"
-              className="w-max"
+              variant="ghost"
+              className="rounded-full text-xs font-semibold px-4 py-2 h-auto"
+              activeClassName="bg-primary text-primary-foreground hover:bg-primary"
+              inactiveClassName="bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
               options={MARKET_CATEGORIES.map((cat) => {
                 const CatIcon = cat.icon;
                 return {
@@ -1105,7 +1107,10 @@ export default function ExplorePage() {
             <SegmentedControl
               value={marketTimeframe}
               onValueChange={setMarketTimeframe}
-              size="sm"
+              variant="ghost"
+              className="px-2.5 py-1 rounded-lg text-xs font-semibold h-auto"
+              activeClassName="bg-foreground text-background hover:bg-foreground"
+              inactiveClassName="text-muted-foreground hover:bg-muted/60 hover:text-foreground"
               options={MARKET_TIMEFRAMES.map((tf) => ({ value: tf, label: tf }))}
             />
             {activeMarketLoading && (

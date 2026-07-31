@@ -395,12 +395,17 @@ export function ChartTradingPlanPanel({
           </div>
         </div>
 
-        <SegmentedControl
-          value={String(riskPercentInput)}
-          onValueChange={(value) => setRiskPercentInput(value)}
-          size="xs"
-          options={riskPresets.map((preset) => ({ value: String(preset), label: `${preset}%` }))}
-        />
+        <div className="flex items-center gap-1.5">
+          <SegmentedControl
+            value={String(riskPercentInput)}
+            onValueChange={(value) => setRiskPercentInput(value)}
+            variant="ghost"
+            className="px-2 py-0.5 text-2xs rounded-full"
+            activeClassName="bg-foreground text-background hover:bg-foreground/90 dark:hover:bg-foreground/90 shadow-sm"
+            inactiveClassName="text-foreground hover:bg-accent hover:text-accent-foreground"
+            options={riskPresets.map((preset) => ({ value: String(preset), label: `${preset}%` }))}
+          />
+        </div>
 
         <div className="space-y-1">
           <label className="text-2xs font-medium text-muted-foreground">Your Entry Price</label>

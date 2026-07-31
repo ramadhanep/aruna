@@ -111,7 +111,7 @@ async function extractLogoColor(url, theme) {
   });
 }
 
-function PieSection({ title, data, sum, prefix, suffix, config, heightClass = 'h-52' }) {
+function PieSection({ title, data, sum, prefix, suffix, config, heightClass = 'h-52', legendClassName }) {
   return (
     <div className="w-full flex flex-col items-center">
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">{title}</p>
@@ -144,7 +144,7 @@ function PieSection({ title, data, sum, prefix, suffix, config, heightClass = 'h
           />
         </PieChart>
       </ChartContainer>
-      <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-2xs mt-2">
+      <div className={legendClassName ?? "flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-2xs mt-2"}>
         {data.map((item, i) => {
           const pct = (item.value / sum) * 100;
           return (
@@ -265,7 +265,7 @@ export function PortfolioPie({
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <PieSection title="Asset Type Allocation" data={assetTypeData} sum={assetSum} prefix="asset" suffix={displaySuffix} config={config} heightClass="h-48" />
+      <PieSection title="Asset Type Allocation" data={assetTypeData} sum={assetSum} prefix="asset" suffix={displaySuffix} config={config} heightClass="h-48" legendClassName="flex flex-wrap items-center justify-center gap-4 text-2xs" />
       <div className="w-full border-t border-border/20" />
       <PieSection title="Digital Asset Allocation" data={digitalData} sum={digitalSum} prefix="digital" suffix={displaySuffix} config={config} />
       <div className="w-full border-t border-border/20" />

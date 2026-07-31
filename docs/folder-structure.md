@@ -73,7 +73,7 @@
 │   │   │   ├── radio-group.jsx
 │   │   │   ├── select.jsx
 │   │   │   ├── separator.jsx
-│   │   │   ├── segmented-control.jsx # Pill segmented control (single active-state recipe)
+│   │   │   ├── segmented-control.jsx # Behavior wrapper: maps options to Buttons, owns selection state
 │   │   │   ├── sheet.jsx
 │   │   │   ├── sidebar.jsx          # shadcn sidebar (not actively used)
 │   │   │   ├── skeleton.jsx

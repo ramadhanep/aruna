@@ -343,10 +343,16 @@ abstraction for a single chart’s one-off markup.
   `isStandalone` bug in watchlist) surfaced by the new lint rules.
 - Lint baseline hardened: `no-undef` and `no-unused-vars` enabled and satisfied;
   ~320 lines of dead code removed across 19 files.
-- One shared UI primitive created: `SegmentedControl` (5 sites, 4 divergent
-  active styles unified). `getChangeTone()` added to `utils.js` as the single
-  change-color source (fixed red-vs-rose drift). `MetricRow`/`EmptyState`/
-  `ChangeChip` deliberately NOT created — no genuine cross-feature reuse.
+- One shared UI primitive created: `SegmentedControl` (behavior-focused:
+  option mapping, selection state, accessibility; composes `Button` for the
+  layout contract). A post-Phase-6 visual audit found the initial single-recipe
+  version normalized feature-specific visuals (label wrap, lost scroll,
+  changed active colors), so per-site visual recipes were restored through
+  `variant`/`className`/`activeClassName`/`inactiveClassName` — the shared
+  interaction logic is retained, no shared visual style is forced.
+  `getChangeTone()` added to `utils.js` as the single change-color source
+  (fixed red-vs-rose drift). `MetricRow`/`EmptyState`/`ChangeChip` deliberately
+  NOT created — no genuine cross-feature reuse.
 - Chart extraction limited to the two highest-cohesion panels (Trading Plan,
   Seasonality) plus the `AnalystGaugeChart` move. Profile/Key Stats/Analysis/
   Financials kept in the page by checkpoint decision: one-off grids bound to
