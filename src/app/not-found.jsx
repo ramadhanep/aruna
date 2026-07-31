@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export default function NotFound() {
   return (
@@ -9,7 +10,7 @@ export default function NotFound() {
         </div>
         <div className="absolute inset-0 flex items-center justify-center">
           <div className="p-4 rounded-2xl bg-primary/10">
-            <img src="/aruna.png" alt="aruna" className="size-8" />
+            <Image src="/aruna.png" alt="aruna" width={32} height={32} className="size-8" />
           </div>
         </div>
       </div>

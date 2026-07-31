@@ -1,5 +1,7 @@
 
 
+import Image from "next/image";
+
 export function ArunaWatermark({ className = "", labelClassName = "" }) {
   const wrapperClass = [
     "pointer-events-none select-none text-muted-foreground/30",
@@ -19,7 +21,7 @@ export function ArunaWatermark({ className = "", labelClassName = "" }) {
   return (
     <div className={wrapperClass} aria-hidden="true">
       <div className={labelClasses}>
-        <img src="/aruna.png" alt="aruna" className="size-5 opacity-30" />
+        <Image src="/aruna.png" alt="aruna" width={20} height={20} className="size-5 opacity-30" />
         <span>aruna</span>
       </div>
     </div>

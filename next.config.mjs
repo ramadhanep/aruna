@@ -10,6 +10,11 @@ const nextConfig = {
     NEXT_PUBLIC_APP_URL: APP_URL,
     SECURE_PAYLOAD_KEY,
   },
+  images: {
+    // Tiny logos and remote avatars only; pass-through keeps /aruna.png URLs stable
+    // for the service-worker precache and avoids Vercel image-optimization usage.
+    unoptimized: true,
+  },
 };
 
 export default nextConfig;

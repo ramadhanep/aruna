@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
@@ -61,7 +62,7 @@ export function PWAInstallDialog() {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="max-w-sm" closeButtonPosition="right">
         <div className="flex flex-col items-center gap-4 text-center">
-          <img src="/aruna.png" alt="aruna" className="h-12 w-12" />
+          <Image src="/aruna.png" alt="aruna" width={48} height={48} className="h-12 w-12" />
           <DialogTitle className="text-sm font-bold">Install Aruna</DialogTitle>
           <DialogDescription className="text-sm">
             Install aruna on your device for quick access and a better experience. No app store needed!

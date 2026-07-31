@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { Star, AlignHorizontalDistributeCenter, ChartPie, LayoutGrid, UserRound, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -61,7 +62,7 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
       <div className="flex items-center w-full max-w-[1400px] mx-auto px-6 gap-1">
         {/* Logo */}
         <Link href="/explore" className="flex items-center gap-2.5 mr-8 shrink-0">
-          <img src="/aruna.png" alt="aruna" className="size-7" />
+          <Image src="/aruna.png" alt="aruna" width={28} height={28} className="size-7" />
           <span className="text-lg font-bold tracking-tight">aruna</span>
         </Link>
 

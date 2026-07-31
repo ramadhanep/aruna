@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { HeaderSymbolSearch } from "@/components/header-symbol-search";
 import { HeaderAccountMenu } from "@/components/header-account-menu";
@@ -100,7 +101,7 @@ export function AppLayoutClient({ children }) {
             <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3 px-4">
               <HeaderAccountMenu onOpenSidebar={() => setSidebarOpen(true)} />
               <div className="flex flex-1 items-center justify-center gap-1.5">
-                <img src="/aruna.png" alt="aruna" className="size-5" />
+                <Image src="/aruna.png" alt="aruna" width={20} height={20} className="size-5" />
                 <h1 className="text-lg font-bold tracking-tight">aruna</h1>
               </div>
               <HeaderSymbolSearch />

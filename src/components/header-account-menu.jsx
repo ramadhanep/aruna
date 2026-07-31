@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/components/auth-provider";
 import { Loader2, UserRound } from "lucide-react";
+import Image from "next/image";
 
 function buildInitials(user) {
   const fullName =
@@ -39,9 +40,11 @@ export function HeaderAccountMenu({ onOpenSidebar }) {
       {loading ? (
         <Loader2 className="h-4 w-4 animate-spin" />
       ) : avatarUrl ? (
-        <img
+        <Image
           src={avatarUrl}
           alt={initials || "Account"}
+          width={36}
+          height={36}
           className="h-full w-full rounded-full object-cover"
           referrerPolicy="no-referrer"
         />

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -106,9 +107,11 @@ function MessageBubble({ message, isOwn, onDelete }) {
         {!isOwn && (
           <div className="flex items-center gap-1.5 mb-0.5 px-1">
             {message.user?.avatar ? (
-              <img
+              <Image
                 src={message.user.avatar}
                 alt=""
+                width={16}
+                height={16}
                 className="w-4 h-4 rounded-full"
               />
             ) : (

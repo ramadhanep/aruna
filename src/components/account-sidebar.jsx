@@ -3,6 +3,7 @@
 import { Suspense, useState, useMemo, useEffect, useRef, useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ClearDataButton } from "@/components/clear-data-button";
 import { useAuth } from "@/components/auth-provider";
@@ -131,9 +132,11 @@ function AccountSidebarContent({ onClose }) {
             <div className="flex items-center gap-3">
               <div className="h-14 w-14 overflow-hidden rounded-full border border-black/10 dark:border-white/20 ">
                 {avatarUrl ? (
-                  <img
+                  <Image
                     src={avatarUrl}
                     alt={fullName || "User avatar"}
+                    width={56}
+                    height={56}
                     className="h-full w-full object-cover"
                     referrerPolicy="no-referrer"
                   />
