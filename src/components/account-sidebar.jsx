@@ -17,86 +17,9 @@ import {
   UserRound,
   ShieldAlert,
   Cookie,
-  Heart,
   X,
-  Sparkles,
-  Leaf,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
-
-function DeleteAccountAction({ onConfirm, disabled }) {
-  const [open, setOpen] = useState(false);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState(null);
-
-  const handleConfirm = async () => {
-    setIsProcessing(true);
-    setError(null);
-    try {
-      await onConfirm();
-      setOpen(false);
-    } catch (err) {
-      setError(err?.message ?? "Failed to delete account.");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button
-          type="button"
-          variant="ghost"
-          disabled={disabled}
-          className="p-0"
-        >
-          <div className="flex flex-1 flex-col items-start gap-0.5 text-xs text-red-600">
-            Delete your Account
-          </div>
-        </Button>
-      </DialogTrigger>
-      <DialogContent closeButtonPosition="right">
-        <DialogHeader>
-          <DialogTitle className="text-sm font-semibold">
-            Delete account?
-          </DialogTitle>
-          <DialogDescription className="text-xs leading-relaxed text-muted-foreground">
-            We&apos;ll permanently remove every trace of your account from our databases.
-            Don&apos;t worry—your data stays private; even our developers won&apos;t know you were ever here.
-          </DialogDescription>
-        </DialogHeader>
-        {error ? (
-          <div className="rounded-md border border-red-600/60 bg-red-600/10 px-3 py-2 text-xs text-red-600">
-            {error}
-          </div>
-        ) : null}
-        <DialogFooter className="gap-2">
-          <DialogClose asChild>
-            <Button variant="outline" className="text-xs">
-              Cancel
-            </Button>
-          </DialogClose>
-          <Button
-            variant="destructive"
-            className="text-xs"
-            disabled={isProcessing}
-            onClick={handleConfirm}
-          >
-            {isProcessing ? (
-              <span className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Deleting…
-              </span>
-            ) : (
-              "Delete permanently"
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 function AccountSidebarContent({ onClose }) {
   const {
@@ -105,7 +28,6 @@ function AccountSidebarContent({ onClose }) {
     signInWithGoogle,
     signOut,
     clearRemoteData,
-    deleteAccount,
     supabaseConfigured,
   } = useAuth();
   const router = useRouter();
@@ -123,7 +45,6 @@ function AccountSidebarContent({ onClose }) {
   );
 
   const activeThemeMode = isClient ? (theme === "dark" ? "dark" : "light") : null;
-  const isDark = isClient ? theme === "dark" : false;
   const redirectHandledRef = useRef(false);
   const rawRedirect = searchParams?.get("redirect") || null;
   const redirectParam = rawRedirect && rawRedirect.startsWith("/") ? rawRedirect : null;

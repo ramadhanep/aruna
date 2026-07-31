@@ -191,7 +191,10 @@ export default function HomePage() {
     const handler = (e) => {
       e.preventDefault();
       setDeferredPrompt(e);
-      setShowInstallButton(!isStandalone);
+      const standalone =
+        window.matchMedia("(display-mode: standalone)").matches ||
+        window.navigator.standalone === true;
+      setShowInstallButton(!standalone);
     };
 
     window.addEventListener('beforeinstallprompt', handler);

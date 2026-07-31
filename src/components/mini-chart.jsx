@@ -1,5 +1,3 @@
-import { cn } from "@/lib/utils"
-
 function MiniChart({ data, isPositive, width = 72, height = 36 }) {
   if (!Array.isArray(data) || data.length < 2) {
     return <div style={{ width, height }} className="rounded-md bg-muted/40" />;

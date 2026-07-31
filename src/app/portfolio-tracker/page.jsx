@@ -15,7 +15,6 @@ import { searchSymbols, fetchLatestQuote } from '@/lib/api-client';
 import { TickerAvatar } from '@/components/ticker-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatTickerDisplay, formatIDR, formatByCurrency } from '@/lib/utils';
-import { useTrial } from '@/components/trial-provider';
 import { GoogleGlyph } from '@/components/google-glyph';
 import { loadPortfolio, savePortfolio } from '@/lib/portfolio-storage';
 import { computeHoldingsMetrics, sortHoldings, computePortfolioSummary, computeDigitalAllocation, computeCashTypeAllocation, formatValue } from '@/lib/portfolio-metrics';
@@ -34,13 +33,10 @@ export default function PortfolioTrackerPage() {
   const {
     user,
     loading: authLoading,
-    remotePortfolio,
-    portfolioLoaded,
     syncPortfolio,
     signInWithGoogle,
     supabaseConfigured,
   } = useAuth();
-  const { initialized: _trialInitialized } = useTrial();
   const isAuthenticated = Boolean(user);
   const [authError, setAuthError] = useState(null);
   const [signingIn, setSigningIn] = useState(false);
@@ -357,8 +353,8 @@ export default function PortfolioTrackerPage() {
   }, [holdingsWithMetrics, holdingsSort]);
 
   const { digitalMarket, digitalPnL, totalCash, totalNetWorth, totalPnL } = useMemo(() => {
-    return computePortfolioSummary(entries, priceMap, fxRate, sgdPerUsd);
-  }, [entries, priceMap, fxRate, sgdPerUsd]);
+    return computePortfolioSummary(entries, priceMap, fxRate);
+  }, [entries, priceMap, fxRate]);
 
   // Holdings allocation for chart
   const holdingsAllocation = useMemo(() => {

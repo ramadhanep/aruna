@@ -4,10 +4,8 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { Loader2, Lock, Download, Flame, ChevronDown, ChevronUp, ChevronRight, Clock, Globe, Zap, BarChart3, ArrowUpRight, ArrowDownRight, Gem, Magnet, Rotate3D, Axe, MessageCircleMore, Radar, Droplets } from "lucide-react";
+import { Loader2, Lock, Download, Flame, Globe, Zap, ArrowUpRight, ArrowDownRight, Gem, Magnet, Rotate3D, Axe, MessageCircleMore, Droplets } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { SUPABASE_STORAGE_BASE } from "@/lib/supabase-storage";
 import { MOTION } from "@/lib/motion";
@@ -260,16 +258,6 @@ function formatTimeAgo(value) {
   return "";
 }
 
-function formatLocalTimeLabel(value) {
-  if (!value) return "";
-  const date = typeof value === "string" ? new Date(value) : value;
-  if (Number.isNaN(date.getTime())) return "";
-  return date.toLocaleTimeString(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-  });
-}
-
 function isSameCalendarDay(dateA, dateB = new Date()) {
   if (!dateA) return false;
   const a = typeof dateA === "string" ? new Date(dateA) : dateA;
@@ -311,16 +299,6 @@ function resolvePrice(pick, quote) {
     return pick.lastClose;
   }
   return null;
-}
-
-function resolveName(pick, quote) {
-  if (quote && typeof quote.name === "string" && quote.name.trim().length > 0) {
-    return quote.name;
-  }
-  if (pick && typeof pick.name === "string" && pick.name.trim().length > 0) {
-    return pick.name;
-  }
-  return pick?.symbol || "";
 }
 
 function sortPicksByDescendingChange(picks, quotes) {

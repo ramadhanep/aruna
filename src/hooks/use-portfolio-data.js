@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/components/auth-provider';
-import { loadPortfolio, savePortfolio } from '@/lib/portfolio-storage';
+import { loadPortfolio } from '@/lib/portfolio-storage';
 import { fetchEncodedJson, fetchLatestQuote } from '@/lib/api-client';
 
 const DEFAULT_PORTFOLIO_ENTRIES = [

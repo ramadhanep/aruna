@@ -1,48 +1,21 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from 'react';
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import {
-  removeIncompleteYears,
-  computeDailyReturns,
-  getElectionCycleLabel,
-  hirschStyleSeasonalPattern,
-  computeSingleYearPattern,
-  forwardFillSingleYear,
-  calculateMonthlyReturns,
-  calculateQuarterlyReturns,
-  formatMonthlyHeatmap,
-  formatQuarterlyHeatmap,
   getWinRateCellStyle,
 } from '@/lib/seasonalData';
 import {
   CURRENT_LINE_COLOR,
-  SCREENING_CATEGORIES,
   areWatchlistsEqual,
-  matchScreeningEntry,
   formatScreeningTimestamp,
   formatTimestamp,
   cycleMetaMap,
-  DAY_IN_MS,
   NORMAL_TIMEFRAME_OPTIONS,
-  INTRADAY_TIMEFRAMES,
   BASE_INFO_TABS,
   TP_FALLBACK_META,
-  INFO_TAB_QUERY_LOOKUP,
-  normalizeInfoTabParam,
-  infoTabToQueryValue,
-  EMA_PERIOD,
   EMA_COLOR,
-  BUY_SIGNAL_COLOR,
-  LIVERMORE_LOOKBACK,
   LIVERMORE_UPPER_COLOR,
   LIVERMORE_LOWER_COLOR,
-  computeRSI,
-  smoothSeries,
-  computeStochasticRSI,
-  calculateEMA,
-  computeLivermoreKeyLevels,
-  isCryptoTicker,
   isIdxLotSymbol,
   toFiniteNumber,
   getDefaultCyclesForSymbol,
@@ -50,20 +23,13 @@ import {
   getReturnCellStyle,
   getQuarterDateRange,
 } from '@/lib/chart-helpers';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar, ReferenceLine } from 'recharts';
-import { Loader2, Sun, MoonStar, Clock3, Star, Lock, Bitcoin, Crown, ChevronDown, Fullscreen, ArrowLeft, Settings, CandlestickChart, LineChart, BarChart2 } from "lucide-react";
+import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar } from 'recharts';
+import { Loader2, Sun, MoonStar, Clock3, Fullscreen, ArrowLeft, Settings, CandlestickChart, LineChart, BarChart2 } from "lucide-react";
 import { useTheme } from 'next-themes';
 import { AddAssetModal } from "@/components/add-asset-modal";
 import { SymbolSearchDialog } from "@/components/header-symbol-search";
@@ -179,13 +145,13 @@ function ElectionCyclePageContent() {
   const isAuthenticated = Boolean(user);
 
   const chartState = useChartState();
-  const { symbol, setSymbol, selectedCycles, setSelectedCycles, infoTab, setInfoTab, infoTabRef, requestedInfoTab, isNormalView, searchParams, pathname, router, searchParamsString } = chartState;
+  const { symbol, setSymbol, selectedCycles, setSelectedCycles, infoTab, setInfoTab, isNormalView, pathname, router } = chartState;
   const { screeningSignal } = useChartScreening(supabase, symbol);
   const {
     normalTimeframe, setNormalTimeframe,
     normalSeriesLoading, normalSeriesError,
     filteredNormalChartData, normalCandlestickSeries,
-    normalChartReady, buySignalMarkers, stochasticChartData,
+    normalChartReady, buySignalMarkers,
     isIntradayTimeframe, normalTimeframeLabel,
     scaleChoice, setScaleChoice,
     showLivermoreKey, setShowLivermoreKey,
@@ -236,7 +202,6 @@ function ElectionCyclePageContent() {
     ? formatScreeningTimestamp(screeningSignal.signal_date)
     : null;
   const tradingPlanPayload = screeningSignal?.trading_plan ?? null;
-  const screeningCategory = screeningSignal?.category ?? null;
   const lotEligible = useMemo(() => isIdxLotSymbol(symbol), [symbol]);
   const hasTradingPlan = Boolean(tradingPlanPayload);
   const infoTabs = useMemo(() => {
@@ -768,26 +733,11 @@ function ElectionCyclePageContent() {
     return `${numeric >= 0 ? '+' : ''}${numeric.toFixed(1)}%`;
   }, []);
 
-  const formatDecimalPercentage = useCallback((value, fractionDigits = 2) => {
-    if (value == null || Number.isNaN(Number(value))) return '—';
-    const numeric = Number(value) * 100;
-    return `${numeric.toFixed(fractionDigits)}%`;
-  }, []);
-
   const formatPlanCurrencyValue = useCallback((value) => {
     if (value == null || Number.isNaN(Number(value))) return '—';
     const formatted = formatDetailedCurrency(value);
     return currencyCode ? `${formatted} ${currencyCode}` : formatted;
   }, [currencyCode, formatDetailedCurrency]);
-
-  const formatPlanPriceDelta = useCallback((value) => {
-    if (value == null || Number.isNaN(Number(value))) return '—';
-    const numeric = Number(value);
-    return `${numeric >= 0 ? '+' : '-'}${Math.abs(numeric).toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-  }, []);
 
   const formatPlanCurrencyDelta = useCallback((value) => {
     if (value == null || Number.isNaN(Number(value))) return '—';
@@ -811,13 +761,6 @@ function ElectionCyclePageContent() {
     () => tradingPlanPayload?.stop_loss_reason || 'Below Key Technical Level',
     [tradingPlanPayload]
   );
-
-  const tradingPlanStopLossDiff = useMemo(() => {
-    if (tradingPlanEntryPrice == null || tradingPlanStopLossPrice == null) {
-      return null;
-    }
-    return tradingPlanStopLossPrice - tradingPlanEntryPrice;
-  }, [tradingPlanEntryPrice, tradingPlanStopLossPrice]);
 
   const tradingPlanStopLossPct = useMemo(() => {
     if (
@@ -938,11 +881,6 @@ function ElectionCyclePageContent() {
     }
     return items;
   }, [tradingPlanPayload]);
-
-  const tradingPlanCategoryLabel = useMemo(() => {
-    if (!screeningCategory) return null;
-    return screeningCategory.toUpperCase();
-  }, [screeningCategory]);
 
   // --- Position size calculator: risk-first, never requires manual share math ---
   const tradingPlanBalanceValue = useMemo(() => {
@@ -2195,7 +2133,7 @@ function ElectionCyclePageContent() {
       );
     }
 
-    const { breakdown = [], totalOpinions, ratingLabel, ratingBgClass, ratingTextClass, ratingScore, priceTargets } =
+    const { breakdown = [], totalOpinions, ratingLabel, ratingTextClass, ratingScore, priceTargets } =
       recommendationData ?? {};
     const currentPrice = displayedPrice ?? symbolInfo?.currentPrice ?? null;
     const hasBreakdown = breakdown.some((item) => item.value);
@@ -3095,7 +3033,6 @@ function ElectionCyclePageContent() {
     <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start pb-8">
       <ChartHeaderBar
         symbol={symbol}
-        assetName={assetName}
         isFavorite={isFavorite}
         onToggleFavorite={toggleFavorite}
         onSearchOpen={() => setSearchDialogOpen(true)}

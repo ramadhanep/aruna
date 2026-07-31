@@ -18,7 +18,6 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
   const [items, setItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
   const searchTimeoutRef = useRef(null);
 
   const handleOpenChange = useCallback((nextOpen) => {
@@ -43,12 +42,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
     }
 
     searchTimeoutRef.current = setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        setSearchResults(await searchSymbols(normalizedQuery));
-      } finally {
-        setIsSearching(false);
-      }
+      setSearchResults(await searchSymbols(normalizedQuery));
     }, 300);
 
     return () => {

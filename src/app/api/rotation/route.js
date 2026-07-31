@@ -13,7 +13,7 @@ export const revalidate = 0;
  * Fetches top 50 IDX stocks by market cap for rotation analysis
  * Returns price change data for weekly and monthly timeframes
  */
-export async function GET(request) {
+export async function GET() {
   try {
     if (!supabaseUrl || !supabaseServiceKey) {
       return NextResponse.json(

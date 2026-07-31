@@ -31,21 +31,6 @@ const allowedOrigins = new Set(
     .filter(Boolean)
 );
 
-const buildUnauthorizedResponse = () =>
-  new NextResponse(JSON.stringify({ error: 'Unauthorized origin' }), {
-    status: 403,
-    headers: { 'Content-Type': 'application/json' },
-  });
-
-const isServerToServerRequest = (request) => {
-  const authorizationHeader = request.headers.get('authorization');
-  if (!authorizationHeader) {
-    return false;
-  }
-  const expected = `Bearer ${process.env.CRON_SECRET}`;
-  return authorizationHeader == expected;
-};
-
 const applyCorsHeaders = (response, origin) => {
   if (!origin) return response;
   response.headers.set('Access-Control-Allow-Origin', origin);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { ArrowLeft, Download } from "lucide-react";
 import { ArunaWatermark } from "@/components/aruna-watermark";

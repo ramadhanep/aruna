@@ -107,7 +107,7 @@ export function sortHoldings(holdingsWithMetrics, sortKey) {
   return [...digital, ...cash];
 }
 
-export function computePortfolioSummary(entries, priceMap, fxRate, sgdPerUsd) {
+export function computePortfolioSummary(entries, priceMap, fxRate) {
   const digitalEntries = entries.filter((e) => e.type !== 'cash');
   const cashEntries = entries.filter((e) => e.type === 'cash');
 

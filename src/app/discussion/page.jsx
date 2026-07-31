@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
-import Link from "next/link";
 
 /**
  * Parse message content and convert stock mentions to links
@@ -76,7 +75,7 @@ function parseMessageContent(content) {
   return parts;
 }
 
-function MessageBubble({ message, isOwn, onDelete, currentUserId }) {
+function MessageBubble({ message, isOwn, onDelete }) {
   const router = useRouter();
   const parsedContent = parseMessageContent(message.content);
   const [showDelete, setShowDelete] = useState(false);
@@ -439,7 +438,6 @@ export default function DiscussionPage() {
                   message={message}
                   isOwn={user?.id === message.userId}
                   onDelete={handleDeleteMessage}
-                  currentUserId={user?.id}
                 />
               ))}
               <div ref={messagesEndRef} />

@@ -5,9 +5,7 @@ import { AlertTriangle, ArrowUpDown, Check, FilterX } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { fetchEncodedJson } from "@/lib/api-client";
-import { TickerAvatar } from "@/components/ticker-avatar";
 import { MoneyFlowCard } from "@/components/money-flow-card";
 import { Accordion } from "@/components/ui/accordion";
 import {
@@ -65,20 +63,6 @@ const sortOptions = [
   { key: "volume_spike", label: "Volume Spike" },
   { key: "price_change", label: "Price Change" },
 ];
-
-const signalVariantMap = {
-  "Strong Accumulation": "success",
-  Accumulation: "success",
-  Neutral: "warning",
-  Distribution: "danger",
-};
-
-const riskVariantMap = {
-  LOW: "success",
-  MEDIUM: "warning",
-  HIGH: "danger",
-  CRITICAL: "danger",
-};
 
 function ReportList({ reports }) {
   if (!reports.length) {

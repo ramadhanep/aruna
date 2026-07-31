@@ -6,7 +6,6 @@ import { formatTickerDisplay } from "@/lib/utils";
 
 export function ChartHeaderBar({
   symbol,
-  assetName,
   isFavorite,
   onToggleFavorite,
   onSearchOpen,

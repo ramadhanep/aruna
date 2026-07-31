@@ -113,7 +113,6 @@ export function calculateMSCIMetrics(stock) {
     price,
     market_cap,
     free_float_percent,
-    shares_outstanding,
     msci_index,
   } = stock;
 

@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Loader2, TrendingUp, AlertTriangle, ArrowUpDown, Check, Lock } from "lucide-react";
+import { TrendingUp, AlertTriangle, ArrowUpDown, Check, Lock } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import {
   formatMarketCap,
@@ -124,7 +124,6 @@ function StatusBadge({ status }) {
 
 function StockCard({ stock, isLocked = false }) {
   const progressPercent = Math.min(stock.progress, 100);
-  const isNearInclusion = stock.progress >= 90;
   return (
     <Card className="overflow-hidden relative">
       <CardContent className={`p-4 space-y-3 ${isLocked ? "opacity-40" : ""}`}>
