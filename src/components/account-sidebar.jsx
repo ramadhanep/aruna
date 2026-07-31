@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ClearDataButton } from "@/components/clear-data-button";
 import { useAuth } from "@/components/auth-provider";
+import { DURATION_CLASS } from "@/lib/motion";
 import { useAppearanceMode } from "@/components/appearance-mode-provider";
 import { GoogleGlyph } from "@/components/google-glyph";
 import {
@@ -412,14 +413,14 @@ export function AccountSidebar({ open, onClose }) {
   return (
     <>
       <div
-        className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        className={`fixed inset-0 bg-black/50 z-[60] transition-opacity ${DURATION_CLASS.base} ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
           }`}
         onClick={onClose}
       />
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 bottom-0 w-full max-w-3xl bg-background z-[70] transition-transform duration-300 ease-out ${open ? "translate-x-0 pointer-events-auto" : "-translate-x-full pointer-events-none"
+        className={`fixed top-0 left-0 bottom-0 w-full max-w-3xl bg-background z-[70] transition-transform ${DURATION_CLASS.slow} ease-out ${open ? "translate-x-0 pointer-events-auto" : "-translate-x-full pointer-events-none"
           }`}
       >
         <Suspense

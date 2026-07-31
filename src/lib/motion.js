@@ -34,6 +34,14 @@ export const DURATION = {
   slow: 400,
 };
 
+// Tailwind duration-* classes for the token values — the single mapping
+// between motion.js durations and the classes custom surfaces apply.
+export const DURATION_CLASS = {
+  fast: `duration-[${DURATION.fast}ms]`,
+  base: `duration-[${DURATION.base}ms]`,
+  slow: `duration-[${DURATION.slow}ms]`,
+};
+
 // Matches Tailwind v4's built-in --ease-out / --ease-in values.
 export const EASE = {
   out: "cubic-bezier(0, 0, 0.2, 1)",

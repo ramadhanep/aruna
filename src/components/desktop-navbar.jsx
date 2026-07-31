@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Star, AlignHorizontalDistributeCenter, ChartPie, LayoutGrid, UserRound, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DURATION_CLASS } from "@/lib/motion";
 import { HeaderSymbolSearch } from "@/components/header-symbol-search";
 import { ModeToggle } from "@/components/mode-toggle";
 import { TOOLS_ITEMS } from "@/lib/tools-menu";
@@ -75,7 +76,8 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
                 key={item.url}
                 href={item.url}
                 className={cn(
-                  "flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium transition-colors duration-200",
+                  "flex items-center gap-2 px-3 py-2 rounded-md text-[13px] font-medium transition-colors",
+                  DURATION_CLASS.fast,
                   isActive
                     ? "bg-accent text-foreground font-semibold"
                     : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
@@ -96,7 +98,8 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
           >
             <button
               className={cn(
-                "flex items-center gap-1.5 px-3 py-2 rounded-md text-[13px] font-medium transition-colors duration-200",
+                "flex items-center gap-1.5 px-3 py-2 rounded-md text-[13px] font-medium transition-colors",
+                DURATION_CLASS.fast,
                 isToolsActive
                   ? "bg-accent text-foreground font-semibold"
                   : "text-muted-foreground hover:bg-accent/70 hover:text-foreground"
@@ -104,11 +107,11 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
               onClick={() => setToolsOpen(!toolsOpen)}
             >
               <span>Tools</span>
-              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", toolsOpen && "rotate-180")} />
+              <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", DURATION_CLASS.fast, toolsOpen && "rotate-180")} />
             </button>
 
             {toolsOpen && (
-              <div className="absolute top-full left-0 mt-2 w-64 rounded-lg border border-border bg-popover py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150 shadow-2xl shadow-black/40">
+              <div className={`absolute top-full left-0 mt-2 w-64 rounded-lg border border-border bg-popover py-2 z-50 animate-in fade-in slide-in-from-top-2 ${DURATION_CLASS.fast} shadow-2xl shadow-black/40`}>
                 {TOOLS_ITEMS.map((item) => {
                   const isActive = pathname === item.url;
                   const Icon = item.icon;
