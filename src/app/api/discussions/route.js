@@ -44,7 +44,7 @@ export async function GET(request) {
   try {
     if (!supabaseUrl || !supabaseServiceKey) {
       return NextResponse.json(
-        { error: 'Supabase configuration missing' },
+        { payload: encodePayload({ error: 'Supabase configuration missing' }) },
         { status: 500 }
       );
     }
@@ -64,7 +64,7 @@ export async function GET(request) {
     if (error) {
       console.error('Database error:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch messages' },
+        { payload: encodePayload({ error: 'Failed to fetch messages' }) },
         { status: 500 }
       );
     }
@@ -115,7 +115,7 @@ export async function GET(request) {
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { payload: encodePayload({ error: 'Internal server error' }) },
       { status: 500 }
     );
   }
@@ -129,7 +129,7 @@ export async function POST(request) {
   try {
     if (!supabaseUrl || !supabaseAnonKey) {
       return NextResponse.json(
-        { error: 'Supabase configuration missing' },
+        { payload: encodePayload({ error: 'Supabase configuration missing' }) },
         { status: 500 }
       );
     }
@@ -157,7 +157,7 @@ export async function POST(request) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { payload: encodePayload({ error: 'Authentication required' }) },
         { status: 401 }
       );
     }
@@ -167,14 +167,14 @@ export async function POST(request) {
 
     if (!content || typeof content !== 'string') {
       return NextResponse.json(
-        { error: 'Message content is required' },
+        { payload: encodePayload({ error: 'Message content is required' }) },
         { status: 400 }
       );
     }
 
     if (content.length > 1000) {
       return NextResponse.json(
-        { error: 'Message too long (max 1000 characters)' },
+        { payload: encodePayload({ error: 'Message too long (max 1000 characters)' }) },
         { status: 400 }
       );
     }
@@ -198,7 +198,7 @@ export async function POST(request) {
     if (error) {
       console.error('Insert error:', error);
       return NextResponse.json(
-        { error: 'Failed to send message' },
+        { payload: encodePayload({ error: 'Failed to send message' }) },
         { status: 500 }
       );
     }
@@ -230,7 +230,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { payload: encodePayload({ error: 'Internal server error' }) },
       { status: 500 }
     );
   }
@@ -270,7 +270,7 @@ export async function DELETE(request) {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
       return NextResponse.json(
-        { error: 'Authentication required' },
+        { payload: encodePayload({ error: 'Authentication required' }) },
         { status: 401 }
       );
     }
@@ -280,7 +280,7 @@ export async function DELETE(request) {
 
     if (!messageId) {
       return NextResponse.json(
-        { error: 'Message ID is required' },
+        { payload: encodePayload({ error: 'Message ID is required' }) },
         { status: 400 }
       );
     }
@@ -294,7 +294,7 @@ export async function DELETE(request) {
     if (error) {
       console.error('Delete error:', error);
       return NextResponse.json(
-        { error: 'Failed to delete message' },
+        { payload: encodePayload({ error: 'Failed to delete message' }) },
         { status: 500 }
       );
     }
@@ -305,7 +305,7 @@ export async function DELETE(request) {
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { payload: encodePayload({ error: 'Internal server error' }) },
       { status: 500 }
     );
   }

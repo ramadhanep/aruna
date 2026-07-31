@@ -1,14 +1,22 @@
 import { decodeApiResponse } from '@/lib/secure-payload';
 import { getRecentUnixRange } from '@/lib/time';
 
-export async function fetchEncodedJson(input, init) {
-  const response = await fetch(input, init);
+export async function fetchEncodedJson(input, init, timeoutMs = 30000) {
+  const response = await fetch(input, {
+    ...init,
+    signal: init?.signal ?? AbortSignal.timeout(timeoutMs),
+  });
   const body = await response.json().catch(() => ({}));
   const decoded = decodeApiResponse(body);
-  if (!decoded) {
-    throw new Error('Failed to decode API response');
+  if (decoded) {
+    return { response, data: decoded };
   }
-  return { response, data: decoded };
+  // Non-encoded error bodies (rate-limit 429s, misconfigured routes) must
+  // surface their real message instead of a generic decode failure.
+  if (body && typeof body.error === 'string') {
+    throw new Error(body.error);
+  }
+  throw new Error('Failed to decode API response');
 }
 
 /**
