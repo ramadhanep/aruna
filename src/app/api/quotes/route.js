@@ -1,9 +1,8 @@
 import yahooFinance from '@/lib/yahoo-finance';
 import { encodePayload } from '@/lib/secure-payload';
-import { getSupabaseServiceRoleClient } from '@/lib/supabase-server';
+import { ensureUsLogo } from '@/lib/logo-cache';
+import { getIdxLogoUrl, getUsLogoUrl } from '@/lib/supabase-storage';
 
-const SUPABASE_STORAGE_BASE = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public`;
-const PLUANG_CDN_BASE = 'https://image-cdn.pluang.com/icons/light/global-stocks';
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 // Max symbols per request to prevent abuse
@@ -91,50 +90,6 @@ function computeTimeframeChange(timeframe, currentPrice, previousClosePrice, val
         return null;
     }
     return ((currentPrice - basePrice) / basePrice) * 100;
-}
-
-/**
- * Ensure a US stock logo exists in Supabase storage.
- * If missing, download from Pluang CDN and upload automatically.
- */
-async function ensureUsLogo(normalizedSymbol) {
-    const supabaseUrl = `${SUPABASE_STORAGE_BASE}/us/${normalizedSymbol}.svg`;
-
-    try {
-        const headRes = await fetch(supabaseUrl, { method: 'HEAD' });
-        if (headRes.ok) {
-            return supabaseUrl;
-        }
-
-        const cdnUrl = `${PLUANG_CDN_BASE}/${normalizedSymbol.toLowerCase()}.svg`;
-        const cdnRes = await fetch(cdnUrl);
-        if (!cdnRes.ok) {
-            return null;
-        }
-
-        const svgBuffer = Buffer.from(await cdnRes.arrayBuffer());
-
-        const supabase = getSupabaseServiceRoleClient();
-        if (!supabase) {
-            return null;
-        }
-
-        const { error: uploadError } = await supabase.storage
-            .from('us')
-            .upload(`${normalizedSymbol}.svg`, svgBuffer, {
-                contentType: 'image/svg+xml',
-                cacheControl: '31536000',
-                upsert: true,
-            });
-
-        if (uploadError) {
-            return null;
-        }
-
-        return supabaseUrl;
-    } catch {
-        return null;
-    }
 }
 
 /**
@@ -240,8 +195,7 @@ async function fetchSymbolQuote(symbol, timeframe = DEFAULT_TIMEFRAME) {
             /-(USD|BTC|USDT|EUR|GBP)$/i.test(normalizedSymbol);
 
         if (isIdxMarket) {
-            const idxSymbol = normalizedSymbol.replace(/\.JK$/i, '');
-            logoUrl = `${SUPABASE_STORAGE_BASE}/idx/${idxSymbol}.png`;
+            logoUrl = getIdxLogoUrl(normalizedSymbol);
         } else if (isCrypto) {
             // Crypto logos are not in chart().meta — fetch from quote() metadata
             try {
@@ -251,9 +205,7 @@ async function fetchSymbolQuote(symbol, timeframe = DEFAULT_TIMEFRAME) {
                 // Silently fail — no logo is fine
             }
         } else if (isUsMarket) {
-            logoUrl =
-                (await ensureUsLogo(normalizedSymbol)) ||
-                `${SUPABASE_STORAGE_BASE}/us/${normalizedSymbol}.svg`;
+            logoUrl = (await ensureUsLogo(normalizedSymbol)) || getUsLogoUrl(normalizedSymbol);
         }
 
         return {
