@@ -2,9 +2,6 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from 'react';
 import {
-  getWinRateCellStyle,
-} from '@/lib/seasonalData';
-import {
   CURRENT_LINE_COLOR,
   areWatchlistsEqual,
   formatScreeningTimestamp,
@@ -12,22 +9,17 @@ import {
   cycleMetaMap,
   NORMAL_TIMEFRAME_OPTIONS,
   BASE_INFO_TABS,
-  TP_FALLBACK_META,
   EMA_COLOR,
   LIVERMORE_UPPER_COLOR,
   LIVERMORE_LOWER_COLOR,
   isIdxLotSymbol,
-  toFiniteNumber,
   getDefaultCyclesForSymbol,
   getDayOfYear,
-  getReturnCellStyle,
   getQuarterDateRange,
 } from '@/lib/chart-helpers';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar } from 'recharts';
 import { Loader2, Sun, MoonStar, Clock3, Fullscreen, ArrowLeft, Settings, CandlestickChart, LineChart, BarChart2 } from "lucide-react";
 import { useTheme } from 'next-themes';
@@ -48,6 +40,9 @@ import { TickerAvatar } from "@/components/ticker-avatar";
 import { formatTickerDisplay, getChangeTone } from "@/lib/utils";
 import { ChartHeaderBar } from "@/components/chart-header-bar";
 import { SegmentedControl } from "@/components/ui/segmented-control";
+import { AnalystGaugeChart } from "@/components/analyst-gauge-chart";
+import { ChartTradingPlanPanel } from "@/components/chart-trading-plan-panel";
+import { ChartSeasonalityPanel } from "@/components/chart-seasonality-panel";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -56,80 +51,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const CHART_HEIGHT_CLASS = "h-[380px] lg:h-[500px]";
-
-/**
- * Semicircle gauge chart for analyst rating.
- * score: 1 (Strong Buy) → 5 (Strong Sell), matching Yahoo Finance's recommendationMean scale.
- */
-function AnalystGaugeChart({ score }) {
-  const cx = 120, cy = 104, r = 78, trackW = 15;
-  const toPoint = (a, rad) => ({
-    x: cx + rad * Math.cos(a),
-    y: cy - rad * Math.sin(a),
-  });
-  const arc = (a1, a2, rad = r) => {
-    const s = toPoint(a1, rad);
-    const e = toPoint(a2, rad);
-    const large = Math.abs(a1 - a2) > Math.PI ? 1 : 0;
-    return `M ${s.x.toFixed(2)} ${s.y.toFixed(2)} A ${rad} ${rad} 0 ${large} 1 ${e.x.toFixed(2)} ${e.y.toFixed(2)}`;
-  };
-  const zones = [
-    [Math.PI, Math.PI * 0.8, '#ef4444'],
-    [Math.PI * 0.8, Math.PI * 0.6, '#f97316'],
-    [Math.PI * 0.6, Math.PI * 0.4, '#eab308'],
-    [Math.PI * 0.4, Math.PI * 0.2, '#22c55e'],
-    [Math.PI * 0.2, 0, '#10b981'],
-  ];
-  // score=1 → p=1 (right/Strong Buy), score=5 → p=0 (left/Strong Sell)
-  const p = score != null ? Math.min(1, Math.max(0, (5 - score) / 4)) : null;
-  const needleAngle = p != null ? Math.PI * (1 - p) : null;
-  const tip = needleAngle != null ? toPoint(needleAngle, r * 0.68) : null;
-  const activeColor = p != null ? zones[Math.min(4, Math.floor(p * 5))][2] : null;
-  // Labels at each zone midpoint, placed outside the arc
-  const labelDefs = [
-    { angle: Math.PI * 0.9, text: 'Strong\nSell', anchor: 'end', offR: 22 },
-    { angle: Math.PI * 0.7, text: 'Sell', anchor: 'end', offR: 18 },
-    { angle: Math.PI * 0.5, text: 'Neutral', anchor: 'middle', offR: 18 },
-    { angle: Math.PI * 0.3, text: 'Buy', anchor: 'start', offR: 18 },
-    { angle: Math.PI * 0.1, text: 'Strong\nBuy', anchor: 'start', offR: 22 },
-  ];
-  return (
-    <svg viewBox="0 0 240 128" className="w-full max-w-[260px] mx-auto select-none">
-      {/* Subtle background track */}
-      <path d={arc(Math.PI, 0)} fill="none" stroke="currentColor" strokeOpacity={0.07} strokeWidth={trackW + 8} />
-      {/* Muted zone segments */}
-      {zones.map(([a1, a2], i) => (
-        <path key={i} d={arc(a1, a2)} fill="none" stroke="currentColor" strokeOpacity={0.12} strokeWidth={trackW} strokeLinecap="butt" />
-      ))}
-      {/* Zone labels */}
-      {labelDefs.map(({ angle, text, anchor, offR }, i) => {
-        const pt = toPoint(angle, r + offR);
-        const lines = text.split('\n');
-        return (
-          <text key={i} x={pt.x.toFixed(1)} y={pt.y.toFixed(1)} textAnchor={anchor} fontSize="7.5" fill="currentColor" opacity="0.5">
-            {lines.map((ln, j) => (
-              <tspan key={j} x={pt.x.toFixed(1)} dy={j === 0 ? 0 : '1.3em'}>{ln}</tspan>
-            ))}
-          </text>
-        );
-      })}
-      {/* Needle */}
-      {tip && (
-        <>
-          <line
-            x1={cx} y1={cy}
-            x2={tip.x.toFixed(2)} y2={tip.y.toFixed(2)}
-            stroke={activeColor ?? 'currentColor'} strokeWidth={2.5} strokeLinecap="round"
-          />
-          <circle cx={cx} cy={cy} r={6} fill={activeColor ?? 'currentColor'} />
-          <circle cx={cx} cy={cy} r={3.5} fill={activeColor ?? 'currentColor'} opacity="0.2" />
-        </>
-      )}
-    </svg>
-  );
-}
-
-
 
 function ElectionCyclePageContent() {
   const { resolvedTheme } = useTheme();
@@ -179,9 +100,6 @@ function ElectionCyclePageContent() {
   const [portfolioEntries, setPortfolioEntries] = useState([]);
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
   const [watchlist, setWatchlist] = useState(() => getDefaultWatchlist());
-  const [tradingPlanEntryInput, setTradingPlanEntryInput] = useState('');
-  const [tradingPlanBalanceInput, setTradingPlanBalanceInput] = useState('');
-  const [tradingPlanRiskPercentInput, setTradingPlanRiskPercentInput] = useState('1');
   const remoteWatchlistSeedRef = useRef(false);
   const remotePortfolioSeedRef = useRef(false);
   const redirectToSignIn = useCallback(() => {
@@ -211,24 +129,6 @@ function ElectionCyclePageContent() {
     }
     return BASE_INFO_TABS;
   }, [hasTradingPlan]);
-
-  useEffect(() => {
-    if (!tradingPlanPayload) {
-      setTradingPlanEntryInput('');
-      setTradingPlanBalanceInput('');
-      setTradingPlanRiskPercentInput('1');
-      return;
-    }
-    setTradingPlanEntryInput(
-      tradingPlanPayload.entry_price != null ? String(tradingPlanPayload.entry_price) : ''
-    );
-    setTradingPlanBalanceInput(
-      tradingPlanPayload.account_size != null ? String(tradingPlanPayload.account_size) : ''
-    );
-    setTradingPlanRiskPercentInput(
-      tradingPlanPayload.risk_percent != null ? String(tradingPlanPayload.risk_percent) : '1'
-    );
-  }, [tradingPlanPayload]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -733,214 +633,6 @@ function ElectionCyclePageContent() {
     const numeric = Number(value);
     return `${numeric >= 0 ? '+' : ''}${numeric.toFixed(1)}%`;
   }, []);
-
-  const formatPlanCurrencyValue = useCallback((value) => {
-    if (value == null || Number.isNaN(Number(value))) return '—';
-    const formatted = formatDetailedCurrency(value);
-    return currencyCode ? `${formatted} ${currencyCode}` : formatted;
-  }, [currencyCode, formatDetailedCurrency]);
-
-  const formatPlanCurrencyDelta = useCallback((value) => {
-    if (value == null || Number.isNaN(Number(value))) return '—';
-    const numeric = Number(value);
-    const formatted = formatDetailedCurrency(Math.abs(numeric));
-    const prefix = numeric >= 0 ? '+' : '-';
-    return currencyCode ? `${prefix}${formatted} ${currencyCode}` : `${prefix}${formatted}`;
-  }, [currencyCode, formatDetailedCurrency]);
-
-  const tradingPlanEntryPrice = useMemo(() => {
-    const manual = toFiniteNumber(tradingPlanEntryInput);
-    if (manual != null && manual > 0) {
-      return manual;
-    }
-    return toFiniteNumber(tradingPlanPayload?.entry_price);
-  }, [tradingPlanEntryInput, tradingPlanPayload]);
-
-  const tradingPlanStopLossPrice = useMemo(() => toFiniteNumber(tradingPlanPayload?.stop_loss), [tradingPlanPayload]);
-
-  const tradingPlanStopLossReason = useMemo(
-    () => tradingPlanPayload?.stop_loss_reason || 'Below Key Technical Level',
-    [tradingPlanPayload]
-  );
-
-  const tradingPlanStopLossPct = useMemo(() => {
-    if (
-      tradingPlanEntryPrice == null ||
-      tradingPlanEntryPrice === 0 ||
-      tradingPlanStopLossPrice == null
-    ) {
-      return null;
-    }
-    return ((tradingPlanStopLossPrice - tradingPlanEntryPrice) / tradingPlanEntryPrice) * 100;
-  }, [tradingPlanEntryPrice, tradingPlanStopLossPrice]);
-
-  // Risk distance per unit (always positive for a valid long setup) — the backbone of every
-  // R-multiple and position-sizing calculation below.
-  const tradingPlanRiskPerUnit = useMemo(() => {
-    if (tradingPlanEntryPrice == null || tradingPlanStopLossPrice == null) return null;
-    const diff = tradingPlanEntryPrice - tradingPlanStopLossPrice;
-    return diff > 0 ? diff : null;
-  }, [tradingPlanEntryPrice, tradingPlanStopLossPrice]);
-
-  const tradingPlanEntryZone = useMemo(() => {
-    const low = toFiniteNumber(tradingPlanPayload?.entry_zone_low) ?? tradingPlanEntryPrice;
-    const high = toFiniteNumber(tradingPlanPayload?.entry_zone_high) ?? tradingPlanEntryPrice;
-    return {
-      low: low != null ? Math.min(low, high ?? low) : null,
-      high: high != null ? Math.max(low ?? high, high) : null,
-      type: tradingPlanPayload?.entry_type || 'Market',
-      reason: tradingPlanPayload?.entry_reason || 'Breakout confirmed by trend and volume',
-    };
-  }, [tradingPlanPayload, tradingPlanEntryPrice]);
-
-  const tradingPlanTargets = useMemo(() => {
-    if (!tradingPlanPayload?.tp_targets) {
-      return [];
-    }
-    return tradingPlanPayload.tp_targets
-      .map((target, index) => {
-        const price = toFiniteNumber(target?.price);
-        if (price == null) {
-          return null;
-        }
-        const fallback = TP_FALLBACK_META[index] || TP_FALLBACK_META[TP_FALLBACK_META.length - 1];
-        const label = target?.label || `TP${index + 1}`;
-        const diff = tradingPlanEntryPrice != null ? price - tradingPlanEntryPrice : null;
-        const pct =
-          tradingPlanEntryPrice != null && tradingPlanEntryPrice !== 0 && diff != null
-            ? (diff / tradingPlanEntryPrice) * 100
-            : null;
-        const rMultiple =
-          tradingPlanRiskPerUnit != null && diff != null ? diff / tradingPlanRiskPerUnit : null;
-        return {
-          label,
-          price,
-          diff,
-          pct,
-          rMultiple,
-          reason: target?.reason || fallback.reason,
-          sellPercent: target?.sell_percent ?? fallback.sellPercent,
-          action: target?.action || fallback.action,
-        };
-      })
-      .filter(Boolean);
-  }, [tradingPlanPayload, tradingPlanEntryPrice, tradingPlanRiskPerUnit]);
-
-  // Primary target used for the headline Risk:Reward figure and the calculator's expected
-  // profit — the middle target (TP2 / measured-move) is the realistic, most-likely outcome.
-  const tradingPlanPrimaryTarget = useMemo(() => {
-    if (tradingPlanTargets.length === 0) return null;
-    const mid = Math.floor(tradingPlanTargets.length / 2);
-    return tradingPlanTargets[mid] || tradingPlanTargets[0];
-  }, [tradingPlanTargets]);
-
-  const tradingPlanRiskReward = useMemo(() => {
-    const fromPayload = tradingPlanPayload?.risk_reward;
-    const perTarget = tradingPlanTargets.map((target) => target.rMultiple ?? null);
-    const primary =
-      toFiniteNumber(fromPayload?.primary) ?? tradingPlanPrimaryTarget?.rMultiple ?? perTarget[perTarget.length - 1] ?? null;
-    return { perTarget, primary };
-  }, [tradingPlanPayload, tradingPlanTargets, tradingPlanPrimaryTarget]);
-
-  const tradingPlanQualityTier = useMemo(() => {
-    const rr = tradingPlanRiskReward.primary;
-    const tier = tradingPlanPayload?.quality_tier ||
-      (rr == null ? 'fair' : rr >= 3 ? 'excellent' : rr >= 2 ? 'good' : rr >= 1.2 ? 'fair' : 'poor');
-    const meta = {
-      excellent: { label: 'Excellent Setup', variant: 'success' },
-      good: { label: 'Good Setup', variant: 'success' },
-      fair: { label: 'Fair Setup', variant: 'warning' },
-      poor: { label: 'Weak Setup', variant: 'danger' },
-    };
-    return { tier, ...(meta[tier] || meta.fair) };
-  }, [tradingPlanPayload, tradingPlanRiskReward]);
-
-  const tradingPlanBasisValues = useMemo(() => {
-    if (!tradingPlanPayload?.basis) {
-      return { swing: null, swingHigh: null, ema: null, atr: null };
-    }
-    return {
-      swing: toFiniteNumber(tradingPlanPayload.basis.swing_low),
-      swingHigh: toFiniteNumber(tradingPlanPayload.basis.swing_high),
-      ema: toFiniteNumber(tradingPlanPayload.basis.ema20),
-      atr: toFiniteNumber(tradingPlanPayload.basis.atr),
-    };
-  }, [tradingPlanPayload]);
-
-  const tradingPlanTechnicalConfirmations = useMemo(() => {
-    const items = [];
-    items.push('Price reclaimed EMA20 with rising slope');
-    const volumeRatio = toFiniteNumber(tradingPlanPayload?.volume_ratio);
-    items.push(
-      volumeRatio != null
-        ? `Volume ${volumeRatio.toFixed(2)}x above 31-day average`
-        : 'Volume above 31-day average'
-    );
-    const slope = toFiniteNumber(tradingPlanPayload?.ema_slope_pct);
-    if (slope != null) {
-      items.push(`EMA20 trending up (${slope >= 0 ? '+' : ''}${slope.toFixed(2)}%/day)`);
-    }
-    return items;
-  }, [tradingPlanPayload]);
-
-  // --- Position size calculator: risk-first, never requires manual share math ---
-  const tradingPlanBalanceValue = useMemo(() => {
-    const manual = toFiniteNumber(tradingPlanBalanceInput);
-    if (manual != null && manual > 0) return manual;
-    return toFiniteNumber(tradingPlanPayload?.account_size);
-  }, [tradingPlanBalanceInput, tradingPlanPayload]);
-
-  const tradingPlanRiskPercentValue = useMemo(() => {
-    const manual = toFiniteNumber(tradingPlanRiskPercentInput);
-    if (manual != null && manual > 0) return manual;
-    return toFiniteNumber(tradingPlanPayload?.risk_percent) ?? 1;
-  }, [tradingPlanRiskPercentInput, tradingPlanPayload]);
-
-  const tradingPlanMaxRiskAmount = useMemo(() => {
-    if (tradingPlanBalanceValue == null || tradingPlanRiskPercentValue == null) return null;
-    return (tradingPlanBalanceValue * tradingPlanRiskPercentValue) / 100;
-  }, [tradingPlanBalanceValue, tradingPlanRiskPercentValue]);
-
-  const tradingPlanShareCount = useMemo(() => {
-    if (tradingPlanMaxRiskAmount == null || !tradingPlanRiskPerUnit) return 0;
-    return Math.max(Math.floor(tradingPlanMaxRiskAmount / tradingPlanRiskPerUnit), 0);
-  }, [tradingPlanMaxRiskAmount, tradingPlanRiskPerUnit]);
-
-  const tradingPlanLotCount = useMemo(() => {
-    if (!lotEligible || tradingPlanShareCount <= 0) return null;
-    return Math.floor(tradingPlanShareCount / 100);
-  }, [lotEligible, tradingPlanShareCount]);
-
-  const tradingPlanSizeSummary = useMemo(() => {
-    if (tradingPlanShareCount <= 0) return null;
-    const shareLabel = tradingPlanShareCount.toLocaleString('en-US', { maximumFractionDigits: 0 });
-    if (lotEligible) {
-      const lotShares = (tradingPlanLotCount ?? 0) * 100;
-      const lotLabel = (tradingPlanLotCount ?? 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
-      return `${lotLabel} lots (${lotShares.toLocaleString('en-US')} shares)`;
-    }
-    return `${shareLabel} shares`;
-  }, [tradingPlanShareCount, tradingPlanLotCount, lotEligible]);
-
-  const tradingPlanPositionCost = useMemo(() => {
-    if (tradingPlanShareCount <= 0 || tradingPlanEntryPrice == null) return null;
-    return tradingPlanShareCount * tradingPlanEntryPrice;
-  }, [tradingPlanShareCount, tradingPlanEntryPrice]);
-
-  const tradingPlanExpectedLoss = useMemo(() => {
-    if (tradingPlanShareCount <= 0 || tradingPlanRiskPerUnit == null) return null;
-    return tradingPlanShareCount * tradingPlanRiskPerUnit;
-  }, [tradingPlanShareCount, tradingPlanRiskPerUnit]);
-
-  const tradingPlanExpectedProfit = useMemo(() => {
-    if (tradingPlanShareCount <= 0 || tradingPlanPrimaryTarget?.diff == null) return null;
-    return tradingPlanShareCount * tradingPlanPrimaryTarget.diff;
-  }, [tradingPlanShareCount, tradingPlanPrimaryTarget]);
-
-  const tradingPlanCalculatorRiskReward = useMemo(() => {
-    if (tradingPlanExpectedProfit == null || !tradingPlanExpectedLoss) return tradingPlanRiskReward.primary;
-    return tradingPlanExpectedProfit / tradingPlanExpectedLoss;
-  }, [tradingPlanExpectedProfit, tradingPlanExpectedLoss, tradingPlanRiskReward]);
 
   const quickStats = useMemo(() => {
     if (!fundamentals) return [];
@@ -1548,240 +1240,6 @@ function ElectionCyclePageContent() {
             </CardContent>
           </Card>
         )}
-      </div>
-    );
-  };
-
-  const renderTradingPlanTab = () => {
-    if (!hasTradingPlan) {
-      return (
-        <div className="rounded-xl border border-border/60 py-10 px-4 flex flex-col items-center justify-center gap-1.5 text-center">
-          <p className="text-sm font-semibold text-foreground">No Trading Plan Available</p>
-          <p className="text-xs text-muted-foreground max-w-xs">
-            A plan appears automatically once a breakout signal is detected for this symbol.
-          </p>
-        </div>
-      );
-    }
-
-    const rr = tradingPlanRiskReward.primary;
-    const rrLabel = rr != null ? `1 : ${rr.toFixed(1)}` : '—';
-    const rrTone = rr == null
-      ? 'text-muted-foreground'
-      : rr >= 2
-        ? 'text-emerald-600 dark:text-emerald-400'
-        : rr >= 1.2
-          ? 'text-amber-600 dark:text-amber-400'
-          : 'text-red-600 dark:text-red-400';
-    const perTargetRR = tradingPlanRiskReward.perTarget;
-    const firstRR = perTargetRR[0];
-    const lastRR = perTargetRR[perTargetRR.length - 1];
-    const riskPresets = [0.5, 1, 2];
-
-    return (
-      <div className="space-y-3 text-xs">
-        {/* 1. Header + Trade Quality */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 min-w-0">
-            {screeningSignalDateLabel && (
-              <span className="text-2xs text-muted-foreground/70 shrink-0">{screeningSignalDateLabel}</span>
-            )}
-          </div>
-          <Badge variant={tradingPlanQualityTier.variant} className="shrink-0">
-            {tradingPlanQualityTier.label}
-          </Badge>
-        </div>
-
-        {/* 2. Risk : Reward — the headline metric */}
-        <div className="rounded-xl border border-border/60 bg-card px-4 py-3.5 flex items-center justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-2xs uppercase tracking-wide text-muted-foreground mb-0.5">Risk : Reward</p>
-            <p className={`text-2xl font-bold leading-none ${rrTone}`}>{rrLabel}</p>
-            <p className="text-2xs text-muted-foreground mt-1.5">
-              Risk {formatPriceValue(tradingPlanRiskPerUnit)} to reach {tradingPlanPrimaryTarget?.label ?? 'target'} · {tradingPlanPrimaryTarget?.reason ?? '—'}
-            </p>
-          </div>
-          <div className="text-right shrink-0">
-            <p className="text-2xs text-muted-foreground mb-0.5">Range TP1→TP3</p>
-            <p className="text-xs font-semibold text-foreground">
-              {firstRR != null ? `1:${firstRR.toFixed(1)}` : '—'} → {lastRR != null ? `1:${lastRR.toFixed(1)}` : '—'}
-            </p>
-          </div>
-        </div>
-
-        {/* 3. Entry */}
-        <div className="rounded-xl border border-border/60 p-3 space-y-1">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold text-foreground">Entry</p>
-            <Badge className="border-transparent bg-primary/10 text-primary">
-              {tradingPlanEntryZone.type}
-            </Badge>
-          </div>
-          <div className="flex items-baseline justify-between gap-2">
-            <p className="text-base font-bold text-foreground">{formatPriceValue(tradingPlanEntryPrice)}</p>
-            <p className="text-2xs text-muted-foreground text-right">
-              Buy zone {formatPriceValue(tradingPlanEntryZone.low)}–{formatPriceValue(tradingPlanEntryZone.high)}
-            </p>
-          </div>
-          <p className="text-2xs text-muted-foreground">{tradingPlanEntryZone.reason}</p>
-        </div>
-
-        {/* 4. Stop Loss */}
-        <div className="rounded-xl border border-border/60 p-3 space-y-1">
-          <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold text-foreground">Stop Loss</p>
-            <span className="text-2xs font-semibold text-red-600 dark:text-red-400">
-              {tradingPlanStopLossPct != null ? `${tradingPlanStopLossPct.toFixed(2)}%` : '—'}
-            </span>
-          </div>
-          <p className="text-base font-bold text-red-600 dark:text-red-400">{formatPriceValue(tradingPlanStopLossPrice)}</p>
-          <p className="text-2xs text-muted-foreground">{tradingPlanStopLossReason}</p>
-        </div>
-
-        {/* 5. Take Profit Strategy */}
-        <div className="rounded-xl border border-border/60 p-3 space-y-2">
-          <p className="text-[11px] font-semibold text-foreground">Take Profit Strategy</p>
-          <div className="space-y-2">
-            {tradingPlanTargets.map((target) => (
-              <div
-                key={target.label}
-                className="flex items-start justify-between gap-3 pb-2 border-b border-border/40 last:border-b-0 last:pb-0"
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{target.label}</span>
-                    <span className="text-2xs text-muted-foreground truncate">{target.reason}</span>
-                  </div>
-                  <p className="text-2xs text-muted-foreground mt-0.5">
-                    Sell {target.sellPercent}% · {target.action}
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-xs font-semibold text-foreground">{formatPriceValue(target.price)}</p>
-                  <p className="text-2xs text-emerald-600 dark:text-emerald-400">
-                    {target.pct != null ? `+${target.pct.toFixed(1)}%` : '—'}
-                    {target.rMultiple != null ? ` · ${target.rMultiple.toFixed(1)}R` : ''}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 6. Position Size Calculator — risk-first, no manual share math */}
-        <div className="rounded-xl border border-border/60 p-3 space-y-3">
-          <p className="text-[11px] font-semibold text-foreground">Position Size Calculator</p>
-
-          <div className="grid grid-cols-2 gap-2.5">
-            <div className="space-y-1">
-              <label className="text-2xs font-medium text-muted-foreground">Account Balance</label>
-              <Input
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step="any"
-                value={tradingPlanBalanceInput}
-                onChange={(event) => setTradingPlanBalanceInput(event.target.value)}
-                className="text-xs h-8"
-                placeholder="e.g. 50,000"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-2xs font-medium text-muted-foreground">Risk %</label>
-              <Input
-                type="number"
-                inputMode="decimal"
-                min="0"
-                step="0.1"
-                value={tradingPlanRiskPercentInput}
-                onChange={(event) => setTradingPlanRiskPercentInput(event.target.value)}
-                className="text-xs h-8"
-                placeholder="1"
-              />
-            </div>
-          </div>
-
-          <SegmentedControl
-            value={String(tradingPlanRiskPercentInput)}
-            onValueChange={(value) => setTradingPlanRiskPercentInput(value)}
-            size="xs"
-            options={riskPresets.map((preset) => ({ value: String(preset), label: `${preset}%` }))}
-          />
-
-          <div className="space-y-1">
-            <label className="text-2xs font-medium text-muted-foreground">Your Entry Price</label>
-            <Input
-              type="number"
-              inputMode="decimal"
-              step="0.0001"
-              min="0"
-              value={tradingPlanEntryInput}
-              onChange={(event) => setTradingPlanEntryInput(event.target.value)}
-              className="text-xs h-8"
-              placeholder={tradingPlanPayload?.entry_price ? `Default: ${tradingPlanPayload.entry_price}` : 'e.g. 125.50'}
-            />
-          </div>
-
-          <div className="rounded-lg bg-muted/30 p-2.5 grid grid-cols-2 gap-y-2.5 gap-x-2">
-            <div>
-              <p className="text-2xs text-muted-foreground">Max Risk Amount</p>
-              <p className="text-xs font-semibold text-red-600 dark:text-red-400">{formatPlanCurrencyValue(tradingPlanMaxRiskAmount)}</p>
-            </div>
-            <div>
-              <p className="text-2xs text-muted-foreground">Position Size</p>
-              <p className="text-xs font-semibold text-foreground">{tradingPlanSizeSummary || '—'}</p>
-            </div>
-            <div>
-              <p className="text-2xs text-muted-foreground">Position Cost</p>
-              <p className="text-xs font-semibold text-foreground">{formatPlanCurrencyValue(tradingPlanPositionCost)}</p>
-            </div>
-            <div>
-              <p className="text-2xs text-muted-foreground">Risk : Reward</p>
-              <p className="text-xs font-semibold text-foreground">
-                {tradingPlanCalculatorRiskReward != null ? `1 : ${tradingPlanCalculatorRiskReward.toFixed(1)}` : '—'}
-              </p>
-            </div>
-            <div>
-              <p className="text-2xs text-muted-foreground">Expected Loss (at SL)</p>
-              <p className="text-xs font-semibold text-red-600 dark:text-red-400">
-                {formatPlanCurrencyDelta(tradingPlanExpectedLoss != null ? -tradingPlanExpectedLoss : null)}
-              </p>
-            </div>
-            <div>
-              <p className="text-2xs text-muted-foreground">Expected Profit ({tradingPlanPrimaryTarget?.label ?? 'TP'})</p>
-              <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                {formatPlanCurrencyDelta(tradingPlanExpectedProfit)}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* 7. Technical Confirmation */}
-        <div className="rounded-xl border border-border/60 p-3 space-y-2">
-          <p className="text-[11px] font-semibold text-foreground">Technical Confirmation</p>
-          <ul className="space-y-1">
-            {tradingPlanTechnicalConfirmations.map((line, index) => (
-              <li key={index} className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
-                <span className="mt-1.5 h-1 w-1 rounded-full bg-emerald-500 shrink-0" />
-                <span>{line}</span>
-              </li>
-            ))}
-          </ul>
-          <div className="grid grid-cols-3 gap-2 pt-1.5 border-t border-border/40">
-            <div>
-              <p className="text-2xs text-muted-foreground">Swing Low</p>
-              <p className="text-[11px] font-semibold">{formatPriceValue(tradingPlanBasisValues.swing)}</p>
-            </div>
-            <div>
-              <p className="text-2xs text-muted-foreground">EMA20</p>
-              <p className="text-[11px] font-semibold">{formatPriceValue(tradingPlanBasisValues.ema)}</p>
-            </div>
-            <div>
-              <p className="text-2xs text-muted-foreground">ATR(14)</p>
-              <p className="text-[11px] font-semibold">{formatPriceValue(tradingPlanBasisValues.atr)}</p>
-            </div>
-          </div>
-        </div>
       </div>
     );
   };
@@ -2769,250 +2227,6 @@ function ElectionCyclePageContent() {
     );
   };
 
-  const renderSeasonalityTab = () => {
-    if (quarterlyHeatmap.rows.length === 0 && monthlyHeatmap.rows.length === 0) {
-      return (
-        <Card>
-          <CardContent className="text-xs text-muted-foreground py-6 text-center">
-            Seasonality data unavailable for {symbol}.
-          </CardContent>
-        </Card>
-      );
-    }
-
-    // Compute summary stats
-    const qAvgs = [1, 2, 3, 4]
-      .map((q) => quarterlyHeatmap.average?.[`Q${q}`])
-      .filter((v) => typeof v === 'number' && !isNaN(v));
-    const mAvgs = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
-      .map((m) => monthlyHeatmap.average?.[`M${m}`])
-      .filter((v) => typeof v === 'number' && !isNaN(v));
-    const bestQIdx = qAvgs.length ? qAvgs.indexOf(Math.max(...qAvgs)) : -1;
-    const worstQIdx = qAvgs.length ? qAvgs.indexOf(Math.min(...qAvgs)) : -1;
-    const bestQ = bestQIdx >= 0 ? qAvgs[bestQIdx] : null;
-    const worstQ = worstQIdx >= 0 ? qAvgs[worstQIdx] : null;
-    const qWinRate = qAvgs.length ? Math.round((qAvgs.filter((v) => v > 0).length / qAvgs.length) * 100) : null;
-    const bestMIdx = mAvgs.length ? mAvgs.indexOf(Math.max(...mAvgs)) : -1;
-    const worstMIdx = mAvgs.length ? mAvgs.indexOf(Math.min(...mAvgs)) : -1;
-    const bestM = bestMIdx >= 0 ? mAvgs[bestMIdx] : null;
-    const worstM = worstMIdx >= 0 ? mAvgs[worstMIdx] : null;
-    const mWinRate = mAvgs.length ? Math.round((mAvgs.filter((v) => v > 0).length / mAvgs.length) * 100) : null;
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const qNames = ['Q1', 'Q2', 'Q3', 'Q4'];
-
-    return (
-      <div className="space-y-3">
-        {/* Stats header */}
-        {(bestQ != null || bestM != null) && (
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-xl bg-muted/40 px-3 py-2.5 text-center border border-border/20">
-              <p className="text-3xs uppercase tracking-wide text-muted-foreground font-medium mb-1">Best Avg</p>
-              <p className="text-xs font-bold text-emerald-500">
-                {bestQ != null ? `${bestQ >= 0 ? '+' : ''}${bestQ.toFixed(1)}%` : '—'}
-              </p>
-              <p className="text-3xs text-muted-foreground mt-0.5">{bestQIdx >= 0 ? qNames[bestQIdx] : ''}</p>
-            </div>
-            <div className="rounded-xl bg-muted/40 px-3 py-2.5 text-center border border-border/20">
-              <p className="text-3xs uppercase tracking-wide text-muted-foreground font-medium mb-1">Worst Avg</p>
-              <p className={`text-xs font-bold ${worstQ != null && worstQ < 0 ? 'text-red-500' : 'text-emerald-500'}`}>
-                {worstQ != null ? `${worstQ >= 0 ? '+' : ''}${worstQ.toFixed(1)}%` : '—'}
-              </p>
-              <p className="text-3xs text-muted-foreground mt-0.5">{worstQIdx >= 0 ? qNames[worstQIdx] : ''}</p>
-            </div>
-            <div className="rounded-xl bg-muted/40 px-3 py-2.5 text-center border border-border/20">
-              <p className="text-3xs uppercase tracking-wide text-muted-foreground font-medium mb-1">Q Win Rate</p>
-              <p className={`text-xs font-bold ${qWinRate != null && qWinRate >= 50 ? 'text-emerald-500' : 'text-red-500'}`}>
-                {qWinRate != null ? `${qWinRate}%` : '—'}
-              </p>
-              <p className="text-3xs text-muted-foreground mt-0.5">{qAvgs.filter((v) => v > 0).length}/{qAvgs.length} pos</p>
-            </div>
-          </div>
-        )}
-        {mAvgs.length > 0 && (
-          <div className="grid grid-cols-3 gap-2">
-            <div className="rounded-xl bg-muted/40 px-3 py-2.5 text-center border border-border/20">
-              <p className="text-3xs uppercase tracking-wide text-muted-foreground font-medium mb-1">Best Month</p>
-              <p className="text-xs font-bold text-emerald-500">
-                {bestM != null ? `${bestM >= 0 ? '+' : ''}${bestM.toFixed(1)}%` : '—'}
-              </p>
-              <p className="text-3xs text-muted-foreground mt-0.5">{bestMIdx >= 0 ? monthNames[bestMIdx] : ''}</p>
-            </div>
-            <div className="rounded-xl bg-muted/40 px-3 py-2.5 text-center border border-border/20">
-              <p className="text-3xs uppercase tracking-wide text-muted-foreground font-medium mb-1">Worst Month</p>
-              <p className={`text-xs font-bold ${worstM != null && worstM < 0 ? 'text-red-500' : 'text-emerald-500'}`}>
-                {worstM != null ? `${worstM >= 0 ? '+' : ''}${worstM.toFixed(1)}%` : '—'}
-              </p>
-              <p className="text-3xs text-muted-foreground mt-0.5">{worstMIdx >= 0 ? monthNames[worstMIdx] : ''}</p>
-            </div>
-            <div className="rounded-xl bg-muted/40 px-3 py-2.5 text-center border border-border/20">
-              <p className="text-3xs uppercase tracking-wide text-muted-foreground font-medium mb-1">M Win Rate</p>
-              <p className={`text-xs font-bold ${mWinRate != null && mWinRate >= 50 ? 'text-emerald-500' : 'text-red-500'}`}>
-                {mWinRate != null ? `${mWinRate}%` : '—'}
-              </p>
-              <p className="text-3xs text-muted-foreground mt-0.5">{mAvgs.filter((v) => v > 0).length}/{mAvgs.length} pos</p>
-            </div>
-          </div>
-        )}
-
-        <Accordion type="multiple" defaultValue={['quarterly', 'monthly']}>
-          <AccordionItem value="quarterly" className="border-b-0">
-            <AccordionTrigger className="py-3 text-sm font-semibold hover:no-underline">
-              Quarterly Returns
-            </AccordionTrigger>
-            <AccordionContent className="pb-4">
-              <div className="overflow-x-auto -mx-4 px-4">
-                <table className="w-full text-2xs">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2 px-1 font-medium sticky left-0 bg-background">Year</th>
-                      {['Q1', 'Q2', 'Q3', 'Q4'].map((quarter, idx) => (
-                        <th key={idx} className="text-center py-2 px-2 font-medium">{quarter}</th>
-                      ))}
-                      <th className="text-center py-2 px-2 font-medium">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b-2 font-semibold bg-muted/50">
-                      <td className="py-2 px-1 sticky left-0 bg-muted/50">Avg.</td>
-                      {[1, 2, 3, 4].map((quarter) => {
-                        const value = quarterlyHeatmap.average[`Q${quarter}`];
-                        return (
-                          <td key={quarter} className="text-center py-2 px-2 transition-colors font-bold" style={getReturnCellStyle(value)}>
-                            {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
-                          </td>
-                        );
-                      })}
-                      {(() => {
-                        const value = quarterlyHeatmap.average?.Total;
-                        return (
-                          <td className="text-center py-2 px-2 transition-colors font-bold" style={getReturnCellStyle(value)}>
-                            {value !== null && value !== undefined ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
-                          </td>
-                        );
-                      })()}
-                    </tr>
-                    {quarterlyHeatmap.rows.map((row, idx) => (
-                      <tr key={idx}>
-                        <td className="py-2 px-1 font-medium sticky left-0 bg-background">{row.year}</td>
-                        {[1, 2, 3, 4].map((quarter) => {
-                          const value = row[`Q${quarter}`];
-                          return (
-                            <td key={quarter} className="text-center py-2 px-2 transition-colors" style={getReturnCellStyle(value)}>
-                              {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
-                            </td>
-                          );
-                        })}
-                        <td className="text-center py-2 px-2 transition-colors font-bold" style={getReturnCellStyle(row.Total)}>
-                          {row.Total !== null && row.Total !== undefined ? `${row.Total >= 0 ? '+' : ''}${row.Total.toFixed(1)}%` : '-'}
-                        </td>
-                      </tr>
-                    ))}
-                    <tr className="border-t-2 font-semibold bg-muted/50">
-                      <td className="py-2 px-1 sticky left-0 bg-muted/50">Prob.</td>
-                      {[1, 2, 3, 4].map((quarter) => {
-                        const value = quarterlyHeatmap.winRate?.[`Q${quarter}`];
-                        return (
-                          <td key={quarter} className="text-center py-2 px-2 transition-colors font-bold" style={getWinRateCellStyle(value)}>
-                            {value !== null && value !== undefined ? `${value.toFixed(0)}%` : '-'}
-                          </td>
-                        );
-                      })}
-                      {(() => {
-                        const value = quarterlyHeatmap.winRate?.Total;
-                        return (
-                          <td className="text-center py-2 px-2 transition-colors font-bold" style={getWinRateCellStyle(value)}>
-                            {value !== null && value !== undefined ? `${value.toFixed(0)}%` : '-'}
-                          </td>
-                        );
-                      })()}
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="monthly" className="border-b-0">
-            <AccordionTrigger className="py-3 text-sm font-semibold hover:no-underline">
-              Monthly Returns
-            </AccordionTrigger>
-            <AccordionContent className="pb-4">
-              <div className="overflow-x-auto">
-                <table className="w-full text-3xs">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2 px-1 font-medium sticky left-0 bg-background">Year</th>
-                      {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map((month, idx) => (
-                        <th key={idx} className="text-center py-2 px-1 font-medium">{month}</th>
-                      ))}
-                      <th className="text-center py-2 px-1 font-medium">Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr className="border-b-2 font-semibold bg-muted/50">
-                      <td className="py-2 px-1 sticky left-0 bg-muted/50">Avg.</td>
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((month) => {
-                        const value = monthlyHeatmap.average[`M${month}`];
-                        return (
-                          <td key={month} className="text-center py-2 px-1 transition-colors font-bold" style={getReturnCellStyle(value)}>
-                            {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
-                          </td>
-                        );
-                      })}
-                      {(() => {
-                        const value = monthlyHeatmap.average?.Total;
-                        return (
-                          <td className="text-center py-2 px-1 transition-colors font-bold" style={getReturnCellStyle(value)}>
-                            {value !== null && value !== undefined ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
-                          </td>
-                        );
-                      })()}
-                    </tr>
-                    {monthlyHeatmap.rows.map((row, idx) => (
-                      <tr key={idx}>
-                        <td className="py-2 px-1 font-medium sticky left-0 bg-background">{row.year}</td>
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((month) => {
-                          const value = row[`M${month}`];
-                          return (
-                            <td key={month} className="text-center py-2 px-1 transition-colors" style={getReturnCellStyle(value)}>
-                              {value !== null ? `${value >= 0 ? '+' : ''}${value.toFixed(1)}%` : '-'}
-                            </td>
-                          );
-                        })}
-                        <td className="text-center py-2 px-1 transition-colors font-bold" style={getReturnCellStyle(row.Total)}>
-                          {row.Total !== null && row.Total !== undefined ? `${row.Total >= 0 ? '+' : ''}${row.Total.toFixed(1)}%` : '-'}
-                        </td>
-                      </tr>
-                    ))}
-                    <tr className="border-t-2 font-semibold bg-muted/50">
-                      <td className="py-2 px-1 sticky left-0 bg-muted/50">Prob.</td>
-                      {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((month) => {
-                        const value = monthlyHeatmap.winRate?.[`M${month}`];
-                        return (
-                          <td key={month} className="text-center py-2 px-1 transition-colors font-bold" style={getWinRateCellStyle(value)}>
-                            {value !== null && value !== undefined ? `${value.toFixed(0)}%` : '-'}
-                          </td>
-                        );
-                      })}
-                      {(() => {
-                        const value = monthlyHeatmap.winRate?.Total;
-                        return (
-                          <td className="text-center py-2 px-1 transition-colors font-bold" style={getWinRateCellStyle(value)}>
-                            {value !== null && value !== undefined ? `${value.toFixed(0)}%` : '-'}
-                          </td>
-                        );
-                      })()}
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      </div>
-    );
-  };
-
   return (
     <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start pb-8">
       <ChartHeaderBar
@@ -3467,12 +2681,27 @@ function ElectionCyclePageContent() {
                   ))}
                 </div>
                 <div>
-                  {infoTab === 'trading-plan' && renderTradingPlanTab()}
+                  {infoTab === 'trading-plan' && (
+                    <ChartTradingPlanPanel
+                      payload={tradingPlanPayload}
+                      dateLabel={screeningSignalDateLabel}
+                      lotEligible={lotEligible}
+                      currencyCode={currencyCode}
+                      formatPriceValue={formatPriceValue}
+                      formatDetailedCurrency={formatDetailedCurrency}
+                    />
+                  )}
                   {infoTab === 'profile' && renderProfileTab()}
                   {infoTab === 'keystats' && renderKeyStatsTab()}
                   {infoTab === 'analysis' && renderAnalysisTab()}
                   {infoTab === 'financials' && renderFinancialsTab()}
-                  {infoTab === 'seasonality' && renderSeasonalityTab()}
+                  {infoTab === 'seasonality' && (
+                    <ChartSeasonalityPanel
+                      quarterlyHeatmap={quarterlyHeatmap}
+                      monthlyHeatmap={monthlyHeatmap}
+                      symbol={symbol}
+                    />
+                  )}
                 </div>
               </div>
             )}
