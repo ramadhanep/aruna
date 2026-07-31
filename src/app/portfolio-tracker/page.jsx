@@ -544,9 +544,7 @@ export default function PortfolioTrackerPage() {
               </div>
               <div className="mt-5">
                 {portfolioMiniLoading ? (
-                  <div className="flex items-center justify-center w-[92px] h-[44px]">
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  </div>
+                  <Skeleton className="w-[92px] h-[44px] rounded-md" />
                 ) : (
                   <PortfolioMiniChart
                     data={portfolioMiniSeries}

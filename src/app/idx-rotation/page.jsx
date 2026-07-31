@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
-import { Loader2, ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import { ArunaWatermark } from "@/components/aruna-watermark";
 import { fetchEncodedJson } from "@/lib/api-client";
+import { ScatterSkeleton } from "@/components/scatter-skeleton";
 
 const QUADRANT_COLORS = {
   leading: { bg: '#10b981', text: 'text-emerald-400', label: 'Leading' },
@@ -145,8 +146,8 @@ export default function IdxRotationPage() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 w-screen h-screen overflow-hidden flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-white/50" />
+      <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-[#09090b] flex items-center justify-center">
+        <ScatterSkeleton />
       </div>
     );
   }

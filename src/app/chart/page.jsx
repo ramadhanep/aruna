@@ -3247,9 +3247,8 @@ function ElectionCyclePageContent() {
               <CardContent className={isNormalView ? "px-0 pb-0 overflow-hidden" : "px-0 pb-0 -mr-4 lg:mr-0"}>
                 {isNormalView ? (
                   normalSeriesLoading ? (
-                    <div className="flex h-[380px] lg:h-[500px] items-center justify-center gap-2 text-xs text-muted-foreground">
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                      Loading {normalTimeframeLabel} candles…
+                    <div className="h-[380px] lg:h-[500px]">
+                      <Skeleton className="w-full h-full rounded-xl" />
                     </div>
                   ) : filteredNormalChartData.length > 0 ? (
                     <>

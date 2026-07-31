@@ -2,10 +2,11 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
-import { Loader2, ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import { ArunaWatermark } from "./aruna-watermark";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { getIdxLogoUrl } from "@/lib/supabase-storage";
+import { ScatterSkeleton } from "./scatter-skeleton";
 
 export function MarketBubbles({ fullScreen = false }) {
   const [stocks, setStocks] = useState([]);
@@ -376,8 +377,8 @@ export function MarketBubbles({ fullScreen = false }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
-        <Loader2 className="w-8 h-8 animate-spin text-white/50" />
+      <div className="flex items-center justify-center h-screen bg-[#09090b]">
+        <ScatterSkeleton />
       </div>
     );
   }

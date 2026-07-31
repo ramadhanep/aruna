@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Loader2,
   Send,
@@ -300,8 +301,29 @@ export default function DiscussionPage() {
   // Show loading while checking auth, but keep the discussion experience available for trial users.
   if (authLoading) {
     return (
-      <div className="fixed inset-0 w-screen h-screen overflow-hidden flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      <div
+        className="fixed inset-0 w-screen flex justify-center bg-background"
+        style={{ height: '100dvh' }}
+      >
+        <div className="w-full max-w-3xl flex flex-col h-full lg:border-x border-border/30 bg-background">
+          <div className="flex-shrink-0 flex items-center justify-between px-3 py-3 bg-card border-b border-border">
+            <Skeleton className="h-8 w-8 rounded-xl" />
+            <Skeleton className="h-4 w-24" />
+            <div className="w-8" />
+          </div>
+          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className={`flex ${i % 2 ? 'justify-end' : 'justify-start'}`}>
+                <Skeleton
+                  className={`h-10 w-3/5 rounded-3xl ${i % 2 ? 'rounded-br-lg' : 'rounded-bl-lg'}`}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="border-t border-border/30 p-3">
+            <Skeleton className="h-10 w-full rounded-3xl" />
+          </div>
+        </div>
       </div>
     );
   }
