@@ -13,6 +13,7 @@ import { useAuth } from "@/components/auth-provider";
 import { useTrial } from "@/components/trial-provider";
 import { TrialBanner } from "@/components/trial-banner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { MOTION } from "@/lib/motion";
 
 const PUBLIC_ROUTES = new Set(["/", "/signin", "/offline", "/pricing", "/explore"]);
 
@@ -128,7 +129,10 @@ export function AppLayoutClient({ children }) {
         
         <main className={`flex-1 ${hideDefaultMobileChrome ? "pb-0" : "pb-nav-safe"} lg:pb-8 relative z-0 w-full ${isLandingPage ? "" : "flex justify-center"}`}>
           <div className={isLandingPage ? "w-full" : "p-4 w-full max-w-[768px] lg:max-w-[1400px] lg:px-6"}>
-            {mainContent}
+            {/* Keyed by pathname so only the content fades between routes; the shell stays stable. */}
+            <div key={pathname} className={MOTION.fadeIn}>
+              {mainContent}
+            </div>
           </div>
         </main>
         

@@ -15,6 +15,7 @@ import { searchSymbols, fetchLatestQuote } from '@/lib/api-client';
 import { TickerAvatar } from '@/components/ticker-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatTickerDisplay, formatIDR, formatByCurrency, getChangeTone } from '@/lib/utils';
+import { MOTION } from '@/lib/motion';
 import { GoogleGlyph } from '@/components/google-glyph';
 import { loadPortfolio, savePortfolio } from '@/lib/portfolio-storage';
 import { computeHoldingsMetrics, sortHoldings, computePortfolioSummary, computeDigitalAllocation, computeCashTypeAllocation, formatValue } from '@/lib/portfolio-metrics';
@@ -447,7 +448,7 @@ export default function PortfolioTrackerPage() {
   return (
     <div
       ref={containerRef}
-      className={`flex flex-col gap-4 ${isMobile ? 'pb-28' : 'lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start'}`}
+      className={`flex flex-col gap-4 ${MOTION.fadeIn} ${isMobile ? 'pb-28' : 'lg:grid lg:grid-cols-12 lg:gap-6 lg:items-start'}`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

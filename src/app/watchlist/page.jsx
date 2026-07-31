@@ -15,6 +15,7 @@ import { TickerRow } from "@/components/ticker-row";
 import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist";
 import { TrendingMarquee } from "@/components/trending-marquee";
 import { formatTickerDisplay } from "@/lib/utils";
+import { MOTION } from "@/lib/motion";
 import { useTrial } from "@/components/trial-provider";
 
 function areWatchlistsEqual(a = [], b = []) {
@@ -321,7 +322,7 @@ export default function HomePage() {
   return (
     <div
       ref={containerRef}
-      className="flex flex-col lg:grid lg:grid-cols-12 lg:content-start gap-4 pb-12"
+      className={`flex flex-col lg:grid lg:grid-cols-12 lg:content-start gap-4 pb-12 ${MOTION.fadeIn}`}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}

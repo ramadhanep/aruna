@@ -38,6 +38,7 @@ import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist"
 import { ArunaWatermark } from "@/components/aruna-watermark";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { formatTickerDisplay, getChangeTone } from "@/lib/utils";
+import { MOTION } from "@/lib/motion";
 import { ChartHeaderBar } from "@/components/chart-header-bar";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { AnalystGaugeChart } from "@/components/analyst-gauge-chart";
@@ -2277,7 +2278,7 @@ function ElectionCyclePageContent() {
 
         {showChartSection && (
           <>
-            <Card className="bg-transparent border-none rounded-none">
+            <Card className={`bg-transparent border-none rounded-none ${MOTION.fadeIn}`}>
               <CardHeader>
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex flex-col gap-2">
@@ -2594,7 +2595,7 @@ function ElectionCyclePageContent() {
         )}
 
         {showChartSection && (
-          <div className="space-y-4 mt-6 lg:mt-0">
+          <div className={`space-y-4 mt-6 lg:mt-0 ${MOTION.fadeIn}`}>
             {hasPortfolioPosition && (
               <Card className="overflow-hidden border border-border/20">
                 <div
@@ -2669,11 +2670,13 @@ function ElectionCyclePageContent() {
 
             {(fundamentalsLoading || fundamentals || cycleSummary || quarterlyHeatmap.rows.length > 0 || monthlyHeatmap.rows.length > 0) && (
               <div className="space-y-4">
-                <div className="flex gap-2 border-b border-border/30 text-1xs overflow-x-auto whitespace-nowrap flex-nowrap pb-1 hide-scrollbar">
+                <div role="tablist" className="flex gap-2 border-b border-border/30 text-1xs overflow-x-auto whitespace-nowrap flex-nowrap pb-1 hide-scrollbar">
                   {infoTabs.map((tab) => (
                     <button
                       key={tab.value}
                       type="button"
+                      role="tab"
+                      aria-selected={infoTab === tab.value}
                       className={`flex-shrink-0 px-2 py-2 uppercase font-semibold transition-colors ${infoTab === tab.value
                         ? 'text-emerald-700 dark:text-emerald-400 border-b-2 border-emerald-700 dark:border-emerald-400'
                         : 'text-muted-foreground'
