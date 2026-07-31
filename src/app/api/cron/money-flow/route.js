@@ -38,7 +38,10 @@ const TIMEFRAMES = [
 ];
 
 async function fetchStockbitChart(symbol, headers) {
-  const chartRes = await fetch(buildChartUrl(symbol), { headers });
+  const chartRes = await fetch(buildChartUrl(symbol), {
+    headers,
+    signal: AbortSignal.timeout(20000),
+  });
   if (!chartRes.ok) throw new Error(`Chart fetch failed for ${symbol}`);
   return chartRes.json();
 }
@@ -46,8 +49,14 @@ async function fetchStockbitChart(symbol, headers) {
 async function fetchStockbitMarketDetector(symbol, headers, days) {
   const { from, to } = getStockbitDateRange(days);
   const [netRes, grossRes] = await Promise.all([
-    fetch(buildMarketDetectorUrl(symbol, from, to, "TRANSACTION_TYPE_NET"), { headers }),
-    fetch(buildMarketDetectorUrl(symbol, from, to, "TRANSACTION_TYPE_GROSS"), { headers }),
+    fetch(buildMarketDetectorUrl(symbol, from, to, "TRANSACTION_TYPE_NET"), {
+      headers,
+      signal: AbortSignal.timeout(20000),
+    }),
+    fetch(buildMarketDetectorUrl(symbol, from, to, "TRANSACTION_TYPE_GROSS"), {
+      headers,
+      signal: AbortSignal.timeout(20000),
+    }),
   ]);
   if (!netRes.ok || !grossRes.ok) {
     throw new Error(`Stockbit MD failed (${symbol}): net=${netRes.status}, gross=${grossRes.status}`);
@@ -85,7 +94,10 @@ async function fetchScreenerUniverse(headers, templateId) {
   };
 
   while (page <= totalPages && page <= 20) {
-    const response = await fetch(buildScreenerTemplateUrl(templateId, page), { headers });
+    const response = await fetch(buildScreenerTemplateUrl(templateId, page), {
+      headers,
+      signal: AbortSignal.timeout(20000),
+    });
     if (!response.ok) {
       throw new Error(`Screener API failed on page ${page} with status ${response.status}`);
     }
@@ -158,10 +170,6 @@ export async function GET(request) {
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-  // Truncate previous data
-  await supabase.from("money_flow_reports").delete().neq("id", 0);
-  await supabase.from("weekly_reports").delete().neq("id", 0);
-
   const reportDate = getISODate(new Date());
 
   const failures = [];
@@ -197,6 +205,17 @@ export async function GET(request) {
 
   if (!reports.length) {
     return buildErrorResponse("Failed to generate money-flow reports", 502);
+  }
+
+  // Truncate previous data only after the full fetch succeeded — a partial or
+  // failed run must never leave the tables empty.
+  const { error: deleteError } = await supabase
+    .from("money_flow_reports")
+    .delete()
+    .neq("id", 0);
+  if (deleteError) {
+    console.error("Failed to clear money_flow_reports", deleteError);
+    return buildErrorResponse("Failed to clear previous money-flow reports", 500);
   }
 
   const rows = reports.map((report) => ({
@@ -270,6 +289,18 @@ export async function GET(request) {
     console.error("Failed to upsert weekly_reports", weeklyError);
     return buildErrorResponse("Reports stored but weekly picks failed", 500);
   }
+
+  console.log(
+    JSON.stringify({
+      level: "info",
+      source: "money-flow-cron",
+      report_date: reportDate,
+      processed_symbols: screenerUniverse.symbols.length,
+      success_count: rows.length,
+      failed_count: failures.length,
+      top_picks_count: topPicks.length,
+    })
+  );
 
   return NextResponse.json({
     success: true,
