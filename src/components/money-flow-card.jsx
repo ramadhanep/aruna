@@ -7,7 +7,7 @@ import { AccordionItem, AccordionTrigger, AccordionContent } from "@/components/
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { Badge } from "@/components/ui/badge";
-import { formatCompactNumber, formatPercent, formatPrice, formatTickerDisplay } from "@/lib/utils";
+import { formatCompactNumber, formatPercent, formatPrice, formatTickerDisplay, getChangeTone } from "@/lib/utils";
 
 const signalStyles = {
   "Strong Accumulation": "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
@@ -160,7 +160,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
               </div>
               <div className="space-y-0.5">
                 <p className="text-2xs text-muted-foreground dark:text-white/50 uppercase tracking-wide">{changeLabel}</p>
-                <p className={`text-sm font-semibold flex items-center gap-1 ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
+                <p className={`text-sm font-semibold flex items-center gap-1 ${getChangeTone(isPositive ? 1 : -1)}`}>
                   {changeFormatted}
                 </p>
               </div>
@@ -274,7 +274,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
               <div className="grid grid-cols-3 gap-2 text-[11px]">
                 <div className="rounded-lg px-2 py-1.5">
                   <p className="text-muted-foreground">Price vs MA20</p>
-                  <p className={`font-semibold ${Number(screenerSnapshot?.derived?.price_vs_ma20_pct || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
+                  <p className={`font-semibold ${getChangeTone(Number(screenerSnapshot?.derived?.price_vs_ma20_pct || 0))}`}>
                     {formatPercent(screenerSnapshot?.derived?.price_vs_ma20_pct, { fractionDigits: 2, nullAsZero: true })}
                   </p>
                 </div>
@@ -284,7 +284,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                 </div>
                 <div className="rounded-lg px-2 py-1.5">
                   <p className="text-muted-foreground">Bandar Delta</p>
-                  <p className={`font-semibold ${Number(screenerSnapshot?.derived?.bandar_delta || 0) >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
+                  <p className={`font-semibold ${getChangeTone(Number(screenerSnapshot?.derived?.bandar_delta || 0))}`}>
                     {formatCompactNumber(screenerSnapshot?.derived?.bandar_delta)}
                   </p>
                 </div>

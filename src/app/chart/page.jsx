@@ -45,8 +45,9 @@ import { Badge } from "@/components/ui/badge";
 import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist";
 import { ArunaWatermark } from "@/components/aruna-watermark";
 import { TickerAvatar } from "@/components/ticker-avatar";
-import { formatTickerDisplay } from "@/lib/utils";
+import { formatTickerDisplay, getChangeTone } from "@/lib/utils";
 import { ChartHeaderBar } from "@/components/chart-header-bar";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1700,20 +1701,12 @@ function ElectionCyclePageContent() {
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
-            {riskPresets.map((preset) => (
-              <Button
-                key={preset}
-                type="button"
-                size="xs"
-                variant={Number(tradingPlanRiskPercentInput) === preset ? 'default' : 'ghost'}
-                className={`px-2 py-0.5 text-2xs rounded-full ${Number(tradingPlanRiskPercentInput) === preset ? 'shadow-sm' : ''}`}
-                onClick={() => setTradingPlanRiskPercentInput(String(preset))}
-              >
-                {preset}%
-              </Button>
-            ))}
-          </div>
+          <SegmentedControl
+            value={String(tradingPlanRiskPercentInput)}
+            onValueChange={(value) => setTradingPlanRiskPercentInput(value)}
+            size="xs"
+            options={riskPresets.map((preset) => ({ value: String(preset), label: `${preset}%` }))}
+          />
 
           <div className="space-y-1">
             <label className="text-2xs font-medium text-muted-foreground">Your Entry Price</label>
@@ -2021,25 +2014,16 @@ function ElectionCyclePageContent() {
                           </p>
                         )}
                       </div>
-                      <div className="inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5">
-                        {[
+                      <SegmentedControl
+                        value={revenuePeriod}
+                        onValueChange={setRevenuePeriod}
+                        size="sm"
+                        shell
+                        options={[
                           { value: 'annual', label: 'Annual', disabled: !hasAnnualRevenue },
-                          { value: 'quarterly', label: 'Quarterly', disabled: false },
-                        ].map((option) => (
-                          <Button
-                            key={option.value}
-                            type="button"
-                            size="xs"
-                            variant={revenuePeriod === option.value ? 'default' : 'ghost'}
-                            className={`px-2 py-1 text-xs rounded-full ${revenuePeriod === option.value ? 'shadow-sm' : ''
-                              }`}
-                            onClick={() => setRevenuePeriod(option.value)}
-                            disabled={option.disabled}
-                          >
-                            {option.label}
-                          </Button>
-                        ))}
-                      </div>
+                          { value: 'quarterly', label: 'Quarterly' },
+                        ]}
+                      />
                     </div>
                   </CardHeader>
                   <CardContent className="h-[260px]">
@@ -2622,7 +2606,7 @@ function ElectionCyclePageContent() {
                   ].filter(item => item.value != null).map((item) => (
                     <div key={item.label} className="space-y-0.5">
                       <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
-                      <dd className={`text-xs font-semibold ${item.value >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500'}`}>
+                      <dd className={`text-xs font-semibold ${getChangeTone(item.value)}`}>
                         {formatPct(item.value)}
                       </dd>
                     </div>

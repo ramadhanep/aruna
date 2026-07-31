@@ -4,14 +4,14 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { TickerAvatar } from "./ticker-avatar";
 import { fetchEncodedJson } from "@/lib/api-client";
-import { formatTickerDisplay } from "@/lib/utils";
+import { formatTickerDisplay, getChangeTone } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function TrendingItem({ symbol, quote }) {
   if (!quote) return null;
 
   const isPositive = (quote.change ?? 0) >= 0;
-  const color = isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-red-500 dark:text-red-400";
+  const color = getChangeTone(quote.change ?? 0);
   const formattedPrice = typeof quote.price === "number"
     ? quote.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
     : "-";

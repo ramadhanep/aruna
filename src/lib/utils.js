@@ -143,3 +143,9 @@ export function formatByCurrency(code, amount) {
   if (code === 'SGD') return formatSGD(amount);
   return formatUSD(amount);
 }
+
+export function getChangeTone(value) {
+  return value >= 0
+    ? 'text-emerald-600 dark:text-emerald-400'
+    : 'text-red-500 dark:text-red-400';
+}

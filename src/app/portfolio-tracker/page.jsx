@@ -14,7 +14,7 @@ import { useAuth } from '@/components/auth-provider';
 import { searchSymbols, fetchLatestQuote } from '@/lib/api-client';
 import { TickerAvatar } from '@/components/ticker-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatTickerDisplay, formatIDR, formatByCurrency } from '@/lib/utils';
+import { formatTickerDisplay, formatIDR, formatByCurrency, getChangeTone } from '@/lib/utils';
 import { GoogleGlyph } from '@/components/google-glyph';
 import { loadPortfolio, savePortfolio } from '@/lib/portfolio-storage';
 import { computeHoldingsMetrics, sortHoldings, computePortfolioSummary, computeDigitalAllocation, computeCashTypeAllocation, formatValue } from '@/lib/portfolio-metrics';
@@ -380,7 +380,7 @@ export default function PortfolioTrackerPage() {
   (isPortfolioHidden
     ? { primary: hiddenPrimaryToken, secondary: hiddenSecondaryToken, tertiary: hiddenSecondaryToken }
     : formatValue(usdAmount, currency, idrPerUsd, sgdPerUsd));
-  const getPnLColor = (value) => (isPortfolioHidden ? 'text-muted-foreground' : value >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-500 dark:text-red-400');
+  const getPnLColor = (value) => (isPortfolioHidden ? 'text-muted-foreground' : getChangeTone(value));
   const totalNetWorthDisplay = getDisplayValue(totalNetWorth);
   const totalPnLDisplay = getDisplayValue(totalPnL);
   const digitalMarketDisplay = getDisplayValue(digitalMarket);
