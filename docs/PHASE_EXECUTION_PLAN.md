@@ -464,6 +464,16 @@ task 5 and phase close; build at phase boundary.
 3. `feat(ui): redesign responsive mobile bottom navigation`
 4. `style(ui): consolidate spacing and restrained visual tokens`
 
+**Executed as planned, with scope corrections:**
+
+- UI-11 shrunk to two loading branches (chart normal-series, portfolio
+  mini-chart) — the chart main skeleton and mini-chart no-data placeholder
+  already existed from P2/P3.
+- UI-1's discussion case was the `authLoading` gate; fixed as a message-shell
+  skeleton (trial users skip it).
+- UI-2 deferred to Phase 6; UI-3/UI-4/UI-6 were already resolved in Phase 0.
+- `max-w-[900px]` full-bleed chart wrapper kept as intentional behaviour.
+
 ## Phase 6 — Remaining componentization
 
 **Execution order and atomic tasks**

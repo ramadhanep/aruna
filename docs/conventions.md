@@ -84,6 +84,21 @@ Portfolio persistence is centralized in `src/lib/portfolio-storage.js`. Legacy k
 - No CSS modules — Tailwind only.
 - `!important` overrides for third-party widget styling (e.g., `#tv-attr-logo`).
 
+## Design Tokens and Motion
+
+- Tiny type scale: `text-2xs` (10px) and `text-3xs` (9px) theme tokens replace
+  `text-[10px]`/`text-[9px]` — use them for dense metadata; don't introduce new
+  arbitrary font sizes.
+- `src/lib/motion.js` is the single timing policy. Custom (non-Radix) surfaces
+  use `DURATION_CLASS` (`fast`/`base`/`slow`) for transition durations; never
+  hardcode new `duration-*` values. Radix primitives animate via `data-state`
+  and must not be double-animated.
+- Loading states reserve the final layout: shape-matched `Skeleton` blocks or
+  `ScatterSkeleton` (full-screen dot-field for the two visualization tools).
+  Avoid whole-screen/centered `Loader2` as an initial state.
+- Repeated page-local dimensions get a named constant (e.g. `CHART_HEIGHT_CLASS`,
+  `CURRENCY_SELECT_WIDTH`) rather than repeated literals.
+
 ## File Naming
 
 | Type | Convention |

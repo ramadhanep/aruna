@@ -39,7 +39,7 @@ RootLayout (src/app/layout.jsx)
 ### Mobile (< 1024px)
 
 - **Header**: Account menu (left), logo (center), symbol search (right).
-- **Bottom Nav**: 4 icons — Watchlist, Supercharts, Explore, Portfolio. Auto-minimizes on scroll down.
+- **Bottom Nav**: 4 labeled tabs (Watchlist, Supercharts, Explore, Portfolio) in a content-width card (`w-max`, `rounded-xl`, active item `rounded-md`) with `bottom-safe` and visible text captions. Auto-minimizes on scroll down.
 - **Back Header**: Shown on certain tool pages (idx-momentum, msci).
 
 ## Page Layout
@@ -106,6 +106,25 @@ Backdrop blur utility classes defined as custom CSS.
   animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
 ```
+
+### Loading
+
+Loading states reserve the final layout instead of showing centered spinners:
+
+- Layout-matched `Skeleton` blocks for rows/cards/charts (see `ui/skeleton.jsx`).
+- `ScatterSkeleton` (`components/scatter-skeleton.jsx`) for the two full-screen
+  visualization tools (market bubbles, idx rotation) — a muted dot-field on the
+  tool's dark canvas colour.
+- Whole-screen/centered `Loader2` is reserved for user-initiated actions, never
+  initial load.
+
+### Motion
+
+`src/lib/motion.js` is the single timing policy (`DURATION`/`EASE`/`MOTION`,
+plus `DURATION_CLASS` for class-based durations). Custom navigation, sidebar and
+data-replacement surfaces apply `DURATION_CLASS.fast|base|slow`. Radix
+primitives (dialog, sheet, select, dropdown, tooltip) animate via `data-state`
+and are not double-animated.
 
 ## Safe-Area Support (PWA)
 

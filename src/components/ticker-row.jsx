@@ -38,7 +38,7 @@ export function TickerRow({
           <div className="font-semibold text-sm truncate flex items-center gap-1.5">
             <span>{formatTickerDisplay(symbol)}</span>
             {isNew ? (
-              <span className="text-[9px] font-bold tracking-wide text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-500/15 px-1.5 py-[2px] rounded-md">
+              <span className="text-3xs font-bold tracking-wide text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-500/15 px-1.5 py-[2px] rounded-md">
                 NEW
               </span>
             ) : null}

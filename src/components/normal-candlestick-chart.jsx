@@ -398,45 +398,45 @@ export function NormalCandlestickChart({
       <div ref={containerRef} className="absolute inset-0" />
       <ArunaWatermark className="absolute inset-0 flex items-end justify-start bottom-10 left-4" />
       {showTooltip && tooltipData ? (
-        <div className="pointer-events-none absolute left-3 top-3 rounded-md border border-border bg-background/95 px-3 py-2 text-[10px]">
+        <div className="pointer-events-none absolute left-3 top-3 rounded-md border border-border bg-background/95 px-3 py-2 text-2xs">
           <div className="flex items-center justify-between gap-3 text-[11px] font-semibold">
             <span className="truncate">{formattedTimestamp}</span>
             {currency ? <span className="text-muted-foreground uppercase">{currency}</span> : null}
           </div>
           <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] uppercase text-muted-foreground">
+              <span className="text-2xs uppercase text-muted-foreground">
                 {formatLabel("O")}
               </span>
               <span className="font-medium">{formatValue(tooltipData.open)}</span>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] uppercase text-muted-foreground">
+              <span className="text-2xs uppercase text-muted-foreground">
                 {formatLabel("H")}
               </span>
               <span className="font-medium">{formatValue(tooltipData.high)}</span>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] uppercase text-muted-foreground">
+              <span className="text-2xs uppercase text-muted-foreground">
                 {formatLabel("L")}
               </span>
               <span className="font-medium">{formatValue(tooltipData.low)}</span>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-[10px] uppercase text-muted-foreground">
+              <span className="text-2xs uppercase text-muted-foreground">
                 {formatLabel("C")}
               </span>
               <span className="font-medium">{formatValue(tooltipData.close)}</span>
             </div>
             <div className="col-span-2 flex items-center justify-between gap-2 border-t border-dashed border-border/20 pt-1">
-              <span className="text-[10px] uppercase text-muted-foreground">EMA 31</span>
+              <span className="text-2xs uppercase text-muted-foreground">EMA 31</span>
               <span className="font-semibold" style={{ color: emaColor }}>
                 {formatValue(tooltipData.ema31)}
               </span>
             </div>
             {showLivermoreKey && tooltipData?.livermoreUpper != null ? (
               <div className="col-span-2 flex items-center justify-between gap-2 border-t border-dashed border-border/20 pt-1">
-                <span className="text-[10px] uppercase text-muted-foreground">Livermore Upper</span>
+                <span className="text-2xs uppercase text-muted-foreground">Livermore Upper</span>
                 <span className="font-semibold" style={{ color: livermoreUpperColor }}>
                   {formatValue(tooltipData.livermoreUpper)}
                 </span>
@@ -444,7 +444,7 @@ export function NormalCandlestickChart({
             ) : null}
             {showLivermoreKey && tooltipData?.livermoreLower != null ? (
               <div className="col-span-2 flex items-center justify-between gap-2 border-t border-dashed border-border/20 pt-1">
-                <span className="text-[10px] uppercase text-muted-foreground">Livermore Lower</span>
+                <span className="text-2xs uppercase text-muted-foreground">Livermore Lower</span>
                 <span className="font-semibold" style={{ color: livermoreLowerColor }}>
                   {formatValue(tooltipData.livermoreLower)}
                 </span>

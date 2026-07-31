@@ -186,11 +186,11 @@ function StockCard({ stock, isLocked = false }) {
         {/* Price & Market Cap */}
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-0.5">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Price</p>
+            <p className="text-2xs text-muted-foreground uppercase tracking-wide">Price</p>
             <p className="text-xs font-semibold">Rp {formatPrice(stock.price)}</p>
           </div>
           <div className="space-y-0.5">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Market Cap</p>
+            <p className="text-2xs text-muted-foreground uppercase tracking-wide">Market Cap</p>
             <p className="text-xs font-semibold">{formatMarketCap(stock.marketCap)}</p>
           </div>
         </div>
@@ -199,7 +199,7 @@ function StockCard({ stock, isLocked = false }) {
         <div className="flex items-center justify-between p-1.5 bg-muted/50 rounded-xl">
           <div className="flex items-center gap-1">
             <Zap className="h-3 w-3 text-muted-foreground" />
-            <span className="text-[10px] text-muted-foreground">Momentum Score</span>
+            <span className="text-2xs text-muted-foreground">Momentum Score</span>
           </div>
           <span className={`text-xs font-bold ${stock.momentumScore >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
             {stock.momentumScore > 0 ? '+' : ''}{stock.momentumScore}
@@ -209,14 +209,14 @@ function StockCard({ stock, isLocked = false }) {
         {/* Price Changes */}
         <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-border">
           <div className="space-y-0.5">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">1 Week</p>
+            <p className="text-2xs text-muted-foreground uppercase tracking-wide">1 Week</p>
             <p className={`text-xs font-semibold flex items-center gap-0.5 ${stock.weekChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {stock.weekChange >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
               {formatPercent(stock.weekChange, { fractionDigits: 2, fallback: "-", showPositiveSign: true })}
             </p>
           </div>
           <div className="space-y-0.5">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">1 Month</p>
+            <p className="text-2xs text-muted-foreground uppercase tracking-wide">1 Month</p>
             <p className={`text-xs font-semibold flex items-center gap-0.5 ${stock.monthChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {stock.monthChange >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
               {formatPercent(stock.monthChange, { fractionDigits: 2, fallback: "-", showPositiveSign: true })}
@@ -242,7 +242,7 @@ function MiniStockCard({ stock }) {
       <TickerAvatar symbol={`${stock.code}.JK`} logo={stock.logo_url} size="xs" />
       <div className="flex-1 min-w-0">
         <p className="text-xs font-bold truncate">{stock.code}</p>
-        <p className={`text-[10px] font-semibold ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
+        <p className={`text-2xs font-semibold ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
           {formatPercent(stock.weekChange, { fractionDigits: 2, fallback: "-", showPositiveSign: true })}
         </p>
       </div>
@@ -467,7 +467,7 @@ export default function MomentumPage() {
             <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
             <div>
               <p className="text-xs font-semibold text-red-600">Failed to load data</p>
-              <p className="text-[9px] text-red-600/80">{error}</p>
+              <p className="text-3xs text-red-600/80">{error}</p>
             </div>
           </CardContent>
         </Card>
@@ -522,7 +522,7 @@ export default function MomentumPage() {
 
                 {/* End of List */}
                 {!hasMore && displayedStocks.length > ITEMS_PER_PAGE && (
-                  <p className="text-[9px] text-center text-muted-foreground py-4">
+                  <p className="text-3xs text-center text-muted-foreground py-4">
                     No more stocks to load
                   </p>
                 )}
@@ -542,7 +542,7 @@ export default function MomentumPage() {
 
       {/* Last Updated */}
       {data?.lastUpdated && (
-        <p className="text-[9px] text-center text-muted-foreground pt-4">
+        <p className="text-3xs text-center text-muted-foreground pt-4">
           Last updated: {new Date(data.lastUpdated).toLocaleTimeString()}
         </p>
       )}

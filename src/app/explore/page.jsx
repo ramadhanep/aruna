@@ -1400,7 +1400,7 @@ export default function ExplorePage() {
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
                       <span className="tabular-nums font-medium">{section.picks.length} found</span>
-                      <span className="rounded-lg border border-border/30 px-2.5 py-1 uppercase tracking-wider text-[10px] font-semibold bg-muted/30">
+                      <span className="rounded-lg border border-border/30 px-2.5 py-1 uppercase tracking-wider text-2xs font-semibold bg-muted/30">
                         {section.snapshot?.status ?? "idle"}
                       </span>
                     </div>
@@ -1487,7 +1487,7 @@ export default function ExplorePage() {
                         label
                       )}
                     </Button>
-                    <p className="text-[10px] text-muted-foreground">
+                    <p className="text-2xs text-muted-foreground">
                       {lastScreened
                         ? `Last ${screenedToday ? "today" : formatLocalDateTimeLabel(lastScreened)}`
                         : "Never screened"}

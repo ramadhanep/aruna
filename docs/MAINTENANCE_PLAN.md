@@ -266,21 +266,39 @@ that this visual work exposes but is not required to begin polish.
 
 **Definition of done:**
 
-- [ ] Bubble, rotation, discussion, normal-chart and portfolio-mini-chart
+- [x] Bubble, rotation, discussion, normal-chart and portfolio-mini-chart
       initial states reserve final layout with skeleton/shimmer rather than
-      whole-screen/centered spinners.
-- [ ] `motion.js` is the approved timing policy for custom surfaces; navigation,
+      whole-screen/centered spinners. `ScatterSkeleton` (dot-field) covers the
+      two full-screen tools; discussion gets a layout-matched message shell;
+      chart series-loading and portfolio mini-chart use the reserved-geometry
+      skeleton.
+- [x] `motion.js` is the approved timing policy for custom surfaces; navigation,
       tabs/data replacement and sidebars use consistent durations/eases without
-      double-animating Radix primitives.
-- [ ] Bottom navigation is responsive through the documented mobile/tablet
+      double-animating Radix primitives. `DURATION_CLASS` added as the single
+      token→class mapping; applied to desktop-navbar, account-sidebar, sheet
+      (data-state durations) and mobile-bottom-nav.
+- [x] Bottom navigation is responsive through the documented mobile/tablet
       range, visually consistent with Aruna’s restrained navigation, and has
-      usable labels/captions where needed.
-- [ ] Repeated chart/nav/mini-chart dimensions and small typography are
+      visible labels/captions. Fixed `w-[300px]` pill → content-width `w-max`
+      card with `rounded-xl`/`rounded-md` corners, `aria-current`, and the
+      scroll-minimize behaviour preserved. Dead `matchPaths` branch removed.
+- [x] Repeated chart/nav/mini-chart dimensions and small typography are
       tokenized or component variants; unjustified arbitrary values are gone.
-- [ ] Analyst/rotation/dropdown color and elevation treatments preserve only
+      `text-2xs` (10px) / `text-3xs` (9px) theme tokens replace all
+      `text-[10px]`/`text-[9px]`; chart container height centralized as
+      `CHART_HEIGHT_CLASS`; portfolio currency-select width as
+      `CURRENCY_SELECT_WIDTH`. The `max-w-[900px]` full-bleed chart wrapper is
+      intentional edge-to-edge behaviour and was kept.
+- [x] Analyst/rotation/dropdown color and elevation treatments preserve only
       useful semantic signal and follow the monochrome-plus-sparing-blue system.
-- [ ] Dark/light, mobile/tablet/desktop, reduced-motion, and installed-PWA
+      Analyst gauge: 5 saturated bands → muted track + score-colored needle;
+      rotation dot glow removed (quadrant tints and dot fills kept for
+      semantic grouping); tools dropdown `shadow-2xl shadow-black/40` →
+      `shadow-lg shadow-black/10`.
+- [x] Dark/light, mobile/tablet/desktop, reduced-motion, and installed-PWA
       smoke checks pass; lint and build pass.
+- [x] UI-2 (access/route loading) explicitly deferred to Phase 6 — its affected
+      components were not otherwise touched in this phase.
 
 **Documentation after implementation:** Update `docs/ui-architecture.md` for
 loading, motion, responsive navigation, spacing and color rules;

@@ -149,24 +149,24 @@ function StockCard({ stock, isLocked = false }) {
         {/* Price & Market Cap */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-0.5">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Price</p>
+            <p className="text-2xs text-muted-foreground uppercase tracking-wide">Price</p>
             <p className="text-sm font-semibold">Rp {formatPrice(stock.price)}</p>
           </div>
           <div className="space-y-0.5">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Market Cap</p>
+            <p className="text-2xs text-muted-foreground uppercase tracking-wide">Market Cap</p>
             <p className="text-sm font-semibold">{formatMarketCap(stock.market_cap)}</p>
           </div>
         </div>
 
         {/* Free Float */}
         <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
-          <span className="text-[10px] text-muted-foreground">Free Float</span>
+          <span className="text-2xs text-muted-foreground">Free Float</span>
           <span className="text-xs font-semibold">{formatPercent(stock.free_float_percent)}</span>
         </div>
 
         {/* Progress Bar */}
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between text-[10px]">
+          <div className="flex items-center justify-between text-2xs">
             <span className="text-muted-foreground">Progress to MSCI</span>
             <span className="font-semibold text-emerald-600 dark:text-emerald-400">
               {formatPercent(stock.progress)}
@@ -183,13 +183,13 @@ function StockCard({ stock, isLocked = false }) {
         {/* Target Price & Upside */}
         <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border">
           <div className="space-y-0.5">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">MSCI Qualification Price</p>
+            <p className="text-2xs text-muted-foreground uppercase tracking-wide">MSCI Qualification Price</p>
             <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
               Rp {formatPrice(stock.targetPrice)}
             </p>
           </div>
           <div className="space-y-0.5">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Potential Upside</p>
+            <p className="text-2xs text-muted-foreground uppercase tracking-wide">Potential Upside</p>
             <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
               <TrendingUp className="h-3 w-3" />
               {formatPercent(stock.upside)}
@@ -387,7 +387,7 @@ export default function MSCIPage() {
 
       {/* Last Updated */}
       {data?.lastUpdated && (
-        <p className="text-[10px] text-center text-muted-foreground pt-4">
+        <p className="text-2xs text-center text-muted-foreground pt-4">
           Last updated: {new Date(data.lastUpdated).toLocaleTimeString()}
         </p>
       )}

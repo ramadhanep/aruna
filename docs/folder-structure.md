@@ -86,6 +86,7 @@
 │   │   ├── header-symbol-search.jsx  # Global symbol search dialog
 │   │   ├── header-account-menu.jsx  # Mobile header account button
 │   │   ├── market-bubbles.jsx       # Canvas-based bubble visualization
+│   │   ├── scatter-skeleton.jsx     # Full-screen dot-field loading state (bubbles, rotation)
 │   │   ├── normal-candlestick-chart.jsx  # lightweight-charts wrapper
 │   │   ├── money-flow-card.jsx      # Expandable money flow report card
 │   │   ├── ticker-avatar.jsx        # Symbol logo with fallback

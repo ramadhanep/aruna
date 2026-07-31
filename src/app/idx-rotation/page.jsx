@@ -162,7 +162,7 @@ export default function IdxRotationPage() {
 
         <div className="flex-1 text-center">
           <h1 className="text-sm font-semibold text-foreground/80">Market Rotation</h1>
-          <p className="text-[10px] text-muted-foreground">Top 50 by Market Cap</p>
+          <p className="text-2xs text-muted-foreground">Top 50 by Market Cap</p>
         </div>
 
         <button
@@ -182,7 +182,7 @@ export default function IdxRotationPage() {
               className="w-2 h-2 rounded-full"
               style={{ backgroundColor: value.bg }}
             />
-            <span className={`text-[10px] font-medium ${value.text}`}>
+            <span className={`text-2xs font-medium ${value.text}`}>
               {value.label}: {summary?.[key] || 0}
             </span>
           </div>

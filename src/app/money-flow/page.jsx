@@ -169,7 +169,7 @@ export default function MoneyFlowPage() {
             <p className="text-xs text-foreground/85 leading-relaxed">
               Smart-money breakdown based on broker flow, market phase, absorption, and screener-synced symbols.
             </p>
-            {payload?.start_date && <p className="text-[10px] text-muted-foreground">Window start: {payload.start_date}</p>}
+            {payload?.start_date && <p className="text-2xs text-muted-foreground">Window start: {payload.start_date}</p>}
           </CardContent>
         </Card>
 
@@ -229,19 +229,19 @@ export default function MoneyFlowPage() {
             <CardContent className="p-4 space-y-3">
               <div className="grid grid-cols-2 gap-2">
                 <div className="rounded-xl border border-border bg-background/70 px-3 py-2">
-                  <p className="text-[10px] text-muted-foreground">Reports</p>
+                  <p className="text-2xs text-muted-foreground">Reports</p>
                   <p className="text-lg font-semibold">{reports.length}</p>
                 </div>
                 <div className="rounded-xl border border-border bg-background/70 px-3 py-2">
-                  <p className="text-[10px] text-muted-foreground">Accumulation</p>
+                  <p className="text-2xs text-muted-foreground">Accumulation</p>
                   <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">{positiveSignals}</p>
                 </div>
                 <div className="rounded-xl border border-border bg-background/70 px-3 py-2">
-                  <p className="text-[10px] text-muted-foreground">Avg Vol Spike</p>
+                  <p className="text-2xs text-muted-foreground">Avg Vol Spike</p>
                   <p className="text-lg font-semibold">{avgVolumeSpike.toFixed(2)}x</p>
                 </div>
                 <div className="rounded-xl border border-border bg-background/70 px-3 py-2">
-                  <p className="text-[10px] text-muted-foreground">Timeframe</p>
+                  <p className="text-2xs text-muted-foreground">Timeframe</p>
                   <p className="text-sm font-semibold capitalize">{timeframe}</p>
                 </div>
               </div>
@@ -266,7 +266,7 @@ export default function MoneyFlowPage() {
         {!loading && !error && <ReportList reports={reports} />}
 
         {payload?.updated_at && (
-          <p className="text-[10px] text-center text-muted-foreground mt-4">
+          <p className="text-2xs text-center text-muted-foreground mt-4">
             Last updated: {new Date(payload.updated_at).toLocaleString()}
           </p>
         )}

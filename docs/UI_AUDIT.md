@@ -4,6 +4,26 @@ Audited against `docs/ui-architecture.md` on 2026-07-31. Findings are based on
 the implemented component states and CSS (not a claim of cross-device visual
 testing). This is an audit only; no UI was changed.
 
+> **Note:** Line references below predate the Phase 2/3 chart/portfolio
+> decompositions (chart now ~3,660 lines, portfolio ~1,040). They are kept as
+> the original audit anchors.
+
+## Resolution status
+
+| Finding | Status |
+|---|---|
+| UI-1 (full-screen spinners) | RESOLVED in Phase 5 — `ScatterSkeleton` dot-field + discussion message shell |
+| UI-2 (access/route loading) | DEFERRED to Phase 6 |
+| UI-3 (bottom-nav safe area) | RESOLVED in Phase 0 — `.bottom-safe`, `.pb-nav-safe` applied |
+| UI-4 (full-screen tool safe areas) | RESOLVED in Phase 0 — `.pt-safe`/`.top-safe-header` on tool chrome |
+| UI-5 (motion policy) | RESOLVED in Phase 5 — `DURATION_CLASS` single token→class mapping |
+| UI-6 (44px touch targets) | RESOLVED in Phase 0 — `h-11 w-11`, `min-h-11` tool chrome |
+| UI-7 (bottom-nav pill) | RESOLVED in Phase 5 — responsive `w-max` card, visible labels |
+| UI-8 (class-string componentization) | Phase 6 scope |
+| UI-9 (arbitrary values) | RESOLVED in Phase 5 — `text-2xs`/`text-3xs`, `CHART_HEIGHT_CLASS`, `CURRENCY_SELECT_WIDTH` |
+| UI-10 (color/elevation) | RESOLVED in Phase 5 — muted gauge, no rotation glow, softer dropdown shadow |
+| UI-11 (chart loading quality) | RESOLVED in Phase 5 — chart series + portfolio mini-chart skeletons |
+
 ## Findings
 
 ### UI-1 — Three data-heavy visualizations replace the whole screen with a spinner

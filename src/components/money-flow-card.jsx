@@ -26,7 +26,7 @@ const riskStyles = {
 function SignalBadge({ signal }) {
   const className = signalStyles[signal] || signalStyles.Neutral;
   return (
-    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${className}`}>
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-2xs font-semibold border ${className}`}>
       {signal}
     </span>
   );
@@ -36,7 +36,7 @@ function RiskBadge({ level }) {
   const risk = String(level || "LOW").toUpperCase();
   const className = riskStyles[risk] || riskStyles.LOW;
   return (
-    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold border ${className}`}>
+    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-2xs font-semibold border ${className}`}>
       {risk}
     </span>
   );
@@ -142,7 +142,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             {/* Stats Grid */}
             <div className="grid grid-cols-3 gap-3 mt-1">
               <div className="space-y-0.5">
-                <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">Price</p>
+                <p className="text-2xs text-muted-foreground dark:text-white/50 uppercase tracking-wide">Price</p>
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold tabular-nums">
                     {formatPrice(report.current_price || 0, { locale: "en-US", zeroIsEmpty: false })}
@@ -150,7 +150,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                 </div>
               </div>
               <div className="space-y-0.5">
-                <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">Flow Score</p>
+                <p className="text-2xs text-muted-foreground dark:text-white/50 uppercase tracking-wide">Flow Score</p>
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                     <TrendingUp className="h-3.5 w-3.5" />
@@ -159,7 +159,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                 </div>
               </div>
               <div className="space-y-0.5">
-                <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">{changeLabel}</p>
+                <p className="text-2xs text-muted-foreground dark:text-white/50 uppercase tracking-wide">{changeLabel}</p>
                 <p className={`text-sm font-semibold flex items-center gap-1 ${isPositive ? "text-emerald-600 dark:text-emerald-400" : "text-rose-500 dark:text-rose-400"}`}>
                   {changeFormatted}
                 </p>
@@ -170,16 +170,16 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             {isExpandedView && (
               <>
                 <div className="flex items-center justify-between p-2 bg-black/5 dark:bg-white/5 rounded-lg">
-                  <span className="text-[10px] text-muted-foreground dark:text-white/70">Top 3 Buy</span>
+                  <span className="text-2xs text-muted-foreground dark:text-white/70">Top 3 Buy</span>
                   <span className="text-xs font-semibold">{formatPercent(report.top3_percent, { fractionDigits: 2, nullAsZero: true })}</span>
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="flex items-center justify-between text-[10px]">
+                  <div className="flex items-center justify-between text-2xs">
                     <span className="text-muted-foreground dark:text-white/70">Vol Spike</span>
                     <span className="font-semibold text-emerald-600 dark:text-emerald-400">{Number(report.volume_spike || 0).toFixed(2)}x</span>
                   </div>
-                  <div className="flex items-center justify-between text-[10px]">
+                  <div className="flex items-center justify-between text-2xs">
                     <span className="text-muted-foreground dark:text-white/70">Absorption Strength</span>
                     <span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatPercent(report?.absorption_strength?.value, { fractionDigits: 2, nullAsZero: true })}</span>
                   </div>
@@ -187,13 +187,13 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
 
                 <div className="grid grid-cols-2 gap-3 pt-2 dark:border-white/10">
                   <div className="space-y-0.5">
-                    <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">Manipulation Risk</p>
+                    <p className="text-2xs text-muted-foreground dark:text-white/50 uppercase tracking-wide">Manipulation Risk</p>
                     <div className="mt-1">
                       <RiskBadge level={riskLevel} />
                     </div>
                   </div>
                   <div className="space-y-0.5">
-                    <p className="text-[10px] text-muted-foreground dark:text-white/50 uppercase tracking-wide">Phase</p>
+                    <p className="text-2xs text-muted-foreground dark:text-white/50 uppercase tracking-wide">Phase</p>
                     <p className="text-xs font-semibold text-foreground dark:text-white">
                       {report.market_phase || "Indeterminate"}
                     </p>
@@ -203,7 +203,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             )}
             {!isExpandedView && (
               <div className="flex items-center justify-between p-1.5 bg-black/5 dark:bg-white/5 rounded-lg mt-1">
-                <span className="text-[10px] text-muted-foreground dark:text-white/70">Top 3 Buy</span>
+                <span className="text-2xs text-muted-foreground dark:text-white/70">Top 3 Buy</span>
                 <span className="text-xs font-semibold">{Number(report.top3_percent || 0).toFixed(1)}%</span>
               </div>
             )}
@@ -218,17 +218,17 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                 <div className="rounded-lg px-2 py-1.5">
                   <p className="text-muted-foreground">Broker Cost</p>
                   <p className="font-semibold">{formatCompactNumber(report?.broker_cost_analysis?.estimated_cost)}</p>
-                  <p className="text-[10px] text-muted-foreground">{report?.broker_cost_analysis?.interpretation || "-"}</p>
+                  <p className="text-2xs text-muted-foreground">{report?.broker_cost_analysis?.interpretation || "-"}</p>
                 </div>
                 <div className="rounded-lg px-2 py-1.5">
                   <p className="text-muted-foreground">Concentration</p>
                   <p className="font-semibold">{formatPercent(report?.broker_concentration?.top3_buy_percent, { fractionDigits: 2, nullAsZero: true })}</p>
-                  <p className="text-[10px] text-muted-foreground">{report?.broker_concentration?.interpretation || "-"}</p>
+                  <p className="text-2xs text-muted-foreground">{report?.broker_concentration?.interpretation || "-"}</p>
                 </div>
               </div>
             )}
             {!isExpandedView && (
-              <div className="grid grid-cols-2 gap-2 text-[10px]">
+              <div className="grid grid-cols-2 gap-2 text-2xs">
                 <div className="rounded-md px-2 py-1.5">
                   <p className="text-muted-foreground">Phase</p>
                   <p className="font-semibold">{report.market_phase || "Indeterminate"}</p>
@@ -305,14 +305,14 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                   <button
                     type="button"
                     onClick={() => setIsNetView(false)}
-                    className={`px-2.5 py-1 text-[10px] font-semibold rounded-lg transition-all ${!isNetView ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                    className={`px-2.5 py-1 text-2xs font-semibold rounded-lg transition-all ${!isNetView ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                   >
                     Gross
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsNetView(true)}
-                    className={`px-2.5 py-1 text-[10px] font-semibold rounded-lg transition-all ${isNetView ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
+                    className={`px-2.5 py-1 text-2xs font-semibold rounded-lg transition-all ${isNetView ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
                   >
                     Net
                   </button>
@@ -322,7 +322,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
               <div className="overflow-x-auto">
                 {/* Visual Indicator Line (Big Dist -> Big Acc) */}
                 <div className="w-full h-px bg-border" />
-                <div className="hidden sm:flex items-center justify-between px-3 py-2 text-[10px] text-muted-foreground border-b border-border/30">
+                <div className="hidden sm:flex items-center justify-between px-3 py-2 text-2xs text-muted-foreground border-b border-border/30">
                   <span className="font-medium text-emerald-600 dark:text-emerald-400">Buyer side accumulation</span>
                   <span className="font-medium text-rose-500 dark:text-rose-400">Seller side distribution</span>
                 </div>
@@ -330,12 +330,12 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                 <Table>
                   <TableHeader>
                     <TableRow className="hover:bg-transparent border-b-border/40">
-                      <TableHead className="text-[10px] h-9 px-2.5">BY</TableHead>
-                      <TableHead className="text-[10px] h-9 px-2.5 text-right">B.val</TableHead>
-                      <TableHead className="text-[10px] h-9 px-2.5 text-right">B.avg</TableHead>
-                      <TableHead className="text-[10px] h-9 px-2.5 text-center border-l border-border/20">SL</TableHead>
-                      <TableHead className="text-[10px] h-9 px-2.5 text-right">S.val</TableHead>
-                      <TableHead className="text-[10px] h-9 px-2.5 text-right">S.avg</TableHead>
+                      <TableHead className="text-2xs h-9 px-2.5">BY</TableHead>
+                      <TableHead className="text-2xs h-9 px-2.5 text-right">B.val</TableHead>
+                      <TableHead className="text-2xs h-9 px-2.5 text-right">B.avg</TableHead>
+                      <TableHead className="text-2xs h-9 px-2.5 text-center border-l border-border/20">SL</TableHead>
+                      <TableHead className="text-2xs h-9 px-2.5 text-right">S.val</TableHead>
+                      <TableHead className="text-2xs h-9 px-2.5 text-right">S.avg</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

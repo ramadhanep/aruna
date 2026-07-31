@@ -247,7 +247,7 @@ export function PortfolioPie({
               }} />} />
           </PieChart>
         </ChartContainer>
-        <div className="flex flex-wrap items-center justify-center gap-4 text-[10px]">
+        <div className="flex flex-wrap items-center justify-center gap-4 text-2xs">
           {assetTypeData.map((item) => {
             const pct = (item.value / assetSum) * 100;
             return (
@@ -297,7 +297,7 @@ export function PortfolioPie({
               }} />} />
           </PieChart>
         </ChartContainer>
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] mt-2">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-2xs mt-2">
           {digitalData.map((item, i) => {
             const pct = (item.value / digitalSum) * 100;
             return (
@@ -347,7 +347,7 @@ export function PortfolioPie({
               }} />} />
           </PieChart>
         </ChartContainer>
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] mt-2">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-2xs mt-2">
           {cashTypeData.map((item, i) => {
             const pct = (item.value / cashTypeSum) * 100;
             return (
@@ -397,7 +397,7 @@ export function PortfolioPie({
               }} />} />
           </PieChart>
         </ChartContainer>
-        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[10px] mt-2">
+        <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-2xs mt-2">
           {holdingsData.map((item, i) => {
             const pct = (item.value / holdingsSum) * 100;
             return (

@@ -28,7 +28,7 @@ function TrendingItem({ symbol, quote }) {
       <div className="flex flex-col">
         <div className="font-semibold text-sm tracking-tight">{formatTickerDisplay(symbol)}</div>
         <div className="text-xs font-medium">
-          {formattedPrice} <span className={`text-[10px] font-semibold ${color}`}>{formattedChange}</span>
+          {formattedPrice} <span className={`text-2xs font-semibold ${color}`}>{formattedChange}</span>
         </div>
       </div>
     </Link>
