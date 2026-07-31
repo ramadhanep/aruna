@@ -399,7 +399,7 @@ export function NormalCandlestickChart({
       <ArunaWatermark className="absolute inset-0 flex items-end justify-start bottom-10 left-4" />
       {showTooltip && tooltipData ? (
         <div className="pointer-events-none absolute left-3 top-3 rounded-md border border-border bg-background/95 px-3 py-2 text-2xs">
-          <div className="flex items-center justify-between gap-3 text-[11px] font-semibold">
+          <div className="flex items-center justify-between gap-3 text-1xs font-semibold">
             <span className="truncate">{formattedTimestamp}</span>
             {currency ? <span className="text-muted-foreground uppercase">{currency}</span> : null}
           </div>
@@ -452,7 +452,7 @@ export function NormalCandlestickChart({
             ) : null}
             {pct != null ? (
               <div
-                className={`col-span-2 text-right text-[11px] font-semibold ${
+                className={`col-span-2 text-right text-1xs font-semibold ${
                   pct >= 0 ? "text-emerald-600" : "text-red-600"
                 }`}
               >

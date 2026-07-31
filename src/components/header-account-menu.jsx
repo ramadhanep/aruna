@@ -46,7 +46,7 @@ export function HeaderAccountMenu({ onOpenSidebar }) {
           referrerPolicy="no-referrer"
         />
       ) : initials ? (
-        <span className="text-[11px] font-semibold uppercase">{initials}</span>
+        <span className="text-1xs font-semibold uppercase">{initials}</span>
       ) : (
         <UserRound className="h-4 w-4" />
       )}

@@ -126,7 +126,7 @@ function AccountSidebarContent({ onClose }) {
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-7 pb-12">
         <section className="space-y-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Profile</p>
+          <p className="text-1xs font-semibold uppercase tracking-wide text-muted-foreground">Profile</p>
           <div className="rounded-3xl bg-card border border-border/30 px-4 py-5 text-foreground">
             <div className="flex items-center gap-3">
               <div className="h-14 w-14 overflow-hidden rounded-full border border-black/10 dark:border-white/20 ">
@@ -147,12 +147,12 @@ function AccountSidebarContent({ onClose }) {
                 <p className="text-sm font-semibold">
                   {user ? fullName : "You're browsing in guest mode"}
                 </p>
-                <p className="text-[11px] text-foreground/80 dark:text-white/80 truncate">
+                <p className="text-1xs text-foreground/80 dark:text-white/80 truncate">
                   {user ? primaryEmail : "Sign in to sync watchlist & portfolio"}
                 </p>
               </div>
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-2 text-[11px]">
+            <div className="mt-4 grid grid-cols-2 gap-2 text-1xs">
               <div className="rounded-2xl  px-3 py-2">
                 <p className="uppercase tracking-wide text-foreground/60 dark:text-white/60">Mode</p>
                 <p className="text-sm font-semibold text-foreground dark:text-white">{user ? "Synced" : "Guest"}</p>
@@ -170,7 +170,7 @@ function AccountSidebarContent({ onClose }) {
               </div>
             ) : user ? null : (
               <div className="mt-4 space-y-3 rounded-2xl bg-black/1 dark:bg-white/1 px-4 py-4">
-                <p className="text-[11px] text-foreground/80 dark:text-white/80">
+                <p className="text-1xs text-foreground/80 dark:text-white/80">
                   Sign in with Google to sync your watchlist and portfolio securely.
                 </p>
                 <Button
@@ -182,7 +182,7 @@ function AccountSidebarContent({ onClose }) {
                   <span>Sign in with Google</span>
                 </Button>
                 {authError ? (
-                  <div className="rounded-2xl bg-red-600/15 px-3 py-2 text-[11px] text-red-100">
+                  <div className="rounded-2xl bg-red-600/15 px-3 py-2 text-1xs text-red-100">
                     {authError}
                   </div>
                 ) : null}
@@ -192,9 +192,9 @@ function AccountSidebarContent({ onClose }) {
         </section>
 
         <section className="space-y-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Appearance</p>
+          <p className="text-1xs font-semibold uppercase tracking-wide text-muted-foreground">Appearance</p>
           <div className="rounded-3xl bg-card border border-border/30 px-4 py-4">
-            <p className="text-[11px] text-muted-foreground">
+            <p className="text-1xs text-muted-foreground">
               Pick the look that feels best on your device. Light stays bright, dark saves battery.
             </p>
             <div className="mt-3 flex gap-2">
@@ -220,7 +220,7 @@ function AccountSidebarContent({ onClose }) {
             <div className="mt-3 flex items-center justify-between rounded-2xl border border-border/40 bg-muted/20 px-3 py-2.5">
               <div>
                 <p className="text-xs font-medium">Visual Mode</p>
-                <p className="text-[11px] text-muted-foreground">Lite mode skips ticker logo images to keep it lighter.</p>
+                <p className="text-1xs text-muted-foreground">Lite mode skips ticker logo images to keep it lighter.</p>
               </div>
               <Button
                 type="button"
@@ -235,7 +235,7 @@ function AccountSidebarContent({ onClose }) {
         </section>
 
         <section className="space-y-3">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Data & Privacy</p>
+          <p className="text-1xs font-semibold uppercase tracking-wide text-muted-foreground">Data & Privacy</p>
           <div className="rounded-3xl bg-card border border-border/30 px-4 py-4 space-y-4">
             <ClearDataButton
               onCleared={user ? clearRemoteData : undefined}
@@ -246,7 +246,7 @@ function AccountSidebarContent({ onClose }) {
                 >
                   <div>
                     <p className="font-semibold text-foreground">Clear Data</p>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="text-1xs text-muted-foreground">
                       Remove watchlist & portfolio items from your account.
                     </p>
                   </div>
@@ -278,12 +278,12 @@ function AccountSidebarContent({ onClose }) {
                 <DialogContent closeButtonPosition="right">
                   <DialogHeader>
                     <DialogTitle className="text-sm font-semibold">Log out?</DialogTitle>
-                    <DialogDescription className="text-[11px] text-muted-foreground">
+                    <DialogDescription className="text-1xs text-muted-foreground">
                       We&apos;ll sign you out of this device. You can sign back in anytime to sync your data again.
                     </DialogDescription>
                   </DialogHeader>
                   {signOutError ? (
-                    <div className="rounded-md bg-red-600/15 px-3 py-2 text-[11px] text-red-600">
+                    <div className="rounded-md bg-red-600/15 px-3 py-2 text-1xs text-red-600">
                       {signOutError}
                     </div>
                   ) : null}
@@ -313,7 +313,7 @@ function AccountSidebarContent({ onClose }) {
               </Dialog>
             ) : null}
             {user && !supabaseConfigured ? (
-              <div className="flex items-start gap-2 rounded-2xl bg-amber-500/10 px-3 py-3 text-[11px] text-amber-800">
+              <div className="flex items-start gap-2 rounded-2xl bg-amber-500/10 px-3 py-3 text-1xs text-amber-800">
                 <ShieldAlert className="h-4 w-4 flex-shrink-0" />
                 Provider credentials are not configured. Remote sync will be disabled until you add them.
               </div>
@@ -322,7 +322,7 @@ function AccountSidebarContent({ onClose }) {
         </section>
 
         <section className="rounded-3xl bg-card border border-border/30 px-4 py-5 text-center">
-          <p className="text-[11px] text-muted-foreground">
+          <p className="text-1xs text-muted-foreground">
             Version {process.env.NEXT_PUBLIC_APP_VERSION || "1.0.0"}
           </p>
         </section>

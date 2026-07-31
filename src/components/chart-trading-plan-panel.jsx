@@ -306,7 +306,7 @@ export function ChartTradingPlanPanel({
       {/* 3. Entry */}
       <div className="rounded-xl border border-border/60 p-3 space-y-1">
         <div className="flex items-center justify-between">
-          <p className="text-[11px] font-semibold text-foreground">Entry</p>
+          <p className="text-1xs font-semibold text-foreground">Entry</p>
           <Badge className="border-transparent bg-primary/10 text-primary">
             {entryZone.type}
           </Badge>
@@ -323,7 +323,7 @@ export function ChartTradingPlanPanel({
       {/* 4. Stop Loss */}
       <div className="rounded-xl border border-border/60 p-3 space-y-1">
         <div className="flex items-center justify-between">
-          <p className="text-[11px] font-semibold text-foreground">Stop Loss</p>
+          <p className="text-1xs font-semibold text-foreground">Stop Loss</p>
           <span className="text-2xs font-semibold text-red-600 dark:text-red-400">
             {stopLossPct != null ? `${stopLossPct.toFixed(2)}%` : '—'}
           </span>
@@ -334,7 +334,7 @@ export function ChartTradingPlanPanel({
 
       {/* 5. Take Profit Strategy */}
       <div className="rounded-xl border border-border/60 p-3 space-y-2">
-        <p className="text-[11px] font-semibold text-foreground">Take Profit Strategy</p>
+        <p className="text-1xs font-semibold text-foreground">Take Profit Strategy</p>
         <div className="space-y-2">
           {targets.map((target) => (
             <div
@@ -364,7 +364,7 @@ export function ChartTradingPlanPanel({
 
       {/* 6. Position Size Calculator — risk-first, no manual share math */}
       <div className="rounded-xl border border-border/60 p-3 space-y-3">
-        <p className="text-[11px] font-semibold text-foreground">Position Size Calculator</p>
+        <p className="text-1xs font-semibold text-foreground">Position Size Calculator</p>
 
         <div className="grid grid-cols-2 gap-2.5">
           <div className="space-y-1">
@@ -452,10 +452,10 @@ export function ChartTradingPlanPanel({
 
       {/* 7. Technical Confirmation */}
       <div className="rounded-xl border border-border/60 p-3 space-y-2">
-        <p className="text-[11px] font-semibold text-foreground">Technical Confirmation</p>
+        <p className="text-1xs font-semibold text-foreground">Technical Confirmation</p>
         <ul className="space-y-1">
           {technicalConfirmations.map((line, index) => (
-            <li key={index} className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
+            <li key={index} className="flex items-start gap-1.5 text-1xs text-muted-foreground">
               <span className="mt-1.5 h-1 w-1 rounded-full bg-emerald-500 shrink-0" />
               <span>{line}</span>
             </li>
@@ -464,15 +464,15 @@ export function ChartTradingPlanPanel({
         <div className="grid grid-cols-3 gap-2 pt-1.5 border-t border-border/40">
           <div>
             <p className="text-2xs text-muted-foreground">Swing Low</p>
-            <p className="text-[11px] font-semibold">{formatPriceValue(basisValues.swing)}</p>
+            <p className="text-1xs font-semibold">{formatPriceValue(basisValues.swing)}</p>
           </div>
           <div>
             <p className="text-2xs text-muted-foreground">EMA20</p>
-            <p className="text-[11px] font-semibold">{formatPriceValue(basisValues.ema)}</p>
+            <p className="text-1xs font-semibold">{formatPriceValue(basisValues.ema)}</p>
           </div>
           <div>
             <p className="text-2xs text-muted-foreground">ATR(14)</p>
-            <p className="text-[11px] font-semibold">{formatPriceValue(basisValues.atr)}</p>
+            <p className="text-1xs font-semibold">{formatPriceValue(basisValues.atr)}</p>
           </div>
         </div>
       </div>

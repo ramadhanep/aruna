@@ -353,7 +353,7 @@ function ToolCard({ href, icon, title, subtitle, trailing = "Open →" }) {
         </div>
         <div>
           <div className="text-xs font-semibold text-foreground">{title}</div>
-          <div className="text-[11px] text-muted-foreground">{subtitle}</div>
+          <div className="text-1xs text-muted-foreground">{subtitle}</div>
         </div>
       </div>
       <span className="whitespace-nowrap text-xs font-medium text-foreground">{trailing}</span>
@@ -409,7 +409,7 @@ function MarketPulseMarquee({ items }) {
               <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
               <span className="text-xs font-bold tabular-nums">{q ? formatPrice(q.price, { locale: "en-US", minimumFractionDigits: 2, maximumFractionDigits: 2, zeroIsEmpty: false }) : "—"}</span>
               {q && typeof q.changePercent === "number" ? (
-                <span className={`text-[11px] font-semibold flex items-center gap-0.5 ${getChangeTone(isPos ? 1 : -1)}`}>
+                <span className={`text-1xs font-semibold flex items-center gap-0.5 ${getChangeTone(isPos ? 1 : -1)}`}>
                   {isPos ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                   {isPos ? "+" : ""}
                   {q.changePercent.toFixed(2)}%
@@ -430,7 +430,7 @@ function MarketPulseMarquee({ items }) {
               <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
               <span className="text-xs font-bold tabular-nums">{q ? formatPrice(q.price, { locale: "en-US", minimumFractionDigits: 2, maximumFractionDigits: 2, zeroIsEmpty: false }) : "—"}</span>
               {q && typeof q.changePercent === "number" ? (
-                <span className={`text-[11px] font-semibold flex items-center gap-0.5 ${getChangeTone(isPos ? 1 : -1)}`}>
+                <span className={`text-1xs font-semibold flex items-center gap-0.5 ${getChangeTone(isPos ? 1 : -1)}`}>
                   {isPos ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                   {isPos ? "+" : ""}
                   {q.changePercent.toFixed(2)}%
@@ -1062,7 +1062,7 @@ export default function ExplorePage() {
                 <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
                 <span className="text-xs font-bold tabular-nums">{q ? formatPrice(q.price, { locale: "en-US", minimumFractionDigits: 2, maximumFractionDigits: 2, zeroIsEmpty: false }) : "—"}</span>
                 {q && typeof q.changePercent === "number" ? (
-                  <span className={`text-[11px] font-semibold flex items-center gap-0.5 ${getChangeTone(isPos ? 1 : -1)}`}>
+                  <span className={`text-1xs font-semibold flex items-center gap-0.5 ${getChangeTone(isPos ? 1 : -1)}`}>
                     {isPos ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
                     {isPos ? "+" : ""}{q.changePercent.toFixed(2)}%
                   </span>
@@ -1146,7 +1146,7 @@ export default function ExplorePage() {
                         <p className="text-sm font-bold text-foreground tracking-tight truncate">{item.symbol.replace('.JK', '')}</p>
                         {isAtATH && <Flame className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
                       </div>
-                      <p className="text-[11px] text-muted-foreground truncate">{formatTickerDisplay(item.label)}</p>
+                      <p className="text-1xs text-muted-foreground truncate">{formatTickerDisplay(item.label)}</p>
                     </div>
                   </div>
                   <div className="mt-3 flex items-end justify-between gap-2">
@@ -1299,17 +1299,17 @@ export default function ExplorePage() {
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
+                        <p className="text-1xs uppercase tracking-wider font-semibold text-muted-foreground">
                           Technical Breakout in {section.title}
                         </p>
                       </div>
                       {section.lastScreened && (
-                        <p className="text-[11px] text-muted-foreground/70">
+                        <p className="text-1xs text-muted-foreground/70">
                           Updated {formatTimeAgo(section.lastScreened)}
                         </p>
                       )}
                     </div>
-                    <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-2 text-1xs text-muted-foreground">
                       <span className="tabular-nums font-medium">{section.picks.length} found</span>
                       <span className="rounded-lg border border-border/30 px-2.5 py-1 uppercase tracking-wider text-2xs font-semibold bg-muted/30">
                         {section.snapshot?.status ?? "idle"}
@@ -1333,14 +1333,14 @@ export default function ExplorePage() {
                       {shouldGate && (
                         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg px-6 text-center">
                           <Lock className="h-4 w-4 text-muted-foreground" />
-                          <p className="text-[11px] font-semibold text-muted-foreground">
+                          <p className="text-1xs font-semibold text-muted-foreground">
                             Sign in to explore all signals
                           </p>
                         </div>
                       )}
                     </div>
                   )}
-                  <div className="mt-3 flex flex-wrap items-center gap-3 text-[11px] text-muted-foreground">
+                  <div className="mt-3 flex flex-wrap items-center gap-3 text-1xs text-muted-foreground">
                     {typeof section.averageChange === "number" ? (
                       <span>Average move {formatPercent(section.averageChange, { fractionDigits: 2, showPositiveSign: true })}</span>
                     ) : null}

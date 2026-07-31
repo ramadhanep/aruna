@@ -49,17 +49,17 @@ export function ChartHeaderBar({
           value={selectedCycles.join(',')}
           onValueChange={(value) => onCyclesChange(value.split(','))}
         >
-          <SelectTrigger className="h-8 text-[11px]">
+          <SelectTrigger className="h-8 text-1xs">
             <SelectValue placeholder="Select cycles" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem className="text-[11px]" value="normal">Normal</SelectItem>
-            <SelectItem className="text-[11px]" value="trump,current">Trump Years</SelectItem>
-            <SelectItem className="text-[11px]" value="all,current">All Years</SelectItem>
-            <SelectItem className="text-[11px]" value="pre,current">Pre-Election</SelectItem>
-            <SelectItem className="text-[11px]" value="election,current">Election</SelectItem>
-            <SelectItem className="text-[11px]" value="post,current">Post-Election</SelectItem>
-            <SelectItem className="text-[11px]" value="mid,current">Mid-Term</SelectItem>
+            <SelectItem className="text-1xs" value="normal">Normal</SelectItem>
+            <SelectItem className="text-1xs" value="trump,current">Trump Years</SelectItem>
+            <SelectItem className="text-1xs" value="all,current">All Years</SelectItem>
+            <SelectItem className="text-1xs" value="pre,current">Pre-Election</SelectItem>
+            <SelectItem className="text-1xs" value="election,current">Election</SelectItem>
+            <SelectItem className="text-1xs" value="post,current">Post-Election</SelectItem>
+            <SelectItem className="text-1xs" value="mid,current">Mid-Term</SelectItem>
           </SelectContent>
         </Select>
         <button

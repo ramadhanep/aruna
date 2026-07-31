@@ -130,7 +130,7 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
                       <Icon className="h-4 w-4 shrink-0" />
                       <div>
                         <p className="font-medium text-foreground">{item.title}</p>
-                        <p className="text-[11px] text-muted-foreground">{item.desc}</p>
+                        <p className="text-1xs text-muted-foreground">{item.desc}</p>
                       </div>
                     </Link>
                   );

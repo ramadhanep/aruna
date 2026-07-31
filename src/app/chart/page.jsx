@@ -389,7 +389,7 @@ function ElectionCyclePageContent() {
           type="button"
           size="sm"
           variant={normalTimeframe === option.value ? 'default' : 'ghost'}
-          className={`rounded-sm px-2 min-w-[2.1rem] font-bold py-0 text-[11px] ${normalTimeframe === option.value
+          className={`rounded-sm px-2 min-w-[2.1rem] font-bold py-0 text-1xs ${normalTimeframe === option.value
             ? 'bg-emerald-700 text-white/80'
             : 'border-border/20 text-muted-foreground'
             }`}
@@ -424,7 +424,7 @@ function ElectionCyclePageContent() {
           type="button"
           size="sm"
           variant="ghost"
-          className="h-6 rounded-md border border-border/30 px-2 gap-1.5 text-muted-foreground text-[11px] font-semibold"
+          className="h-6 rounded-md border border-border/30 px-2 gap-1.5 text-muted-foreground text-1xs font-semibold"
           title="Chart Type"
           aria-label="Chart type"
         >
@@ -2017,7 +2017,7 @@ function ElectionCyclePageContent() {
                   { label: 'Revenue / Share', value: fh.revenuePerShare != null ? fh.revenuePerShare.toFixed(2) : '—' },
                 ].filter(item => item.value !== '—').map((item) => (
                   <div key={item.label} className="space-y-0.5">
-                    <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
+                    <dt className="text-1xs text-muted-foreground">{item.label}</dt>
                     <dd className={`text-xs font-semibold ${item.highlight === 'pos' ? 'text-emerald-500' : item.highlight === 'neg' ? 'text-red-500' : ''}`}>
                       {item.value}
                     </dd>
@@ -2063,7 +2063,7 @@ function ElectionCyclePageContent() {
                     { label: 'Earnings Growth', value: fh.earningsGrowth },
                   ].filter(item => item.value != null).map((item) => (
                     <div key={item.label} className="space-y-0.5">
-                      <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
+                      <dt className="text-1xs text-muted-foreground">{item.label}</dt>
                       <dd className={`text-xs font-semibold ${getChangeTone(item.value)}`}>
                         {formatPct(item.value)}
                       </dd>
@@ -2091,7 +2091,7 @@ function ElectionCyclePageContent() {
                   { label: 'Ex-Dividend', value: div.exDividendDate ? formatDate(div.exDividendDate) : null },
                 ].filter(item => item.value != null).map((item) => (
                   <div key={item.label} className="space-y-0.5">
-                    <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
+                    <dt className="text-1xs text-muted-foreground">{item.label}</dt>
                     <dd className="text-xs font-semibold">{item.value}</dd>
                   </div>
                 ))}
@@ -2128,7 +2128,7 @@ function ElectionCyclePageContent() {
                   { label: 'Last Split', value: kse.lastSplitFactor || null },
                 ].filter(item => item.value != null).map((item) => (
                   <div key={item.label} className="space-y-0.5">
-                    <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
+                    <dt className="text-1xs text-muted-foreground">{item.label}</dt>
                     <dd className="text-xs font-semibold">{item.value}</dd>
                   </div>
                 ))}
@@ -2154,7 +2154,7 @@ function ElectionCyclePageContent() {
                   { label: 'Short Data Date', value: kse.sharesShortPreviousMonthDate ? formatDate(kse.sharesShortPreviousMonthDate) : null },
                 ].filter((item) => item.value != null).map((item) => (
                   <div key={item.label} className="space-y-0.5">
-                    <dt className="text-[11px] text-muted-foreground">{item.label}</dt>
+                    <dt className="text-1xs text-muted-foreground">{item.label}</dt>
                     <dd className="text-xs font-semibold">{item.value}</dd>
                   </div>
                 ))}
@@ -2208,12 +2208,12 @@ function ElectionCyclePageContent() {
                     <div key={idx} className="flex items-start gap-3 py-2 border-b border-border/10 last:border-0">
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold truncate">{entry.firm || 'Unknown'}</p>
-                        <p className="text-[11px] text-muted-foreground">
+                        <p className="text-1xs text-muted-foreground">
                           {entry.fromGrade ? `${entry.fromGrade} → ` : ''}{entry.toGrade || '—'}
                         </p>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className={`text-[11px] font-semibold ${actionColor}`}>{actionLabel}</p>
+                        <p className={`text-1xs font-semibold ${actionColor}`}>{actionLabel}</p>
                         <p className="text-2xs text-muted-foreground">{formatDate(entry.date)}</p>
                       </div>
                     </div>
@@ -2280,7 +2280,7 @@ function ElectionCyclePageContent() {
                     <CardDescription className="text-xs">{assetName}</CardDescription>
                     {screeningSignal && (
                       <div className="flex flex-wrap gap-1">
-                        <Badge variant="success" className="px-3 py-1 text-[11px]">
+                        <Badge variant="success" className="px-3 py-1 text-1xs">
                           BUY SIGNAL
                         </Badge>
                         {screeningSignalDateLabel && (
@@ -2601,7 +2601,7 @@ function ElectionCyclePageContent() {
                 >
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                      <p className="text-1xs uppercase tracking-wide text-muted-foreground">
                         Your Portfolio in {symbol}
                       </p>
                       <p className="text-xl font-semibold">
@@ -2609,7 +2609,7 @@ function ElectionCyclePageContent() {
                           ? `${formatDetailedCurrency(portfolioPosition.marketValue)} ${currencyCode}`
                           : '—'}
                       </p>
-                      <p className="text-[11px] text-muted-foreground">Market Value</p>
+                      <p className="text-1xs text-muted-foreground">Market Value</p>
                     </div>
                     {portfolioPosition.pnlPct != null && (
                       <span
@@ -2623,7 +2623,7 @@ function ElectionCyclePageContent() {
                 </div>
                 <div className="grid grid-cols-2 gap-4 border-t border-border/30 bg-background px-4 py-3 text-sm font-semibold">
                   <div className="space-y-1">
-                    <p className="text-[11px] text-muted-foreground">Average Price</p>
+                    <p className="text-1xs text-muted-foreground">Average Price</p>
                     <p>
                       {portfolioPosition.averagePrice != null
                         ? `${formatDetailedCurrency(portfolioPosition.averagePrice)} ${currencyCode}`
@@ -2631,7 +2631,7 @@ function ElectionCyclePageContent() {
                     </p>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[11px] text-muted-foreground">PNL</p>
+                    <p className="text-1xs text-muted-foreground">PNL</p>
                     <p
                       className={
                         portfolioPosition.pnl != null
@@ -2665,7 +2665,7 @@ function ElectionCyclePageContent() {
 
             {(fundamentalsLoading || fundamentals || cycleSummary || quarterlyHeatmap.rows.length > 0 || monthlyHeatmap.rows.length > 0) && (
               <div className="space-y-4">
-                <div className="flex gap-2 border-b border-border/30 text-[11px] overflow-x-auto whitespace-nowrap flex-nowrap pb-1 hide-scrollbar">
+                <div className="flex gap-2 border-b border-border/30 text-1xs overflow-x-auto whitespace-nowrap flex-nowrap pb-1 hide-scrollbar">
                   {infoTabs.map((tab) => (
                     <button
                       key={tab.value}

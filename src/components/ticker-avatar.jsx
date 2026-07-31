@@ -10,7 +10,7 @@ export function TickerAvatar({
   logo,
   size = "default", // "xs" | "sm" | "default"
   sizeClass = size === "xs" ? "h-5 w-5" : size === "sm" ? "h-6 w-6" : "h-8 w-8",
-  textClass = size === "xs" ? "text-[8px]" : size === "sm" ? "text-[10px]" : "text-[11px]",
+  textClass = size === "xs" ? "text-[8px]" : size === "sm" ? "text-[10px]" : "text-1xs",
   className = "",
   backgroundClass = "bg-muted/30",
 }) {

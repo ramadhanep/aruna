@@ -591,7 +591,7 @@ export default function PortfolioTrackerPage() {
           <div className="rounded-2xl border border-border/40 bg-card px-4 py-4 space-y-3">
             <div>
               <p className="text-xs font-semibold text-foreground">Local Portfolio</p>
-              <p className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
+              <p className="mt-1 text-1xs text-muted-foreground leading-relaxed">
                 Your portfolio is stored only on this device.
                 Sign in to securely sync across devices and prevent data loss.
               </p>
@@ -606,7 +606,7 @@ export default function PortfolioTrackerPage() {
               {signingIn ? 'Connecting…' : 'Sync with Google'}
             </Button>
             {authError && (
-              <p className="text-[11px] text-red-500 text-center">{authError}</p>
+              <p className="text-1xs text-red-500 text-center">{authError}</p>
             )}
           </div>
         )}
@@ -676,7 +676,7 @@ export default function PortfolioTrackerPage() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-foreground">Start Building Your Portfolio</p>
-                  <p className="mt-1.5 text-[11px] text-muted-foreground leading-relaxed max-w-xs">
+                  <p className="mt-1.5 text-1xs text-muted-foreground leading-relaxed max-w-xs">
                     Track your stocks, crypto and cash in one place.
                     {!isAuthenticated && ' Everything is stored locally until you decide to sync with Google.'}
                   </p>

@@ -63,7 +63,7 @@ export function TrialBanner() {
         </div>
         <div className="flex flex-col leading-none">
           <span className="text-[12px] font-medium text-foreground">Guest Mode</span>
-          <span className={`text-[11px] ${urgencyClass}`}>{formatTime(remainingMs)} remaining</span>
+          <span className={`text-1xs ${urgencyClass}`}>{formatTime(remainingMs)} remaining</span>
         </div>
       </div>
     </div>

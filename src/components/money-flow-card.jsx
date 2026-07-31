@@ -128,7 +128,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                   <h3 className="text-sm font-bold truncate">{formatTickerDisplay(report.symbol)}</h3>
                   <SignalBadge signal={report.signal} />
                 </div>
-                <p className="text-[11px] text-muted-foreground dark:text-white/70 truncate">
+                <p className="text-1xs text-muted-foreground dark:text-white/70 truncate">
                   {screenerSnapshot?.company_name || screenerSnapshot?.name || report.market_phase || "Indeterminate Phase"}
                 </p>
               </div>
@@ -214,7 +214,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
           <div className="space-y-3 pt-1">
             {/* Expanded view only extras */}
             {isExpandedView && (
-              <div className="grid grid-cols-2 gap-2 text-[11px]">
+              <div className="grid grid-cols-2 gap-2 text-1xs">
                 <div className="rounded-lg px-2 py-1.5">
                   <p className="text-muted-foreground">Broker Cost</p>
                   <p className="font-semibold">{formatCompactNumber(report?.broker_cost_analysis?.estimated_cost)}</p>
@@ -244,8 +244,8 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             {Array.isArray(report?.manipulation_risk?.reasons) && report.manipulation_risk.reasons.length > 0 && (
               <Card className="rounded-xl bg-amber-500/5 shadow-none">
                 <CardContent className="p-3">
-                  <p className="text-[11px] font-semibold mb-1">Risk notes</p>
-                  <ul className="text-[11px] text-muted-foreground space-y-1">
+                  <p className="text-1xs font-semibold mb-1">Risk notes</p>
+                  <ul className="text-1xs text-muted-foreground space-y-1">
                     {report.manipulation_risk.reasons.map((reason, index) => (
                       <li key={`${report.symbol}-risk-${index}`}>• {reason}</li>
                     ))}
@@ -257,12 +257,12 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             {report.analysis_summary && (
               <Card className="rounded-xl shadow-none">
                 <CardContent className="p-3 space-y-2">
-                  <p className="text-[11px] font-semibold">Smart Money Summary</p>
+                  <p className="text-1xs font-semibold">Smart Money Summary</p>
                   {String(report.analysis_summary)
                     .split("\n\n")
                     .filter(Boolean)
                     .map((paragraph, index) => (
-                      <p key={`${report.symbol}-summary-${index}`} className="text-[11px] text-muted-foreground leading-relaxed">
+                      <p key={`${report.symbol}-summary-${index}`} className="text-1xs text-muted-foreground leading-relaxed">
                         {paragraph}
                       </p>
                     ))}
@@ -271,7 +271,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             )}
 
             {isExpandedView && screenerSnapshot && (
-              <div className="grid grid-cols-3 gap-2 text-[11px]">
+              <div className="grid grid-cols-3 gap-2 text-1xs">
                 <div className="rounded-lg px-2 py-1.5">
                   <p className="text-muted-foreground">Price vs MA20</p>
                   <p className={`font-semibold ${getChangeTone(Number(screenerSnapshot?.derived?.price_vs_ma20_pct || 0))}`}>
@@ -341,7 +341,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                   <TableBody>
                     {brokers.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={6} className="text-[11px] text-center text-muted-foreground h-24">
+                        <TableCell colSpan={6} className="text-1xs text-center text-muted-foreground h-24">
                           No broker data available
                         </TableCell>
                       </TableRow>
@@ -349,14 +349,14 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                     {brokers.map((row, idx) => (
                       <TableRow key={`broker-${report.symbol}-${idx}`} className="hover:bg-muted/40 border-b-border/20">
                         {/* Buy Side */}
-                        <TableCell className="text-[11px] font-bold px-2.5 text-emerald-600 dark:text-emerald-400">{row.bCode}</TableCell>
-                        <TableCell className="text-[11px] text-right px-2.5 tabular-nums">{row.bVal === 0 ? '-' : formatCompactNumber(row.bVal)}</TableCell>
-                        <TableCell className="text-[11px] text-right px-2.5 font-medium text-emerald-600 dark:text-emerald-400 tabular-nums">{row.bAvg > 0 ? formatPrice(row.bAvg, { locale: "en-US", zeroIsEmpty: false }) : '-'}</TableCell>
+                        <TableCell className="text-1xs font-bold px-2.5 text-emerald-600 dark:text-emerald-400">{row.bCode}</TableCell>
+                        <TableCell className="text-1xs text-right px-2.5 tabular-nums">{row.bVal === 0 ? '-' : formatCompactNumber(row.bVal)}</TableCell>
+                        <TableCell className="text-1xs text-right px-2.5 font-medium text-emerald-600 dark:text-emerald-400 tabular-nums">{row.bAvg > 0 ? formatPrice(row.bAvg, { locale: "en-US", zeroIsEmpty: false }) : '-'}</TableCell>
 
                         {/* Sell Side */}
-                        <TableCell className="text-[11px] font-bold text-center px-2.5 border-l border-border/20 text-rose-500 dark:text-rose-400">{row.sCode}</TableCell>
-                        <TableCell className="text-[11px] text-right px-2.5 text-rose-500 dark:text-rose-400 tabular-nums">{row.sVal === 0 ? '-' : formatCompactNumber(row.sVal)}</TableCell>
-                        <TableCell className="text-[11px] text-right px-2.5 font-medium text-rose-600 dark:text-rose-400 tabular-nums">{row.sAvg > 0 ? formatPrice(row.sAvg, { locale: "en-US", zeroIsEmpty: false }) : '-'}</TableCell>
+                        <TableCell className="text-1xs font-bold text-center px-2.5 border-l border-border/20 text-rose-500 dark:text-rose-400">{row.sCode}</TableCell>
+                        <TableCell className="text-1xs text-right px-2.5 text-rose-500 dark:text-rose-400 tabular-nums">{row.sVal === 0 ? '-' : formatCompactNumber(row.sVal)}</TableCell>
+                        <TableCell className="text-1xs text-right px-2.5 font-medium text-rose-600 dark:text-rose-400 tabular-nums">{row.sAvg > 0 ? formatPrice(row.sAvg, { locale: "en-US", zeroIsEmpty: false }) : '-'}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

@@ -116,11 +116,11 @@ export default function PricingPage() {
           </Button>
 
           {authError && (
-            <p className="text-center text-[11px] text-red-500">{authError}</p>
+            <p className="text-center text-1xs text-red-500">{authError}</p>
           )}
 
           {!supabaseConfigured && (
-            <p className="text-center text-[11px] text-muted-foreground/70">
+            <p className="text-center text-1xs text-muted-foreground/70">
               Authentication is not configured in this environment.
             </p>
           )}
