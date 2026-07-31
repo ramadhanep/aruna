@@ -30,14 +30,19 @@ export async function GET(request, context) {
   }
 
   const baseUrl = resolveBaseUrl();
+  if (!baseUrl) {
+    return buildErrorResponse("APP_URL or VERCEL_URL is not configured", 500);
+  }
   const targetUrl = `${baseUrl}/api/screeners/${category}`;
 
+  const startedAt = Date.now();
   try {
     const response = await fetch(targetUrl, {
       method: "GET",
       headers: {
         "User-Agent": "aruna-cron",
       },
+      signal: AbortSignal.timeout(55000),
     });
     const payloadText = await response.text();
     let payload;
@@ -46,6 +51,17 @@ export async function GET(request, context) {
     } catch {
       payload = payloadText;
     }
+
+    console.log(
+      JSON.stringify({
+        level: "info",
+        source: "cron-trigger",
+        category,
+        status: response.status,
+        ok: response.ok,
+        durationMs: Date.now() - startedAt,
+      })
+    );
 
     return NextResponse.json(
       {
@@ -57,7 +73,15 @@ export async function GET(request, context) {
       { status: response.ok ? 200 : 502 }
     );
   } catch (error) {
-    console.error("Cron trigger failed", error);
+    console.error(
+      JSON.stringify({
+        level: "error",
+        source: "cron-trigger",
+        category,
+        error: error?.message || "Failed to reach screener",
+        durationMs: Date.now() - startedAt,
+      })
+    );
     return buildErrorResponse("Failed to reach screener", 502);
   }
 }
