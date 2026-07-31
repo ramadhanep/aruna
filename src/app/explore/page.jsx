@@ -973,59 +973,41 @@ export default function ExplorePage() {
           </div>
         </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="lg:col-span-4 flex flex-col gap-6">
-            <section>
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-3 w-3 rounded-full" />
-                <Skeleton className="h-4 w-32 rounded-full" />
-              </div>
-              <div className="mt-3 space-y-2">
-                {[1, 2, 3].map((item) => (
-                  <Skeleton key={`money-loading-${item}`} className="h-16 rounded-xl" />
-                ))}
+        <div className="grid grid-cols-1 gap-y-2 lg:block lg:columns-2 lg:gap-6">
+          {["idx", "us", "crypto"].map((category) => (
+            <section key={category} className="lg:[break-inside:avoid] lg:mb-2">
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-44 rounded-full" />
+                  <Skeleton className="h-3 w-28 rounded-full" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-16 rounded-full" />
+                  <Skeleton className="h-6 w-20 rounded-lg" />
+                </div>
               </div>
               <div className="mt-4">
-                <Skeleton className="h-9 w-full rounded-full" />
-              </div>
-            </section>
-          </div>
-          <div className="lg:col-span-8 lg:columns-2 lg:gap-6 space-y-4 lg:space-y-0">
-            {["idx", "us", "crypto"].map((category) => (
-              <section key={category} className="lg:[break-inside:avoid] lg:mb-2">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-44 rounded-full" />
-                    <Skeleton className="h-3 w-28 rounded-full" />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-4 w-16 rounded-full" />
-                    <Skeleton className="h-6 w-20 rounded-lg" />
-                  </div>
-                </div>
-                <div className="mt-4">
-                  {[...Array(5)].map((_, idx) => (
-                    <TickerRowSkeleton key={`${category}-shimmer-${idx}`} />
-                  ))}
-                </div>
-                <div className="mt-3">
-                  <Skeleton className="h-4 w-32 rounded-full" />
-                </div>
-              </section>
-            ))}
-            <section className="p-4 rounded-xl border border-border bg-card">
-              <Skeleton className="h-4 w-48 rounded-full" />
-              <div className="mt-4 grid grid-cols-3 gap-3">
-                {Array.from({ length: 3 }).map((_, i) => (
-                  <div key={i} className="space-y-1 text-center">
-                    <Skeleton className="h-8 w-full rounded-xl" />
-                    <Skeleton className="h-3 w-20 rounded-full mx-auto" />
-                  </div>
+                {[...Array(5)].map((_, idx) => (
+                  <TickerRowSkeleton key={`${category}-shimmer-${idx}`} />
                 ))}
               </div>
+              <div className="mt-3">
+                <Skeleton className="h-4 w-32 rounded-full" />
+              </div>
             </section>
-          </div>
+          ))}
         </div>
+        <section className="p-4 rounded-xl border border-border bg-card mt-4 lg:mt-2">
+          <Skeleton className="h-4 w-48 rounded-full" />
+          <div className="mt-4 grid grid-cols-3 gap-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="space-y-1 text-center">
+                <Skeleton className="h-8 w-full rounded-xl" />
+                <Skeleton className="h-3 w-20 rounded-full mx-auto" />
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     );
   }
@@ -1086,7 +1068,7 @@ export default function ExplorePage() {
               onValueChange={setActiveMarketTab}
               variant="ghost"
               className="rounded-full text-xs font-semibold px-4 py-2 h-auto"
-              activeClassName="bg-primary text-primary-foreground hover:bg-primary"
+              activeClassName="bg-primary text-primary-foreground hover:bg-primary dark:hover:bg-primary"
               inactiveClassName="bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
               options={MARKET_CATEGORIES.map((cat) => {
                 const CatIcon = cat.icon;
@@ -1110,7 +1092,7 @@ export default function ExplorePage() {
               onValueChange={setMarketTimeframe}
               variant="ghost"
               className="px-2.5 py-1 rounded-lg text-xs font-semibold h-auto"
-              activeClassName="bg-foreground text-background hover:bg-foreground"
+              activeClassName="bg-foreground text-background hover:bg-foreground dark:hover:bg-foreground"
               inactiveClassName="text-muted-foreground hover:bg-muted/60 hover:text-foreground"
               options={MARKET_TIMEFRAMES.map((tf) => ({ value: tf, label: tf }))}
             />

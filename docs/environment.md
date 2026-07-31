@@ -17,6 +17,8 @@
 |---|---|---|---|
 | `STOCKBIT_AUTHORIZATION_BEARER` | — | Money flow cron (Stockbit API auth) | Bearer token from Stockbit session |
 | `STOCKBIT_SCREENER_TEMPLATE_ID` | `"5461641"` | Money flow cron | Screener template ID on Stockbit |
+| `MONEY_FLOW_ENABLED` | `true` | `/api/money-flow`, `/api/cron/money-flow` | Server-side feature flag; `false` makes the API return `404` and the cron no-op |
+| `NEXT_PUBLIC_MONEY_FLOW_ENABLED` | `true` | Money Flow page, tools menu, manifest shortcuts | Client-side feature flag; `false` hides the Money Flow entry and page |
 | `API_ALLOWED_ORIGINS` | — | Middleware CORS allowlist | Comma-separated origins |
 | `VERCEL_URL` | Auto-set by Vercel | Middleware CORS, cron base URL | Automatically injected |
 | `NEXT_PUBLIC_APP_NAME` | `"Aruna"` | Layout, manifest | Set via `next.config.mjs` |

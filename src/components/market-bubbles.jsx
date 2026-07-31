@@ -377,8 +377,15 @@ export function MarketBubbles({ fullScreen = false }) {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[#09090b]">
-        <ScatterSkeleton />
+      <div className="w-full h-screen bg-[#09090b]">
+        <div className="absolute top-0 left-0 right-0 z-50 flex items-center px-3 py-2 sm:px-4 sm:py-3">
+          <Link href="/" className="flex h-11 w-11 items-center justify-center rounded-lg bg-white/5 hover:bg-white/10 transition-colors shrink-0" aria-label="Go back">
+            <ArrowLeft className="size-6 text-muted-foreground" />
+          </Link>
+        </div>
+        <div className="flex items-center justify-center h-full">
+          <ScatterSkeleton />
+        </div>
       </div>
     );
   }

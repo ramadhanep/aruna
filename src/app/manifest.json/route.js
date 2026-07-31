@@ -66,13 +66,15 @@ export async function GET() {
         url: '/msci',
         icons: [{ src: '/aruna.png', sizes: '192x192', type: 'image/png' }],
       },
-      {
-        name: 'Money Flow',
-        short_name: 'Flow',
-        description: 'Monitor broker accumulation and weekly top picks.',
-        url: '/money-flow',
-        icons: [{ src: '/aruna.png', sizes: '192x192', type: 'image/png' }],
-      },
+      ...(process.env.NEXT_PUBLIC_MONEY_FLOW_ENABLED !== "false"
+        ? [{
+            name: 'Money Flow',
+            short_name: 'Flow',
+            description: 'Monitor broker accumulation and weekly top picks.',
+            url: '/money-flow',
+            icons: [{ src: '/aruna.png', sizes: '192x192', type: 'image/png' }],
+          }]
+        : []),
       {
         name: 'Portfolio tracker',
         short_name: 'Portfolio',

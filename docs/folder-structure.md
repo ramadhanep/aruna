@@ -147,7 +147,7 @@
 │   ├── sw.js                        # PWA service worker (VERSION must match app version)
 │   ├── _headers                     # Vercel headers for service worker
 │   ├── trump.gif                    # Election-cycle watermark (chart page)
-│   ├── indonesian-flag.gif          # Election-cycle watermark (chart page)
+│   ├── anteck.gif          # Election-cycle watermark (chart page)
 │   └── america-eagle.gif            # Election-cycle watermark (chart page)
 ├── supabase/
 │   └── setup.sql                    # Complete DB setup (schema, RLS, seeds)

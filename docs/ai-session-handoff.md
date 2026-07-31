@@ -2,6 +2,57 @@
 
 **Last Updated**: 2026-07-31
 
+**Summary**: Executed **Phase 8 — Feature Stabilization & UX** (functional
+bugs, UX polish, money-flow flag). Architecture preserved; no refactoring.
+Caching (quotes + price-series only, DB cache, simple TTL, deterministic
+cleanup) is **scoped but not yet implemented** — planned as a separate phase
+after stabilization. Verified with `npm run lint` (0/0) and `npm run build`
+(pass).
+
+## Phase 8 Files Modified
+
+| File | Change |
+|---|---|
+| `src/components/manage-watchlist-dialog.jsx` | Seed items on dialog open edge (was dead `onOpenChange(true)` logic); drag-to-reorder via Pointer Events (`GripVertical` handle, `touch-none`, keyboard `ArrowUp/Down` fallback) replacing arrow buttons |
+| `src/app/watchlist/page.jsx` | Edit gated on `watchlistReady`; guest watchlist persisted to `localStorage` (`aruna_watchlist`) on save |
+| `src/lib/default-watchlist.js` | `readStoredWatchlist()` / `writeStoredWatchlist()` helpers |
+| `src/app/idx-bubbles/page.jsx` | Removed page-level duplicate back button |
+| `src/components/market-bubbles.jsx` | Loading state now shows the back button (header lives entirely in `MarketBubbles`) |
+| `src/app/explore/page.jsx` | `dark:hover:bg-*` added to active market/timeframe tabs; skeleton bottom section aligned to single-column layout; dead money-flow skeleton removed |
+| `src/components/auth-provider.jsx` | `loading` held true on OAuth callback (`?code=`) until first session event (10 s fallback) |
+| `src/components/trial-guard.jsx` | Waits on `auth.loading` before guest redirects |
+| `src/app/account/page.jsx` | Redirects only after auth resolves; device-aware default (`/watchlist` mobile, `/explore` desktop) |
+| `src/app/page.jsx` | Client device-aware first-load redirect (authenticated: mobile `/watchlist`, desktop `/explore`; guests `/explore`) |
+| `src/app/chart/page.jsx` | Skeleton loading blocks aligned to final layout (left: header + chart + timeframe pills; right: portfolio card + Add button + tabs + panel) |
+| `src/lib/tools-menu.js` | Money Flow entry gated on `NEXT_PUBLIC_MONEY_FLOW_ENABLED` |
+| `src/app/money-flow/page.jsx` | Early-return placeholder when flag off; fetch skipped |
+| `src/app/api/money-flow/route.js` | `404` when `MONEY_FLOW_ENABLED=false` |
+| `src/app/api/cron/money-flow/route.js` | No-op `200 { status: "disabled" }` when flag off (no truncation) |
+| `src/app/manifest.json/route.js` | Money Flow shortcut gated on `NEXT_PUBLIC_MONEY_FLOW_ENABLED` |
+| `.env.template` | Added `MONEY_FLOW_ENABLED` / `NEXT_PUBLIC_MONEY_FLOW_ENABLED` |
+| Docs | `environment.md`, `api.md`, `known-issues.md`, `ai-session-handoff.md` |
+
+## Phase 8 Validation Results
+
+- `npm run lint`: **0 errors / 0 warnings**.
+- `npm run build`: **passes** — 27 routes + `ƒ Proxy (Middleware)`.
+- Manual checks not yet run in browser: watchlist edit/reorder/guest-persistence,
+  OAuth callback landing, first-load device routing, /idx-bubbles back button,
+  dark-mode tab hover, chart skeleton fidelity, money-flow flag on/off.
+
+## Phase 8 Product Decisions
+
+- **Caching deferred to a separate phase**, scoped to `/api/quotes` +
+  `/api/price-series` only (no finance/fundamentals/symbol-search), DB cache
+  table, simple TTL, deterministic cleanup, no edge cache until real usage
+  justifies it.
+- **Money Flow disabled via env flags** (default on), not code removal —
+  re-enabling is an env flip.
+
+---
+
+## Phase 7 Record
+
 **Summary**: Executed **Phase 7 — Production Hardening & Release Readiness**
 per the approved assessment (docs/PHASE_EXECUTION_PLAN.md + assessment).
 Architecture preserved; no refactoring. All changes verified with

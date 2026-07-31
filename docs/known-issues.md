@@ -103,3 +103,35 @@ image-optimization usage). Revisit only if the app grows real image payloads.
   report-only CSP).
 - **`middleware.js` deprecation** → renamed to `src/proxy.js` (Next 16 proxy
   convention); build warning gone.
+
+## Resolved in Phase 8 (Feature Stabilization)
+
+- **Edit Watchlist dialog always empty** → `ManageWatchlistDialog` is a
+  controlled Radix Dialog, so `onOpenChange(true)` never fires on open and the
+  old "seed on open" logic was dead code. Items are now seeded from the
+  `watchlist` prop on the open edge via an effect. Edit is also gated on
+  `watchlistReady` so it can't open against the pre-load empty state.
+- **Guest watchlist not persisted** → watchlist now writes/reads
+  `aruna_watchlist` in `localStorage` for non-authenticated users (the key was
+  already reserved in `clear-data-button.jsx`); authenticated users keep
+  Supabase sync.
+- **Duplicate back button on `/idx-bubbles`** → the page's own back `<Link>`
+  was removed; `MarketBubbles` owns the fullscreen header (back +
+  timeframe + download) in both loading and loaded states.
+- **Dark-mode hover overriding active market tab** → explore's
+  `SegmentedControl` `activeClassName` lacked `dark:hover:bg-*`; the ghost
+  variant's `dark:hover:bg-accent/50` won on hover. Fixed by adding
+  `dark:hover:bg-primary` / `dark:hover:bg-foreground`.
+- **Authenticated users landing on `/pricing`** → OAuth callback pages carry
+  `?code=` while the session exchange is still in flight; guards treated the
+  pre-session moment as an expired guest and redirected. `AuthProvider` now
+  keeps `loading=true` until the first session event (10 s fallback),
+  `TrialGuard` waits on `auth.loading`, and `/account` waits for auth before
+  redirecting.
+- **Device-aware first load** → `/` is now a client redirect: authenticated
+  users go to `/watchlist` on mobile and `/explore` on desktop; guests keep
+  the existing `/explore` onboarding. `/account`'s no-param default matches.
+- **Money Flow disable flag** → `MONEY_FLOW_ENABLED` (server) +
+  `NEXT_PUBLIC_MONEY_FLOW_ENABLED` (client) gate the page, tools menu entry,
+  manifest shortcut, `/api/money-flow` (404), and the cron (no-op). Set both
+  to `false` to hide the feature; flip back to re-enable without code changes.

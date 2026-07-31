@@ -15,6 +15,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const MONEY_FLOW_ENABLED = process.env.NEXT_PUBLIC_MONEY_FLOW_ENABLED !== "false";
+
 function LoadingState() {
   return (
     <div className="space-y-3">
@@ -98,6 +100,7 @@ export default function MoneyFlowPage() {
     let cancelled = false;
 
     async function fetchData() {
+      if (!MONEY_FLOW_ENABLED) return;
       setLoading(true);
       setError("");
       try {
@@ -145,6 +148,16 @@ export default function MoneyFlowPage() {
     const total = reports.reduce((sum, item) => sum + Number(item?.volume_spike || 0), 0);
     return total / reports.length;
   }, [reports]);
+
+  if (!MONEY_FLOW_ENABLED) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
+        <p className="text-sm font-semibold">Money Flow is not available</p>
+        <p className="text-1xs text-muted-foreground">This feature is temporarily disabled.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4 pb-4">
       <div className="flex flex-col gap-4">

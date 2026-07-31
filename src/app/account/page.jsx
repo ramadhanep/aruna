@@ -2,25 +2,31 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-
-const getSafeRedirect = () => {
-  if (typeof window === "undefined") return "/portfolio-tracker";
-
-  const params = new URLSearchParams(window.location.search);
-  const redirect = params.get("redirect") || "/portfolio-tracker";
-
-  return redirect.startsWith("/") && !redirect.startsWith("//")
-    ? redirect
-    : "/portfolio-tracker";
-};
+import { useAuth } from "@/components/auth-provider";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 // Account is now a sidebar, but OAuth returns here before continuing.
+// Wait for the auth session to resolve so we don't redirect before Supabase
+// has finished the OAuth code exchange (which would leave guards mid-race).
 export default function AccountPage() {
   const router = useRouter();
+  const { loading } = useAuth();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
-    router.replace(getSafeRedirect());
-  }, [router]);
+    if (loading) return;
+
+    const params = new URLSearchParams(window.location.search);
+    const rawRedirect = params.get("redirect");
+    const safeRedirect =
+      rawRedirect?.startsWith("/") && !rawRedirect.startsWith("//")
+        ? rawRedirect
+        : isMobile
+          ? "/watchlist"
+          : "/explore";
+
+    router.replace(safeRedirect);
+  }, [router, loading, isMobile]);
 
   return (
     <div className="flex items-center justify-center py-16">

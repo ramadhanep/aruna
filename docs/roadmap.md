@@ -34,6 +34,10 @@
 - ✅ Structured request logging (Yahoo + cron summary lines)
 - ✅ Cron scheduling decision (disabled, documented)
 - ✅ Fetch timeouts (Yahoo/Stockbit/cron/client)
+- ✅ Feature stabilization & UX polish (watchlist edit/persist, drag reorder,
+  /idx-bubbles back button, dark-mode tab hover, OAuth init race, device-aware
+  first load, skeleton fidelity)
+- ✅ Money Flow feature flag (`MONEY_FLOW_ENABLED` / `NEXT_PUBLIC_MONEY_FLOW_ENABLED`)
 
 ## In Progress
 
@@ -41,6 +45,9 @@
 
 ## Planned
 
+- 📋 Market data caching (approved, scoped: `/api/quotes` + `/api/price-series`
+  only, DB cache table, simple TTL, deterministic cleanup, no edge cache) —
+  separate phase after stabilization
 - 📋 Testing infrastructure (Jest/Vitest + Playwright + E2E)
 - 📋 Live USD/IDR exchange rate for MSCI calculations
 - 📋 Full API rate limiting (all routes, not just screeners)

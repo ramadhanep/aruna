@@ -144,6 +144,13 @@ export async function GET(request) {
     return buildErrorResponse("Unauthorized", 401);
   }
 
+  if (process.env.MONEY_FLOW_ENABLED === "false") {
+    return NextResponse.json({
+      status: "disabled",
+      message: "Money flow feature is disabled",
+    });
+  }
+
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     return buildErrorResponse("Supabase configuration missing", 500);
   }

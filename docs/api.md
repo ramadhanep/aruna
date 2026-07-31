@@ -121,6 +121,10 @@ Institutional money flow reports.
 
 Response: `{ symbol?, reports: [{ timeframe, money_flow_score, signal, broker_accdist, ... }] }`
 
+> **Feature flag:** when `MONEY_FLOW_ENABLED=false`, this endpoint returns
+> `404` with a disabled message. The cron endpoint (`/api/cron/money-flow`)
+> responds `200 { status: "disabled" }` without touching the database.
+
 ### `GET /api/msci`
 
 MSCI inclusion tracker data.

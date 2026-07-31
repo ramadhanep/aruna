@@ -2266,13 +2266,11 @@ function ElectionCyclePageContent() {
               </CardContent>
             </Card>
 
-            <div className="flex gap-2">
-              {[...Array(4)].map((_, i) => (
+            <div className="flex flex-wrap justify-center items-center gap-1 mt-4 lg:mt-2">
+              {[...Array(6)].map((_, i) => (
                 <Skeleton key={i} className="flex-1 h-7 rounded-full" />
               ))}
             </div>
-
-            <Skeleton className="h-10 rounded-xl" />
           </>
         )}
 
@@ -2386,9 +2384,9 @@ function ElectionCyclePageContent() {
                           <div className="absolute inset-0 pointer-events-none">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
-                              src="/indonesian-flag.gif"
+                              src="/anteck.gif"
                               alt="IDX"
-                              className="absolute w-16 h-16 lg:w-24 lg:h-24 object-contain opacity-20"
+                              className="absolute w-16 h-16 lg:w-24 lg:h-24 object-contain opacity-50 rounded-md"
                               style={{ bottom: '3rem', right: '5rem' }}
                             />
                           </div>
@@ -2560,40 +2558,27 @@ function ElectionCyclePageContent() {
 
       <div className="lg:col-span-4 flex flex-col gap-4">
         {loading && (
-          <div className="mt-4 flex flex-col gap-8 lg:mt-0">
+          <div className="mt-4 flex flex-col gap-4 lg:mt-0">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Summary</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-3">
-                  {[...Array(6)].map((_, idx) => (
-                    <div key={idx} className="space-y-1">
-                      <Skeleton className="h-3 w-24 rounded-full" />
-                      <Skeleton className="h-4 w-20 rounded-full" />
-                    </div>
-                  ))}
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="space-y-2">
+                    <Skeleton className="h-3 w-32 rounded-full" />
+                    <Skeleton className="h-6 w-36 rounded-full" />
+                  </div>
+                  <Skeleton className="h-6 w-14 rounded-full" />
                 </div>
               </CardContent>
             </Card>
-            <div className="grid gap-2">
-              <Card>
-                <CardHeader className="gap-1">
-                  <CardTitle className="text-sm">Earnings Results</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-[240px] rounded-xl" />
-                </CardContent>
-              </Card>
-            </div>
-            <div className="border-b border-border/20 pb-2 flex flex-wrap gap-2">
-              {[...Array(4)].map((_, idx) => (
-                <Skeleton key={`tab-${idx}`} className="h-8 w-16 rounded-full" />
+            <Skeleton className="h-9 w-full rounded-xl" />
+            <div className="flex gap-2 border-b border-border/20 pb-2">
+              {[...Array(5)].map((_, idx) => (
+                <Skeleton key={`tab-${idx}`} className="h-6 w-14 rounded-full" />
               ))}
             </div>
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">Analysis</CardTitle>
+                <Skeleton className="h-4 w-24 rounded-full" />
               </CardHeader>
               <CardContent className="space-y-3">
                 {[...Array(5)].map((_, idx) => (

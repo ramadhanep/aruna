@@ -52,6 +52,21 @@ export function AuthProvider({ children }) {
 
     let isMounted = true;
 
+    // OAuth callback pages carry `?code=` (or an `error=`) before the session
+    // exchange completes. Keep `loading` true until the session event arrives so
+    // guards don't treat a logged-in user as a guest and redirect to /pricing.
+    const params = typeof window !== "undefined" ? window.location.search : "";
+    const isOAuthCallback = /[?&](code|access_token)=/.test(params);
+    const hasOAuthError = /[?&]error=/.test(params);
+    const holdLoading = isOAuthCallback && !hasOAuthError;
+
+    let callbackTimeout = null;
+    if (holdLoading) {
+      callbackTimeout = setTimeout(() => {
+        if (isMounted) setLoading(false);
+      }, 10000);
+    }
+
     supabase.auth.getSession().then(({ data, error }) => {
       if (!isMounted) return;
 
@@ -63,20 +78,27 @@ export function AuthProvider({ children }) {
         setSession(data?.session ?? null);
         setUser(data?.session?.user ?? null);
       }
-      setLoading(false);
+      if (!holdLoading) {
+        setLoading(false);
+      }
     });
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    } = supabase.auth.onAuthStateChange((event, nextSession) => {
       if (!isMounted) return;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
+      if (holdLoading && event !== "SIGNED_OUT") {
+        setLoading(false);
+        if (callbackTimeout) clearTimeout(callbackTimeout);
+      }
     });
 
     return () => {
       isMounted = false;
       subscription?.unsubscribe();
+      if (callbackTimeout) clearTimeout(callbackTimeout);
     };
   }, [supabase]);
 

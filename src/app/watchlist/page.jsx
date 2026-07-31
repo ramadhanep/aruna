@@ -12,7 +12,7 @@ import { fetchEncodedJson } from "@/lib/api-client";
 import { MiniChart } from "@/components/mini-chart";
 import { TickerRowSkeleton } from "@/components/ticker-row-skeleton";
 import { TickerRow } from "@/components/ticker-row";
-import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist";
+import { getDefaultWatchlist, readStoredWatchlist, writeStoredWatchlist } from "@/lib/default-watchlist";
 import { TrendingMarquee } from "@/components/trending-marquee";
 import { formatTickerDisplay } from "@/lib/utils";
 import { MOTION } from "@/lib/motion";
@@ -146,8 +146,10 @@ export default function HomePage() {
 
     queueMicrotask(() => {
       if (!isAuthenticated) {
-        if (!areWatchlistsEqual(DEFAULT_WATCHLIST, watchlist)) {
-          setWatchlist(getDefaultWatchlist());
+        const stored = readStoredWatchlist();
+        const seed = stored !== null ? stored : getDefaultWatchlist();
+        if (!areWatchlistsEqual(seed, watchlist)) {
+          setWatchlist(seed);
         }
         setWatchlistReady(true);
         return;
@@ -313,6 +315,7 @@ export default function HomePage() {
                 <Skeleton className="h-4 w-24 rounded-full" />
               </CardContent>
             </Card>
+            <Skeleton className="h-11 w-full rounded-md" />
           </div>
         </div>
       </div>
@@ -376,9 +379,13 @@ export default function HomePage() {
               <Button
                 type="button"
                 variant="ghost"
+                disabled={!watchlistReady}
                 onClick={() => {
                   if (!canUseProtectedActions) {
                     redirectToSignIn();
+                    return;
+                  }
+                  if (!watchlistReady) {
                     return;
                   }
                   setManageDialogOpen(true);
@@ -462,7 +469,7 @@ export default function HomePage() {
       </div>
 
       <ManageWatchlistDialog
-        open={manageDialogOpen && canUseProtectedActions}
+        open={manageDialogOpen && canUseProtectedActions && watchlistReady}
         onOpenChange={(nextOpen) => {
           if (!nextOpen) {
             setManageDialogOpen(false);
@@ -481,6 +488,9 @@ export default function HomePage() {
             return;
           }
           setWatchlist(newWatchlist);
+          if (!isAuthenticated) {
+            writeStoredWatchlist(newWatchlist);
+          }
           syncWatchlist(newWatchlist).catch(() => { });
         }}
       />

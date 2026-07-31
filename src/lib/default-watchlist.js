@@ -16,3 +16,35 @@ export const DEFAULT_WATCHLIST = [
 export function getDefaultWatchlist() {
   return DEFAULT_WATCHLIST.map((item) => ({ ...item }));
 }
+
+const WATCHLIST_STORAGE_KEY = "aruna_watchlist";
+
+function parseStoredWatchlist(raw) {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return null;
+    return parsed
+      .map((item, index) => ({
+        symbol: typeof item?.symbol === "string" ? item.symbol.trim() : null,
+        order: Number.isFinite(Number(item?.order)) ? Number(item.order) : index + 1,
+      }))
+      .filter((item) => item.symbol && item.symbol.length > 0);
+  } catch {
+    return null;
+  }
+}
+
+export function readStoredWatchlist() {
+  if (typeof window === "undefined") return null;
+  return parseStoredWatchlist(window.localStorage.getItem(WATCHLIST_STORAGE_KEY));
+}
+
+export function writeStoredWatchlist(items) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(items ?? []));
+  } catch {
+    // Ignore storage failures; watchlist simply won't persist locally.
+  }
+}
