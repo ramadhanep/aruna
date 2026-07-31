@@ -3,9 +3,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Star, AlignHorizontalDistributeCenter, BriefcaseBusiness, LayoutDashboard, Telescope } from "lucide-react";
+import { Star, AlignHorizontalDistributeCenter, BriefcaseBusiness, LayoutDashboard } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { TOOLS_ITEMS } from "@/lib/tools-menu";
+import { DURATION_CLASS } from "@/lib/motion";
 
 const navItems = [
   {
@@ -75,36 +75,38 @@ export function MobileBottomNav() {
 
   return (
     <nav
-      className={cn("fixed bottom-safe left-1/2 -translate-x-1/2 z-50 border border-border bg-card p-1.5 rounded-full transition-all duration-200 w-[300px]", isMinimized && "translate-y-2 -translate-x-1/2 opacity-95")}
+      className={cn("fixed bottom-safe left-1/2 -translate-x-1/2 z-50 border border-border bg-card p-1.5 rounded-xl w-max transition-transform", DURATION_CLASS.base, isMinimized && "translate-y-2 -translate-x-1/2 opacity-95")}
       style={{
         transformOrigin: "center bottom",
         willChange: "transform, opacity",
       }}
     >
       <div
-        className="mx-auto flex items-center justify-around"
+        className="flex items-center gap-1"
       >
         {navItems.map((item) => {
-          const isActive = item.matchPaths
-            ? item.matchPaths.some((path) => pathname === path)
-            : pathname === item.url;
+          const isActive = pathname === item.url;
           const Icon = item.icon;
 
           return (
             <Link
               key={item.url}
               href={item.url}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
-                "relative flex flex-col items-center justify-center transition-colors duration-200 rounded-full select-none outline-none py-3 w-full",
+                "relative flex flex-col items-center justify-center gap-0.5 rounded-md min-w-16 px-3 py-1.5 select-none transition-colors",
+                DURATION_CLASS.fast,
                 isActive
                   ? "bg-accent text-foreground"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
               <Icon className={cn(
-                "h-5 w-5 transition-transform duration-200",
+                "h-5 w-5 transition-transform",
+                DURATION_CLASS.fast,
                 isActive && "scale-105"
               )} />
+              <span className="text-[10px] font-medium leading-none">{item.title}</span>
             </Link>
           );
         })}
