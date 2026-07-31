@@ -1,5 +1,68 @@
 import { NextResponse } from 'next/server';
 
+// --- Minimal per-IP limiter for the heavy screener batches ---
+// ponytail: fixed-window counter in per-instance memory. Not authoritative
+// across lambda instances — good enough to stop casual abuse of the public
+// screener trigger, not a defense against distributed bots. Swap for a
+// managed rate limiter if the screener endpoint becomes a real target.
+const SCREENER_LIMIT = 20;
+const SCREENER_WINDOW_MS = 60_000;
+const requestCounts = new Map();
+
+const buildRateLimitResponse = (retryAfterSeconds) =>
+  new Response(JSON.stringify({ error: 'Too many screener requests. Try again later.' }), {
+    status: 429,
+    headers: {
+      'Content-Type': 'application/json',
+      'Retry-After': String(retryAfterSeconds),
+    },
+  });
+
+function enforceScreenerLimit(request) {
+  const url = new URL(request.url);
+  if (!url.pathname.startsWith('/api/screeners')) {
+    return null;
+  }
+  // Internal cron-triggered self-calls must not be throttled.
+  if (request.headers.get('user-agent') === 'aruna-cron') {
+    return null;
+  }
+
+  const ip =
+    request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+    request.headers.get('x-real-ip') ||
+    request.ip ||
+    'unknown';
+
+  const now = Date.now();
+  const entry = requestCounts.get(ip);
+
+  if (!entry || now - entry.windowStart >= SCREENER_WINDOW_MS) {
+    requestCounts.set(ip, { windowStart: now, count: 1 });
+    return null;
+  }
+
+  entry.count += 1;
+  if (entry.count > SCREENER_LIMIT) {
+    const retryAfterSeconds = Math.ceil(
+      (entry.windowStart + SCREENER_WINDOW_MS - now) / 1000
+    );
+    return buildRateLimitResponse(retryAfterSeconds);
+  }
+
+  if (requestCounts.size > 5000) {
+    for (const [key, value] of requestCounts) {
+      if (now - value.windowStart > SCREENER_WINDOW_MS * 2) {
+        requestCounts.delete(key);
+      }
+    }
+  }
+
+  return null;
+}
+
+// --- CORS allowlist (decorative; see docs/known-issues.md) ---
+
 const toList = (value) =>
   String(value || '')
     .split(',')
@@ -73,26 +136,13 @@ const resolveAllowedOrigin = (request) => {
   return null;
 };
 
-export function middleware(request) {
+export function proxy(request) {
+  const limited = enforceScreenerLimit(request);
+  if (limited) {
+    return limited;
+  }
+
   const allowedOrigin = resolveAllowedOrigin(request);
-
-  // if (isServerToServerRequest(request)) {
-  //   const response = NextResponse.next();
-  //   return applyCorsHeaders(response, allowedOrigin);
-  // }
-
-  // if (request.method === 'OPTIONS') {
-  //   if (!allowedOrigin) {
-  //     return buildUnauthorizedResponse();
-  //   }
-  //   const response = new NextResponse(null, { status: 204 });
-  //   return applyCorsHeaders(response, allowedOrigin);
-  // }
-
-  // if (!allowedOrigin) {
-  //   return buildUnauthorizedResponse();
-  // }
-
   const response = NextResponse.next();
   return applyCorsHeaders(response, allowedOrigin);
 }
