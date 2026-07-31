@@ -1,4 +1,4 @@
-const VERSION = '1.3.42';
+const VERSION = '1.7.56';
 const STATIC_CACHE = `aruna-static-${VERSION}`;
 const PAGE_CACHE = `aruna-pages-${VERSION}`;
 const DATA_CACHE = `aruna-data-${VERSION}`;
@@ -9,6 +9,7 @@ const OFFLINE_URL = '/offline';
 const APP_SHELL = [
   '/',
   '/?source=pwa',
+  '/explore',
   '/chart',
   '/idx-bubbles',
   '/watchlist',
