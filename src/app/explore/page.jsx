@@ -41,6 +41,23 @@ const HIGHLIGHT_SYMBOLS = [
 
 const MARKET_CATEGORIES = [
   {
+    id: "us",
+    title: "United States",
+    emoji: "🇺🇸",
+    icon: null,
+    marketTz: "America/New_York",
+    marketOpen: [9, 30],
+    marketClose: [16, 0],
+    symbols: [
+      { symbol: "NVDA", label: "NVIDIA Corporation", logo: `${SUPABASE_STORAGE_BASE}/us/NVDA.svg` },
+      { symbol: "AVGO", label: "Broadcom Inc.", logo: `${SUPABASE_STORAGE_BASE}/us/AVGO.svg` },
+      { symbol: "MU", label: "Micron Technology", logo: `${SUPABASE_STORAGE_BASE}/us/MU.svg` },
+      { symbol: "SNDK", label: "Sandisk Corporation", logo: `${SUPABASE_STORAGE_BASE}/us/SNDK.svg` },
+      { symbol: "ARM", label: "Arm Holdings plc", logo: `${SUPABASE_STORAGE_BASE}/us/ARM.svg` },
+      { symbol: "BE", label: "Bloom Energy Corporation", logo: `${SUPABASE_STORAGE_BASE}/us/BE.svg` },
+    ],
+  },
+  {
     id: "indonesia",
     title: "Indonesia",
     emoji: "🇮🇩",
@@ -51,7 +68,7 @@ const MARKET_CATEGORIES = [
     symbols: [
       { symbol: "^JKSE", label: "IHSG", logo: "https://s3-symbol-logo.tradingview.com/indices/jakarta-composite-index.svg" },
       { symbol: "BBCA.JK", label: "Bank Central Asia Tbk", logo: `${SUPABASE_STORAGE_BASE}/idx/BBCA.png` },
-      { symbol: "RANS.JK", label: "Rans Entertainmen Indonesia Tbk", logo: `${SUPABASE_STORAGE_BASE}/idx/RANS.png` },
+      { symbol: "ANTM.JK", label: "PT Antam (Persero) Tbk", logo: `${SUPABASE_STORAGE_BASE}/idx/ANTM.png` },
       { symbol: "BMRI.JK", label: "Bank Mandiri (Persero) Tbk", logo: `${SUPABASE_STORAGE_BASE}/idx/BMRI.png` },
       { symbol: "BBRI.JK", label: "Bank Rakyat Indonesia (Persero) Tbk", logo: `${SUPABASE_STORAGE_BASE}/idx/BBRI.png` },
       { symbol: "BRPT.JK", label: "Barito Pacific Tbk", logo: `${SUPABASE_STORAGE_BASE}/idx/BRPT.png` },
@@ -59,7 +76,7 @@ const MARKET_CATEGORIES = [
   },
   {
     id: "global",
-    title: "Global",
+    title: "Global Index",
     emoji: null,
     icon: Globe,
     marketTz: "America/New_York",
@@ -461,7 +478,7 @@ export default function ExplorePage() {
       window.navigator.standalone === true;
     return !isStandalone;
   });
-  const [activeMarketTab, setActiveMarketTab] = useState("indonesia");
+  const [activeMarketTab, setActiveMarketTab] = useState("us");
   const [marketTimeframe, setMarketTimeframe] = useState("1W");
   const [activeMarketQuotes, setActiveMarketQuotes] = useState({});
   const [activeMarketLoading, setActiveMarketLoading] = useState(false);
