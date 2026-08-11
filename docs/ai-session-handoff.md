@@ -95,6 +95,16 @@ recorded in `SHADCN_MIGRATION.md`.
 | `src/app/explore/page.jsx` | Screener status span → `Badge` |
 | Docs | `SHADCN_MIGRATION.md` (audit + phase records), `ai-session-handoff.md` |
 
+## Phase 9 Addendum (follow-up pass)
+
+- **Chart info-tabs size fix**: `text-sm` from the `TabsTrigger` base beat custom `text-1xs` (tailwind-merge can't resolve non-standard theme utilities) → forced `text-[11px]`.
+- **Tab content → `Table`**: Trading Snapshot, Upcoming Events, Financial Health info blocks converted from `<dl>` grids to shadcn `Table`.
+- **`money-flow-card.jsx`**: `SignalBadge`/`RiskBadge` → `Badge` variants (`accumulation`/`highrisk` added to `ui/badge.jsx` cva); Gross/Net raw buttons → `SegmentedControl`.
+- **`chart-trading-plan-panel.jsx`**: 3 raw `<label>` → `<Label>`.
+- **`ticker-row.jsx`**: `NEW` pill → `Badge variant="new"`.
+- Commits: `032115e` (P1–P4), `2bd6ca5` (tabs/table/money-flow round, P5).
+- Validation: lint clean, build passes, dev smoke 200 on `/`, `/chart`, `/explore`, `/portfolio-tracker`, `/watchlist`, `/idx-bubbles`.
+
 ## Phase 9 Validation
 
 - `npm run lint`: **0 errors / 0 warnings** after every file.

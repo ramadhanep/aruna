@@ -4,6 +4,7 @@ import { TickerAvatar } from "@/components/ticker-avatar";
 import { MiniChart } from "@/components/mini-chart";
 import { formatTickerDisplay, getChangeTone } from "@/lib/utils";
 import { DURATION_CLASS } from "@/lib/motion";
+import { Badge } from "@/components/ui/badge";
 
 export function TickerRow({
   symbol,
@@ -39,9 +40,7 @@ export function TickerRow({
           <div className="font-semibold text-sm truncate flex items-center gap-1.5">
             <span>{formatTickerDisplay(symbol)}</span>
             {isNew ? (
-              <span className="text-3xs font-bold tracking-wide text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 dark:bg-emerald-500/15 px-1.5 py-[2px] rounded-md">
-                NEW
-              </span>
+              <Badge variant="new" className="px-1.5 py-[2px] rounded-md">NEW</Badge>
             ) : null}
             {isWarning ? (
               <AlertTriangle className="h-3.5 w-3.5 text-amber-500" title="High volume vs market cap" />

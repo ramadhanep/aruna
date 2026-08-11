@@ -62,4 +62,14 @@ Goal: pages fully shadcn-blocked. One page per pass, lint per pass.
 Goal: confirm zero stragglers + docs sync.
 - [x] Grep old inline pattern clusters (`rounded-* border`, `border-input bg-background`, raw `<input`/`<button>`) across `src/components` + `src/app` — no raw `<input>`, `<details>/<summary>` reordered, `ToastViewport` gone, remaining `title=` are SVG-icon semantics / data prop names, not tooltips
 - [x] `npm run lint`, `npm run build` — both pass
-- [ ] Update `docs/ui-architecture.md`, `docs/known-issues.md`, `docs/ai-session-handoff.md` — P2, S
+- [x] Update `docs/ui-architecture.md`, `docs/known-issues.md`, `docs/ai-session-handoff.md` — P2, S
+
+## P5 — Follow-up (tabs polish + medium components)
+
+- [x] Chart info-tabs label size — `text-sm` (14px, TabsTrigger base) silently won over custom `text-1xs` (11px) because `tailwind-merge` can't resolve custom theme utilities → forced `text-[11px]`
+- [x] Chart tab content "information" blocks → `Table`: Trading Snapshot (1405), Upcoming Events (2015), Financial Health (2052). Right-aligned values, row dividers, hover
+- [x] `money-flow-card` — `SignalBadge`/`RiskBadge` raw spans → `Badge` variants (added `accumulation`/`highrisk` to `badge.jsx` cva); Gross/Net toggle → `SegmentedControl`
+- [x] `chart-trading-plan-panel` — 3 raw `<label>` → `<Label>`
+- [x] `ticker-row` `NEW` pill → `Badge variant="new"`
+- Skipped: remaining `<dl>` grids are 2-col dense layouts (profile facts, summary stats, ROE/ROA) — single-col Table flattens mobile density; seasonality heatmap `<table>` keeps sticky-col + inline cell styling (`ui/table` container would fight them); marquee/SectionHeader dedupe is `tailwind-cleanup` scope, not primitives
+- Validation: `npm run lint` clean, `npm run build` passes, 6 pages return 200 on dev smoke (root, chart, explore, portfolio-tracker, watchlist, idx-bubbles)
