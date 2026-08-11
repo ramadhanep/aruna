@@ -22,6 +22,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar } from 'recharts';
 import { Loader2, Sun, MoonStar, Clock3, Fullscreen, ArrowLeft, Settings, CandlestickChart, LineChart, BarChart2 } from "lucide-react";
+import { Tooltip as RadixTooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useTheme } from 'next-themes';
 import { AddAssetModal } from "@/components/add-asset-modal";
 import { SymbolSearchDialog } from "@/components/header-symbol-search";
@@ -34,6 +35,8 @@ import { useChartSeries } from '@/hooks/use-chart-series';
 import { useChartFundamentals } from '@/hooks/use-chart-fundamentals';
 import { useChartScreening } from '@/hooks/use-chart-screening';
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist";
 import { ArunaWatermark } from "@/components/aruna-watermark";
 import { TickerAvatar } from "@/components/ticker-avatar";
@@ -49,6 +52,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuCheckboxItem,
 } from "@/components/ui/dropdown-menu";
 
 const CHART_HEIGHT_CLASS = "h-[380px] lg:h-[500px]";
@@ -469,42 +473,47 @@ function ElectionCyclePageContent() {
       {renderChartTypeSwitcher()}
       {renderChartSettings()}
       {includeFullscreenToggle ? (
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className="h-6 w-6 rounded-full border border-border/30 p-0 text-muted-foreground"
-          onClick={() => setNormalFullscreenOpen(true)}
-          disabled={normalSeriesLoading || !normalChartReady}
-          title={`Fullscreen ${normalTimeframeLabel} candlestick`}
-          aria-label="Open candlestick fullscreen"
-        >
-          <Fullscreen className="h-4 w-4" />
-        </Button>
+        <RadixTooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-6 w-6 rounded-full border border-border/30 p-0 text-muted-foreground"
+              onClick={() => setNormalFullscreenOpen(true)}
+              disabled={normalSeriesLoading || !normalChartReady}
+              aria-label="Open candlestick fullscreen"
+            >
+              <Fullscreen className="h-4 w-4" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">Fullscreen {normalTimeframeLabel} candlestick</TooltipContent>
+        </RadixTooltip>
       ) : null}
     </>
   );
 
   const renderChartTypeSwitcher = () => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          className="h-6 rounded-md border border-border/30 px-2 gap-1.5 text-muted-foreground text-1xs font-semibold"
-          title="Chart Type"
-          aria-label="Chart type"
-        >
-          {chartDisplayType === 'line' ? (
-            <LineChart className="h-3.5 w-3.5" />
-          ) : chartDisplayType === 'candle' ? (
-            <BarChart2 className="h-3.5 w-3.5" />
-          ) : (
-            <CandlestickChart className="h-3.5 w-3.5" />
-          )}
-        </Button>
-      </DropdownMenuTrigger>
+    <RadixTooltip>
+      <TooltipTrigger asChild>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-6 rounded-md border border-border/30 px-2 gap-1.5 text-muted-foreground text-1xs font-semibold"
+              aria-label="Chart type"
+            >
+              {chartDisplayType === 'line' ? (
+                <LineChart className="h-3.5 w-3.5" />
+              ) : chartDisplayType === 'candle' ? (
+                <BarChart2 className="h-3.5 w-3.5" />
+              ) : (
+                <CandlestickChart className="h-3.5 w-3.5" />
+              )}
+            </Button>
+          </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44 z-[130]">
         {[
           { key: 'heikinAshi', label: 'Heikin Ashi', icon: CandlestickChart },
@@ -529,60 +538,49 @@ function ElectionCyclePageContent() {
           );
         })}
       </DropdownMenuContent>
-    </DropdownMenu>
+      </DropdownMenu>
+    </TooltipTrigger>
+      <TooltipContent side="bottom">Chart Type</TooltipContent>
+    </RadixTooltip>
   );
 
   const renderChartSettings = () => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+    <RadixTooltip>
+      <TooltipTrigger asChild>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
         <Button
           type="button"
           size="sm"
           variant="ghost"
           className="h-6 w-6 rounded-full border border-border/30 p-0 text-muted-foreground"
-          title="Chart Settings"
           aria-label="Chart settings"
         >
           <Settings className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48 z-[130]">
-        <DropdownMenuItem
-          className="flex items-center gap-2 cursor-pointer"
-          onSelect={(e) => {
-            e.preventDefault();
-            setScaleChoice(scaleChoice === 'log' ? 'linear' : 'log');
-          }}
+        <DropdownMenuCheckboxItem
+          checked={scaleChoice === 'log'}
+          onCheckedChange={() => setScaleChoice(scaleChoice === 'log' ? 'linear' : 'log')}
+          className="cursor-pointer"
+          onSelect={(e) => e.preventDefault()}
         >
-          <div className={`h-4 w-4 rounded border flex items-center justify-center ${scaleChoice === 'log' ? 'bg-emerald-700 border-emerald-700' : 'border-muted-foreground/30'
-            }`}>
-            {scaleChoice === 'log' && (
-              <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            )}
-          </div>
           <span className="text-sm">Logarithmic</span>
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          className="flex items-center gap-2 cursor-pointer"
-          onSelect={(e) => {
-            e.preventDefault();
-            setShowLivermoreKey((prev) => !prev);
-          }}
+        </DropdownMenuCheckboxItem>
+        <DropdownMenuCheckboxItem
+          checked={showLivermoreKey}
+          onCheckedChange={() => setShowLivermoreKey((prev) => !prev)}
+          className="cursor-pointer"
+          onSelect={(e) => e.preventDefault()}
         >
-          <div className={`h-4 w-4 rounded border flex items-center justify-center ${showLivermoreKey ? 'bg-emerald-700 border-emerald-700' : 'border-muted-foreground/30'
-            }`}>
-            {showLivermoreKey && (
-              <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-            )}
-          </div>
           <span className="text-sm">Livermore Key</span>
-        </DropdownMenuItem>
+        </DropdownMenuCheckboxItem>
       </DropdownMenuContent>
-    </DropdownMenu>
+      </DropdownMenu>
+    </TooltipTrigger>
+      <TooltipContent side="bottom">Chart Settings</TooltipContent>
+    </RadixTooltip>
   );
 
 
@@ -1276,12 +1274,7 @@ function ElectionCyclePageContent() {
                           <span className="text-muted-foreground">{item.label}</span>
                           <span className={`font-bold ${textColor}`}>{score} / 10</span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                          <div
-                            className={`h-full w-full rounded-full origin-left transition-transform ${color}`}
-                            style={{ transform: `scaleX(${pct / 100})` }}
-                          />
-                        </div>
+                        <Progress value={pct} className="h-1.5 bg-muted" indicatorClassName={color} />
                       </div>
                     );
                   })}
@@ -1724,12 +1717,11 @@ function ElectionCyclePageContent() {
                     return (
                       <div key={item.label} className="flex items-center gap-3">
                         <span className="w-20 text-right text-xs text-muted-foreground shrink-0">{item.label}</span>
-                        <div className="flex-1 h-2.5 rounded-full bg-muted overflow-hidden">
-                          <div
-                            className={`h-full w-full rounded-full origin-left transition-transform ${barColor}`}
-                            style={{ transform: `scaleX(${Math.min(100, percent) / 100})` }}
-                          />
-                        </div>
+                        <Progress
+                          value={Math.min(100, percent)}
+                          className="flex-1 h-2.5 bg-muted"
+                          indicatorClassName={barColor}
+                        />
                         <span className="w-8 text-xs tabular-nums text-muted-foreground">{item.value}</span>
                       </div>
                     );
@@ -2121,12 +2113,11 @@ function ElectionCyclePageContent() {
                       <span className="text-muted-foreground">{item.label}</span>
                       <span className="font-semibold">{formatPct(item.value)}</span>
                     </div>
-                    <div className="h-1.5 rounded-full bg-muted">
-                      <div
-                        className={`h-full rounded-full ${item.color}`}
-                        style={{ width: `${Math.min(100, Math.max(0, (item.value || 0) * 100))}%` }}
-                      />
-                    </div>
+                    <Progress
+                      value={Math.min(100, Math.max(0, (item.value || 0) * 100))}
+                      className="h-1.5 bg-muted"
+                      indicatorClassName={item.color}
+                    />
                   </div>
                 ))}
                 <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border/20">
@@ -2581,18 +2572,20 @@ function ElectionCyclePageContent() {
               </>
             ) : (
               <div className="flex items-center justify-center gap-2 mt-4 lg:mt-2">
-                {['all', 'Q1', 'Q2', 'Q3', 'Q4'].map((q) => (
-                  <button
-                    key={q}
-                    className={`w-16 h-6 text-xs font-semibold rounded-sm border-1.5 transition-colors ${quarterFilter === q
-                      ? 'border-primary bg-primary text-primary-foreground'
-                      : 'border-muted bg-popover hover:bg-accent hover:text-accent-foreground'
-                      }`}
-                    onClick={() => setQuarterFilter(q)}
-                  >
-                    {q === 'all' ? 'All' : q}
-                  </button>
-                ))}
+                <SegmentedControl
+                  value={quarterFilter}
+                  onValueChange={setQuarterFilter}
+                  options={[
+                    { value: 'all', label: 'All' },
+                    { value: 'Q1', label: 'Q1' },
+                    { value: 'Q2', label: 'Q2' },
+                    { value: 'Q3', label: 'Q3' },
+                    { value: 'Q4', label: 'Q4' },
+                  ]}
+                  className="w-16 h-6 text-xs font-semibold rounded-sm border-1.5"
+                  activeClassName="border-primary bg-primary text-primary-foreground"
+                  inactiveClassName="border-muted bg-popover hover:bg-accent hover:text-accent-foreground"
+                />
               </div>
             )}
           </>
@@ -2678,23 +2671,22 @@ function ElectionCyclePageContent() {
 
             {(fundamentalsLoading || fundamentals || cycleSummary || quarterlyHeatmap.rows.length > 0 || monthlyHeatmap.rows.length > 0) && (
               <div className="space-y-4">
-                <div role="tablist" className="flex gap-2 border-b border-border/30 text-1xs overflow-x-auto whitespace-nowrap flex-nowrap pb-1 hide-scrollbar">
-                  {infoTabs.map((tab) => (
-                    <button
-                      key={tab.value}
-                      type="button"
-                      role="tab"
-                      aria-selected={infoTab === tab.value}
-                      className={`flex-shrink-0 px-2 py-2 uppercase font-semibold transition-colors ${infoTab === tab.value
-                        ? 'text-emerald-700 dark:text-emerald-400 border-b-2 border-emerald-700 dark:border-emerald-400'
-                        : 'text-muted-foreground'
-                        }`}
-                      onClick={() => setInfoTab(tab.value)}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
+                <Tabs value={infoTab} onValueChange={setInfoTab} className="w-full">
+                  <TabsList
+                    variant="line"
+                    className="justify-start gap-2 overflow-x-auto flex-nowrap whitespace-nowrap border-b border-border/30 pb-1 hide-scrollbar w-full h-auto p-0 text-1xs"
+                  >
+                    {infoTabs.map((tab) => (
+                      <TabsTrigger
+                        key={tab.value}
+                        value={tab.value}
+                        className="flex-shrink-0 px-2 py-2 uppercase font-semibold text-muted-foreground data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 after:bg-emerald-700 dark:after:bg-emerald-400"
+                      >
+                        {tab.label}
+                      </TabsTrigger>
+                    ))}
+                  </TabsList>
+                </Tabs>
                 <div>
                   {infoTab === 'trading-plan' && (
                     <ChartTradingPlanPanel

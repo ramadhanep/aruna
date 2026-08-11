@@ -7,6 +7,7 @@ import { ArunaWatermark } from "./aruna-watermark";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { getIdxLogoUrl } from "@/lib/supabase-storage";
 import { ScatterSkeleton } from "./scatter-skeleton";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 
 export function MarketBubbles({ fullScreen = false }) {
   const [stocks, setStocks] = useState([]);
@@ -399,24 +400,17 @@ export function MarketBubbles({ fullScreen = false }) {
           </Link>
 
           <div className="flex-1 flex gap-2 p-1 bg-muted/30 rounded-full max-w-[200px]">
-            <button
-              onClick={() => setTimeframe("weekly")}
-              className={`min-h-11 flex items-center justify-center flex-1 rounded-full text-xs font-semibold transition-all ${timeframe === "weekly"
-                  ? "bg-card border-border text-foreground dark:text-white"
-                  : "hover:bg-muted"
-                }`}
-            >
-              Weekly
-            </button>
-            <button
-              onClick={() => setTimeframe("monthly")}
-              className={`min-h-11 flex items-center justify-center flex-1 rounded-full text-xs font-semibold transition-all ${timeframe === "monthly"
-                  ? "bg-card border-border text-foreground dark:text-white"
-                  : "hover:bg-muted"
-                }`}
-            >
-              Monthly
-            </button>
+            <SegmentedControl
+              value={timeframe}
+              onValueChange={setTimeframe}
+              options={[
+                { value: "weekly", label: "Weekly" },
+                { value: "monthly", label: "Monthly" },
+              ]}
+              className="min-h-11 flex-1 rounded-full text-xs font-semibold transition-all"
+              activeClassName="bg-card border-border text-foreground dark:text-white"
+              inactiveClassName="hover:bg-muted"
+            />
           </div>
 
           <button

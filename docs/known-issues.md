@@ -96,8 +96,8 @@ image-optimization usage). Revisit only if the app grows real image payloads.
 - **Discussions error responses unencoded** → all `/api/discussions` error
   responses now use `payload: encodePayload({ error })`; the client surfaces
   non-encoded `{ error }` bodies (e.g. 429s) with their real message.
-- **Native `alert()` calls (11 sites)** → replaced with a dependency-free
-  toast (`src/components/toast.jsx`, mounted in root layout).
+- **Native `alert()` calls (11 sites)** → replaced with shadcn `sonner` toasts
+  (`src/components/ui/sonner.jsx`, mounted in root layout).
 - **Missing security headers** → added via `next.config.mjs` `headers()`
   (nosniff, X-Frame-Options DENY, Referrer-Policy, Permissions-Policy, HSTS,
   report-only CSP).

@@ -76,9 +76,12 @@
 │   │   │   ├── sheet.jsx
 │   │   │   ├── skeleton.jsx
 │   │   │   ├── table.jsx
-│   │   │   └── tooltip.jsx
+│   │   │   ├── tooltip.jsx
+│   │   │   ├── sonner.jsx            # Toasts (shadcn sonner, mounted in root layout)
+│   │   │   ├── progress.jsx          # Progress bar primitive (indicatorClassName extended)
+│   │   │   ├── tabs.jsx              # Radix tabs
+│   │   │   └── command.jsx           # cmdk command palette/search primitive
 │   │   ├── mini-chart.jsx           # Lightweight sparkline chart component
-│   │   ├── toast.jsx                # Dependency-free toast notification system
 │   │   ├── app-layout-client.jsx    # Layout shell (nav, sidebar, chrome)
 │   │   ├── auth-provider.jsx        # Auth context + watchlist/portfolio sync
 │   │   ├── account-sidebar.jsx      # Slide-out account panel

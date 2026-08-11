@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Command, CommandItem, CommandList } from '@/components/ui/command';
 import { searchSymbols, fetchLatestQuote } from '@/lib/api-client';
 import { formatTickerDisplay } from '@/lib/utils';
-import { toast } from '@/components/toast';
+import { toast } from 'sonner';
 
 export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }) {
   const [symbolQuery, setSymbolQuery] = useState(initialSymbol);
@@ -107,7 +108,7 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
       if (quote?.price != null) avgPriceNum = quote.price;
     }
     if (avgPriceNum == null || isNaN(avgPriceNum)) {
-      toast('Could not determine average price for this symbol. Please enter it manually.');
+      toast.error('Could not determine average price for this symbol. Please enter it manually.');
       return;
     }
 
@@ -152,18 +153,24 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
                 />
                 {loadingSearch && <p className="text-xs text-muted-foreground">Searching...</p>}
                 {!loadingSearch && symbolResults.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 z-20 mt-1 max-h-40 overflow-auto rounded-md border border-border bg-background p-1 flex flex-col gap-1 shadow-md">
-                    {symbolResults.map(r => (
-                      <button
-                        type="button"
-                        key={r.symbol}
-                        onClick={() => handleSelectSymbol(r)}
-                        className="w-full text-left px-2 py-1 rounded hover:bg-accent text-xs"
-                      >
-                        <span className="font-medium">{formatTickerDisplay(r.symbol)}</span> <span className="text-muted-foreground">{r.name}</span>
-                      </button>
-                    ))}
-                  </div>
+                  <Command
+                    shouldFilter={false}
+                    className="absolute top-full left-0 right-0 z-20 mt-1 max-h-40 overflow-auto rounded-md border border-border bg-popover p-1 shadow-md"
+                  >
+                    <CommandList className="max-h-none">
+                      {symbolResults.map(r => (
+                        <CommandItem
+                          key={r.symbol}
+                          value={r.symbol}
+                          onSelect={() => handleSelectSymbol(r)}
+                          className="cursor-pointer"
+                        >
+                          <span className="font-medium">{formatTickerDisplay(r.symbol)}</span>{" "}
+                          <span className="text-muted-foreground">{r.name}</span>
+                        </CommandItem>
+                      ))}
+                    </CommandList>
+                  </Command>
                 )}
               </div>
 

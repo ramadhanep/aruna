@@ -1,14 +1,14 @@
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { Search, Loader2, Clock } from "lucide-react";
 import { searchSymbols } from "@/lib/api-client";
-import { cn, formatTickerDisplay } from "@/lib/utils";
-import { MOTION } from "@/lib/motion";
+import { formatTickerDisplay, cn } from "@/lib/utils";
 
 const SEARCH_HISTORY_KEY = "aruna_header_symbol_history";
 
@@ -104,17 +104,6 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
     setHistory([]);
   }, []);
 
-  const emptyState = useMemo(() => {
-    if (loading) return null;
-    if (!query.trim()) return null;
-    if (results.length) return null;
-    return (
-      <p className="text-xs text-center text-muted-foreground py-8">
-        No matches for &ldquo;{query.trim()}&rdquo;
-      </p>
-    );
-  }, [loading, query, results]);
-
   const handleOpenChange = useCallback(
     (nextOpen) => {
       onOpenChange?.(nextOpen);
@@ -144,8 +133,8 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
           />
         </div>
 
-        <div className="max-h-full overflow-hidden rounded-md border">
-          <div className="max-h-full overflow-y-auto">
+        <Command className="max-h-full overflow-hidden rounded-md border">
+          <CommandList>
             {loading && (
               <div className="flex items-center justify-center py-6 text-muted-foreground text-sm">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -153,51 +142,45 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
               </div>
             )}
 
+            {!query && history.length > 0 && (
+              <CommandGroup
+                heading={
+                  <span className="flex items-center justify-between pr-2">
+                    <span className="flex items-center gap-2">
+                      <Clock className="h-3.5 w-3.5" /> Recent
+                    </span>
+                    <Button variant="ghost" size="sm" className="text-xs h-7" onClick={clearHistory}>
+                      Clear
+                    </Button>
+                  </span>
+                }
+              >
+                {history.map((item) => (
+                  <CommandItem key={item} value={item} onSelect={() => handleSelect(item)}>
+                    {formatTickerDisplay(item)}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            )}
+
             {!loading && results.length > 0 && (
-              <ul className="divide-y">
+              <CommandGroup heading="Results">
                 {results.map((item) => (
-                  <li key={item.symbol} className={MOTION.slideUp}>
-                    <button
-                      type="button"
-                      onClick={() => handleSelect(item.symbol)}
-                      className="w-full px-4 py-3 text-left hover:bg-accent transition-colors"
-                    >
+                  <CommandItem key={item.symbol} value={item.symbol} onSelect={() => handleSelect(item.symbol)}>
+                    <span className="flex-1">
                       <p className="text-sm font-semibold uppercase">{formatTickerDisplay(item.symbol)}</p>
                       {item.name && <p className="text-xs text-muted-foreground line-clamp-1">{item.name}</p>}
-                    </button>
-                  </li>
+                    </span>
+                  </CommandItem>
                 ))}
-              </ul>
+              </CommandGroup>
             )}
 
-            {emptyState}
-
-            {!query && history.length > 0 && (
-              <div className="py-2">
-                <div className="flex items-center justify-between px-4 pb-2">
-                  <span className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-                    <Clock className="h-3.5 w-3.5" /> Recent
-                  </span>
-                  <Button variant="ghost" size="sm" className="text-xs h-7" onClick={clearHistory}>
-                    Clear
-                  </Button>
-                </div>
-                <div className="flex flex-wrap gap-2 px-4 pb-3">
-                  {history.map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      onClick={() => handleSelect(item)}
-                      className="rounded-full border px-3 py-1 text-xs font-medium hover:bg-accent"
-                    >
-                      {formatTickerDisplay(item)}
-                    </button>
-                  ))}
-                </div>
-              </div>
+            {query.trim() && !loading && !results.length && (
+              <CommandEmpty>No matches for &ldquo;{query.trim()}&rdquo;</CommandEmpty>
             )}
-          </div>
-        </div>
+          </CommandList>
+        </Command>
 
         <Button variant="outline" className="w-full text-sm mt-2" onClick={() => handleOpenChange(false)}>
           Cancel

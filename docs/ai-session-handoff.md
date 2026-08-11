@@ -9,6 +9,11 @@ business-logic dedupe, motion/microinteraction polish, component-primitive
 consolidation, and large-page decomposition. Architecture preserved — no new
 paradigms introduced. `npm run lint` clean after every phase.
 
+Subsequent phases: **Phase 8** (feature stabilization & UX) and **Phase 9**
+(shadcn-first UI migration per `docs/SHADCN_MIGRATION.md` — sonner, Sheet,
+Tooltip, SegmentedControl, cmdk Command, Tabs, Progress, Accordion, Badge,
+DropdownMenuCheckboxItem). Both lint+build clean.
+
 ## Maintenance Plan — Files Modified
 
 | Phase | File(s) | Change |
@@ -59,6 +64,60 @@ Manually verify the UI changes in-browser (list above), then decide on
 Mac/iOS-feel work (spring-physics transitions, gesture navigation) needs its
 own follow-up design-system phase — none of the 7 phases just completed add
 that, they were maintenance/debt cleanup only.
+
+---
+
+## Phase 9 Record
+
+**Summary**: Executed **Phase 9 — shadcn-first UI migration** per
+`docs/SHADCN_MIGRATION.md` (P1–P4). Goal: shadcn/ui primitives as the primary
+UI source across all pages, same layout template, zero visual regression.
+Real audit coverage was ~40% shadcn before; after hard gaps closed. Several
+audit-flagged "→ Card" conversions turned out to be no-ops (`card.jsx` is an
+unstylized `flex flex-col` div — no border/bg/padding) and were skipped,
+recorded in `SHADCN_MIGRATION.md`.
+
+## Phase 9 Files Modified
+
+| File | Change |
+|---|---|
+| `src/components/ui/{progress,sonner,tabs,command,dialog}.jsx` | Added via `npx shadcn@latest add`; `progress.jsx` extended with `indicatorClassName`; `dialog.jsx` regenerated to unified `radix-ui` imports |
+| `package.json` / `package-lock.json` | `sonner@2`, `cmdk`, `radix-ui` deps added by shadcn CLI |
+| `src/app/layout.jsx` | `<Toaster position="top-center" />` replaces `ToastViewport` (old position parity) |
+| `src/components/toast.jsx` | **Deleted** — migrated to sonner |
+| `add-asset-modal.jsx`, `discussion/page.jsx`, `explore/page.jsx`, `portfolio-tracker/page.jsx` | `toast()` import/`toast.error()`/`toast.success()` conversion (12 call sites) |
+| `src/components/account-sidebar.jsx` | Hand-rolled `fixed` drawer → radix `Sheet` (`side="left"`); `onOpenChange` drives `onClose` |
+| `src/app/chart/page.jsx` | `title` attrs → `Tooltip` (×3); info tabs → `Tabs variant="line"` (radix keyboard nav); quarter filter → `SegmentedControl`; 3 progress bars (governance/analyst/margin) → `Progress`; log-scale + Livermore toggles → `DropdownMenuCheckboxItem` |
+| `src/components/market-bubbles.jsx` | Weekly/Monthly raw buttons → `SegmentedControl` |
+| `src/components/header-symbol-search.jsx` | `<ul>` results + history chips → cmdk `Command` (`CommandGroup`/`CommandItem`/`CommandList`); `emptyState` memo removed |
+| `src/components/add-asset-modal.jsx` | Search-result `<button>` rows → `Command` |
+| `src/app/portfolio-tracker/page.jsx` | `<details>/<summary>` expanders ×2 → `Accordion`; inline `AddAssetForm` search → `Command` |
+| `src/app/explore/page.jsx` | Screener status span → `Badge` |
+| Docs | `SHADCN_MIGRATION.md` (audit + phase records), `ai-session-handoff.md` |
+
+## Phase 9 Validation
+
+- `npm run lint`: **0 errors / 0 warnings** after every file.
+- `npm run build`: **passes** (27 routes + Proxy).
+- Manual browser check not yet run — sonner toast positioning, Sheet swipe/close,
+  `Tabs` underline on active info tab, cmdk keyboard nav in both search UIs,
+  Accordion expand/collapse on portfolio tracker, Settings dropdown checkbox states.
+
+## Phase 9 Skipped (with reasons)
+
+| Item | Rationale |
+|---|---|
+| Banner / FX box / holding rows / price-target blocks → `Card` | `card.jsx` is an unstylized `<div class="flex flex-col gap-2">` — conversion adds zero classes, pure churn with regression risk |
+| `<dl>` key-value grids → `Table` | Already semantic; Table wrapper = churn |
+| Chart-type switcher → `DropdownMenuRadioGroup` | Radio dot ≠ existing emerald check; visual parity risk |
+| Price-range bar → `Progress` | Absolute range + markers, not a single-value progress |
+| `ui/chart.jsx` recharts wrapper adoption | chart page imports recharts directly; low visual value, churn risk on 2800-line page |
+| MCP for shadcn | Not needed — `npx shadcn@latest add` covers everything; `components.json` `registries` block left empty |
+
+## Phase 9 Next Recommended Task
+
+Manual in-browser verification list above, then commit the phase (currently
+uncommitted) under a single message referencing `SHADCN_MIGRATION.md`.
 
 ---
 

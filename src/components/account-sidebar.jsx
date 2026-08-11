@@ -7,7 +7,6 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ClearDataButton } from "@/components/clear-data-button";
 import { useAuth } from "@/components/auth-provider";
-import { DURATION_CLASS } from "@/lib/motion";
 import { useAppearanceMode } from "@/components/appearance-mode-provider";
 import { GoogleGlyph } from "@/components/google-glyph";
 import {
@@ -18,12 +17,12 @@ import {
   UserRound,
   ShieldAlert,
   Cookie,
-  X,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
+import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 
-function AccountSidebarContent({ onClose }) {
+function AccountSidebarContent() {
   const {
     user,
     loading,
@@ -112,18 +111,6 @@ function AccountSidebarContent({ onClose }) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Close Button */}
-      <div className="flex items-center justify-end px-4 py-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          onClick={onClose}
-        >
-          <X className="size-5 text-muted-foreground" />
-        </Button>
-      </div>
-
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-7 pb-12">
         <section className="space-y-3">
@@ -348,18 +335,13 @@ function AccountSidebarContent({ onClose }) {
 
 export function AccountSidebar({ open, onClose }) {
   return (
-    <>
-      <div
-        className={`fixed inset-0 bg-black/50 z-[60] transition-opacity ${DURATION_CLASS.base} ${open ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-          }`}
-        onClick={onClose}
-      />
-
-      {/* Sidebar */}
-      <div
-        className={`fixed top-0 left-0 bottom-0 w-full max-w-3xl bg-background z-[70] transition-transform ${DURATION_CLASS.slow} ease-out ${open ? "translate-x-0 pointer-events-auto" : "-translate-x-full pointer-events-none"
-          }`}
+    <Sheet open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
+      <SheetContent
+        side="left"
+        className="w-full sm:max-w-3xl max-w-3xl border-r"
       >
+        <SheetTitle className="sr-only">Account</SheetTitle>
+        <SheetDescription className="sr-only">Account settings, appearance, and data management.</SheetDescription>
         <Suspense
           fallback={
             <div className="p-4 space-y-3">
@@ -376,9 +358,9 @@ export function AccountSidebar({ open, onClose }) {
             </div>
           }
         >
-          <AccountSidebarContent onClose={onClose} />
+          <AccountSidebarContent />
         </Suspense>
-      </div>
-    </>
+      </SheetContent>
+    </Sheet>
   );
 }

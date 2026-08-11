@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { Loader2, Lock, Download, Flame, Globe, Zap, ArrowUpRight, ArrowDownRight, Gem, Magnet, Rotate3D, Axe, MessageCircleMore, Droplets } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { SUPABASE_STORAGE_BASE } from "@/lib/supabase-storage";
@@ -17,7 +18,7 @@ import { MiniChart } from "@/components/mini-chart";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { cn, formatPercent, formatPrice, formatTickerDisplay, getChangeTone } from "@/lib/utils";
-import { toast } from "@/components/toast";
+import { toast } from "sonner";
 
 const CATEGORY_LABELS = {
   idx: "IDX 🇮🇩",
@@ -824,11 +825,11 @@ export default function ExplorePage() {
         const message = data?.status
           ? `${category.toUpperCase()} → ${data.status.toUpperCase()}`
           : `${category.toUpperCase()} → failed`;
-        toast(message, { type: "success" });
+        toast.success(message);
         await loadSnapshots();
       } catch (error) {
         console.warn("Trigger failed", error);
-        toast(error?.message || `${category.toUpperCase()} → error`);
+        toast.error(error?.message || `${category.toUpperCase()} → error`);
       } finally {
         setManualLoading((prev) => ({ ...prev, [category]: false }));
       }
@@ -1320,9 +1321,9 @@ export default function ExplorePage() {
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-1xs text-muted-foreground">
                       <span className="tabular-nums font-medium">{section.picks.length} found</span>
-                      <span className="rounded-lg border border-border/30 px-2.5 py-1 uppercase tracking-wider text-2xs font-semibold bg-muted/30">
+                      <Badge className="rounded-lg px-2.5 py-1 uppercase tracking-wider">
                         {section.snapshot?.status ?? "idle"}
-                      </span>
+                      </Badge>
                     </div>
                   </div>
                   <div className="mt-4 space-y-0.5">

@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
-import { toast } from "@/components/toast";
+import { toast } from "sonner";
 
 /**
  * Parse message content and convert stock mentions to links
@@ -394,7 +394,7 @@ export default function DiscussionPage() {
       setTimeout(scrollToBottom, 100);
     } catch (err) {
       console.error('Failed to send message:', err);
-      toast(err.message || 'Failed to send message');
+      toast.error(err.message || 'Failed to send message');
     }
   };
 
@@ -412,7 +412,7 @@ export default function DiscussionPage() {
       setMessages(prev => prev.filter(m => m.id !== messageId));
     } catch (err) {
       console.error('Failed to delete message:', err);
-      toast(err.message || 'Failed to delete message');
+      toast.error(err.message || 'Failed to delete message');
     }
   };
 

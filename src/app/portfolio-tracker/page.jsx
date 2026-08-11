@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } fr
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
+import { Command, CommandItem, CommandList } from '@/components/ui/command';
 import { Plus, MoreVertical, Pencil, Trash2, Loader2, CreditCard, TrendingUp, ArrowUpDown, Check, Eye, EyeClosed } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth-provider';
@@ -24,7 +26,7 @@ import { usePortfolioData, getDefaultPortfolio } from '@/hooks/use-portfolio-dat
 import { usePullToRefresh } from '@/hooks/use-pull-to-refresh';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { PortfolioMiniChart } from '@/components/portfolio-mini-chart';
-import { toast } from '@/components/toast';
+import { toast } from 'sonner';
 
 // Dynamic chart component to keep page light and avoid SSR issues
 const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { ssr: false });
@@ -88,18 +90,24 @@ function AddAssetForm({
             />
             {loadingSearch && <p className="text-xs text-muted-foreground">Searching...</p>}
             {!loadingSearch && symbolResults.length > 0 && (
-              <div className="absolute top-full left-0 right-0 z-20 mt-1 max-h-40 overflow-auto rounded-md border border-border bg-background p-1 flex flex-col gap-2">
-                {symbolResults.map(r => (
-                  <button
-                    type="button"
-                    key={r.symbol}
-                    onClick={() => handleSelectSymbol(r)}
-                    className="w-full text-left px-2 py-1 rounded hover:bg-accent text-xs"
-                  >
-                    <span className="font-medium">{formatTickerDisplay(r.symbol)}</span> <span className="text-muted-foreground">{r.name}</span>
-                  </button>
-                ))}
-              </div>
+              <Command
+                shouldFilter={false}
+                className="absolute top-full left-0 right-0 z-20 mt-1 max-h-40 overflow-auto rounded-md border border-border bg-popover p-1 shadow-md"
+              >
+                <CommandList className="max-h-none">
+                  {symbolResults.map(r => (
+                    <CommandItem
+                      key={r.symbol}
+                      value={r.symbol}
+                      onSelect={() => handleSelectSymbol(r)}
+                      className="cursor-pointer"
+                    >
+                      <span className="font-medium">{formatTickerDisplay(r.symbol)}</span>{" "}
+                      <span className="text-muted-foreground">{r.name}</span>
+                    </CommandItem>
+                  ))}
+                </CommandList>
+              </Command>
             )}
           </div>
 
@@ -382,13 +390,13 @@ export default function PortfolioTrackerPage() {
     if (assetType === 'cash') {
       // Cash asset
       if (!form.category.trim()) {
-        toast('Please enter a category for cash asset (e.g., Bank BCA)');
+        toast.error('Please enter a category for cash asset (e.g., Bank BCA)');
         return;
       }
 
       const nativeAmount = amountNum;
       if (nativeAmount <= 0 || isNaN(nativeAmount)) {
-        toast('Please enter the cash amount');
+        toast.error('Please enter the cash amount');
         return;
       }
 
@@ -396,13 +404,13 @@ export default function PortfolioTrackerPage() {
       let totalUSD = nativeAmount;
       if (form.cashCurrency === 'IDR') {
         if (fxRate <= 0) {
-          toast('IDR FX rate unavailable. Please refresh to update rates.');
+          toast.error('IDR FX rate unavailable. Please refresh to update rates.');
           return;
         }
         totalUSD = nativeAmount * fxRate; // IDR * (USD per IDR) = USD
       } else if (form.cashCurrency === 'SGD') {
         if (sgdPerUsd <= 0) {
-          toast('SGD FX rate unavailable. Please refresh to update rates.');
+          toast.error('SGD FX rate unavailable. Please refresh to update rates.');
           return;
         }
         totalUSD = nativeAmount / sgdPerUsd; // SGD / (SGD per USD) = USD
@@ -433,7 +441,7 @@ export default function PortfolioTrackerPage() {
     } else {
       // Digital asset
       if (!form.symbol) {
-        toast('Please select a symbol');
+        toast.error('Please select a symbol');
         return;
       }
 
@@ -457,7 +465,7 @@ export default function PortfolioTrackerPage() {
         }
       }
       if (avgPriceNum == null || isNaN(avgPriceNum)) {
-        toast('Could not determine average price for this symbol. Please enter it manually.');
+        toast.error('Could not determine average price for this symbol. Please enter it manually.');
         return;
       }
 
@@ -698,12 +706,12 @@ export default function PortfolioTrackerPage() {
             </div>
 
             <div className="flex flex-col gap-2">
-              <div className="rounded-xl border border-border/20">
-                <details>
-                  <summary className="list-none cursor-pointer select-none text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400 py-2.5">
+              <Accordion type="single" collapsible className="rounded-xl border border-border/20">
+                <AccordionItem value="detail" className="border-b-0">
+                  <AccordionTrigger className="justify-center py-2.5 text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400 [&>svg]:hidden">
                     View Detail
-                  </summary>
-                  <div className="space-y-3 pt-1">
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 pt-1">
                     <div className="flex items-start gap-3 p-3 rounded-xl border">
                       <div className="flex-1">
                         <p className="text-sm text-muted-foreground mb-1">Digital Assets</p>
@@ -733,16 +741,16 @@ export default function PortfolioTrackerPage() {
                         <CreditCard className="h-5 w-5 text-emerald-800 dark:text-emerald-500" />
                       </div>
                     </div>
-                  </div>
-                </details>
-              </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
 
-              <div className="rounded-xl border border-border/20">
-                <details>
-                  <summary className="list-none cursor-pointer select-none text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400 py-2.5">
+              <Accordion type="single" collapsible className="rounded-xl border border-border/20">
+                <AccordionItem value="allocation" className="border-b-0">
+                  <AccordionTrigger className="justify-center py-2.5 text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400 [&>svg]:hidden">
                     View Allocation Chart
-                  </summary>
-                  <div className="space-y-3 pt-1">
+                  </AccordionTrigger>
+                  <AccordionContent>
                     <PortfolioPie
                       digitalUSD={digitalMarket}
                       cashUSD={totalCash}
@@ -753,9 +761,9 @@ export default function PortfolioTrackerPage() {
                       idrPerUsd={idrPerUsd}
                       sgdPerUsd={sgdPerUsd}
                     />
-                  </div>
-                </details>
-              </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
             </div>
           </CardContent>
         </Card>
