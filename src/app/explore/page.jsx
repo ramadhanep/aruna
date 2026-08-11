@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Loader2, Lock, Download, Flame, Globe, Zap, ArrowUpRight, ArrowDownRight, Gem, Magnet, Rotate3D, Axe, MessageCircleMore, Droplets } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { SUPABASE_STORAGE_BASE } from "@/lib/supabase-storage";
-import { MOTION } from "@/lib/motion";
+import { MOTION, DURATION_CLASS } from "@/lib/motion";
 import { TickerRowSkeleton } from "@/components/ticker-row-skeleton";
 import { TickerRow } from "@/components/ticker-row";
 import { TickerAvatar } from "@/components/ticker-avatar";
@@ -358,6 +358,63 @@ function MarketSymbolCardSkeleton() {
         <Skeleton className="h-10 w-[72px] rounded-xl" />
       </div>
     </div>
+  );
+}
+
+function MarketSymbolCard({ item, marketTimeframe }) {
+  const q = item.quote;
+  const tfChange = getTimeframeChange(q, marketTimeframe);
+  const changeValue = tfChange ?? (q?.change ?? 0);
+  const isPositive = changeValue >= 0;
+  const isAtATH = marketTimeframe === "ATH" && tfChange !== null && Math.abs(tfChange) < 0.5;
+  return (
+    <Link
+      href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
+      className={cn(
+        "rounded-xl p-3.5 border transition-all block card-hover bg-card",
+        DURATION_CLASS.base,
+        MOTION.fadeIn,
+        isAtATH
+          ? "border-amber-500/40 bg-card ring-1 ring-amber-500/20"
+          : "border-border/20 hover:border-border/40"
+      )}
+    >
+      <div className="flex items-center gap-2.5">
+        <TickerAvatar symbol={item.symbol} logo={item.logo || q?.logo} />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5">
+            <p className="text-sm font-bold text-foreground tracking-tight truncate">{item.symbol.replace('.JK', '')}</p>
+            {isAtATH && <Flame className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
+          </div>
+          <p className="text-1xs text-muted-foreground truncate">{formatTickerDisplay(item.label)}</p>
+        </div>
+      </div>
+      <div className="mt-3 flex items-end justify-between gap-2">
+        <div>
+          <p className="text-base font-bold text-foreground tabular-nums">
+            {q ? formatPrice(q.price, { locale: "en-US", minimumFractionDigits: 2, maximumFractionDigits: 2, zeroIsEmpty: false }) : "—"}
+          </p>
+          <p className={`text-xs font-semibold mt-0.5 ${getChangeTone(isPositive ? 1 : -1)}`}>
+            {tfChange !== null
+              ? `${isPositive ? "+" : ""}${tfChange.toFixed(2)}%`
+              : q && typeof q.changePercent === "number"
+                ? `${q.changePercent >= 0 ? "+" : ""}${q.changePercent.toFixed(2)}%`
+                : "—"}
+            {marketTimeframe !== "1D" && tfChange !== null && (
+              <span className="text-muted-foreground font-normal ml-1">({marketTimeframe})</span>
+            )}
+          </p>
+        </div>
+        <div className={`flex items-center ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
+          <MiniChart
+            data={q?.chartData || []}
+            isPositive={isPositive}
+            width={72}
+            height={40}
+          />
+        </div>
+      </div>
+    </Link>
   );
 }
 
@@ -1038,7 +1095,7 @@ export default function ExplorePage() {
     >
       {pullDistance > 0 && (
         <div
-          className="flex items-center justify-center transition-all duration-200"
+          className={cn("flex items-center justify-center transition-all", DURATION_CLASS.base)}
           style={{ height: `${Math.min(pullDistance, 120)}px` }}
         >
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -1126,62 +1183,9 @@ export default function ExplorePage() {
             ? activeCategory.symbols.map((item) => (
               <MarketSymbolCardSkeleton key={`loading-${item.symbol}`} />
             ))
-            : activeCategory.symbols.map((item) => {
-              const q = item.quote;
-              const tfChange = getTimeframeChange(q, marketTimeframe);
-              const changeValue = tfChange ?? (q?.change ?? 0);
-              const isPositive = changeValue >= 0;
-              const isAtATH = marketTimeframe === "ATH" && tfChange !== null && Math.abs(tfChange) < 0.5;
-              return (
-                <Link
-                  key={item.symbol}
-                  href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
-                  className={cn(
-                    "rounded-xl p-3.5 border transition-all duration-200 block card-hover bg-card",
-                    MOTION.fadeIn,
-                    isAtATH
-                      ? "border-amber-500/40 bg-card ring-1 ring-amber-500/20"
-                      : "border-border/20 hover:border-border/40"
-                  )}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <TickerAvatar symbol={item.symbol} logo={item.logo || q?.logo} />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <p className="text-sm font-bold text-foreground tracking-tight truncate">{item.symbol.replace('.JK', '')}</p>
-                        {isAtATH && <Flame className="h-3.5 w-3.5 text-amber-500 shrink-0" />}
-                      </div>
-                      <p className="text-1xs text-muted-foreground truncate">{formatTickerDisplay(item.label)}</p>
-                    </div>
-                  </div>
-                  <div className="mt-3 flex items-end justify-between gap-2">
-                    <div>
-                      <p className="text-base font-bold text-foreground tabular-nums">
-                        {q ? formatPrice(q.price, { locale: "en-US", minimumFractionDigits: 2, maximumFractionDigits: 2, zeroIsEmpty: false }) : "—"}
-                      </p>
-                      <p className={`text-xs font-semibold mt-0.5 ${getChangeTone(isPositive ? 1 : -1)}`}>
-                        {tfChange !== null
-                          ? `${isPositive ? "+" : ""}${tfChange.toFixed(2)}%`
-                          : q && typeof q.changePercent === "number"
-                            ? `${q.changePercent >= 0 ? "+" : ""}${q.changePercent.toFixed(2)}%`
-                            : "—"}
-                        {marketTimeframe !== "1D" && tfChange !== null && (
-                          <span className="text-muted-foreground font-normal ml-1">({marketTimeframe})</span>
-                        )}
-                      </p>
-                    </div>
-                    <div className={`flex items-center ${isPositive ? "text-emerald-500" : "text-red-500"}`}>
-                      <MiniChart
-                        data={q?.chartData || []}
-                        isPositive={isPositive}
-                        width={72}
-                        height={40}
-                      />
-                    </div>
-                  </div>
-                </Link>
-              );
-            })}
+            : activeCategory.symbols.map((item) => (
+              <MarketSymbolCard key={item.symbol} item={item} marketTimeframe={marketTimeframe} />
+            ))}
         </div>
       </section>
 

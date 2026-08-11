@@ -38,7 +38,7 @@ const {
 
 ### 2. Watchlist & Portfolio — localStorage + Supabase
 
-**Guest mode**: Data stored in `localStorage` keys `aruna-watchlist` and `aruna-portfolio`.
+**Guest mode**: Data stored in `localStorage` keys `aruna_watchlist` and `aruna-portfolio`.
 
 **Authenticated mode**: Data loaded from Supabase `watchlists` and `portfolios` tables on sign-in. Written to both localStorage (cache) and Supabase (remote) on changes.
 

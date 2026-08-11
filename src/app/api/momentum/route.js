@@ -42,7 +42,7 @@ export async function GET(request) {
   try {
     if (!supabaseUrl || !supabaseServiceKey) {
       return NextResponse.json(
-        { error: 'Supabase configuration missing' },
+        { payload: encodePayload({ error: 'Supabase configuration missing' }) },
         { status: 500 }
       );
     }
@@ -63,7 +63,7 @@ export async function GET(request) {
     if (error) {
       console.error('Database error:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch stocks' },
+        { payload: encodePayload({ error: 'Failed to fetch stocks' }) },
         { status: 500 }
       );
     }
@@ -138,7 +138,7 @@ export async function GET(request) {
   } catch (error) {
     console.error('API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { payload: encodePayload({ error: 'Internal server error' }) },
       { status: 500 }
     );
   }

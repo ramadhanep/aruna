@@ -107,5 +107,6 @@ const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/id
 - No formal migration tool (no Prisma, Drizzle, etc.).
 - Schema changes are applied directly in Supabase SQL Editor.
 - `supabase/setup.sql` is the source of truth and should be re-runnable.
-- Tables are dropped and recreated if they exist (`DROP TABLE IF EXISTS`).
+- `setup.sql` uses `create table if not exists` for all tables — existing
+  tables and data are preserved on re-run, never dropped.
 - Seed data is included in `setup.sql`.

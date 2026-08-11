@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import { Clock3 } from "lucide-react";
 import { useTrial } from "@/components/trial-provider";
 import { MOBILE_BREAKPOINT } from "@/lib/time";
+import { DURATION_CLASS } from "@/lib/motion";
 
 function formatTime(ms) {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000));
@@ -53,7 +54,7 @@ export function TrialBanner() {
 
   return (
     <div
-      className={`pointer-events-none fixed left-1/2 top-3 z-[9999] -translate-x-1/2 px-3 transition-all duration-200 ${
+      className={`pointer-events-none fixed left-1/2 top-3 z-[9999] -translate-x-1/2 px-3 transition-all ${DURATION_CLASS.base} ${
         isVisible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-4 scale-95 pointer-events-none"
       }`}
     >

@@ -294,11 +294,6 @@ export function computeLivermoreKeyLevels(points = [], lookback = 31) {
   return { upper, lower, lookup };
 }
 
-export function isCryptoTicker(symbol = '') {
-  const upper = symbol.toUpperCase();
-  return upper.includes('-USD') || upper.startsWith('CRYPTO:');
-}
-
 export function isIdxLotSymbol(symbol = '') {
   return /\.JK$/i.test(symbol?.trim?.() ?? '');
 }

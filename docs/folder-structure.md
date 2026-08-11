@@ -70,15 +70,15 @@
 │   │   │   ├── dropdown-menu.jsx
 │   │   │   ├── input.jsx
 │   │   │   ├── label.jsx
-│   │   │   ├── radio-group.jsx
 │   │   │   ├── select.jsx
 │   │   │   ├── separator.jsx
 │   │   │   ├── segmented-control.jsx # Behavior wrapper: maps options to Buttons, owns selection state
 │   │   │   ├── sheet.jsx
-│   │   │   ├── sidebar.jsx          # shadcn sidebar (not actively used)
 │   │   │   ├── skeleton.jsx
 │   │   │   ├── table.jsx
 │   │   │   └── tooltip.jsx
+│   │   ├── mini-chart.jsx           # Lightweight sparkline chart component
+│   │   ├── toast.jsx                # Dependency-free toast notification system
 │   │   ├── app-layout-client.jsx    # Layout shell (nav, sidebar, chrome)
 │   │   ├── auth-provider.jsx        # Auth context + watchlist/portfolio sync
 │   │   ├── account-sidebar.jsx      # Slide-out account panel

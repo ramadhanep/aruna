@@ -247,6 +247,20 @@ function EmptyState() {
   );
 }
 
+function MessageListSkeleton() {
+  return (
+    <div className="space-y-2.5">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className={`flex ${i % 2 ? 'justify-end' : 'justify-start'}`}>
+          <Skeleton
+            className={`h-10 w-3/5 rounded-3xl ${i % 2 ? 'rounded-br-lg' : 'rounded-bl-lg'}`}
+          />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default function DiscussionPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
@@ -314,14 +328,8 @@ export default function DiscussionPage() {
             <Skeleton className="h-4 w-24" />
             <div className="w-8" />
           </div>
-          <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2.5">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className={`flex ${i % 2 ? 'justify-end' : 'justify-start'}`}>
-                <Skeleton
-                  className={`h-10 w-3/5 rounded-3xl ${i % 2 ? 'rounded-br-lg' : 'rounded-bl-lg'}`}
-                />
-              </div>
-            ))}
+          <div className="flex-1 overflow-y-auto px-3 py-3">
+            <MessageListSkeleton />
           </div>
           <div className="border-t border-border/30 p-3">
             <Skeleton className="h-10 w-full rounded-3xl" />
@@ -429,9 +437,7 @@ export default function DiscussionPage() {
         {/* Messages area */}
         <div className="flex-1 overflow-y-auto px-3 py-3" style={{ minHeight: 0 }}>
           {messagesLoading ? (
-            <div className="flex justify-center py-8">
-              <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
-            </div>
+            <MessageListSkeleton />
           ) : messages.length === 0 ? (
             <EmptyState />
           ) : (

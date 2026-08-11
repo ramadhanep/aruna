@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
 import { Trash2, Plus, X, GripVertical } from "lucide-react";
 import {
   Dialog,
@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { searchSymbols } from "@/lib/api-client";
 import { formatTickerDisplay, cn } from "@/lib/utils";
+import { DURATION, EASE } from "@/lib/motion";
 
 export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave }) {
   const [items, setItems] = useState([]);
@@ -161,6 +162,39 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
     window.addEventListener('pointercancel', endDrag);
   }, [handleDragMove, endDrag]);
 
+  // FLIP: rows keyed by symbol keep their DOM node across reorders, so we can
+  // measure the pre-reorder position and animate from there instead of the
+  // instant jump a plain re-render would produce.
+  const rowRefs = useRef(new Map());
+  const prevRectTopsRef = useRef(new Map());
+
+  const setRowRef = useCallback((symbol) => (el) => {
+    if (el) rowRefs.current.set(symbol, el);
+    else rowRefs.current.delete(symbol);
+  }, []);
+
+  useLayoutEffect(() => {
+    const prevTops = prevRectTopsRef.current;
+    rowRefs.current.forEach((el, symbol) => {
+      const prevTop = prevTops.get(symbol);
+      if (prevTop == null) return;
+      const delta = prevTop - el.getBoundingClientRect().top;
+      if (!delta) return;
+      el.style.transition = 'none';
+      el.style.transform = `translateY(${delta}px)`;
+      requestAnimationFrame(() => {
+        el.style.transition = `transform ${DURATION.fast}ms ${EASE.out}`;
+        el.style.transform = '';
+      });
+    });
+
+    const nextTops = new Map();
+    rowRefs.current.forEach((el, symbol) => {
+      nextTops.set(symbol, el.getBoundingClientRect().top);
+    });
+    prevRectTopsRef.current = nextTops;
+  }, [items]);
+
   const handleSave = () => {
     onSave(items);
     onOpenChange(false);
@@ -224,6 +258,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
               {items.map((item, index) => (
                 <div
                   key={item.symbol}
+                  ref={setRowRef(item.symbol)}
                   className={cn(
                     "flex items-center gap-2 p-3 border rounded-md bg-card transition-opacity",
                     draggingIndex === index && "opacity-60"

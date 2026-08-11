@@ -173,8 +173,8 @@ function StockCard({ stock, isLocked = false }) {
           </div>
           <div className="h-2 bg-muted/70 rounded-full overflow-hidden">
             <div
-              className="h-full rounded-full transition-all bg-emerald-600 dark:bg-emerald-400"
-              style={{ width: `${progressPercent}%` }}
+              className="h-full w-full rounded-full origin-left transition-transform bg-emerald-600 dark:bg-emerald-400"
+              style={{ transform: `scaleX(${progressPercent / 100})` }}
             />
           </div>
         </div>

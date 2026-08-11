@@ -4,7 +4,7 @@
 
 **Status**: Accepted
 
-**Decision**: All API responses (except discussions and cron) are XOR-encoded with a shared key before sending to the client.
+**Decision**: All API responses (except cron) are XOR-encoded with a shared key before sending to the client.
 
 **Reason**: Prevent casual inspection of API response data in browser devtools. The app serves financial data that could be scraped or reverse-engineered.
 
@@ -109,7 +109,10 @@
 **Tradeoffs**:
 - Tied to Supabase ecosystem.
 - Google-only OAuth — no email/password, Apple, or other providers.
-- Client-side auth only — no server-side session cookies.
+- Mostly client-side auth (`getSupabaseBrowserClient()`), but `/api/discussions`
+  POST/DELETE are the exception — they use `@supabase/ssr`'s
+  `createServerClient()` with `cookies()` (`next/headers`) to read the real
+  server-side session cookie.
 
 ## ADR-007: Monorepo with Flutter (Discontinued, Now Removed)
 
@@ -142,7 +145,7 @@
 
 **Status**: Known Debt
 
-**Decision**: Strict CORS origin blocking is commented out in `src/proxy.js` (formerly `middleware.js`).
+**Decision**: `src/proxy.js` (formerly `middleware.js`) applies CORS headers permissively — there is no origin-blocking logic in the file, commented out or otherwise.
 
 **Reason**: During development, strict CORS caused issues with various tooling and development workflows. The CORS headers are still applied, but unauthorized origins are not blocked.
 

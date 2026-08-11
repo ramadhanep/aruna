@@ -244,7 +244,7 @@ export async function DELETE(request) {
   try {
     if (!supabaseUrl || !supabaseAnonKey) {
       return NextResponse.json(
-        { error: 'Supabase configuration missing' },
+        { payload: encodePayload({ error: 'Supabase configuration missing' }) },
         { status: 500 }
       );
     }

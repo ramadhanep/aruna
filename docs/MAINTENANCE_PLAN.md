@@ -1,426 +1,240 @@
 # Maintenance Plan
 
-Execution plan synthesized from `docs/TECH_DEBT.md`, `docs/UI_AUDIT.md`, and
-the cron investigation: cron route handlers remain functional, but the
-`vercel.json` cron schedule was accidentally removed. Restoring a schedule is
-an explicit product/deployment decision, not an assumed code change.
-
-The plan is ordered to establish safe patterns and shared seams before the two
-large route decompositions. Each phase is independently reviewable and should
-finish with `npm run lint`; build and device checks are added where the change
-affects route rendering or PWA chrome.
-
-## Phase 0 — Quick wins and mobile ergonomics
-
-**Goal:** Remove clearly obsolete code, establish shared small constants and
-formatters, and fix the safe-area/touch-target problems with no architectural
-dependency.
-
-**Scope:** TD-5, TD-6, TD-10, TD-11, UI-3, UI-4, UI-6.
-
-**Files touched:**
-
-- `src/lib/utils.js`; a small shared constants/date-range module if warranted;
-  `src/hooks/use-mobile.js`.
-- Consumers of duplicated formatters/constants: `money-flow-card.jsx`,
-  `money-flow/page.jsx`, `idx-momentum/page.jsx`, `explore/page.jsx`,
-  `portfolio-tracker/page.jsx`, `add-asset-modal.jsx`, and `trial-banner.jsx`.
-- Dead/obsolete code: `src/components/market-canvas.jsx`,
-  `src/components/desktop-sidebar.jsx`, `money-flow/page.jsx`,
-  `portfolio-tracker/page.jsx`, and `account-sidebar.jsx`.
-- PWA chrome: `src/app/globals.css`, `src/components/mobile-bottom-nav.jsx`,
-  `src/components/app-layout-client.jsx`, `src/app/idx-rotation/page.jsx`, and
-  `src/components/market-bubbles.jsx`.
-
-**Dependencies:** None. Confirm that apparently unused components have no
-dynamic/external consumer before deleting them.
-
-**Effort:** M (a set of small, independently shippable changes).
-
-**Definition of done:**
-
-- [x] `MarketCanvas` and `DesktopSidebar` — files were already deleted.
-      Documentation references removed.
-- [x] Commented-out feature implementations — inspection confirmed no
-      `{/* ... */}` commented-out JSX blocks remain in the 3 target files.
-      Only explanatory label comments exist. TD-11 resolved.
-- [x] Shared formatters — `formatDecimalPercent`, `formatUSD`, `formatIDR`,
-      `formatSGD`, `formatByCurrency` added to `src/lib/utils.js`. Local
-      duplicates removed from `money-flow/page.jsx` (both were uncalled).
-      `portfolio-tracker/page.jsx` currency formatters replaced with imports.
-      `formatValue` (state-coupled) retained locally with `ponytail:` rationale.
-- [x] The 1024px mobile threshold and shared request-window values — already
-      centralized in `src/lib/time.js`. No duplicate literals found.
-- [x] Mobile bottom navigation and main-content clearance — already applied
-      via `.bottom-safe`, `.pt-safe`, `.pb-nav-safe` classes. `viewportFit:
-      'cover'` already present in `layout.jsx` viewport metadata.
-- [x] Back/download controls — already 44px (`h-11 w-11`) in `idx-rotation`
-      and `market-bubbles`. Timeframe toggle buttons in `market-bubbles.jsx`
-      updated with `min-h-11`.
-- [x] `npm run lint` — no new findings (same 27 errors / 10 warnings as
-      pre-existing baseline, all Phase 1 items). Build passes.
-
-**Documentation after implementation:** Update `docs/conventions.md` for any
-new shared constants/local conventions, `docs/ui-architecture.md` for
-safe-area and touch-target rules, `docs/folder-structure.md` if files are
-added/removed, and `docs/ai-session-handoff.md`. Update
-`docs/architecture.md` only if a new cross-cutting lib module changes the
-documented layer map.
-
-## Phase 1 — Establish compliant React effect and render patterns
-
-**Goal:** Clear the existing React lint failures and stabilize market-bubble
-rendering before extracting code, so later modules do not inherit unsafe state
-or purity patterns.
-
-**Scope:** TD-7 and TD-8; address all current `set-state-in-effect`, ref-read,
-render-purity and hook-dependency findings that are in scope of the audit.
-
-**Files touched:** At minimum `src/app/explore/page.jsx`,
-`watchlist/page.jsx`, `portfolio-tracker/page.jsx`, `discussion/page.jsx`,
-`chart/page.jsx`; `src/components/auth-provider.jsx`,
-`header-symbol-search.jsx`, `manage-watchlist-dialog.jsx`,
-`add-asset-modal.jsx`, `market-bubbles.jsx`, `mode-toggle.jsx`,
-`account-sidebar.jsx`, `trial-provider.jsx`; and `src/hooks/use-mobile.js`.
-Any extracted hook belongs in `src/hooks/` and pure calculation belongs in
-`src/lib/`.
-
-**Dependencies:** Phase 0 is preferred for its shared breakpoint/date helpers,
-but not technically blocking. This phase blocks Phases 2 and 3.
-
-**Effort:** M.
-
-**Definition of done:**
-
-- [x] `npm run lint` passes with **0 errors, 8 warnings** — all remaining
-      warnings are `@next/next/no-img-element` (8 instances, pre-existing,
-      deferred to Phase 6 `no-img-element` audit).
-- [x] Effects synchronize with external systems/subscriptions rather than
-      copying derived values into state; async work handles unmount/stale
-      results safely.
-- [x] Bubble positions and animation metadata are stable by symbol and no
-      render path reads mutable refs or calls `Math.random()`.
-- [x] Auth, trial, watchlist, explore, portfolio and dialog behaviour is smoke
-      tested across initial load, sign-in/out, and route changes.
-
-**Documentation after implementation:** Update `docs/coding-standards.md` and
-`docs/conventions.md` with the approved data-loading/effect pattern;
-`docs/state-management.md` if state ownership changes; and
-`docs/ai-session-handoff.md`. Update `docs/architecture.md` and
-`docs/folder-structure.md` if new hooks/lib modules are introduced.
-
-## Phase 2 — Decompose the chart route around clear feature boundaries
-
-**Goal:** Turn `src/app/chart/page.jsx` from a 4,700-line feature subsystem
-into route composition, focused feature components, hooks, and pure lib
-helpers without changing product behaviour.
-
-**Scope:** TD-1, with the chart portion of UI-8 and UI-9.
-
-**Files touched:** `src/app/chart/page.jsx`; new chart components under
-`src/components/` (or a focused chart feature directory consistent with the
-folder convention); hooks under `src/hooks/`; pure seasonal/trading-plan/date
-helpers under `src/lib/`; and only the existing chart-related UI primitives as
-needed.
-
-**Dependencies:** Requires Phase 1. It has an interface dependency on Phase 4:
-chart extraction must isolate logo cache/provider configuration and symbol/price
-requests behind narrow helpers so Phase 4 can consolidate them without another
-route-wide rewrite. Do not create additional route-local provider constants in
-this phase.
-
-**Effort:** L.
-
-**Definition of done:**
-
-- [x] The route owns URL/search-param handling and feature composition only;
-      pure calculations and browser persistence/fetch state have named homes.
-- [x] Chart panels, trading plan, fundamentals, seasonal views and dialogs are
-      independently readable components with explicit props.
-- [x] Reusable logic has no dependency on pages/components; components never
-      import API route modules and use `fetchEncodedJson()` through approved
-      helpers.
-- [x] Existing chart states—normal/seasonal modes, symbol change, watchlist,
-      portfolio action, dialog and error/loading paths—are smoke tested.
-- [x] Lint and production build pass; no regressions in Suspense wrapping for
-      `useSearchParams`.
-
-**Documentation after implementation:** Update `docs/architecture.md`,
-`docs/folder-structure.md`, `docs/conventions.md`, `docs/state-management.md`,
-and `docs/ui-architecture.md` where component ownership or chart layout
-changes. Update `docs/ai-session-handoff.md`.
-
-## Phase 3 — Decompose portfolio state and resolve its persistence contract
-
-**Goal:** Separate portfolio page composition, domain calculations, storage,
-remote data, form/search state, and visual sections while preserving existing
-user data.
-
-**Scope:** TD-2 and the portfolio portion of UI-8/UI-9. TD-9 storage
-strategy is already approved (Option B — one-time migration to canonical
-`aruna-portfolio`).
-
-**Files touched:** `src/app/portfolio-tracker/page.jsx`,
-`src/app/portfolio-tracker/pie.jsx`, `src/components/add-asset-modal.jsx`;
-new portfolio hooks/components/lib modules; and, only after an approved
-migration decision, portfolio storage declarations and tests/manual fixtures.
-
-**Dependencies:** Requires Phase 1. Coordinate its request boundaries with
-Phase 4. The local-storage decision below must be approved before changing
-keys or stored shapes.
-
-**Effort:** L.
-
-**Approved TD-9 decision:** Option B — one-time migration to canonical
-`aruna-portfolio`. On first portfolio load, read legacy keys
-(`portfolio_currency`, `portfolio_visibility_hidden`, `aruna_guest_portfolio`,
-`aruna_guest_portfolio_seeded`), convert to canonical schema, and persist as
-`aruna-portfolio`. All subsequent reads/writes use the canonical record only.
-No dual-write or permanent compatibility layer. `ClearDataButton` must remove
-both the canonical record and all known legacy keys. See
-`docs/PHASE_EXECUTION_PLAN.md` for full policy.
-
-**Definition of done:**
-
-- [x] Page composition is separate from portfolio calculations, persistence,
-      FX/quote loading, pull-to-refresh, asset search and edit-form state.
-- [x] The selected storage strategy is recorded, preserves existing user data,
-      and covers malformed/legacy local-storage values.
-- [x] Guest, authenticated, remote-sync, currency, hidden-balance, add/edit/
-      delete asset, and chart-loading paths are smoke tested.
-- [x] Portfolio-specific dimensions/text styles are shared where recurrent,
-      without prematurely redesigning the full visual system.
-- [x] Lint and production build pass.
-
-**Documentation after implementation:** Update `docs/conventions.md` and
-`docs/state-management.md` for the settled storage contract;
-`docs/folder-structure.md`, `docs/architecture.md`, and
-`docs/ui-architecture.md` for extraction/layout changes; and
-`docs/ai-session-handoff.md`. If persistence shape changes, also update the
-relevant portfolio description in `README.md`/`docs/application-flow.md`.
-
-## Phase 4 — Consolidate shared data access and provider configuration
-
-**Goal:** Make server logo caching, client symbol/price requests, provider
-configuration and market catalog ownership single-source after the large pages
-have clean seams.
-
-**Scope:** TD-3, TD-4 and TD-12.
-
-**Files touched:** `src/app/api/quotes/route.js`, `api/finance/route.js`,
-`src/components/add-asset-modal.jsx`, portfolio/chart consumers, and
-`src/app/explore/page.jsx`; new server-safe helpers and client helpers in
-`src/lib/` (and hooks only where React lifecycle is needed); `.env.template`
-only if a newly variable deployment setting is approved.
-
-**Dependencies:** Phases 2 and 3 provide the clean consumers; Phase 0 may
-already provide shared range constants. Avoid moving secrets into client code
-and preserve XOR response envelopes/API routes.
-
-**Effort:** M.
-
-**Definition of done:**
-
-- [x] `ensureUsLogo()` has one server-only implementation shared by quotes and
-      finance routes, with preserved caching/error behaviour.
-- [x] Symbol search and latest-price access have one client-facing helper using
-      `fetchEncodedJson()`; no duplicate decoder/error/date-window wrappers
-      remain in UI files.
-- [x] CDN/storage/provider bases and static market catalog data reside in the
-      appropriate config/lib module; values that vary by deployment are env
-      configuration, not duplicated literals.
-      (Scope note: the `explore/page.jsx` market catalog stayed in the page —
-      it is single-consumer presentation data carrying lucide icons, and
-      extracting it to lib would break the documented lib→components layer
-      rule. Only its storage-base literal was centralized.)
-- [x] No API route response encoding, authorization, or public response shape
-      changes without an explicit compatibility decision.
-- [x] Lint, build, and representative quote/finance/symbol-search requests
-      pass.
-
-**Documentation after implementation:** Update `docs/architecture.md`,
-`docs/folder-structure.md`, `docs/api.md`, and `docs/integrations.md`.
-Update `docs/environment.md` and `.env.template` if env variables are added;
-update `docs/ai-session-handoff.md` in all cases.
-
-## Phase 5 — Apply a coherent UI polish system
-
-**Goal:** Replace remaining disruptive spinners, make motion consistent, and
-bring navigation, spacing and color use back to the documented visual system.
-
-**Scope:** UI-1, UI-5, UI-7, UI-9, UI-10 and UI-11. UI-2 may be included when
-its affected components are touched, but should not block the phase.
-
-**Files touched:** `src/components/market-bubbles.jsx`,
-`src/app/idx-rotation/page.jsx`, `src/app/discussion/page.jsx`,
-`src/app/chart/page.jsx`, `src/app/portfolio-tracker/page.jsx`,
-`src/components/mobile-bottom-nav.jsx`, `desktop-navbar.jsx`,
-`account-sidebar.jsx`, `src/lib/motion.js`, `src/app/globals.css`, plus focused
-loading/feature components extracted in Phases 2-3.
-
-**Dependencies:** Phases 0-3. Use Phase 2/3 component boundaries rather than
-editing large page sections inline. Phase 6 may take any component extraction
-that this visual work exposes but is not required to begin polish.
-
-**Effort:** L.
-
-**Definition of done:**
-
-- [x] Bubble, rotation, discussion, normal-chart and portfolio-mini-chart
-      initial states reserve final layout with skeleton/shimmer rather than
-      whole-screen/centered spinners. `ScatterSkeleton` (dot-field) covers the
-      two full-screen tools; discussion gets a layout-matched message shell;
-      chart series-loading and portfolio mini-chart use the reserved-geometry
-      skeleton.
-- [x] `motion.js` is the approved timing policy for custom surfaces; navigation,
-      tabs/data replacement and sidebars use consistent durations/eases without
-      double-animating Radix primitives. `DURATION_CLASS` added as the single
-      token→class mapping; applied to desktop-navbar, account-sidebar, sheet
-      (data-state durations) and mobile-bottom-nav.
-- [x] Bottom navigation is responsive through the documented mobile/tablet
-      range, visually consistent with Aruna’s restrained navigation, and has
-      visible labels/captions. Fixed `w-[300px]` pill → content-width `w-max`
-      card with `rounded-xl`/`rounded-md` corners, `aria-current`, and the
-      scroll-minimize behaviour preserved. Dead `matchPaths` branch removed.
-- [x] Repeated chart/nav/mini-chart dimensions and small typography are
-      tokenized or component variants; unjustified arbitrary values are gone.
-      `text-2xs` (10px) / `text-3xs` (9px) theme tokens replace all
-      `text-[10px]`/`text-[9px]`; chart container height centralized as
-      `CHART_HEIGHT_CLASS`; portfolio currency-select width as
-      `CURRENCY_SELECT_WIDTH`. The `max-w-[900px]` full-bleed chart wrapper is
-      intentional edge-to-edge behaviour and was kept.
-- [x] Analyst/rotation/dropdown color and elevation treatments preserve only
-      useful semantic signal and follow the monochrome-plus-sparing-blue system.
-      Analyst gauge: 5 saturated bands → muted track + score-colored needle;
-      rotation dot glow removed (quadrant tints and dot fills kept for
-      semantic grouping); tools dropdown `shadow-2xl shadow-black/40` →
-      `shadow-lg shadow-black/10`.
-- [x] Dark/light, mobile/tablet/desktop, reduced-motion, and installed-PWA
-      smoke checks pass; lint and build pass.
-- [x] UI-2 (access/route loading) explicitly deferred to Phase 6 — its affected
-      components were not otherwise touched in this phase.
-
-**Documentation after implementation:** Update `docs/ui-architecture.md` for
-loading, motion, responsive navigation, spacing and color rules;
-`docs/conventions.md` for shared class/variant conventions;
-`docs/folder-structure.md` if components move; and
-`docs/ai-session-handoff.md`.
-
-## Phase 6 — Complete componentization and eliminate remaining class sprawl
-
-**Goal:** Finish the extraction work intentionally deferred from Phases 2, 3
-and 5, especially repeated presentation patterns in explore/portfolio/chart.
-
-**Scope:** Remaining TD-2/UI-8 work, including reusable feature cards,
-segmented controls, status chips, metric rows and loading/empty states.
-
-**Files touched:** Remaining large page sections in `src/app/chart/page.jsx`,
-`portfolio-tracker/page.jsx`, and `explore/page.jsx`; new focused components
-under `src/components/`; potentially `src/components/ui/` only for a genuinely
-cross-feature primitive using `cn()`/cva.
-
-**Dependencies:** Requires Phases 2, 3 and 5. Do not create a generic
-abstraction for a single chart’s one-off markup.
-
-**Effort:** L.
-
-**Definition of done:**
-
-- [x] Feature pages are primarily composition and state wiring; recurring
-      presentation is in readable components with explicit props.
-- [x] Repeated Tailwind strings have named component/cva variants where the
-      visual behaviour is genuinely shared.
-- [x] UI primitives retain their shadcn-compatible boundary and depend only on
-      `@/lib/utils`; no new UI framework/state library is introduced.
-- [x] Visual regression smoke tests cover all extracted states; lint and build
-      pass.
-
-**Executed with tightened scope (architectural guardrails):**
-
-- Correctness first: fixed B1 (orphan chart price-series effect — out-of-scope
-  setters, duplicate fetch), B2 (explore install-handler `isStandalone` scope
-  bug), B3 (triplicated portfolio persistence effects), plus B4 (same
-  `isStandalone` bug in watchlist) surfaced by the new lint rules.
-- Lint baseline hardened: `no-undef` and `no-unused-vars` enabled and satisfied;
-  ~320 lines of dead code removed across 19 files.
-- One shared UI primitive created: `SegmentedControl` (behavior-focused:
-  option mapping, selection state, accessibility; composes `Button` for the
-  layout contract). A post-Phase-6 visual audit found the initial single-recipe
-  version normalized feature-specific visuals (label wrap, lost scroll,
-  changed active colors), so per-site visual recipes were restored through
-  `variant`/`className`/`activeClassName`/`inactiveClassName` — the shared
-  interaction logic is retained, no shared visual style is forced.
-  `getChangeTone()` added to `utils.js` as the single change-color source
-  (fixed red-vs-rose drift). `MetricRow`/`EmptyState`/`ChangeChip` deliberately
-  NOT created — no genuine cross-feature reuse.
-- Chart extraction limited to the two highest-cohesion panels (Trading Plan,
-  Seasonality) plus the `AnalystGaugeChart` move. Profile/Key Stats/Analysis/
-  Financials kept in the page by checkpoint decision: one-off grids bound to
-  page formatters, extraction would be prop-drilling without ownership gain.
-- Other dedup: explore tool cards (6×), portfolio pie sections (4×),
-  `use-pull-to-refresh` hook (2 consumers).
-- UI-2 resolved (shell-mounted auth gating, sign-in bootstrap and sidebar
-  skeletons). `text-1xs` (11px) token replaces 58 arbitrary literals.
-- `no-img-element` audit: all 8 sites migrated to `next/image` with
-  `images.unoptimized: true` (raw URLs preserved for the SW precache; remote
-  avatars need no `remotePatterns`). Lint is now 0 errors / 0 warnings.
-
-**Documentation after implementation:** Update `docs/architecture.md`,
-`docs/folder-structure.md`, `docs/ui-architecture.md`, and
-`docs/conventions.md`; update `docs/ai-session-handoff.md`.
-
-## Phase 7 — Decide and restore/document cron scheduling
-
-**Goal:** Resolve the independent deployment gap: API cron route handlers are
-functional, but `vercel.json` currently has no cron configuration because it
-was accidentally dropped. **Executed 2026-07-31:** scheduling formally disabled
-(Option 2) and Phase 7 was expanded into full production hardening and release
-readiness — see `docs/known-issues.md` "Resolved in Phase 7".
-
-**Scope:** Restore an approved schedule, or formally document cron scheduling
-as intentionally disabled. The likely work includes IDX/US daily runs and an
-explicit review of crypto/money-flow frequency against Vercel Hobby tier limits.
-
-**Files touched:** `vercel.json`; potentially cron route/config helpers only if
-the approved schedule exposes a real operational constraint; deployment and
-cron documentation. No route handler rewrite is implied by the investigation.
-
-**Dependencies:** Independent of Phases 0-6, but requires a product/deployment
-decision and access to the current Vercel plan/limits. It must not be silently
-restored with guessed frequency.
-
-**Effort:** S for a documented decision or restoring known-safe schedules; M if
-frequency/batching needs redesign after plan-limit evaluation.
-
-**Decision required:**
-
-1. Restore IDX and US daily schedules, then choose crypto/money-flow cadence
-   compatible with the Hobby tier; or
-2. formally mark scheduled refresh as disabled and describe the stale-data/
-   manual-trigger behaviour users should expect.
-
-**RESOLVED (2026-07-31):** Option 2 — scheduling is formally disabled. See
-`docs/deployment.md` for the recorded decision. The Phase 7 scope was expanded
-to full production hardening (error boundaries, security headers, fetch
-timeouts, screener rate limit, health endpoint, CI, structured logging,
-discussions error-encoding fix, alert()→toast); see `docs/known-issues.md`
-"Resolved in Phase 7".
-
-**Definition of done:**
-
-- [x] The selected option, exact UTC schedules, ownership, and Vercel plan
-      constraints are approved and recorded.
-- [x] If enabled, `vercel.json` lists the approved cron entries and each route
-      is manually invoked with `CRON_SECRET` in a safe environment.
-      (N/A — disabled by decision.)
-- [x] If disabled, no documentation claims automatic refresh; operational and
-      product consequences are recorded.
-- [ ] Database writes, authorization failures, duration, and schedule overlap
-      are observed for at least one run per enabled category.
-      (N/A — no schedule; the screener manual trigger and money-flow cron were
-      smoke-tested via the rate-limiter and timeout paths.)
-
-**Documentation after implementation:** Update `docs/deployment.md`,
-`docs/application-flow.md`, `docs/api.md`, `docs/known-issues.md`, and
-`docs/roadmap.md`; update `docs/architecture.md` if the scheduled data-flow
-description changes, and always update `docs/ai-session-handoff.md`.
+Synthesized from `docs/DOCS_DRIFT_REPORT.md`, `docs/TECH_DEBT.md`,
+`docs/UI_AUDIT.md` (all read-only audits, commit `d050c9e`). Phases are
+ordered by dependency blast radius, not by source report — a phase that
+fixes an assumption every later phase would otherwise inherit comes first;
+shared-code changes come before UI polish in the same files; large
+refactors come last, after quick wins build confidence. Run with
+`/execute-phase`.
+
+---
+
+## Phase 1 — Foundation: doc corrections + the fix that makes them true
+
+**Goal:** eliminate false architectural claims (encoding, auth, CORS,
+migration safety) that any later phase — or any agent reading `CLAUDE.md`
+first — would otherwise inherit as fact.
+
+**Items:**
+- [x] P0 (S) — Wrap `discussions/route.js:246-249` DELETE config-missing
+  branch in `encodePayload()` — `src/app/api/discussions/route.js`. Makes
+  the "GET/POST/DELETE all encode" claim true at the source instead of
+  editing the 6 docs that repeat it.
+- [x] P0 (S) — Fix ADR-006 ("no server-side session cookies") to note the
+  discussions cookie-session exception — `docs/architecture-decisions.md`
+- [x] P0 (S) — Fix ADR-009 + CORS section (`buildUnauthorizedResponse`
+  doesn't exist in `src/proxy.js`, isn't merely commented out) —
+  `docs/architecture-decisions.md`, `docs/known-issues.md`. Also fixed
+  ADR-001 (found stale during execution — "except discussions and cron" →
+  "except cron", not called out separately in the plan file but same root
+  cause).
+- [x] P1 (S) — Fix migration-strategy claim: `setup.sql` uses
+  `create table if not exists`, never `DROP TABLE` — `docs/database.md`
+- [x] P1 (S) — Fix localStorage key `aruna-watchlist` → `aruna_watchlist` —
+  `docs/conventions.md`, `docs/state-management.md`
+- [x] P2 (S) — Fix "no global error boundary" claim (`error.jsx` /
+  `global-error.jsx` exist) — `docs/coding-standards.md`
+- [x] P2 (S) — Sync `yahoo-finance2` version `^3.14.3` → `^4.0.0` —
+  `docs/tech-stack.md`, `docs/dependencies.md`
+- [x] P2 (S) — Add `mini-chart.jsx`, `toast.jsx` to component tree —
+  `docs/folder-structure.md`
+
+**Depends on:** none
+
+---
+
+## Phase 2 — API response-encoding safeguards
+
+**Goal:** close real `encodePayload()` gaps in shared API routes before any
+UI work touches the same files.
+
+**Items:**
+- [x] P0 (S) — Wrap the empty-state success branch in
+  `src/app/api/msci/route.js:52-59` — currently returns raw JSON,
+  `fetchEncodedJson()` throws on it (Critical: real bug, not just
+  obfuscation gap)
+- [x] P0 (S) — Wrap error branches (12 call sites) with `encodePayload()` —
+  `src/app/api/bubbles/route.js`, `src/app/api/momentum/route.js`,
+  `src/app/api/msci/route.js`, `src/app/api/rotation/route.js`
+
+**Depends on:** Phase 1 (doc claims about encoding must already be correct
+so this fix isn't read against stale docs)
+
+---
+
+## Phase 3 — Dead code deletion
+
+**Goal:** remove confirmed-zero-import code before later phases touch
+adjacent files, shrinking review surface.
+
+**Items:**
+- [x] P1 (S) — Delete `src/components/ui/sidebar.jsx` (680 lines, zero
+  imports; also carries the `width`/`left`/`right` transitions the 60fps
+  goal flags) — see Unresolved Questions if a near-term collapsible
+  sidebar is planned
+- [x] P2 (S) — Delete `src/components/ui/radio-group.jsx` (zero imports)
+- [x] P2 (S) — Delete dead lib exports: `isCryptoTicker`
+  (`src/lib/chart-helpers.js:297`), `dayOfYearToMonthDate`
+  (`src/lib/seasonalData.js:132`), `sortByNearestInclusion`
+  (`src/lib/msci-calculations.js:149`), `formatDecimalPercent`
+  (`src/lib/utils.js:123`) — **excludes** `calculateSummaryStats`, wired up
+  in Phase 4 instead of deleted
+
+**Depends on:** none
+
+---
+
+## Phase 4 — Dedupe business logic
+
+**Goal:** replace inline reimplementations with the existing `lib`
+functions they duplicate.
+
+**Items:**
+- [x] P1 (S) — Import `calculateSummaryStats` from
+  `src/lib/msci-calculations.js:158` into `src/app/api/msci/route.js`,
+  delete the inline `calculateStats` (lines 149-156)
+- [x] P1 (M) — Replace `formatPriceValue`/`formatPlainNumber` in
+  `src/app/chart/page.jsx:562-601` with `lib/utils.js#formatPrice`.
+  Rescoped during execution: `priceInfo.fiftyTwoWeekRange`/`dayRange` are
+  already-formatted range strings from `api/fundamentals/route.js`'s
+  `formatRange()` (e.g. `"185.2 - 195.4"`), not numbers — routing them
+  through `formatPrice()` would replace them with the fallback dash.
+  `formatPlainNumber` kept as a thin wrapper delegating its numeric branch
+  to `formatPrice()` (dedupes the `toLocaleString` logic) while preserving
+  the non-numeric string passthrough. `formatPriceValue` (purely numeric,
+  used as a child-component prop) was replaced outright.
+
+**Depends on:** Phase 3 (resolves which lib export is dead vs. wired-up in
+the same pass, avoids a delete/reuse conflict)
+
+---
+
+## Phase 5 — Motion & microinteraction quick wins
+
+**Goal:** cheap, isolated, high-visible-impact fixes toward the 60fps/
+native-feel goal — composited-property transitions, touch targets, timing
+consistency. Low risk, good confidence-builder before the large refactors.
+
+**Items:**
+- [x] P1 (S) — Progress-bar fills: swap `width` + `transition-all` for
+  `transform: scaleX()` — `src/app/chart/page.jsx:1214,1660,1823`,
+  `src/app/msci/page.jsx:176-177`. Rescoped: `chart/page.jsx:1823` (the
+  stacked analyst-recommendation-trend bar) is a segmented multi-sibling
+  bar where each `<div>`'s literal `width` sets its flex-item layout size,
+  not a single-value fill inside a track — `scaleX` only transforms
+  visually and doesn't affect flex layout, so converting it would collapse
+  the segments. Left as `width` + `transition-all`; the other 3 (single-fill
+  progress bars) converted.
+- [x] P1 (S) — Fullscreen chart back control: replace bare
+  `<div onClick>` with `<Button variant="ghost" size="icon">` (44px target,
+  hover/active states) — `src/app/chart/page.jsx:2498-2503`
+- [x] P2 (S) — Replace hardcoded `duration-200` with `DURATION_CLASS.base`
+  — `ticker-row.jsx:31`, `trending-marquee.jsx:25`,
+  `explore/page.jsx:1041,1140`, `portfolio-tracker/page.jsx:460`,
+  `watchlist/page.jsx:336`, `pricing/page.jsx:103`, `trial-banner.jsx:56`
+- [x] P2 (S) — Toast dismiss: replace `✕` glyph with lucide `<X>` —
+  `src/components/toast.jsx:64-71`
+- [x] P2 (S) — Drop `box-shadow` from focus-ring transition list —
+  `src/components/ui/input.jsx:15`, `src/components/ui/select.jsx:38`
+
+**Depends on:** none
+
+---
+
+## Phase 6 — Component primitive consolidation
+
+**Goal:** replace hand-rolled duplicated markup with existing primitives,
+in the shared UI directory Phase 3 already cleaned up.
+
+**Items:**
+- [x] P0 (S) — Replace 8 raw `<input>` elements with `<Input>` —
+  `src/components/add-asset-modal.jsx:150,180,210`,
+  `src/app/portfolio-tracker/page.jsx:879,908,938,953,967`
+- [x] P1 (S) — Discussion page: extract a `MessageListSkeleton` from the
+  existing auth-loading skeleton, reuse it for `messagesLoading` instead of
+  the centered `Loader2` — `src/app/discussion/page.jsx:305-332,431-434`
+- [x] P2 (S) — Replace duplicated primary-CTA className with `<Button>` —
+  `src/app/not-found.jsx:28,34`, `src/app/error.jsx:22`. Rescoped:
+  `src/app/global-error.jsx:17` kept as hand-rolled className — it replaces
+  the entire root `<html>`/`<body>` and doesn't import `globals.css`
+  itself, so Tailwind utility classes (on `Button` or the existing markup
+  alike) aren't reliably guaranteed to be loaded there regardless of which
+  markup is used; not swapping avoids introducing a false sense that this
+  path is safer.
+- [x] P2 (M) — FLIP-animate watchlist drag-reorder sibling rows instead of
+  instant jump — `src/components/manage-watchlist-dialog.jsx:224-253`
+
+**Depends on:** Phase 3 (dead `ui/` scaffolding removed first)
+
+---
+
+## Phase 7 — Large page decomposition
+
+**Goal:** break down the three oversized feature pages into extracted
+components, reusing the primitives Phase 6 already consolidated. Highest
+effort — scheduled last, after the quicker phases have de-risked the
+shared pieces these pages will import.
+
+**Items:**
+- [x] P2 (L) — Extract repeated inline conditional Tailwind blocks into
+  components — `src/app/chart/page.jsx` (2,773 lines, e.g. 2253-2271,
+  2566-2585). Rescoped: the two named ranges were analyst-opinion/
+  recommendation-trend blocks already narrow and non-repeated; extracted
+  the actual duplicated-markup case instead — the loading-skeleton JSX
+  (main chart card + sidebar), pulled into `ChartMainSkeleton` and
+  `ChartSidebarSkeleton` components, both pure (no closures beyond the
+  module-level `CHART_HEIGHT_CLASS` constant and already-imported UI
+  primitives).
+- [x] P2 (L) — Extract market card grid into a component —
+  `src/app/explore/page.jsx` (1,422 lines, e.g. 1124-1170). Extracted
+  `MarketSymbolCard({ item, marketTimeframe })`, placed beside the
+  existing `MarketSymbolCardSkeleton`; grid `.map()` now renders it
+  directly.
+- [x] P2 (L) — Extract add-asset form section into a component —
+  `src/app/portfolio-tracker/page.jsx` (1,013 lines, e.g. 860-980).
+  Extracted `AddAssetForm` taking the asset-type/symbol-search/form-field
+  state as props (kept in the parent — the form has no independent
+  lifecycle).
+- [x] P2 (M) — Promote recurring arbitrary spacing values
+  (`mt-[5px]`, `max-w-[900px]`-style) to constants/scale, chart-specific
+  pass — `src/app/chart/page.jsx`. Rescoped: audited every `[Npx]`
+  arbitrary value in the file — only `h-[260px]` (the two secondary
+  earnings/analyst chart cards) was a genuine repeat, promoted to
+  `SECONDARY_CHART_HEIGHT_CLASS` alongside the existing
+  `CHART_HEIGHT_CLASS`. `max-w-[900px]`, `max-w-[768px]`, `h-[220px]` etc.
+  each appear exactly once — left as one-offs per the item's own scope
+  note.
+
+**Depends on:** Phase 6 (extraction should reuse `<Input>`/`<Button>`/etc.,
+not re-duplicate the markup Phase 6 just consolidated)
+
+---
+
+## Unresolved questions
+
+1. **Scope gap vs. the original ask.** These three audits found the app's
+   UI foundation already sound — no gradients, no generic-AI-slop tells,
+   working skeleton coverage, a real motion-token system. What they found
+   is debt and rough edges, not a missing design system. Making the app
+   *feel like a native Mac/iOS app* (spring-physics page transitions,
+   gesture-driven navigation, haptic-style feedback) is a different, larger
+   scope than "fix what's broken" — none of the 7 phases above add that.
+   Decide: is this maintenance plan sufficient, or does a separate
+   design-system phase need to be scoped after it?
+2. **CORS.** `src/proxy.js` has no origin-blocking logic in any form (not
+   commented out — never existed in the current file). Is permissive CORS
+   an intentional decision that just needs documenting as such (matches
+   `docs/authorization.md`'s "decorative" framing), or should strict
+   origin blocking actually be implemented? Affects whether Phase 1's
+   ADR-009 fix is a doc correction or a spec for new Phase-2-adjacent work.
+3. **`sidebar.jsx` deletion (Phase 3).** Confirm there's no near-term plan
+   for a collapsible desktop sidebar before deleting — if one exists, it
+   should instead be fixed (transform-based transitions) and wired up
+   rather than removed.
+4. **Discussion cookie-session exception.** Now that ADR-006 will be
+   corrected (Phase 1) to acknowledge discussions' server-side session
+   cookie, should other authenticated routes adopt the same cookie-session
+   pattern instead of the Bearer-token pattern, or should this stay a
+   documented one-off? No action item depends on the answer yet, but it
+   affects how future auth-touching work should be planned.

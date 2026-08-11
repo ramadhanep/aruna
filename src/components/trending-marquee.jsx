@@ -5,6 +5,7 @@ import Link from "next/link";
 import { TickerAvatar } from "./ticker-avatar";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { formatTickerDisplay, getChangeTone } from "@/lib/utils";
+import { DURATION_CLASS } from "@/lib/motion";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function TrendingItem({ symbol, quote }) {
@@ -22,7 +23,7 @@ function TrendingItem({ symbol, quote }) {
   return (
     <Link
       href={`/chart?symbol=${encodeURIComponent(symbol)}&cycle=normal`}
-      className="inline-flex items-center gap-2.5 px-3.5 py-2.5 hover:bg-accent/40 transition-all duration-200 rounded-xl"
+      className={`inline-flex items-center gap-2.5 px-3.5 py-2.5 hover:bg-accent/40 transition-all ${DURATION_CLASS.base} rounded-xl`}
     >
       <TickerAvatar symbol={symbol} logo={quote.logo} size="sm" />
       <div className="flex flex-col">

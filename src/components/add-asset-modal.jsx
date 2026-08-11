@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { searchSymbols, fetchLatestQuote } from '@/lib/api-client';
 import { formatTickerDisplay } from '@/lib/utils';
 import { toast } from '@/components/toast';
@@ -142,12 +143,11 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="relative flex flex-col gap-1">
                 <Label htmlFor="symbolSearch">Symbol</Label>
-                <input
+                <Input
                   id="symbolSearch"
                   value={symbolQuery}
                   onChange={(e) => { setSymbolQuery(e.target.value); setForm(f => ({ ...f, symbol: e.target.value })); }}
                   placeholder="Search ticker (e.g. AAPL)"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   disabled={loadingPrice}
                 />
                 {loadingSearch && <p className="text-xs text-muted-foreground">Searching...</p>}
@@ -170,14 +170,13 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
                   <Label htmlFor="amount">Amount</Label>
-                  <input
+                  <Input
                     id="amount"
                     value={form.amount}
                     onChange={(e) => setForm(f => ({ ...f, amount: e.target.value }))}
                     placeholder="0"
                     type="number"
                     step="any"
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
@@ -200,14 +199,13 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
 
               <div className="flex flex-col gap-1">
                 <Label htmlFor="avgPrice">Average Price</Label>
-                <input
+                <Input
                   id="avgPrice"
                   value={form.avgPrice}
                   onChange={(e) => setForm(f => ({ ...f, avgPrice: e.target.value }))}
                   placeholder="0"
                   type="number"
                   step="any"
-                  className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
                 />
               </div>
 

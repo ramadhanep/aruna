@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Plus, MoreVertical, Pencil, Trash2, Loader2, CreditCard, TrendingUp, ArrowUpDown, Check, Eye, EyeClosed } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth-provider';
@@ -15,7 +16,7 @@ import { searchSymbols, fetchLatestQuote } from '@/lib/api-client';
 import { TickerAvatar } from '@/components/ticker-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatTickerDisplay, formatIDR, formatByCurrency, getChangeTone } from '@/lib/utils';
-import { MOTION } from '@/lib/motion';
+import { MOTION, DURATION_CLASS } from '@/lib/motion';
 import { GoogleGlyph } from '@/components/google-glyph';
 import { loadPortfolio, savePortfolio } from '@/lib/portfolio-storage';
 import { computeHoldingsMetrics, sortHoldings, computePortfolioSummary, computeDigitalAllocation, computeCashTypeAllocation, formatValue } from '@/lib/portfolio-metrics';
@@ -29,6 +30,177 @@ import { toast } from '@/components/toast';
 const PortfolioPie = dynamic(() => import('./pie').then(m => m.PortfolioPie), { ssr: false });
 
 const CURRENCY_SELECT_WIDTH = 'w-[132px]';
+
+function AddAssetForm({
+  editingIndex,
+  assetType,
+  setAssetType,
+  symbolQuery,
+  setSymbolQuery,
+  setForm,
+  loadingSearch,
+  symbolResults,
+  handleSelectSymbol,
+  form,
+  effectiveUnit,
+  unitLocked,
+  handleSubmit,
+}) {
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+      {/* Asset Type Selection */}
+      <div className="flex flex-col gap-2">
+        <Label>Asset Type</Label>
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant={assetType === 'digital' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setAssetType('digital')}
+            className="flex-1"
+          >
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Digital Assets
+          </Button>
+          <Button
+            type="button"
+            variant={assetType === 'cash' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setAssetType('cash')}
+            className="flex-1"
+          >
+            <CreditCard className="h-4 w-4 mr-2" />
+            Cash
+          </Button>
+        </div>
+      </div>
+
+      {assetType === 'digital' ? (
+        <>
+          {/* Digital Asset Fields */}
+          <div className="relative flex flex-col gap-2">
+            <Label htmlFor="symbolSearch">Symbol</Label>
+            <Input
+              id="symbolSearch"
+              value={symbolQuery}
+              onChange={(e) => { setSymbolQuery(e.target.value); setForm(f => ({ ...f, symbol: e.target.value })); }}
+              placeholder="Search ticker (e.g. AAPL, BBCA.JK)"
+            />
+            {loadingSearch && <p className="text-xs text-muted-foreground">Searching...</p>}
+            {!loadingSearch && symbolResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 z-20 mt-1 max-h-40 overflow-auto rounded-md border border-border bg-background p-1 flex flex-col gap-2">
+                {symbolResults.map(r => (
+                  <button
+                    type="button"
+                    key={r.symbol}
+                    onClick={() => handleSelectSymbol(r)}
+                    className="w-full text-left px-2 py-1 rounded hover:bg-accent text-xs"
+                  >
+                    <span className="font-medium">{formatTickerDisplay(r.symbol)}</span> <span className="text-muted-foreground">{r.name}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="amount">Amount</Label>
+              <Input
+                id="amount"
+                value={form.amount}
+                onChange={(e) => setForm(f => ({ ...f, amount: e.target.value }))}
+                placeholder="0"
+                type="number"
+                step="any"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="unit">Unit</Label>
+              <Select
+                value={effectiveUnit}
+                onValueChange={(value) => setForm(f => ({ ...f, unit: value }))}
+                disabled={unitLocked}
+              >
+                <SelectTrigger id="unit" className="w-full h-9 px-3 text-sm">
+                  <SelectValue placeholder="Select unit" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="share">Share</SelectItem>
+                  <SelectItem value="lot">Lot</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="avgPrice">Average Price</Label>
+            <Input
+              id="avgPrice"
+              value={form.avgPrice}
+              onChange={(e) => setForm(f => ({ ...f, avgPrice: e.target.value }))}
+              placeholder="0"
+              type="number"
+              step="any"
+            />
+            <p className="text-xs text-muted-foreground">Price per {effectiveUnit === 'lot' ? 'lot' : 'share'} in native currency</p>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Cash Asset Fields */}
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="category">Category</Label>
+            <Input
+              id="category"
+              value={form.category}
+              onChange={(e) => setForm(f => ({ ...f, category: e.target.value }))}
+              placeholder="e.g., Bank BCA, Gopay, etc."
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="cashAmount">Amount</Label>
+              <Input
+                id="cashAmount"
+                value={form.amount}
+                onChange={(e) => setForm(f => ({ ...f, amount: e.target.value }))}
+                placeholder="0"
+                type="number"
+                step="any"
+              />
+              <p className="text-xs text-muted-foreground">Total cash in selected currency</p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="cashCurrency">Currency</Label>
+              <Select
+                value={form.cashCurrency}
+                onValueChange={(value) => setForm(f => ({ ...f, cashCurrency: value }))}
+              >
+                <SelectTrigger id="cashCurrency" className="w-full h-9 px-3 text-sm">
+                  <SelectValue placeholder="Select currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="IDR">🇮🇩 IDR</SelectItem>
+                  <SelectItem value="USD">🇺🇸 USD</SelectItem>
+                  <SelectItem value="SGD">🇸🇬 SGD</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </>
+      )}
+
+      <div className="flex justify-end gap-2 pt-4">
+        <DialogClose asChild>
+          <Button type="button" variant="ghost">Cancel</Button>
+        </DialogClose>
+        <Button type="submit">{editingIndex != null ? 'Save' : 'Add'}</Button>
+      </div>
+    </form>
+  );
+}
 
 export default function PortfolioTrackerPage() {
   const router = useRouter();
@@ -457,7 +629,7 @@ export default function PortfolioTrackerPage() {
       {/* Pull to refresh indicator */}
       {pullDistance > 0 && (
         <div
-          className="flex lg:col-span-12 items-center justify-center transition-all duration-200"
+          className={`flex lg:col-span-12 items-center justify-center transition-all ${DURATION_CLASS.base}`}
           style={{
             height: `${pullDistance}px`,
             opacity: Math.min(pullDistance / 80, 1)
@@ -838,163 +1010,21 @@ export default function PortfolioTrackerPage() {
                 Record your {assetType === 'cash' ? 'cash' : 'digital asset'} details.
               </DialogDescription>
 
-              <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                {/* Asset Type Selection */}
-                <div className="flex flex-col gap-2">
-                  <Label>Asset Type</Label>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant={assetType === 'digital' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setAssetType('digital')}
-                      className="flex-1"
-                    >
-                      <TrendingUp className="h-4 w-4 mr-2" />
-                      Digital Assets
-                    </Button>
-                    <Button
-                      type="button"
-                      variant={assetType === 'cash' ? 'default' : 'outline'}
-                      size="sm"
-                      onClick={() => setAssetType('cash')}
-                      className="flex-1"
-                    >
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      Cash
-                    </Button>
-                  </div>
-                </div>
-
-                {assetType === 'digital' ? (
-                  <>
-                    {/* Digital Asset Fields */}
-                    <div className="relative flex flex-col gap-2">
-                      <Label htmlFor="symbolSearch">Symbol</Label>
-                      <input
-                        id="symbolSearch"
-                        value={symbolQuery}
-                        onChange={(e) => { setSymbolQuery(e.target.value); setForm(f => ({ ...f, symbol: e.target.value })); }}
-                        placeholder="Search ticker (e.g. AAPL, BBCA.JK)"
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                      />
-                      {loadingSearch && <p className="text-xs text-muted-foreground">Searching...</p>}
-                      {!loadingSearch && symbolResults.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 z-20 mt-1 max-h-40 overflow-auto rounded-md border border-border bg-background p-1 flex flex-col gap-2">
-                          {symbolResults.map(r => (
-                            <button
-                              type="button"
-                              key={r.symbol}
-                              onClick={() => handleSelectSymbol(r)}
-                              className="w-full text-left px-2 py-1 rounded hover:bg-accent text-xs"
-                            >
-                              <span className="font-medium">{formatTickerDisplay(r.symbol)}</span> <span className="text-muted-foreground">{r.name}</span>
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-2">
-                        <Label htmlFor="amount">Amount</Label>
-                        <input
-                          id="amount"
-                          value={form.amount}
-                          onChange={(e) => setForm(f => ({ ...f, amount: e.target.value }))}
-                          placeholder="0"
-                          type="number"
-                          step="any"
-                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <Label htmlFor="unit">Unit</Label>
-                        <Select
-                          value={effectiveUnit}
-                          onValueChange={(value) => setForm(f => ({ ...f, unit: value }))}
-                          disabled={unitLocked}
-                        >
-                          <SelectTrigger id="unit" className="w-full h-9 px-3 text-sm">
-                            <SelectValue placeholder="Select unit" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="share">Share</SelectItem>
-                            <SelectItem value="lot">Lot</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="avgPrice">Average Price</Label>
-                      <input
-                        id="avgPrice"
-                        value={form.avgPrice}
-                        onChange={(e) => setForm(f => ({ ...f, avgPrice: e.target.value }))}
-                        placeholder="0"
-                        type="number"
-                        step="any"
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                      />
-                      <p className="text-xs text-muted-foreground">Price per {effectiveUnit === 'lot' ? 'lot' : 'share'} in native currency</p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* Cash Asset Fields */}
-                    <div className="flex flex-col gap-2">
-                      <Label htmlFor="category">Category</Label>
-                      <input
-                        id="category"
-                        value={form.category}
-                        onChange={(e) => setForm(f => ({ ...f, category: e.target.value }))}
-                        placeholder="e.g., Bank BCA, Gopay, etc."
-                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="flex flex-col gap-2">
-                        <Label htmlFor="cashAmount">Amount</Label>
-                        <input
-                          id="cashAmount"
-                          value={form.amount}
-                          onChange={(e) => setForm(f => ({ ...f, amount: e.target.value }))}
-                          placeholder="0"
-                          type="number"
-                          step="any"
-                          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                        />
-                        <p className="text-xs text-muted-foreground">Total cash in selected currency</p>
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <Label htmlFor="cashCurrency">Currency</Label>
-                        <Select
-                          value={form.cashCurrency}
-                          onValueChange={(value) => setForm(f => ({ ...f, cashCurrency: value }))}
-                        >
-                          <SelectTrigger id="cashCurrency" className="w-full h-9 px-3 text-sm">
-                            <SelectValue placeholder="Select currency" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="IDR">🇮🇩 IDR</SelectItem>
-                            <SelectItem value="USD">🇺🇸 USD</SelectItem>
-                            <SelectItem value="SGD">🇸🇬 SGD</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </>
-                )}
-
-                <div className="flex justify-end gap-2 pt-4">
-                  <DialogClose asChild>
-                    <Button type="button" variant="ghost">Cancel</Button>
-                  </DialogClose>
-                  <Button type="submit">{editingIndex != null ? 'Save' : 'Add'}</Button>
-                </div>
-              </form>
+              <AddAssetForm
+                editingIndex={editingIndex}
+                assetType={assetType}
+                setAssetType={setAssetType}
+                symbolQuery={symbolQuery}
+                setSymbolQuery={setSymbolQuery}
+                setForm={setForm}
+                loadingSearch={loadingSearch}
+                symbolResults={symbolResults}
+                handleSelectSymbol={handleSelectSymbol}
+                form={form}
+                effectiveUnit={effectiveUnit}
+                unitLocked={unitLocked}
+                handleSubmit={handleSubmit}
+              />
             </div>
           </div>
         </DialogContent>

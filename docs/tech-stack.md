@@ -14,7 +14,7 @@
 |---|---|---|
 | `@supabase/supabase-js` | ^2.79.0 | Auth, database, storage client |
 | `@supabase/ssr` | ^0.8.0 | SSR-safe Supabase client |
-| `yahoo-finance2` | ^3.14.3 | Market data (quotes, charts, fundamentals, search) |
+| `yahoo-finance2` | ^4.0.0 | Market data (quotes, charts, fundamentals, search) |
 | Supabase (platform) | — | PostgreSQL database, Auth (Google OAuth), file storage |
 
 ## UI & Styling

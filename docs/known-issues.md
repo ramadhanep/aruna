@@ -6,7 +6,7 @@
 `lib/secure-payload.js` uses simple XOR with a repeating key. Anyone with the `SECURE_PAYLOAD_KEY` or who reverse-engineers the pattern can read all API responses. This is obfuscation only — not a substitute for HTTPS or signed JWTs.
 
 ### CORS Enforcement Is Partial
-Strict origin blocking (`buildUnauthorizedResponse`) is commented out in `src/proxy.js` (formerly `middleware.js`). The proxy applies CORS headers but doesn't block unauthorized origins. CORS is decorative, not protective. (Phase 7 added a per-IP rate limit for `/api/screeners` in the proxy — see below — but CORS itself remains decorative.)
+`src/proxy.js` (formerly `middleware.js`) applies CORS headers permissively — it contains no origin-blocking logic in any form, not even commented out. CORS is decorative, not protective. (Phase 7 added a per-IP rate limit for `/api/screeners` in the proxy — see below — but CORS itself remains decorative.)
 
 ### Stockbit API Scraping
 The money flow cron (`/api/cron/money-flow`) authenticates to `https://exodus.stockbit.com` (a private/undocumented API) using a user bearer token. This is fragile and may violate Stockbit's ToS.

@@ -68,7 +68,7 @@ Exceptions (no XOR encoding):
 |---|---|
 | `aruna_auth` | Supabase session persistence |
 | `aruna-theme` | Theme preference (dark/light/system) |
-| `aruna-watchlist` | Local watchlist (guest mode) |
+| `aruna_watchlist` | Local watchlist (guest mode) |
 | `aruna-portfolio` | Local portfolio (guest mode) |
 | `aruna_header_symbol_history` | Recent symbol search history |
 | `aruna-trial-state` | Trial `{ startedAt, expiresAt }` state (60-minute guest trial) |

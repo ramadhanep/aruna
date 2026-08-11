@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { GoogleGlyph } from "@/components/google-glyph";
 import { useAuth } from "@/components/auth-provider";
 import { useTrial } from "@/components/trial-provider";
+import { DURATION_CLASS } from "@/lib/motion";
 
 const BENEFITS = [
   "IDX, US equities & crypto data",
@@ -100,7 +101,7 @@ export default function PricingPage() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={authLoading || !supabaseConfigured}
-            className="w-full justify-center gap-3 rounded-full bg-foreground py-5 text-sm font-semibold text-background hover:bg-foreground/90 transition-all duration-200 disabled:opacity-50"
+            className={`w-full justify-center gap-3 rounded-full bg-foreground py-5 text-sm font-semibold text-background hover:bg-foreground/90 transition-all ${DURATION_CLASS.base} disabled:opacity-50`}
           >
             {authLoading ? (
               <>

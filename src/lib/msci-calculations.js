@@ -142,15 +142,6 @@ export function calculateMSCIMetrics(stock) {
 }
 
 /**
- * Sort stocks by nearest to inclusion (highest progress)
- * @param {array} stocks - Array of stock objects with progress
- * @returns {array} Sorted stocks
- */
-export function sortByNearestInclusion(stocks) {
-  return [...stocks].sort((a, b) => (b.progress || 0) - (a.progress || 0));
-}
-
-/**
  * Calculate summary statistics for MSCI stocks
  * @param {array} stocks - Array of stock objects
  * @returns {object} Summary statistics

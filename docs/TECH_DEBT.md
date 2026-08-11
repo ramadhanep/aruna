@@ -1,169 +1,58 @@
-# Technical Debt Audit
+# Tech Debt Audit
 
-Audited against `docs/architecture.md`, `docs/coding-standards.md`, and
-`docs/conventions.md` on 2026-07-31. References are to the current working
-tree. This is an audit only; no implementation changes were made.
+Read-only audit against the layer/encoding rules in `CLAUDE.md`. No source files were modified. Findings are grouped by category; each carries an explicit severity tag. Line numbers are accurate as of the commit at audit time (`d050c9e`).
 
-## Verified conformances
+## Missing safeguards (encodePayload / RLS / env)
 
-- No component or page imports an API route module directly. Browser data calls
-  use `fetchEncodedJson()` rather than route-module imports.
-- All 13 non-cron API routes wrap their returned bodies with `encodePayload()`,
-  including all GET/POST/DELETE handlers in `api/discussions`. The two
-  `api/cron/*` handlers are the documented plain-JSON exceptions. There is no
-  missing-encoding finding.
+- **[Critical]** `src/app/api/msci/route.js:52-59` — the "no MSCI stocks found" success branch returns a fully raw JSON body (`{ stocks: [], summary: {...}, lastUpdated }`) with no `encodePayload()` at all, unlike every other success branch in the file (line 168-174). This is a genuine payload-shape bug, not just an obfuscation gap: a client that only understands the encoded envelope (`{ payload: "..." }`) will fail to parse this response via `fetchEncodedJson()` (falls into the `body.error` string check in `src/lib/api-client.js:16`, then throws `'Failed to decode API response'` since there's no `.error` field either). Fix: wrap in `encodePayload()` like the rest of the route.
+- **[High]** Four routes wrap only their *success* path in `encodePayload()` but return raw `{ error }` JSON on every error branch, inconsistent with the pattern used in `finance`, `price-series`, `quotes`, `fundamentals`, `screeners`, `symbol-search`, `delete-account`, and (mostly) `discussions`:
+  - `src/app/api/bubbles/route.js:19-22, 47-50, 71-74`
+  - `src/app/api/momentum/route.js:44-47, 65-68, 140-143`
+  - `src/app/api/msci/route.js:20-23, 45-48, 72-75, 178-181`
+  - `src/app/api/rotation/route.js:19-22, 37-40, 105-108`
+  All four import `encodePayload` and use it correctly for the 200 path, so this reads as a copy-paste gap rather than a deliberate exception — none of these routes are documented exceptions in `docs/api.md` (only `/api/cron/*` and `/api/health` are). Fix: wrap every `NextResponse.json({ error, ... })` in these files the same way `finance/route.js` does (`{ payload: encodePayload({ error }) }`).
+- **[Medium]** `src/app/api/discussions/route.js:246-249` — the `DELETE` handler's "Supabase configuration missing" branch returns raw `{ error }` JSON. This directly contradicts `docs/known-issues.md:96-98`, which states the Phase 7 fix made **all** `/api/discussions` error responses (GET/POST/DELETE) use `encodePayload()`. Every other error branch in this file (GET, POST, and the rest of DELETE) is correctly wrapped — this one branch was missed. Low practical impact since `fetchEncodedJson()` has a documented fallback for unencoded `{ error }` bodies (`src/lib/api-client.js:14-18`), but it's a live contradiction of the docs and the architecture rule.
+- **[Low]** RLS / schema check: every table referenced via `.from('...')` in `src/app` and `src/lib` (`profiles`, `watchlists`, `portfolios`, `stock_universes`, `screening_snapshots`, `trending_stocks`, `msci_stocks`, `msci_snapshot_cache`, `ajaib_stocks`, `bibit_stocks`, `discussion_messages`, `money_flow_reports`, `weekly_reports`) exists in `supabase/setup.sql` with `enable row level security` + at least one `create policy`. No missing-RLS gap found — this area is clean, no action needed.
 
-## Findings
+## Dead / duplicated code
 
-### TD-1 — The chart page has become a feature subsystem in a route module (RESOLVED in Phase 2)
+- **[Medium]** `src/components/ui/sidebar.jsx` (680 lines) and `src/components/ui/radio-group.jsx` (38 lines) — orphaned shadcn scaffold components. Neither `Sidebar*` nor `RadioGroup` (the primitive, as opposed to `DropdownMenuRadioGroup`) is imported anywhere in `src/app` or `src/components`. 718 lines of dead UI-kit code. Fix: delete both files, or confirm they're intentionally kept as scaffolding for a future feature (in which case note it explicitly, per YAGNI this should just go).
+- **[Low]** Five exported `lib` functions have zero call sites outside their own definition (only match is the `export function` line itself):
+  - `isCryptoTicker` — `src/lib/chart-helpers.js:297`
+  - `dayOfYearToMonthDate` — `src/lib/seasonalData.js:132`
+  - `sortByNearestInclusion` — `src/lib/msci-calculations.js:149`
+  - `calculateSummaryStats` — `src/lib/msci-calculations.js:158`
+  - `formatDecimalPercent` — `src/lib/utils.js:123`
+  Likely leftovers from refactors (e.g. `msci/route.js` computes its own inline `calculateStats` at `src/app/api/msci/route.js:149-156` instead of the lib's `calculateSummaryStats` — see next item). Fix: delete if truly unused, or wire up the caller that was supposed to use them.
+- **[Medium]** `src/app/api/msci/route.js:149-156` defines a local `calculateStats(stocks)` helper that duplicates `calculateSummaryStats()` already exported from `src/lib/msci-calculations.js:158` (same shape: `totalStocks`, progress/free-float aggregation). This is the API-route counterpart of the dead-export finding above — the lib function exists but the route reimplements it inline instead of importing it. Fix: import and use `calculateSummaryStats` from the lib, delete the inline copy.
+- **[Medium]** `src/app/chart/page.jsx:562-568` (`formatPriceValue`) and `src/app/chart/page.jsx:585-601` (`formatPlainNumber`) both reimplement `formatPrice(value, { locale: 'en-US', minimumFractionDigits: 2, maximumFractionDigits: 2 })` from `src/lib/utils.js:82-95`, which already accepts these exact options. The two local functions are also near-duplicates of *each other* within the same file (both do `Number(value).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })`, `formatPlainNumber` just adds a string-coercion branch). Fix: replace both with calls to the existing `formatPrice()`.
+- **[Low]** `docs/known-issues.md:8-9` describes "Strict origin blocking (`buildUnauthorizedResponse`) is commented out in `src/proxy.js`" — but `src/proxy.js` (read in full) contains no `buildUnauthorizedResponse` function or any commented-out origin-blocking code at all; the file only has the live rate-limiter and the (working, uncommented) decorative CORS logic. This isn't undocumented dead code in the source — it's the reverse: documented dead code that no longer exists in the source, i.e. the doc is stale relative to the file it describes.
 
-- **Resolution:** `src/app/chart/page.jsx` reduced from 4,736 to 3,600 lines.
-  Pure helpers extracted to `src/lib/chart-helpers.js`. Data fetching/persistence
-  extracted to 5 hooks under `src/hooks/use-chart-*.js`. Chart header extracted
-  to `src/components/chart-header-bar.jsx`. Page now handles route composition,
-  URL-state wiring, and layout only. Pre-existing `canUseProtectedActions`
-  ReferenceError fixed.
+## Business logic outside lib/
 
-### TD-2 — Portfolio functionality is similarly concentrated in one page (RESOLVED in Phase 3)
+No misplaced scoring/threshold logic found. Money-flow scoring (`src/lib/money-flow.js`), MSCI thresholds (`src/lib/msci-calculations.js`), and seasonal math (`src/lib/seasonalData.js`) are correctly centralized and consumed as-is by API routes and pages/hooks — the only leakage found is the `calculateStats` duplication noted above, which is a duplication issue rather than logic living exclusively outside `lib/`.
 
-- **Resolution:** `src/app/portfolio-tracker/page.jsx` reduced from 1,761 to 1,188 lines.
-  Persistence extracted to `src/lib/portfolio-storage.js`. Pure calculations extracted to
-  `src/lib/portfolio-metrics.js`. Data orchestration extracted to
-  `src/hooks/use-portfolio-data.js`. `PortfolioMiniChart` extracted to
-  `src/components/portfolio-mini-chart.jsx`. Page now composes hooks and lib modules;
-  remaining inline code is UI state (dialog, form, search, sort) and JSX layout.
+## Architecture violations
 
-### TD-3 — Quote/asset-logo acquisition is duplicated across two API routes (RESOLVED in Phase 4)
+No dependency-flow violations found:
+- No `src/components/*` or `src/lib/*` file imports from `src/app/api/*`.
+- No `src/lib/*` file imports from `src/components/*` or `src/app/*`.
+- No raw `fetch('/api/...')` calls in components bypassing `fetchEncodedJson()`.
+- No page directly imports `yahoo-finance2` or calls Supabase for data mutations outside `src/lib/*` wrappers; the one direct `getSupabaseBrowserClient()` use in `src/app/discussion/page.jsx:253` is for a Realtime channel subscription, which must run client-side and is not a data-fetch bypass of the API layer.
 
-- **Resolution:** `ensureUsLogo()` extracted to `src/lib/logo-cache.js` as the
-  single server-only implementation (HEAD check → Pluang CDN download →
-  service-role upload → public URL, null on failure). Both
-  `src/app/api/quotes/route.js` and `src/app/api/finance/route.js` import it.
-  Shared storage/CDN bases moved to `src/lib/supabase-storage.js`. Encoded
-  response shapes and logo URLs verified unchanged via live API smoke test.
+This area is clean — the codebase is actually disciplined about the pages -> components -> lib flow.
 
-### TD-4 — Symbol search and short-window price fetching are duplicated in UI (RESOLVED in Phase 4)
+## Already-tracked (not re-reported as new)
 
-- **Resolution:** `searchSymbols()` and `fetchLatestQuote()` added to
-  `src/lib/api-client.js`. All duplicate wrappers removed:
-  `add-asset-modal.jsx`, `portfolio-tracker/page.jsx`, `use-portfolio-data.js`
-  (including FX lookups), `manage-watchlist-dialog.jsx`, and
-  `header-symbol-search.jsx` (abort-aware) now use the shared helpers.
-  Also removed the page-local mini-series effect in `portfolio-tracker/page.jsx`
-  that duplicated `use-portfolio-data.js`'s identical effect (double fetch).
-  `searchSymbols` is tolerant (returns `[]`, rethrows only `AbortError`);
-  this also fixed an unhandled-rejection path in `add-asset-modal`.
-  Chart seasonal/series and portfolio mini-series fetches remain separate
-  contracts by design.
+- `chart/page.jsx` (2772 lines), `explore/page.jsx` (1421 lines), `portfolio-tracker/page.jsx` (1012 lines) remain large per `docs/known-issues.md`, but sizes have not grown meaningfully since that doc was written (chart is smaller than the ~2780 cited there; portfolio-tracker is smaller than the ~1190 cited there). No new large-file regressions found beyond the specific duplication items called out above.
+- Hardcoded `USD_TO_IDR` in `src/lib/msci-calculations.js` and `DEFAULT_SCREENER_TEMPLATE_ID` in the money-flow cron are already documented in `docs/known-issues.md` — not re-listed here.
 
-### TD-5 — Formatting helpers are reimplemented in feature files [PARTIALLY RESOLVED]
+---
 
-- **Resolution:** `money-flow-card.jsx` already imports all formatters from
-  `@/lib/utils`. `idx-momentum/page.jsx` already uses canonical helpers. Phase 0
-  added `formatDecimalPercent`, `formatUSD`, `formatIDR`, `formatSGD`, and
-  `formatByCurrency` to `src/lib/utils.js` and removed the duplicated local
-  versions from `money-flow/page.jsx` and `portfolio-tracker/page.jsx`. The
-  remaining local time-label formatters (`formatLocalDateTimeLabel`,
-  `formatTimeAgo`, `formatLocalTimeLabel`) in `explore/page.jsx` are
-  page-specific date-formatting helpers with no equivalent in utils — not
-  duplicates. The `portfolio-tracker/page.jsx` `formatValue` function is
-  state-coupled (depends on currency/idrPerUsd/sgdPerUsd) and stays local until
-  Phase 3 extraction.
+## Top 5 shortlist (risk x frequency-of-touch, effort-tagged)
 
-### TD-6 — Breakpoint and duration constants are scattered instead of shared [RESOLVED]
-
-- **Resolution:** `MOBILE_BREAKPOINT = 1024` and `RECENT_PRICE_LOOKBACK_DAYS = 5`
-  are already centralized in `src/lib/time.js` with a shared `getRecentUnixRange()`
-  helper. `use-mobile.js`, `trial-banner.jsx`, `portfolio-tracker/page.jsx`, and
-  `add-asset-modal.jsx` all import from `@/lib/time`. No duplicate literals remain.
-  Resolved in Phase 0 (confirmed already in place, no code change needed).
-
-### TD-7 — React effect patterns are inconsistent and currently fail lint [RESOLVED]
-
-- **Resolution:** Phase 1 fixed all 27 effect-related lint errors across 13
-  files. Approaches used: `queueMicrotask`/`setTimeout` to defer synchronous
-  `setState` out of effect bodies; `useSyncExternalStore` for the `use-mobile`
-  hook (subscribing to `matchMedia`) and for hydration guards in
-  `account-sidebar.jsx`; `useState` lazy initializers for reading localStorage
-  and computing client-only initial values; inlined async fetch logic with
-  cancellation inside effects; moved dialog-reset logic from effects to event
-  handlers. No new hooks or lib modules were added. All remaining 8 warnings
-  are `no-img-element` (Phase 6 scope).
-- **Effort:** M
-
-### TD-8 — Market bubble rendering is impure during render [RESOLVED]
-
-- **Reference:** `src/components/market-bubbles.jsx:175-191,429-522`.
-- **Resolution:** Phase 1 removed all ref reads and `Math.random()` calls from
-  the render path. `initialPositionsRef` (dead code, never read) removed.
-  `Math.random()` replaced with deterministic `hashSeed()` per symbol code.
-  `dragInfoRef.current.code` ref-read in SVG render replaced with a
-  `draggedCode` state variable. `isDragging` state already existed. Bubble
-  animation metadata is now stable per symbol across re-renders.
-- **Effort:** M
-
-### TD-9 — Local-storage keys deviate from the documented registry (RESOLVED)
-
-- **Resolution:** Implemented in Phase 3. `src/lib/portfolio-storage.js` handles
-  canonical `aruna-portfolio` schema with one-time migration from legacy keys.
-  `ClearDataButton` imports `PORTFOLIO_STORAGE_KEYS` from the adapter for a
-  single source of truth. No dual-write or permanent compatibility layer.
-  All persistence centralized behind the adapter.
-
-### TD-10 — Dead, unreferenced modules remain in the component layer [RESOLVED]
-
-- **Resolution:** Files `src/components/market-canvas.jsx` and
-  `src/components/desktop-sidebar.jsx` were confirmed non-existent and
-  unreferenced. Documentation (`docs/folder-structure.md`, `README.md`,
-  `docs/ui-architecture.md`) updated to remove their entries. Resolved in
-  Phase 0.
-
-### TD-11 — Commented-out feature blocks are retained in production files [RESOLVED]
-
-- **Resolution:** Code inspection confirmed the referenced line ranges no longer
-  contain commented-out executable code — the files were edited since the
-  original audit. Only explanatory `{/* label */}` JSX comments remain (section
-  labels, catch-block comments). No code change was needed. Resolved in Phase 0.
-
-### TD-12 — Direct hardcoded external provider URLs/configuration are spread (RESOLVED in Phase 4)
-
-- **Resolution:** `src/lib/supabase-storage.js` is the single source for
-  `SUPABASE_STORAGE_BASE` (derived from existing `NEXT_PUBLIC_SUPABASE_URL`),
-  `PLUANG_CDN_BASE`, `getIdxLogoUrl()`, and `getUsLogoUrl()`. All 7 inline
-  storage-base constructions removed: `quotes`, `finance`, `momentum`,
-  `msci`, `money-flow`, `market-bubbles`, `explore`. No new env surface;
-  `PLUANG_CDN_BASE` stays a stable code constant. The `explore/page.jsx`
-  market catalog was deliberately left in the page: it carries lucide icon
-  components and accent colors (presentation data), and extracting it to
-  `src/lib/` would violate the documented "lib has no dependencies on
-  components" rule. It is single-consumer; only its storage-base literal was
-  centralized.
-
-## Notes
-
-- `USD_TO_IDR` was intentionally excluded as requested.
-- ESLint also reports image-optimization warnings and a few hook-dependency
-  warnings; these are useful follow-ups but not architecture deviations by
-  themselves.
-
-## Phase 6 follow-up
-
-- **TD-2/UI-8 remainder (componentization)** — resolved under Phase 6 guardrails:
-  `SegmentedControl` (behavior-focused wrapper composing `Button`; visual
-  recipes stay per-feature after a post-Phase-6 audit found the initial
-  single-recipe version regressed feature-specific styling), explore tool cards
-  (6×) and portfolio pie sections (4×) deduplicated, chart Trading-Plan/
-  Seasonality panels and `AnalystGaugeChart` extracted. Metric-row, empty-state
-  and change-chip primitives were deliberately not created (no cross-feature
-  reuse); chart Profile/Key Stats/Analysis/Financials tabs stayed in the page
-  (checkpoint decision — one-off grids, no ownership gain).
-- **Lint blind spot (new)** — `no-undef`/`no-unused-vars` were not effective
-  under `eslint-config-next`; this let two undefined-reference bugs ship. Now
-  enforced in `eslint.config.mjs`; ~320 lines of dead code removed across 19
-  files. Also fixed B4 (watchlist `isStandalone`, same class as B2).
-- **`no-img-element` (8 warnings)** — resolved by migrating all 8 `<img>` sites
-  to `next/image` with `images.unoptimized: true`; lint is now 0 errors /
-  0 warnings. Offline `/aruna.png` precache behaviour is preserved (raw URLs
-  emitted; verified in built HTML).
-- **UI-2** — resolved in Phase 6 (shell-mounted auth gating + layout-shaped
-  skeletons for app shell, sign-in bootstrap, account sidebar).
+1. **[S]** Fix `src/app/api/msci/route.js:52-59` empty-state branch to use `encodePayload()` — one-line-ish change, but it's an actual response-shape bug on a route the `/explore` and `/msci-tracker` pages hit regularly whenever the DB table is empty or filtered to nothing.
+2. **[S]** Wrap error branches in `bubbles`, `momentum`, `msci`, `rotation` routes with `encodePayload()` (12 call sites total, same one-line pattern each) — closes a real, currently-reproducible violation of the project's own "every response except cron/health must be encoded" rule, and these are player-facing routes (explore, bubbles, momentum, MSCI, rotation pages) touched often.
+3. **[S]** Fix the one missed branch in `src/app/api/discussions/route.js:246-249` — brings the file back in line with what `docs/known-issues.md` already claims is true; trivial diff, closes a doc/code mismatch.
+4. **[M]** Delete `src/components/ui/sidebar.jsx` + `radio-group.jsx` (718 dead lines) and the 5 dead lib exports — pure deletion, zero behavior risk, reduces surface area newcomers have to read through.
+5. **[M]** Dedupe `formatPriceValue`/`formatPlainNumber` in `chart/page.jsx` onto `lib/utils.js#formatPrice`, and swap the inline `calculateStats` in `msci/route.js` for the existing `calculateSummaryStats` — `chart/page.jsx` is the single most-edited file in this codebase per `docs/known-issues.md`, so any duplicated logic there compounds every time someone touches formatting again.

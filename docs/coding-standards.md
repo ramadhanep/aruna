@@ -39,7 +39,9 @@
 - API routes: Return `Response.json()` with appropriate status codes.
 - Client-side: Use try/catch with `console.warn` for non-critical errors.
 - Network errors: Show error states via `AlertTriangle` or inline error messages.
-- No global error boundary is configured.
+- Global error boundaries exist: `src/app/error.jsx` (route-level) and
+  `src/app/global-error.jsx` (root-level) render an in-app retry screen
+  instead of a blank page.
 
 ## Async Patterns
 

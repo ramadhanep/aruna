@@ -3,6 +3,7 @@ import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { MiniChart } from "@/components/mini-chart";
 import { formatTickerDisplay, getChangeTone } from "@/lib/utils";
+import { DURATION_CLASS } from "@/lib/motion";
 
 export function TickerRow({
   symbol,
@@ -28,7 +29,7 @@ export function TickerRow({
   return (
     <Link
       href={href}
-      className="flex items-center gap-3 py-3.5 px-1 hover:bg-accent/40 transition-all duration-200 rounded-xl -mx-1"
+      className={`flex items-center gap-3 py-3.5 px-1 hover:bg-accent/40 transition-all ${DURATION_CLASS.base} rounded-xl -mx-1`}
     >
       <div className="flex-1 min-w-0 flex items-center gap-3">
         <div className="flex-shrink-0">

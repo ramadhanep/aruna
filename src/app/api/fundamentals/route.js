@@ -155,10 +155,11 @@ export async function GET(request) {
       // so the fundamentals fetch survives upstream schema changes.
       console.warn(`Yahoo schema validation failed for ${symbolKey}, retrying without validation`, error);
       try {
-        summaryModules = await yahooFinance.quoteSummary(symbolKey, {
-          modules,
-          validateResult: false,
-        });
+        summaryModules = await yahooFinance.quoteSummary(
+          symbolKey,
+          { modules },
+          { validateResult: false }
+        );
         await writeYahooRawLog({
           endpoint: 'fundamentals-quoteSummary-unvalidated',
           symbol: symbolKey,

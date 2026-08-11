@@ -15,7 +15,7 @@ import { TickerRow } from "@/components/ticker-row";
 import { getDefaultWatchlist, readStoredWatchlist, writeStoredWatchlist } from "@/lib/default-watchlist";
 import { TrendingMarquee } from "@/components/trending-marquee";
 import { formatTickerDisplay } from "@/lib/utils";
-import { MOTION } from "@/lib/motion";
+import { MOTION, DURATION_CLASS } from "@/lib/motion";
 import { useTrial } from "@/components/trial-provider";
 
 function areWatchlistsEqual(a = [], b = []) {
@@ -333,7 +333,7 @@ export default function HomePage() {
       {/* Pull to refresh indicator */}
       {pullDistance > 0 && (
         <div
-          className="flex lg:col-span-12 items-center justify-center transition-all duration-200"
+          className={`flex lg:col-span-12 items-center justify-center transition-all ${DURATION_CLASS.base}`}
           style={{
             height: `${pullDistance}px`,
             opacity: Math.min(pullDistance / 80, 1)

@@ -37,7 +37,7 @@ import { Badge } from "@/components/ui/badge";
 import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist";
 import { ArunaWatermark } from "@/components/aruna-watermark";
 import { TickerAvatar } from "@/components/ticker-avatar";
-import { formatTickerDisplay, getChangeTone } from "@/lib/utils";
+import { formatTickerDisplay, getChangeTone, formatPrice } from "@/lib/utils";
 import { MOTION } from "@/lib/motion";
 import { ChartHeaderBar } from "@/components/chart-header-bar";
 import { SegmentedControl } from "@/components/ui/segmented-control";
@@ -52,6 +52,73 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const CHART_HEIGHT_CLASS = "h-[380px] lg:h-[500px]";
+const SECONDARY_CHART_HEIGHT_CLASS = "h-[260px]";
+
+function ChartMainSkeleton() {
+  return (
+    <>
+      <Card className="bg-transparent border-none rounded-none">
+        <CardHeader>
+          <div className="flex items-start justify-between gap-4">
+            <div className="flex-1 space-y-2">
+              <Skeleton className="h-3 w-28 rounded-full" />
+              <Skeleton className="h-8 w-32 rounded-xl" />
+              <Skeleton className="h-4 w-24 rounded-full" />
+              <Skeleton className="h-4 w-20 rounded-full" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Skeleton className="h-6 w-40 rounded-full" />
+              <Skeleton className="h-6 w-32 rounded-full" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="px-0 pb-0">
+          <Skeleton className={`w-full ${CHART_HEIGHT_CLASS} rounded-xl`} />
+        </CardContent>
+      </Card>
+
+      <div className="flex flex-wrap justify-center items-center gap-1 mt-4 lg:mt-2">
+        {[...Array(6)].map((_, i) => (
+          <Skeleton key={i} className="flex-1 h-7 rounded-full" />
+        ))}
+      </div>
+    </>
+  );
+}
+
+function ChartSidebarSkeleton() {
+  return (
+    <div className="mt-4 flex flex-col gap-4 lg:mt-0">
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="space-y-2">
+              <Skeleton className="h-3 w-32 rounded-full" />
+              <Skeleton className="h-6 w-36 rounded-full" />
+            </div>
+            <Skeleton className="h-6 w-14 rounded-full" />
+          </div>
+        </CardContent>
+      </Card>
+      <Skeleton className="h-9 w-full rounded-xl" />
+      <div className="flex gap-2 border-b border-border/20 pb-2">
+        {[...Array(5)].map((_, idx) => (
+          <Skeleton key={`tab-${idx}`} className="h-6 w-14 rounded-full" />
+        ))}
+      </div>
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-4 w-24 rounded-full" />
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {[...Array(5)].map((_, idx) => (
+            <Skeleton key={`analysis-${idx}`} className="h-3 rounded-full w-full" />
+          ))}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
 function ElectionCyclePageContent() {
   const { resolvedTheme } = useTheme();
@@ -559,13 +626,16 @@ function ElectionCyclePageContent() {
     [normalTimeframe]
   );
 
-  const formatPriceValue = useCallback((value) => {
-    if (value == null || Number.isNaN(Number(value))) return '-';
-    return Number(value).toLocaleString('en-US', {
+  const formatPriceValue = useCallback(
+    (value) => formatPrice(value, {
+      locale: 'en-US',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    });
-  }, []);
+      zeroIsEmpty: false,
+      fallback: '-',
+    }),
+    []
+  );
 
   const currencyCode = fundamentals?.profile?.currency || symbolInfo?.currency || 'USD';
   const currencyFractionDigits = useMemo(
@@ -584,17 +654,13 @@ function ElectionCyclePageContent() {
 
   const formatPlainNumber = useCallback((value) => {
     if (value == null || value === '') return '—';
-    if (typeof value === 'number') {
-      return value.toLocaleString('en-US', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
-    }
     const numeric = Number(value);
-    if (!Number.isNaN(numeric)) {
-      return numeric.toLocaleString('en-US', {
+    if (Number.isFinite(numeric)) {
+      return formatPrice(numeric, {
+        locale: 'en-US',
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
+        zeroIsEmpty: false,
       });
     }
     return String(value);
@@ -1210,8 +1276,11 @@ function ElectionCyclePageContent() {
                           <span className="text-muted-foreground">{item.label}</span>
                           <span className={`font-bold ${textColor}`}>{score} / 10</span>
                         </div>
-                        <div className="h-1.5 rounded-full bg-muted">
-                          <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${pct}%` }} />
+                        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                          <div
+                            className={`h-full w-full rounded-full origin-left transition-transform ${color}`}
+                            style={{ transform: `scaleX(${pct / 100})` }}
+                          />
                         </div>
                       </div>
                     );
@@ -1390,7 +1459,7 @@ function ElectionCyclePageContent() {
                       </Badge>
                     </div>
                   </CardHeader>
-                  <CardContent className="h-[260px]">
+                  <CardContent className={SECONDARY_CHART_HEIGHT_CLASS}>
                     <ResponsiveContainer width="100%" height="100%">
                       <ComposedChart
                         data={earningsChartData}
@@ -1489,7 +1558,7 @@ function ElectionCyclePageContent() {
                       </div>
                     </div>
                   </CardHeader>
-                  <CardContent className="h-[260px]">
+                  <CardContent className={SECONDARY_CHART_HEIGHT_CLASS}>
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart
                         data={revenueChartData}
@@ -1657,8 +1726,8 @@ function ElectionCyclePageContent() {
                         <span className="w-20 text-right text-xs text-muted-foreground shrink-0">{item.label}</span>
                         <div className="flex-1 h-2.5 rounded-full bg-muted overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all ${barColor}`}
-                            style={{ width: `${Math.min(100, percent)}%` }}
+                            className={`h-full w-full rounded-full origin-left transition-transform ${barColor}`}
+                            style={{ transform: `scaleX(${Math.min(100, percent) / 100})` }}
                           />
                         </div>
                         <span className="w-8 text-xs tabular-nums text-muted-foreground">{item.value}</span>
@@ -2244,35 +2313,7 @@ function ElectionCyclePageContent() {
       />
 
       <div className="lg:col-span-8 flex flex-col gap-2">
-        {loading && (
-          <>
-            <Card className="bg-transparent border-none rounded-none">
-              <CardHeader>
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-3 w-28 rounded-full" />
-                    <Skeleton className="h-8 w-32 rounded-xl" />
-                    <Skeleton className="h-4 w-24 rounded-full" />
-                    <Skeleton className="h-4 w-20 rounded-full" />
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    <Skeleton className="h-6 w-40 rounded-full" />
-                    <Skeleton className="h-6 w-32 rounded-full" />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="px-0 pb-0">
-                <Skeleton className={`w-full ${CHART_HEIGHT_CLASS} rounded-xl`} />
-              </CardContent>
-            </Card>
-
-            <div className="flex flex-wrap justify-center items-center gap-1 mt-4 lg:mt-2">
-              {[...Array(6)].map((_, i) => (
-                <Skeleton key={i} className="flex-1 h-7 rounded-full" />
-              ))}
-            </div>
-          </>
-        )}
+        {loading && <ChartMainSkeleton />}
 
         {!loading && error && (
           <Card className="flex flex-col items-center gap-4 text-center py-10 bg-transparent border-dashed rounded-xl">
@@ -2495,12 +2536,14 @@ function ElectionCyclePageContent() {
                     showCloseButton={false}
                   >
                     <div className="flex flex-col gap-1 justify-center items-center border-b py-4 text-center">
-                      <div
-                        className="absolute top-5 left-5 cursor-pointer"
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-5 left-5"
                         onClick={() => setNormalFullscreenOpen(false)}
                       >
                         <ArrowLeft className="size-6 text-muted-foreground" />
-                      </div>
+                      </Button>
                       <DialogTitle className="text-sm font-semibold leading-none">
                         {formatTickerDisplay(symbol)}
                       </DialogTitle>
@@ -2557,37 +2600,7 @@ function ElectionCyclePageContent() {
       </div>
 
       <div className="lg:col-span-4 flex flex-col gap-4">
-        {loading && (
-          <div className="mt-4 flex flex-col gap-4 lg:mt-0">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="space-y-2">
-                    <Skeleton className="h-3 w-32 rounded-full" />
-                    <Skeleton className="h-6 w-36 rounded-full" />
-                  </div>
-                  <Skeleton className="h-6 w-14 rounded-full" />
-                </div>
-              </CardContent>
-            </Card>
-            <Skeleton className="h-9 w-full rounded-xl" />
-            <div className="flex gap-2 border-b border-border/20 pb-2">
-              {[...Array(5)].map((_, idx) => (
-                <Skeleton key={`tab-${idx}`} className="h-6 w-14 rounded-full" />
-              ))}
-            </div>
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-4 w-24 rounded-full" />
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {[...Array(5)].map((_, idx) => (
-                  <Skeleton key={`analysis-${idx}`} className="h-3 rounded-full w-full" />
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        {loading && <ChartSidebarSkeleton />}
 
         {showChartSection && (
           <div className={`space-y-4 mt-6 lg:mt-0 ${MOTION.fadeIn}`}>

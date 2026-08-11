@@ -8,7 +8,7 @@
 | `react` / `react-dom` | 19.2.0 | UI framework | Everywhere |
 | `@supabase/supabase-js` | ^2.79.0 | Supabase client (auth, DB, storage) | `lib/supabase-browser.js`, `lib/supabase-server.js` |
 | `@supabase/ssr` | ^0.8.0 | SSR-safe Supabase client — actively used | `src/app/api/discussions/route.js` (`createServerClient()` for cookie-session auth on POST/DELETE) |
-| `yahoo-finance2` | ^3.14.3 | Market data — quotes, charts, fundamentals, search | `/api/finance`, `/api/quotes`, `/api/price-series`, `/api/fundamentals`, `/api/symbol-search`, `/api/screeners` |
+| `yahoo-finance2` | ^4.0.0 | Market data — quotes, charts, fundamentals, search | `/api/finance`, `/api/quotes`, `/api/price-series`, `/api/fundamentals`, `/api/symbol-search`, `/api/screeners` |
 | `tailwindcss` | ^4 | Utility-first CSS framework | All components |
 | `@tailwindcss/postcss` | ^4 | PostCSS integration for Tailwind | `postcss.config.mjs` |
 | `tw-animate-css` | ^1.4.0 | Animation utilities (fade, slide, zoom) | `globals.css` |

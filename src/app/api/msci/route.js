@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { encodePayload } from '@/lib/secure-payload';
-import { calculateMSCIMetrics } from '@/lib/msci-calculations';
+import { calculateMSCIMetrics, calculateSummaryStats } from '@/lib/msci-calculations';
 import { getIdxLogoUrl } from '@/lib/supabase-storage';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -18,7 +18,7 @@ export async function GET(request) {
   try {
     if (!supabaseUrl || !supabaseServiceKey) {
       return NextResponse.json(
-        { error: 'Supabase configuration missing' },
+        { payload: encodePayload({ error: 'Supabase configuration missing' }) },
         { status: 500 }
       );
     }
@@ -43,19 +43,21 @@ export async function GET(request) {
     if (dbError) {
       console.error('Database error:', dbError);
       return NextResponse.json(
-        { error: 'Failed to fetch MSCI stocks' },
+        { payload: encodePayload({ error: 'Failed to fetch MSCI stocks' }) },
         { status: 500 }
       );
     }
 
     if (!msciStocks || msciStocks.length === 0) {
       return NextResponse.json({
-        stocks: [],
-        summary: {
-          standard: { totalStocks: 0, nearestProgress: 0, averageFreeFloat: 0 },
-          small_cap: { totalStocks: 0, nearestProgress: 0, averageFreeFloat: 0 },
-        },
-        lastUpdated: new Date().toISOString(),
+        payload: encodePayload({
+          stocks: [],
+          summary: {
+            standard: { totalStocks: 0, nearestProgress: 0, averageFreeFloat: 0 },
+            small_cap: { totalStocks: 0, nearestProgress: 0, averageFreeFloat: 0 },
+          },
+          lastUpdated: new Date().toISOString(),
+        }),
       });
     }
 
@@ -70,7 +72,7 @@ export async function GET(request) {
     if (bibitError) {
       console.error('Bibit data fetch error:', bibitError);
       return NextResponse.json(
-        { error: 'Failed to fetch market data' },
+        { payload: encodePayload({ error: 'Failed to fetch market data' }) },
         { status: 500 }
       );
     }
@@ -146,18 +148,9 @@ export async function GET(request) {
     const standardStocks = enrichedStocks.filter(s => s.msci_index === 'standard');
     const smallCapStocks = enrichedStocks.filter(s => s.msci_index === 'small_cap');
 
-    const calculateStats = (stocks) => {
-      if (!stocks.length) return { totalStocks: 0, nearestProgress: 0, averageFreeFloat: 0 };
-      return {
-        totalStocks: stocks.length,
-        nearestProgress: Math.max(...stocks.map(s => s.progress || 0)),
-        averageFreeFloat: stocks.reduce((sum, s) => sum + (s.free_float_percent || 0), 0) / stocks.length,
-      };
-    };
-
     const summary = {
-      standard: calculateStats(standardStocks),
-      small_cap: calculateStats(smallCapStocks),
+      standard: calculateSummaryStats(standardStocks),
+      small_cap: calculateSummaryStats(smallCapStocks),
     };
 
     // Get last updated time from bibit_stocks
@@ -176,7 +169,7 @@ export async function GET(request) {
   } catch (error) {
     console.error('MSCI API error:', error);
     return NextResponse.json(
-      { error: 'Internal server error', details: error.message },
+      { payload: encodePayload({ error: 'Internal server error', details: error.message }) },
       { status: 500 }
     );
   }

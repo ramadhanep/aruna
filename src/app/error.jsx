@@ -1,5 +1,7 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+
 export default function Error({ error, reset }) {
   return (
     <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6 text-center px-4">
@@ -16,13 +18,9 @@ export default function Error({ error, reset }) {
         </p>
       </div>
 
-      <button
-        type="button"
-        onClick={() => reset()}
-        className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-full hover:opacity-90 transition-opacity"
-      >
+      <Button size="lg" className="rounded-full" onClick={() => reset()}>
         Try Again
-      </button>
+      </Button>
     </div>
   );
 }

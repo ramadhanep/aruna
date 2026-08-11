@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { AlertTriangle, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, CheckCircle2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MOTION } from "@/lib/motion";
 
@@ -67,7 +67,7 @@ export function ToastViewport() {
             className="text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Dismiss"
           >
-            ✕
+            <X className="size-4" />
           </button>
         </div>
       ))}

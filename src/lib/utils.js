@@ -120,12 +120,6 @@ export function formatCompactNumber(value, { maximumFractionDigits = 1, fallback
   }).format(numeric);
 }
 
-export function formatDecimalPercent(value, { fractionDigits = 2, fallback = '0.00%' } = {}) {
-  const numeric = Number(value || 0) * 100;
-  if (!Number.isFinite(numeric)) return fallback;
-  return `${numeric >= 0 ? '+' : ''}${numeric.toFixed(fractionDigits)}%`;
-}
-
 export function formatUSD(value) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value);
 }

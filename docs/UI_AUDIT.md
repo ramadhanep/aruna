@@ -1,214 +1,262 @@
 # UI/UX Audit
 
-Audited against `docs/ui-architecture.md` on 2026-07-31. Findings are based on
-the implemented component states and CSS (not a claim of cross-device visual
-testing). This is an audit only; no UI was changed.
+Audited against `docs/ui-architecture.md` and `src/app/globals.css` on
+2026-08-12. Read-only pass — no source files were changed. Line numbers are
+current as of this commit (`d050c9e`). Supersedes the 2026-07-31 audit below;
+the resolution table has been re-verified against the current tree.
 
-> **Note:** Line references below predate the Phase 2/3 chart/portfolio
-> decompositions (chart now ~3,660 lines, portfolio ~1,040). They are kept as
-> the original audit anchors.
-
-## Resolution status
+## Resolution status (re-verified this pass)
 
 | Finding | Status |
 |---|---|
-| UI-1 (full-screen spinners) | RESOLVED in Phase 5 — `ScatterSkeleton` dot-field + discussion message shell |
-| UI-2 (access/route loading) | DEFERRED to Phase 6 |
-| UI-3 (bottom-nav safe area) | RESOLVED in Phase 0 — `.bottom-safe`, `.pb-nav-safe` applied |
-| UI-4 (full-screen tool safe areas) | RESOLVED in Phase 0 — `.pt-safe`/`.top-safe-header` on tool chrome |
-| UI-5 (motion policy) | RESOLVED in Phase 5 — `DURATION_CLASS` single token→class mapping |
-| UI-6 (44px touch targets) | RESOLVED in Phase 0 — `h-11 w-11`, `min-h-11` tool chrome |
-| UI-7 (bottom-nav pill) | RESOLVED in Phase 5 — responsive `w-max` card, visible labels |
-| UI-8 (class-string componentization) | Phase 6 scope |
-| UI-9 (arbitrary values) | RESOLVED in Phase 5 — `text-2xs`/`text-3xs`, `CHART_HEIGHT_CLASS`, `CURRENCY_SELECT_WIDTH` |
-| UI-10 (color/elevation) | RESOLVED in Phase 5 — muted gauge, no rotation glow, softer dropdown shadow |
-| UI-11 (chart loading quality) | RESOLVED in Phase 5 — chart series + portfolio mini-chart skeletons |
+| UI-1 (full-screen spinners on bubbles/rotation/discussion) | CONFIRMED RESOLVED — `ScatterSkeleton` in `market-bubbles.jsx:387`, `idx-rotation/page.jsx:150`; discussion auth-gate skeleton at `discussion/page.jsx:305-332` |
+| UI-2 (access/route loading) | CONFIRMED RESOLVED — `app-layout-client.jsx:77-80` skeletons the protected content shell |
+| UI-3 (bottom-nav safe area) | RESOLVED (unchanged) |
+| UI-4 (full-screen tool safe areas) | RESOLVED (unchanged) |
+| UI-5 (motion policy: `src/lib/motion.js`) | PARTIALLY REGRESSED — `account-sidebar.jsx`/`mobile-bottom-nav.jsx` correctly use `DURATION_CLASS`, but several newer surfaces hardcode `duration-200` instead of adopting it (see UI-14 below) |
+| UI-6 (44px touch targets) | MOSTLY RESOLVED, one new instance found (UI-15) |
+| UI-7 (bottom-nav pill) | RESOLVED (unchanged) |
+| UI-8 (class-string componentization) | STILL OPEN, new concrete instance found (UI-12) |
+| UI-9 (arbitrary values) | STILL OPEN (not re-audited in depth this pass; scope unchanged) |
+| UI-10 (color/elevation) | RESOLVED (unchanged, no gradients/purple/heavy shadows found anywhere in `src/app`/`src/components` this pass) |
+| UI-11 (chart loading quality) | RESOLVED (unchanged) |
 
-## Findings
-
-### UI-1 — Three data-heavy visualizations replace the whole screen with a spinner
-
-- **Reference:** `src/components/market-bubbles.jsx:372-378`; 
-  `src/app/idx-rotation/page.jsx:146-152`; `src/app/discussion/page.jsx:297-304`.
-- **What is wrong:** Initial load returns a full-viewport `Loader2` rather than
-  a skeleton matching the bubble field, rotation plot, or discussion feed.
-- **Why it feels off:** The documented shimmer/skeleton pattern is used well on
-  watchlist, explore, MSCI and portfolio. These routes instead flash empty
-  space, then abruptly replace it, particularly noticeable in installed PWA.
-- **Suggested direction:** Reserve the final canvas/feed/header geometry and
-  use a muted skeleton/shimmer grid, plot scaffold, and message rows.
-- **Effort:** M
-
-### UI-2 — Access and route loading use generic spinners rather than layout-shaped placeholders
-
-- **Reference:** `src/components/app-layout-client.jsx:72-82`; 
-  `src/app/signin/page.jsx:90-98`; `src/components/account-sidebar.jsx:424-432`.
-- **What is wrong:** Auth gating, sign-in bootstrap and sidebar loading show a
-  centered spinner without preserving the navbar/page/sidebar shape.
-- **Why it feels off:** It creates a blank flash and vertical reflow before
-  content appears, unlike the intended mobile/desktop shell.
-- **Suggested direction:** Keep the shell in place and skeleton the protected
-  content/sidebar’s actual rows. Retain a compact inline status only for an
-  action initiated by the user.
-- **Effort:** M
-
-### UI-3 — Safe-area support exists but is not applied to the floating mobile nav
-
-- **Reference:** defined at `src/app/globals.css:149-153`; mobile nav at
-  `src/components/mobile-bottom-nav.jsx:78`; page clearance at
-  `src/components/app-layout-client.jsx:128`.
-- **What is wrong:** `.pb-safe` is defined but unused. The nav is fixed at
-  `bottom-3`, while content reserves fixed `pb-24`; neither includes
-  `safe-area-inset-bottom`.
-- **Why it feels off:** On iPhones with a home indicator, the 300px pill can sit
-  too low and obscure the last interactive row. Installed-PWA mode therefore
-  still feels browser-like at the bottom edge.
-- **Suggested direction:** Add bottom safe-area padding/offset to both nav and
-  main clearance, and validate minimized state on iOS standalone mode.
-- **Effort:** S
-
-### UI-4 — Full-screen tool pages ignore top/bottom safe areas
-
-- **Reference:** `src/app/idx-rotation/page.jsx:154-156`; 
-  `src/components/market-bubbles.jsx:381-385`.
-- **What is wrong:** Fixed, edge-to-edge visualizations position controls at
-  `top-0` and use fixed viewport heights without safe-area insets.
-- **Why it feels off:** PWA status-bar/notch areas can crowd or partially cover
-  the back/download controls, exactly where the user needs a reliable escape.
-- **Suggested direction:** Give full-screen tool chrome safe-area-aware top and
-  bottom padding; test standalone iOS and Android with browser chrome hidden.
-- **Effort:** S
-
-### UI-5 — Transition policy is inconsistent despite shared motion tokens
-
-- **Reference:** canonical tokens in `src/lib/motion.js:31-47`; hardcoded
-  timings in `src/components/desktop-navbar.jsx:78,107,111` (200ms / 150ms),
-  `src/components/account-sidebar.jsx:417-424` (300ms `ease-out`),
-  `src/components/mobile-bottom-nav.jsx:78,98,105` (200ms), and
-  `src/components/ui/sheet.jsx:60` (open 500ms, close 300ms).
-- **What is wrong:** The documented motion helper defines 150/250/400ms,
-  but only explore and symbol search use it. Other navigation/dialog surfaces
-  hardcode distinct durations/eases; full-screen page data swaps are instant.
-- **Why it feels off:** Similar interactions open at visibly different speeds,
-  and skeleton-to-data/tab changes lack a coherent transition.
-- **Suggested direction:** Treat `motion.js` as the single timing policy; align
-  non-Radix navigation surfaces and add modest opacity transitions on data/tab
-  replacement (without delaying accessibility or navigation).
-- **Effort:** M
-
-### UI-6 — Touch targets are too small in full-screen tool headers
-
-- **Reference:** `src/app/idx-rotation/page.jsx:159-172`; 
-  `src/components/market-bubbles.jsx:385-413`.
-- **What is wrong:** Back/download controls use `p-1.5` around a 24px icon,
-  producing about a 36px target, below the generally expected 44px mobile
-  target. The adjacent segmented buttons are visually compact as well.
-- **Why it feels off:** These high-frequency controls are at the device edge,
-  where missed taps feel especially clumsy.
-- **Suggested direction:** Establish a 44px minimum control variant for mobile
-  tool chrome while preserving the compact visual icon.
-- **Effort:** S
-
-### UI-7 — The mobile bottom nav is an inconsistent, excessively rounded pill
-
-- **Reference:** `src/components/mobile-bottom-nav.jsx:78-105`.
-- **What is wrong:** It is a fixed-width `w-[300px]`, `rounded-full` floating
-  card whose links have no visible text labels, while the rest of the terminal
-  UI relies mostly on restrained `rounded-md`/`rounded-lg` surfaces.
-- **Why it feels off:** The oversized pill plus four icon-only targets reads as
-  a generic mobile template rather than the quiet, dense Aruna navigation.
-  Fixed 300px also leaves awkward margins on tablets even though mobile chrome
-  covers widths through 1023px.
-- **Suggested direction:** Use a responsive nav width and a compact active label
-  or accessible visible caption; make corner treatment and border weight match
-  desktop navigation. Preserve the scroll-minimize behaviour.
-- **Effort:** M
+## Still-open findings carried from the 2026-07-31 audit
 
 ### UI-8 — Large class strings and feature rendering should be componentized
 
-- **Reference:** `src/app/chart/page.jsx:2702-2911,4240-4656`;
-  `src/app/portfolio-tracker/page.jsx:1109-1756`; 
-  `src/app/explore/page.jsx:979-1525`; 
-  `src/components/ui/button.jsx:8`; `src/components/ui/select.jsx:38,62`.
-- **What is wrong:** The three feature pages contain hundreds/thousands of
-  lines of inline conditional Tailwind. Button/select primitives also carry
-  large strings, but their variants are centralized; page-level repeated cards,
-  badges, tabs and empty/loading rows are not.
-- **Why it feels off:** Visual changes are hard to make consistently and
-  variant differences accumulate unnoticed. This is also the chief source of
-  spacing/type drift in the product.
+- **Severity:** Medium **Effort:** L
+- **Reference:** `src/app/chart/page.jsx` (2,773 lines, dozens of inline
+  conditional Tailwind blocks, e.g. `2253-2271`, `2566-2585`);
+  `src/app/portfolio-tracker/page.jsx` (1,013 lines, e.g. `860-980` add-asset
+  form); `src/app/explore/page.jsx` (1,422 lines, e.g. `1124-1170` market card
+  grid). Unchanged in scope since the prior audit; still not decomposed.
+- **What is wrong:** The three feature pages still contain hundreds of lines of
+  inline conditional Tailwind per page. Recurring cards/badges/tabs/empty rows
+  are copy-pasted rather than extracted (see UI-12/UI-20 above for two
+  concrete, now-fixable instances of this same pattern).
 - **Suggested direction:** Extract feature cards/section components and use
   `cn()`/cva variants for recurring status chips, segmented controls, metric
-  cards and tool-header actions. Do not over-abstract one-off chart markup.
-- **Effort:** L
+  cards. Do not over-abstract one-off chart markup. Treat UI-12/UI-20 as the
+  first small cuts of this larger item.
 
-### UI-9 — Spacing and typography use many arbitrary, non-token values
+### UI-9 — Spacing and typography use some arbitrary, non-token values
 
-- **Reference:** `src/app/chart/page.jsx:2892` (`mt-[5px]`), `4329`
-  (`max-w-[900px]` outside the documented 768/1400 content widths), and
-  `4240,4323,4371` (repeated 380/500px chart sizes); 
-  `src/app/portfolio-tracker/page.jsx:1117-1128,1216,1246`
-  (92/132/44px); `src/components/mobile-bottom-nav.jsx:78` (300px).
-- **What is wrong:** Important layout numbers are ad hoc and repeated rather
-  than expressed as shared component dimensions or the documented content
-  widths/padding scale.
-- **Why it feels off:** Near-identical elements no longer align exactly across
-  loading, loaded, mobile and desktop states; arbitrary `text-[9px]`/`[10px]`
-  usage throughout chart/portfolio also makes hierarchy overly dense.
-- **Suggested direction:** Promote genuinely recurring chart/nav/mini-chart
-  dimensions to component constants/variants, use normal spacing steps for
-  one-off offsets, and consolidate a readable small-text scale.
-- **Effort:** M
+- **Severity:** Low **Effort:** M
+- **Reference:** not re-audited line-by-line this pass (page line numbers have
+  drifted since the 07-31 audit due to the chart/portfolio decompositions
+  noted in that audit's original header). Spot-checked this pass: padding
+  values are largely consistent (`p-3`/`p-4`/`p-6`, `gap-2.5`/`gap-3`/`gap-4`
+  dominate; only `p-3.5`/`p-2.5`/`p-5` appear as isolated one-offs at
+  `src/app/explore/page.jsx:345,1140`, `src/app/chart/page.jsx:1775`,
+  `src/components/chart-trading-plan-panel.jsx:424`, `src/app/error.jsx:6`,
+  `src/app/offline/page.jsx:9` — none is a strong enough pattern break to flag
+  individually, but arbitrary pixel values in chart-specific sizing likely
+  still exist per the original audit's `mt-[5px]`/`max-w-[900px]` findings and
+  were not re-verified here).
+- **Suggested direction:** Unchanged from prior audit — promote genuinely
+  recurring chart/nav dimensions to component constants, use standard spacing
+  steps elsewhere. Lower priority than UI-8; needs a dedicated pass over
+  `chart/page.jsx` specifically.
 
-### UI-10 — Some visual treatments contradict the restrained monochrome identity
+## New findings (2026-08-12 pass)
 
-- **Reference:** `src/app/chart/page.jsx:51-116` (five-color analyst gauge);
-  `src/app/idx-rotation/page.jsx:200-295,344-352` (four colored quadrant
-  backgrounds plus dot glow); `src/components/desktop-navbar.jsx:111`
-  (`shadow-2xl shadow-black/40`).
-- **What is wrong:** The UI architecture specifies a monochrome palette with a
-  sparing blue accent. These surfaces layer saturated red/orange/yellow/green,
-  blue, and a heavy black dropdown shadow.
-- **Why it feels off:** Semantic market color can be useful, but this density of
-  colored zones/glow competes with the stated terminal-like visual language;
-  the heavy dropdown shadow is disproportionate to otherwise low-elevation
-  cards.
-- **Suggested direction:** Keep semantic gain/loss color only where it conveys
-  information, reduce decorative saturation/glow, and use the tokenized border
-  plus a softer elevation for the tools menu.
-- **Effort:** M
+### UI-12 — Hand-rolled `<input>` styling duplicated instead of the existing `<Input>` primitive
 
-### UI-11 — Loading treatment has a quality mismatch inside an otherwise skeleton-led app
+- **Severity:** High **Effort:** S
+- **Reference:** `src/components/add-asset-modal.jsx:150,180,210`;
+  `src/app/portfolio-tracker/page.jsx:879,908,938,953,967`.
+- **What is wrong:** Eight raw `<input>` elements across two files repeat the
+  identical 15-word className
+  (`"w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"`)
+  instead of using `src/components/ui/input.jsx`'s `<Input>`, which already
+  encodes this exact style plus disabled/invalid states.
+- **Why it feels off:** This is the textbook "shadcn primitive exists, hand-rolled
+  div/input used anyway" pattern the audit is meant to catch — any future
+  focus-ring/height/radius tweak now needs 8 coordinated edits.
+- **Suggested direction:** Swap all 8 for `<Input>` from `@/components/ui/input`;
+  mechanical, no visual change expected.
 
-- **Reference:** `src/app/portfolio-tracker/page.jsx:1245-1249` and
-  `src/app/chart/page.jsx:4323-4325,4366-4368`; compare the detailed skeletons
-  at `portfolio-tracker/page.jsx:1109-1170` and `chart/page.jsx:4240,4551`.
-- **What is wrong:** Mini-chart and normal-chart loading falls back to centered
-  spinners/text, although the page already establishes fixed chart dimensions
-  and uses shape-matched skeletons elsewhere.
-- **Why it feels off:** Replacing a reserved data visualization with a spinner
-  creates a harsh visual state change and makes the UI appear less finished.
-- **Suggested direction:** Use the existing chart-sized skeleton convention for
-  each chart state, retaining spinner only as a small supplementary cue.
-- **Effort:** S
+### UI-13 — Discussion page has a shape-matched skeleton for auth, but reverts to a bare spinner for the actual message fetch
 
-## Cross-audit priorities
+- **Severity:** Medium **Effort:** S
+- **Reference:** `src/app/discussion/page.jsx:305-332` (chat-bubble skeleton,
+  used only while `authLoading`) vs. `discussion/page.jsx:431-434`
+  (`messagesLoading` renders a centered `<Loader2>` with no reserved layout).
+- **What is wrong:** The page already has a message-bubble-shaped skeleton one
+  state earlier, but doesn't reuse it for `messagesLoading`, which is the state
+  users actually see on every page load once authenticated.
+- **Why it feels off:** Contradicts the documented policy in
+  `docs/ui-architecture.md` ("Loading states reserve the final layout instead
+  of showing centered spinners... Whole-screen/centered `Loader2` is reserved
+  for user-initiated actions, never initial load") within the same file that
+  demonstrates the correct pattern one function up.
+- **Suggested direction:** Extract the bubble-skeleton block into a small
+  `MessageListSkeleton` and render it for both `authLoading` and
+  `messagesLoading`.
 
-Ordered for visible impact relative to effort:
+### UI-14 — `duration-200` hardcoded in several places instead of `DURATION_CLASS.base` from `src/lib/motion.js`
 
-1. **UI-3 / UI-4 (S):** Apply safe-area offsets to the mobile bottom nav and
-   full-screen tool headers; this immediately improves installed-PWA ergonomics.
-2. **UI-1 / UI-11 (S-M):** Replace full-screen and chart spinners with
-   layout-matched skeletons to remove the most conspicuous loading flashes.
-3. **TD-3 / TD-4 / TD-5 (M):** Centralize logo caching, symbol/price access,
-   and formatters; this removes active duplication with limited surface change.
-4. **TD-7 / TD-8 (M):** Resolve effect and render-purity lint failures before
-   they become user-visible stale state or bubble jitter.
-5. **UI-5 (M):** Make the existing motion tokens the shared timing policy for
-   nav, sidebars, and data replacements.
-6. **UI-6 / UI-7 (S-M):** Improve mobile tool target sizes and rework the fixed
-   300px icon-only bottom-nav pill for the documented tablet/mobile range.
-7. **TD-1 (L):** Decompose the chart route first; it is the largest maintain-
-   ability and consistency risk.
-8. **TD-2 / UI-8 (L):** Split portfolio/explore presentation and state into
-   feature components and hooks after the shared primitives are established.
+- **Severity:** Low **Effort:** S
+- **Reference:** `src/components/ticker-row.jsx:31`;
+  `src/components/trending-marquee.jsx:25`; `src/app/explore/page.jsx:1041,1140`;
+  `src/app/portfolio-tracker/page.jsx:460`; `src/app/watchlist/page.jsx:336`;
+  `src/app/pricing/page.jsx:103`; `src/components/trial-banner.jsx:56`.
+- **What is wrong:** `src/lib/motion.js` documents itself as "the single timing
+  policy" (`DURATION.base = 250ms` → `DURATION_CLASS.base`), and
+  `account-sidebar.jsx`/`mobile-bottom-nav.jsx` follow it correctly, but seven
+  other files hardcode Tailwind's default `duration-200` (200ms) directly.
+- **Why it feels off:** Two adjacent hover/tab transitions in the app now run
+  at very slightly different speeds (200ms vs 250ms) for no reason — small, but
+  exactly the kind of drift the shared token was written to prevent.
+- **Suggested direction:** Replace literal `duration-200` with
+  `DURATION_CLASS.base` via `cn()` in these seven spots.
+
+### UI-15 — Fullscreen chart dialog back control is a bare `<div onClick>` with no hover/active feedback or touch target
+
+- **Severity:** Medium **Effort:** S
+- **Reference:** `src/app/chart/page.jsx:2498-2503`.
+- **What is wrong:** Unlike every other icon-affordance in the app (buttons
+  with `hover:bg-accent`, `active:scale-[.98]` via `buttonVariants`), this back
+  arrow is a plain `<div className="absolute top-5 left-5 cursor-pointer" onClick=...>`
+  wrapping a 24px icon with zero padding — no `hover:`/`active:` state, not a
+  `<button>`, and well under the documented 44×44px touch target minimum
+  (`docs/ui-architecture.md` "Mobile Touch Targets").
+- **Why it feels off:** It's the only exit control in a fullscreen modal and
+  gives no visual feedback that it's interactive or was tapped.
+- **Suggested direction:** Use `<Button variant="ghost" size="icon">` (or at
+  minimum `p-2.5` + `hover:bg-accent` + `rounded-full`) so it matches every
+  other icon control's feedback and hit-area conventions.
+
+### UI-16 — Progress-bar fills animate `width` via `transition-all` instead of a composited property
+
+- **Severity:** Low **Effort:** S
+- **Reference:** `src/app/chart/page.jsx:1214,1660,1823`;
+  `src/app/msci/page.jsx:176-177`.
+- **What is wrong:** Four progress-bar fills set `style={{ width: '${pct}%' }}`
+  on an element also carrying `transition-all` (or `transition-all bg-emerald-600...`).
+  `width` is a layout property — animating it triggers reflow, not just
+  compositing, which is exactly the class of transition the 60fps/native-feel
+  goal wants avoided.
+- **Why it feels off:** Not currently causing visible jank (updates are
+  infrequent, one bar at a time) but is the wrong primitive to build on, and
+  will get worse if these fills are ever driven by frequently-updating data
+  (e.g. live money-flow score).
+- **Suggested direction:** Render the fill as `transform: scaleX(pct/100)` with
+  `transform-origin: left` on a full-width element instead of animating
+  `width`, and swap `transition-all` for `transition-transform`.
+
+### UI-17 — Drag-to-reorder in the watchlist manager only fades the dragged row; sibling rows jump instead of sliding into place
+
+- **Severity:** Medium **Effort:** M
+- **Reference:** `src/components/manage-watchlist-dialog.jsx:224-253`
+  (custom pointer-events drag, `transition-opacity` only on `draggingIndex`).
+- **What is wrong:** The dragged item gets `opacity-60` during drag, but the
+  other rows that shift up/down to make room re-render at their new array
+  index with no transition — a discrete instant jump each time the dragged
+  item crosses a boundary, rather than a settle animation.
+- **Why it feels off:** This is precisely the "list reordering" microinteraction
+  gap called out for smoothing — reordering here reads as a data re-render, not
+  a physical reorder.
+- **Suggested direction:** Track each row's previous vs. new offset (simple
+  FLIP: measure before/after, apply an inverted `translateY` then transition
+  it to `0` over `DURATION.fast`) so siblings slide rather than jump. Keep the
+  existing opacity treatment for the actively dragged row.
+
+### UI-18 — `src/components/ui/sidebar.jsx` is unused, dead shadcn boilerplate that also animates `width`/`left`/`right`
+
+- **Severity:** Low **Effort:** S
+- **Reference:** `src/components/ui/sidebar.jsx` (whole file, ~760 lines);
+  no import of `@/components/ui/sidebar` exists anywhere else in `src/`.
+  Layout-animating spots specifically: `sidebar.jsx:192`
+  (`transition-[width] duration-200 ease-linear`) and `sidebar.jsx:202`
+  (`transition-[left,right,width] duration-200 ease-linear`).
+- **What is wrong:** Aruna's real navigation is `desktop-navbar.jsx` +
+  `account-sidebar.jsx` (custom-built, already uses `DURATION_CLASS`); this
+  generic collapsible-sidebar shadcn primitive was scaffolded but never wired
+  up, and if it ever is, it ships the exact width/left/right transition
+  pattern this audit is asked to flag.
+- **Suggested direction:** Delete the file if there's no near-term plan to use
+  it (grep confirms zero imports), or if kept for a future collapsible desktop
+  sidebar, swap the flagged transitions for `transform: translateX()` +
+  `width` only on the CSS var (not the transitioned property) before wiring it
+  up.
+
+### UI-19 — Toast dismiss control uses a raw `✕` glyph instead of the app's lucide icon set
+
+- **Severity:** Low **Effort:** S
+- **Reference:** `src/components/toast.jsx:64-71` (glyph) vs. `toast.jsx:4`
+  (`CheckCircle2`/`AlertTriangle` from `lucide-react` used two lines above it).
+- **What is wrong:** Every other icon in the toast (and essentially the whole
+  app) is a lucide component; the close button alone is a plain text
+  character, which renders at a different optical weight/alignment than the
+  `size-4` lucide icons beside it.
+- **Suggested direction:** Replace `✕` with `<X className="size-4" />` from
+  `lucide-react` (already a dependency, already imported elsewhere in this
+  file's neighbors).
+
+### UI-20 — Duplicated primary-CTA button className across error/empty-state pages instead of the existing `<Button>` primitive
+
+- **Severity:** Low **Effort:** S
+- **Reference:** `src/app/not-found.jsx:28,34`; `src/app/error.jsx:22`;
+  `src/app/global-error.jsx:17` — all three hand-roll
+  `"inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-full hover:opacity-90 transition-opacity"`
+  verbatim. Contrast with `src/app/offline/page.jsx:18-23`, the sibling
+  empty-state page, which correctly uses `<Button className="rounded-full px-6">`.
+- **What is wrong:** Same "primitive exists, three of four sibling pages
+  reimplement it by hand" pattern as UI-12, on the app's four fallback/error
+  routes specifically.
+- **Suggested direction:** Use `<Button size="lg" className="rounded-full">`
+  (or `buttonVariants({ size: "lg" })` for the plain `<Link>` cases in
+  `not-found.jsx`) in all three files, matching `offline/page.jsx`.
+  `global-error.jsx` needs `Button` importable outside the themed shell — verify
+  it renders acceptably in the un-styled `<html>` fallback before swapping.
+
+### UI-21 — Minor: focus-ring transitions include `box-shadow` on the two lowest-level form primitives
+
+- **Severity:** Low **Effort:** S
+- **Reference:** `src/components/ui/input.jsx:15`
+  (`transition-[color,border-color,box-shadow]`); `src/components/ui/select.jsx:38`
+  (same pattern).
+- **What is wrong:** `box-shadow` is a non-composited/paint property. Here it's
+  only the Tailwind `ring` utility firing on focus (not continuous or
+  high-frequency), so real-world jank risk is minimal, but it's the one
+  instance in the primitive layer that doesn't follow the transform/opacity
+  rule the rest of the system already follows (e.g. `button.jsx`'s
+  `transition-[background-color,color,border-color,opacity,transform]`).
+- **Suggested direction:** Low priority; only worth touching if these
+  primitives are revisited for another reason. Could drop `box-shadow` from
+  the transition list since the ring appears/disappears crisply without it.
+
+## Top 5 by severity/effort (this pass)
+
+1. **UI-12 (High/S)** — 8 duplicated raw `<input>` elements in
+   `add-asset-modal.jsx` and `portfolio-tracker/page.jsx` should use the
+   existing `<Input>` primitive.
+2. **UI-13 (Medium/S)** — Discussion page's message-loading state regresses to
+   a centered spinner despite an existing shape-matched skeleton one function
+   above it, contradicting the app's own documented loading policy.
+3. **UI-15 (Medium/S)** — Fullscreen chart's back control is a `<div onClick>`
+   with no hover/active feedback and a sub-44px hit area.
+4. **UI-17 (Medium/M)** — Watchlist drag-reorder siblings jump instead of
+   sliding into place; the one genuine "list reordering" microinteraction gap
+   found.
+5. **UI-16 (Low/S)** — Four progress-bar fills animate `width` via
+   `transition-all`; cheap fix to `transform: scaleX()` ahead of the 60fps/
+   native-feel goal, before any of these bars gets driven by live data.
+
+## Notes on what's already solid (no action needed)
+
+- No gradients, purple/blue accent washes, or emoji-as-primary-icon usage
+  found anywhere in `src/app`/`src/components` (checked via pattern search
+  across all `.jsx`/`.js` files) — the monochrome/flat identity described in
+  `globals.css`'s header comment is intact.
+- Skeleton/shimmer coverage is broad and largely shape-matched: `explore`,
+  `watchlist`, `msci`, `money-flow`, `idx-momentum`, `idx-rotation`,
+  `portfolio-tracker`, `signin`, `chart`, and `app-layout-client` all reserve
+  final layout via `<Skeleton>`/`TickerRowSkeleton`/`ScatterSkeleton` rather
+  than blank/spinner states. UI-13 above is the one regression found.
+- `button.jsx`'s `buttonVariants` already restricts its transition to
+  `background-color,color,border-color,opacity,transform` and uses
+  `active:scale-[.98]` — the correct composited-property pattern; most of the
+  codebase's interactive elements build on it correctly.

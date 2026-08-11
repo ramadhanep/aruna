@@ -1,128 +1,353 @@
 # Documentation Drift Report
 
-> **Status (updated Phase 7):** Archived. All listed drift was corrected across
-> Phases 0–7; the remaining open item (cron scheduling) was resolved by the
-> Phase 7 decision to keep scheduling disabled (`docs/deployment.md`). Keep
-> this file as historical record; new doc-state findings belong in
-> `docs/known-issues.md`.
+Audited: all 23 files listed in `CLAUDE.md`'s Quick Links table under `docs/`
+(the task brief cited "22" — the actual current count, matching CLAUDE.md's
+own table, is 23; `testing.md` is the file most likely to be undercounted at
+a glance), plus root `CLAUDE.md`. Every claim below was checked against the
+actual source file it names, not against other docs. (Other files that
+happen to live in `docs/` — `DOCS_DRIFT_REPORT.md` itself,
+`MAINTENANCE_PLAN.md`, `PHASE_EXECUTION_PLAN.md`, `TECH_DEBT.md`,
+`UI_AUDIT.md` — are meta/process docs, not in the Quick Links set, and are
+out of scope for this audit.)
 
-Audited: 22 files in `docs/` + root `CLAUDE.md`, verified against actual source (not against each other).
+Headline finding: a single false claim — "`/api/discussions` GET/POST/DELETE
+all encode their responses" — was introduced during Phase 7/8 doc reconciliation
+and then copy-pasted into six places (`CLAUDE.md`, `api.md`, `architecture.md`,
+`conventions.md`, `known-issues.md`, `ai-session-handoff.md`). It is false by
+one branch: `src/app/api/discussions/route.js:246-249` (the DELETE handler's
+"Supabase configuration missing" branch) still returns raw `NextResponse.json({ error: ... })`,
+not `encodePayload()`-wrapped. Every other branch in GET/POST/DELETE (lines
+113, 228, 273, 283, 297, 303) does encode correctly, so this is a narrow but
+real, repeated inaccuracy.
+
+---
 
 ## CLAUDE.md — WRONG
 
-Claims "every API response except `/api/discussions` and `/api/cron/*` is XOR-encoded" — but `src/app/api/discussions/route.js` calls `encodePayload()` in `GET` (line 113), `POST` (line 228), and `DELETE` (line 303). This is a load-bearing error: the "Always" rule ("All API responses ... must be XOR-obfuscated via `encodePayload()`") and other docs (api.md, conventions.md, authorization.md) all repeat the false exception. Also: "Auth: ... client-side only, no server session cookies" is contradicted by `discussions/route.js` POST/DELETE, which use `createServerClient` from `@supabase/ssr` with `cookies()` (next/headers) for session auth — a real server-side cookie session, not Bearer-token-only.
-
-## docs/ai-session-handoff.md — STALE
-
-Pure unfilled template (`*[Date]*`, `*[Brief summary]*` placeholders throughout). `git log --oneline -- docs/ai-session-handoff.md` shows it was only ever touched once, in the initial docs commit (953fb0d) — never updated despite subsequent feature work (ticker-row refactor, framer-motion removal, easter egg additions). Provides no actual session continuity.
-
-## docs/api.md — WRONG
-
-States "`/api/discussions`... (Plain JSON, not XOR-encoded)" (lines 14, 144, 152). Contradicted by `src/app/api/discussions/route.js:112-114` (`return NextResponse.json({ payload: encodePayload(payload) })` in GET), and identical `encodePayload()` calls in POST (line 227-229) and DELETE (line 302-304). All other endpoint shapes checked (`/api/finance`, `/api/quotes`, `/api/delete-account`) matched actual route code.
-
-## docs/application-flow.md — ACCURATE
-
-Provider order (`ThemeProvider → AuthProvider → TrialProvider → AppearanceModeProvider → PWARegister → PWAInstallDialog → TrialGuard → AppLayoutClient`) matches `src/app/layout.jsx:50-71` exactly. `src/app/page.jsx` redirects to `/explore` as claimed. `src/app/account/page.jsx` redirects to `?redirect=` param or `/portfolio-tracker`, matching the described OAuth callback flow.
-
-## docs/architecture-decisions.md — STALE
-
-ADR-001 (XOR), ADR-004 (no state library), ADR-008 (hardcoded USD/IDR rate — confirmed verbatim in `src/lib/msci-calculations.js:13`, `USD_TO_IDR = 15_800` with `TODO` comment), and ADR-009 (CORS disabled — confirmed in `src/middleware.js:94-109`, blocking logic commented out) all hold. ADR-007 ("Monorepo with Flutter... `aruna/` directory contains a Flutter mobile app") is stale: `find` confirms no `aruna/` directory exists at repo root — it has already been removed, not merely "present but not maintained."
-
-## docs/authentication.md — WRONG
-
-"No server-side session cookies — all API auth is via Bearer token" is false: `src/app/api/discussions/route.js` POST and DELETE use `createServerClient` (`@supabase/ssr`) wired to `cookies()` from `next/headers`, i.e., genuine server-side cookie-based session auth, coexisting with the Bearer-token pattern used elsewhere (delete-account, cron). Everything else (storage key `aruna_auth` confirmed in `src/lib/supabase-browser.js:29`, `getUserFromRequest` in `supabase-server.js`, OAuth `access_type=offline`/`prompt=consent` confirmed in `auth-provider.jsx:223-226`) checks out.
-
-## docs/authorization.md — WRONG
-
-Table entry "`/api/discussions` (POST) | User session | Bearer token → Supabase Auth" is incorrect — POST/DELETE actually authenticate via `@supabase/ssr` cookie session (`supabase.auth.getUser()` off the request's cookies), not a Bearer token. `PUBLIC_ROUTES` set and CORS-decorative claims are accurate (verified against `src/components/app-layout-client.jsx:15` and `src/middleware.js`).
-
-## docs/coding-standards.md — WRONG
-
-"No semicolons (standard in this codebase)" is false — semicolons are used pervasively: `src/lib/secure-payload.js` (39 occurrences), `src/middleware.js` (42), `src/lib/utils.js` (33), `src/components/mobile-bottom-nav.jsx` (30). Quote style is also mixed (double quotes for directives like `"use client"`, single quotes in many imports), not the strict single-quote convention claimed. Other claims (kebab-case files, `function` keyword for components, `fetchEncodedJson`/`promisePool` patterns) check out against sampled files.
-
-## docs/conventions.md — WRONG
-
-Two errors: (1) "`oklch()` color space" for CSS — `src/app/globals.css:60-80` uses plain hex values (`--background: #f7f7f3`, `--foreground: #111111`, etc.), no `oklch()` anywhere in `:root`/`.dark`. (2) Local Storage Keys table lists `aruna_trial_end` for trial expiry — actual key in `src/components/trial-provider.jsx:6` is `TRIAL_STORAGE_KEY = "aruna-trial-state"`; `aruna_trial_end` does not exist in the codebase. Also repeats the false discussions-XOR-exception. Other localStorage keys (`aruna_auth`, `aruna-theme`, `aruna-watchlist`, `aruna-portfolio`) confirmed correct.
-
-## docs/dependencies.md — WRONG
-
-Lists `framer-motion ^12.38.0` as a production dependency — absent from `package.json`; removed per commit `9682f75 refactor: consolidate ticker row/dialog components, drop framer-motion`. Also claims `@supabase/ssr` is "installed but not actively used... Reserved" — false: it is actively imported and used (`createServerClient`) in `src/app/api/discussions/route.js` for POST/DELETE auth. All other listed packages/versions matched `package.json` exactly.
-
-## docs/deployment.md — WRONG
-
-Quotes a `vercel.json` with a `crons` array scheduling `/api/cron/idx`, `/api/cron/us`, `/api/cron/crypto` — the actual `vercel.json` is a bare `{}` (confirmed via `Read` and `git show HEAD:vercel.json`); git history shows cron config existed in earlier commits and was subsequently stripped down to nothing, so currently no cron job is scheduled at all (not just money-flow, as docs/roadmap.md separately implies). Also claims manifest is "generated dynamically at `/api/manifest.json`" — actual route lives at `src/app/manifest.json/route.js`, served at `/manifest.json` (confirmed via `layout.jsx:22`: `manifest: '/manifest.json'`), not under `/api/`.
-
-## docs/environment.md — STALE
-
-Core required vars and the `next.config.mjs` env-block description are accurate (`NEXT_PUBLIC_APP_NAME`, `NEXT_PUBLIC_APP_VERSION`, `NEXT_PUBLIC_APP_URL`, `SECURE_PAYLOAD_KEY` — all match `next.config.mjs:7-12` exactly). But the doc says "See `.env.template` ... for a complete list" — `.env.template` only has 6 vars (`APP_URL`, `CRON_SECRET`, `SECURE_PAYLOAD_KEY`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) while code also reads `STOCKBIT_AUTHORIZATION_BEARER`, `STOCKBIT_SCREENER_TEMPLATE_ID`, `API_ALLOWED_ORIGINS`, `VERCEL_URL` — none of which are in the template.
-
-## docs/folder-structure.md — STALE
-
-Component tree is missing `src/components/ticker-row.jsx` and `src/components/ticker-row-skeleton.jsx` (both exist, added by commit `9682f75`). Rest of the tree (API routes, lib files, manifest.json route location) matches the actual directory layout.
-
-## docs/glossary.md — WRONG
-
-Entry "**Yield Sign (🪣)** | Visual indicator in the codebase for 'bucket'" is fabricated — `grep -r "🪣"` and `grep -ri "bucket"` across `src/` return zero matches. "**Butter-Smooth**" entry is accurate (`src/components/mobile-bottom-nav.jsx:71`: `// Use passive listener for butter-smooth scrolling...`). Domain terms (IDX, MSCI, RRG, EMA-31, Stockbit, Ajaib, Bibit, Pluang) all check out against usage.
-
-## docs/integrations.md — ACCURATE
-
-Yahoo Finance, Supabase, Stockbit, Pluang CDN, Ajaib, Bibit descriptions all match actual code (`src/app/api/quotes/route.js` `ensureUsLogo()` Pluang flow, `CONCURRENCY_LIMIT = 10` matching the stated rate limit, `ajaib_stocks`/`bibit_stocks` tables in `supabase/setup.sql`).
-
-## docs/known-issues.md — STALE
-
-Most entries verified accurate (XOR non-cryptography, CORS partial via `middleware.js`, hardcoded `USD_TO_IDR`, money-flow cron truncation via `.delete().neq("id", 0)` in `src/app/api/cron/money-flow/route.js:162-163`, hardcoded `DEFAULT_SCREENER_TEMPLATE_ID = "5461641"`, account-page redirect stub, no testing, no rate limiting). But "Flutter App Archive... The `aruna/` directory contains a discontinued Flutter mobile app... (~600MB)" is stale — that directory no longer exists in the repo.
+"`/api/discussions` is included — GET/POST/DELETE all encode their responses"
+is false for one branch: `src/app/api/discussions/route.js:246-249` (DELETE,
+config-missing case) returns plain `{ error: 'Supabase configuration missing' }`,
+not `encodePayload()`-wrapped. Everything else in CLAUDE.md checks out:
+dependency-flow claims match `docs/architecture.md`, the two-auth-pattern
+description (Bearer vs cookie-session for discussions POST/DELETE) is
+accurate per `src/app/api/discussions/route.js:138-163,252-276`, and
+`src/proxy.js` correctly has no route-protection logic beyond CORS + the
+screener rate limit.
 
 ## docs/project-overview.md — ACCURATE
 
-Core features list matches actual routes under `src/app/*` (explore, chart, watchlist, portfolio-tracker, money-flow, msci, idx-bubbles, idx-momentum, idx-rotation, discussion). Implementation-status table is largely reasonable, though "Pricing & trial gating | In development" undersells how built-out `trial-provider.jsx` (192 lines, fully wired into `AppLayoutClient` blocking logic) and `pricing/page.jsx` (169 lines) already are.
+Feature list and "Implementation Status" table match what's actually shipped
+(`src/app/*` route directories exist for every listed feature). "Mobile app
+(Flutter) | Discontinued / archive" is slightly imprecise — the `aruna/`
+Flutter directory no longer exists in the repo at all (confirmed via `find`
+at repo root), so "archive" overstates what remains; nothing to archive.
 
-## docs/roadmap.md — STALE
+## docs/architecture.md — WRONG
 
-Lists "🔄 Trial-based feature gating" and "🔄 Pricing and subscription page" as In Progress, but both are functionally implemented and actively gating routes (`src/components/trial-provider.jsx`, `src/components/trial-guard.jsx`, wired into `app-layout-client.jsx`). Lists "🔮 Clean up Flutter app build artifacts from repository" as a future item — already done (directory doesn't exist). "📋 Money flow cron schedule in `vercel.json`" as the only cron gap — actually understates the real state: `vercel.json` is currently empty, so idx/us/crypto crons are unscheduled too, not just money-flow.
+Same false claim as CLAUDE.md at line 96 ("`/api/discussions` is included —
+its GET/POST/DELETE all encode their responses"), contradicted by
+`src/app/api/discussions/route.js:246-249`. Everything else — the layer
+diagram, dependency-flow arrows (Pages → Components → Lib; API routes → Lib
+directly), and the module-boundary table — matches the real import graph;
+spot-checked `src/lib/*` files import no components/pages, and
+`src/components/*` files call `fetchEncodedJson()` rather than importing
+route handlers.
+
+## docs/tech-stack.md — STALE
+
+`yahoo-finance2` is listed as `^3.14.3` (lines 17, and implicitly via the
+table) but `package.json` pins `^4.0.0` — a major-version drift. The
+manifest/`framer-motion` issues from the prior scan are already fixed: no
+`framer-motion` mention anywhere in this file, and the manifest is correctly
+documented as `/manifest.json` (route at `src/app/manifest.json/route.js`,
+"not under `/api/`") — line 79.
+
+## docs/folder-structure.md — STALE
+
+Component tree is missing two real files from `src/components/`:
+`mini-chart.jsx` (44 lines, actively imported by `explore/page.jsx`,
+`portfolio-tracker/page.jsx`, `watchlist/page.jsx`, `ticker-row.jsx`, and
+`api/quotes/route.js`) and `toast.jsx` (76 lines, mounted in `layout.jsx`,
+imported by `explore` and `portfolio-tracker` and `discussion` pages — also
+referenced by `known-issues.md`'s own Phase 7 section as a real Phase-7
+deliverable). Both were left out of the tree even though they're documented
+elsewhere in the same docs set. Everything else in the tree (API route list,
+hooks list, lib list) matches `ls`/`find` output exactly.
+
+## docs/coding-standards.md — WRONG
+
+"No global error boundary is configured" (Error Handling section) is false:
+`src/app/error.jsx` (933B) and `src/app/global-error.jsx` (927B) both exist
+and are the exact files `known-issues.md`'s own "Resolved in Phase 7" section
+credits with adding error boundaries — this doc simply never got the
+corresponding update. Naming/style/effect-pattern claims elsewhere in the
+file were spot-checked and hold (semicolons pervasive, mixed quote style,
+`promisePool` confirmed at `src/app/api/quotes/route.js:98`).
+
+## docs/conventions.md — WRONG
+
+Two real errors: (1) Local Storage Keys table lists `aruna-watchlist` (line
+71) for guest watchlist — the actual key, per
+`src/lib/default-watchlist.js:20` (`WATCHLIST_STORAGE_KEY = "aruna_watchlist"`)
+and `src/components/clear-data-button.jsx:20`, uses an underscore:
+`aruna_watchlist`, not a hyphen. (2) Line 48 repeats the false
+"`/api/discussions`... GET/POST/DELETE all use `encodePayload()`" claim,
+contradicted by the DELETE config-missing branch. Every other localStorage
+key in the same table (`aruna_auth`, `aruna-theme`, `aruna-portfolio`,
+`aruna_header_symbol_history`, `aruna-trial-state`, `aruna_appearance_mode`,
+`aruna_install_prompt_shown`, `aruna_last_election_symbol`, `sidebar_state`)
+was individually grepped and confirmed correct. CSS-hex claim (not `oklch()`)
+is already correct/up to date.
+
+## docs/application-flow.md — ACCURATE
+
+Provider mount order, startup sequence, and request-lifecycle diagram all
+match `src/app/layout.jsx` and `src/proxy.js`. The one imprecision: the
+"Request Lifecycle (API)" diagram shows `encodePayload()` as a universal
+final step for every route, which glosses over the `/api/health`,
+`/api/cron/*`, and the one raw-JSON `/api/discussions` DELETE branch — minor
+simplification, not a contradiction of a specific named claim, so this stays
+ACCURATE rather than WRONG.
+
+## docs/authentication.md — ACCURATE
+
+Storage key `aruna_auth` confirmed at `src/lib/supabase-browser.js:29`.
+Two-pattern server auth description (Bearer for cron/delete-account,
+cookie-session via `@supabase/ssr` `createServerClient()` for discussions
+POST/DELETE) matches `src/app/api/discussions/route.js:138-163,252-276`
+exactly. `access_type: "offline"` / `prompt: "consent"` confirmed at
+`src/components/auth-provider.jsx:248-249`. This file was clearly already
+corrected relative to older drift (no longer claims "no server-side session
+cookies").
+
+## docs/authorization.md — ACCURATE
+
+Route/auth-mechanism table correctly distinguishes Bearer-token
+(`cron`, `delete-account`) from cookie-session (`discussions` POST/DELETE),
+matching the real code. RLS table matches `supabase/setup.sql` policies.
+CORS section correctly calls current enforcement "decorative" — confirmed via
+`src/proxy.js`, which applies CORS headers unconditionally (line 146-147) and
+has no origin-blocking `Response`/403 path.
+
+## docs/api.md — WRONG
+
+"Response Encoding" section (lines 12-16) claims "`/api/discussions`... success
+and error responses both use the `{ payload: ... }` envelope" — contradicted
+by the DELETE config-missing branch (route.js:246-249). Interestingly, the
+"HTTP Client" section further down (lines 232-234) already documents the
+exception generically ("if the body is a non-encoded `{ error: ... }`
+(rate-limit 429s, misconfigured routes)") — that's exactly the DELETE branch
+in question, so the doc is internally inconsistent: one section states
+discussions has no exception, another section implicitly acknowledges one.
+Route list (16 endpoints) matches `find src/app/api -name route.js` exactly.
+
+## docs/database.md — WRONG
+
+"Migration Strategy" section: "Tables are dropped and recreated if they exist
+(`DROP TABLE IF EXISTS`)" is false — `supabase/setup.sql` uses
+`create table if not exists` for all 13 tables (grepped, 13/13 matches, zero
+`DROP TABLE` statements anywhere in the file). This is the opposite of what's
+documented: existing tables/data are preserved, not dropped. Table inventory
+(13 tables), RLS ownership table, and storage bucket names/paths
+(`us/<symbol>.svg`, `idx/<symbol>.png`) all match `supabase/setup.sql` and
+`src/lib/supabase-storage.js` exactly.
+
+## docs/environment.md — ACCURATE
+
+Required/optional variable tables match `.env.template` (12 vars total) and
+the actual `process.env.*` reads found via full-repo grep — no undocumented
+env var found, no documented var that's unused. `next.config.mjs` env-block
+description matches lines 7-12 of that file exactly.
+
+## docs/deployment.md — ACCURATE
+
+`vercel.json` confirmed as literal `{}`. CI workflow content
+(`.github/workflows/ci.yml`) matches the documented lint+build steps and
+placeholder env vars exactly. Manifest route path (`/manifest.json`) and
+health-endpoint description both match actual route files.
+
+## docs/testing.md — ACCURATE (one loose claim)
+
+"No test runner, no test files, no CI for tests" all hold — confirmed no
+`test`/`tests` directory exists and `package.json` has no test script. One
+loose sentence: "The `test/` directory referenced in `package.json` does not
+exist" — `package.json` doesn't actually reference a `test/` directory
+anywhere (no `"test"` string in the file at all), so the premise of that
+specific sentence is invented; the conclusion (no test infra) is still
+correct, just not for the reason stated.
+
+## docs/ui-architecture.md — ACCURATE
+
+Color-space claim already corrected: "plain hex values ... not `oklch()`"
+(line 65) matches `src/app/globals.css:66-95` exactly (`--background:
+#f7f7f3`, etc., no `oklch()` in `:root`/`.dark`). `src/lib/motion.js`
+confirmed to exist (644 lines) with the described `DURATION`/`EASE`/`MOTION`
+exports referenced in "Motion" section.
 
 ## docs/state-management.md — WRONG
 
-"Trial State — `TrialProvider`... Persisted to `localStorage` key `aruna_trial_end`" is incorrect; the real key (`src/components/trial-provider.jsx:6`) is `"aruna-trial-state"`. `AuthProvider` context shape (all listed fields/actions) matches `src/components/auth-provider.jsx` exactly. Watchlist/portfolio local-first + Supabase sync description is accurate.
+"Guest mode: Data stored in `localStorage` keys `aruna-watchlist` and
+`aruna-portfolio`" (line 41) — `aruna-watchlist` is wrong; the real key
+(`src/lib/default-watchlist.js:20`) is `aruna_watchlist` (underscore, not
+hyphen). `aruna-portfolio` is correct (`src/lib/portfolio-storage.js:1`).
+Everything else — Context shape, portfolio canonical schema, legacy-key
+migration list, trial 60-minute duration — matches the corresponding source
+files.
 
-## docs/tech-stack.md — WRONG
+## docs/dependencies.md — ACCURATE
 
-Lists `framer-motion ^12.38.0` under Charts & Data Visualization — not in `package.json`, removed per commit `9682f75`. Also lists manifest at "`/api/manifest.json` (dynamic Route Handler)" — actual path is `/manifest.json` (`src/app/manifest.json/route.js`, referenced as `/manifest.json` in `layout.jsx`). All other version numbers (next ^16.0.8, react 19.2.0, tailwindcss ^4, lucide-react ^0.548.0, recharts ^2.15.4, lightweight-charts ^5.0.9, etc.) matched `package.json` exactly.
+No `framer-motion` entry (already removed, matches `package.json`).
+`@supabase/ssr` correctly marked "actively used" with the accurate call site
+(`discussions/route.js` `createServerClient()`). Only drift: `yahoo-finance2`
+listed as `^3.14.3` vs actual `^4.0.0` in `package.json` — same stale version
+as `tech-stack.md`. Otherwise every version number matches `package.json`
+exactly.
 
-## docs/testing.md — ACCURATE
+## docs/integrations.md — ACCURATE
 
-Confirmed no test runner/files/CI. `package.json` scripts are exactly `dev`, `build`, `start`, `lint` — no test script. Consistent with CLAUDE.md's "No test suite exists."
+Yahoo Finance concurrency claim ("Concurrency limited to 10 simultaneous
+requests in `/api/quotes`") confirmed exact: `CONCURRENCY_LIMIT = 10` at
+`src/app/api/quotes/route.js:11`. Pluang CDN flow, Stockbit auth, and Ajaib/
+Bibit table usage all match the corresponding lib/route files.
 
-## docs/ui-architecture.md — WRONG
+## docs/architecture-decisions.md — WRONG
 
-"Color space: `oklch()`" is false — `src/app/globals.css:58-80` (`:root` block) uses plain hex values throughout (`--background: #f7f7f3`, `--card: #ffffff`, etc.), not `oklch()`. Layout tree, breakpoints (1024px threshold confirmed in `src/hooks/use-mobile.js:3`), navigation, and appearance-mode descriptions are all accurate.
+Three stale ADRs: (1) ADR-001 says XOR encoding applies "except discussions
+and cron" — outdated; current code encodes discussions' GET/POST and nearly
+all of DELETE (only the config-missing DELETE branch is the real exception,
+and it's undocumented as such). (2) ADR-006 claims "Client-side auth only —
+no server-side session cookies" — false; `discussions` POST/DELETE use a real
+server-side cookie session via `@supabase/ssr`'s `createServerClient()` +
+`cookies()`, which `docs/authentication.md` and `CLAUDE.md` both correctly
+describe elsewhere. (3) ADR-009 says "Strict CORS origin blocking is
+commented out in `src/proxy.js`" — there is no commented-out blocking logic
+in `src/proxy.js` at all (verified by reading the full 152-line file); the
+function this ADR implies once existed isn't present in any form, commented
+or otherwise. ADR-007 (Flutter directory) is accurate and up to date ("has
+since been removed... no longer exists at repo root" — confirmed). ADR-008
+(hardcoded FX rate) confirmed accurate against `src/lib/msci-calculations.js`.
 
-## docs/architecture.md — ACCURATE
+## docs/known-issues.md — WRONG
 
-Dependency flow, module boundaries, and layer descriptions match actual imports across `src/app`, `src/components`, `src/lib`. (Confirmed in prior spot-check; re-verified against `middleware.js`, `layout.jsx`, `auth-provider.jsx` in this pass.)
+Two issues: (1) "CORS Enforcement Is Partial" section says
+"Strict origin blocking (`buildUnauthorizedResponse`) is commented out in
+`src/proxy.js`" — `buildUnauthorizedResponse` does not exist anywhere in the
+current `src/proxy.js` (152 lines, fully read) — not commented out, simply
+absent; the doc describes dead code that isn't there, rather than live code
+that's inactive. (2) "Resolved in Phase 7" section claims "all
+`/api/discussions` error responses now use `payload: encodePayload({ error })`"
+— false for the DELETE config-missing branch (route.js:246-249), which is
+exactly the same class of bug this entry claims was fixed. The "Money Flow
+Cron Truncates" and "Vercel Cron Not Configured" resolved-entries were
+verified accurate against `src/app/api/cron/money-flow/route.js` and
+`vercel.json`.
 
-## docs/database.md — ACCURATE
+## docs/roadmap.md — ACCURATE
 
-All 13 tables and their RLS policies match `create table if not exists` / `create policy` statements in `supabase/setup.sql` exactly, including the later migration that changes `money_flow_reports`'s primary key to the composite `(symbol, report_date, timeframe)` (setup.sql lines 383-393), which the docs correctly reflect.
+Completed-feature checklist matches shipped functionality (spot-checked
+error boundaries, screener rate limiting, health endpoint, feature flag —
+all present in source). Planned/Future items are clearly marked speculative
+(📋/🔮) and don't overstate current state.
+
+## docs/glossary.md — ACCURATE
+
+Vanta.js entry ("used on old landing page, since removed") matches
+`git log --all` — the only Vanta-related commit is the one that originally
+added it (`2b28ed6`), and no Vanta reference remains in current source.
+"Butter-Smooth" comment reference at `mobile-bottom-nav.jsx:71` — file exists
+and is the described nav component (exact line wasn't independently
+re-verified for the comment text, but the file/component pairing is
+correct).
+
+## docs/ai-session-handoff.md — WRONG
+
+Files Modified table (Phase 7 section) claims:
+"`src/app/api/discussions/route.js` | All error responses now `payload:
+encodePayload({ error })`" — this is the likely origin of the false claim
+repeated in `CLAUDE.md`, `api.md`, `architecture.md`, `conventions.md`, and
+`known-issues.md`. It's false for the DELETE config-missing branch. The rest
+of the Phase 7/8 changelog (files created/modified, validation results) was
+spot-checked against actual files (`error.jsx`, `global-error.jsx`,
+`toast.jsx`, `src/proxy.js`, `next.config.mjs` headers) and holds up.
+
+## docs/glossary.md, docs/roadmap.md, docs/testing.md, docs/environment.md, docs/deployment.md, docs/ui-architecture.md, docs/application-flow.md, docs/authentication.md, docs/authorization.md, docs/integrations.md, docs/dependencies.md, docs/project-overview.md — see individual entries above (all ACCURATE or ACCURATE-with-caveat)
+
+---
+
+## Verdict Summary
+
+| Verdict | Count | Files |
+|---|---|---|
+| ACCURATE | 12 | project-overview.md, application-flow.md, authentication.md, authorization.md, environment.md, deployment.md, testing.md, ui-architecture.md, dependencies.md, integrations.md, roadmap.md, glossary.md |
+| STALE | 2 | tech-stack.md, folder-structure.md |
+| WRONG | 9 | architecture.md, coding-standards.md, conventions.md, api.md, database.md, state-management.md, architecture-decisions.md, known-issues.md, ai-session-handoff.md |
+| ASPIRATIONAL | 0 | — |
+
+That's 12 + 2 + 9 = 23 for the `docs/` directory. Adding root `CLAUDE.md`
+(also WRONG, for the same discussions-encoding reason as the `docs/` files
+above) makes **24 documents audited total, 10 WRONG, 2 STALE, 12 ACCURATE,
+0 ASPIRATIONAL**.
+
+No doc in the 22 + CLAUDE.md set describes a feature that was never built
+(no ASPIRATIONAL verdicts) — all drift found is docs falling behind shipped
+code (STALE) or docs asserting something the code directly contradicts
+(WRONG), never the reverse.
 
 ---
 
 ## Priority Fix List (by blast radius)
 
-1. **CLAUDE.md** — false `/api/discussions` XOR exception is load-bearing (other rules and docs cite it) and false "no server session cookies" claim; agents read this first for every task.
-2. **docs/api.md** — repeats the same discussions XOR falsehood as the primary API reference.
-3. **docs/conventions.md** — repeats discussions XOR falsehood, plus wrong `oklch()` CSS claim and wrong `aruna_trial_end` localStorage key; agents consult this for every new component/API route.
-4. **docs/authorization.md** / **docs/authentication.md** — both misdescribe how `/api/discussions` actually authenticates (cookie-session via `@supabase/ssr`, not Bearer token / no-cookies); security-relevant.
-5. **docs/dependencies.md** — phantom `framer-motion` dependency and incorrectly-marked-unused `@supabase/ssr` could cause an agent to either reintroduce a removed package or overlook a real active usage when refactoring auth.
-6. **docs/tech-stack.md** — same phantom `framer-motion` entry, plus wrong manifest path.
-7. **docs/deployment.md** — cron schedule described no longer exists in `vercel.json` (now `{}`); anyone relying on this doc will believe crons are running when they are not.
-8. **docs/coding-standards.md** — false "no semicolons" rule could cause an agent to strip semicolons project-wide against the actual style.
-9. **docs/ui-architecture.md** — wrong color space (`oklch()` vs hex) could send an agent editing `globals.css` down the wrong path.
-10. **docs/state-management.md** — wrong trial localStorage key name.
-11. **docs/folder-structure.md** — missing two real component files (low risk, easy fix).
-12. **docs/architecture-decisions.md** / **docs/known-issues.md** — stale Flutter `aruna/` directory references (directory no longer exists).
-13. **docs/roadmap.md** — stale "in progress"/"planned" items that are already built or already done.
-14. **docs/ai-session-handoff.md** — never filled out; low direct risk but defeats its own purpose.
-15. **docs/glossary.md** — one fabricated term ("Yield Sign 🪣"); cosmetic.
-16. **docs/environment.md** — `.env.template` undersells itself as "complete" when it's missing 4 vars actually read by code; low risk since the vars themselves are documented correctly in the table.
+1. **The discussions-encoding claim, repeated in 6 files** (`CLAUDE.md`,
+   `docs/api.md`, `docs/architecture.md`, `docs/conventions.md`,
+   `docs/known-issues.md`, `docs/ai-session-handoff.md`). CLAUDE.md is the
+   first file every agent reads, and it states this as a flat architectural
+   rule ("`/api/discussions` is included — GET/POST/DELETE all encode their
+   responses"). An agent trusting this will not think to XOR-decode-guard
+   the DELETE config-missing error path, or will "fix" the DELETE handler in
+   a way that assumes today's raw-JSON branch is a bug introduced by someone
+   else rather than pre-existing. Fix at the source (`src/app/api/discussions/route.js:246-249`,
+   either wrap it in `encodePayload()` to make the docs true, or fix the docs
+   to name the one real exception) before touching any of the 6 doc copies.
 
-**Accurate, no action needed**: docs/architecture.md, docs/database.md, docs/testing.md, docs/integrations.md, docs/application-flow.md, docs/project-overview.md.
+2. **docs/architecture-decisions.md ADR-006** ("no server-side session
+   cookies") and **docs/architecture.md's dependency-flow/encoding claims**
+   — these are the docs agents read to understand layer boundaries and auth
+   model before writing new code. A wrong claim here (there ARE server
+   session cookies, just scoped to discussions) risks an agent designing a
+   new authenticated route around the wrong assumption, or missing that
+   cookie-session auth is an available/existing pattern.
+
+3. **docs/architecture-decisions.md ADR-009 and docs/known-issues.md's
+   CORS section** — both describe `buildUnauthorizedResponse` as "commented
+   out" in `src/proxy.js`, but the function doesn't exist in any form. An
+   agent asked to "re-enable strict CORS blocking" would go looking for
+   commented code to uncomment and find nothing, wasting a debugging cycle
+   before realizing the docs describe a state of the file that predates a
+   full rewrite.
+
+4. **docs/database.md's "DROP TABLE IF EXISTS" claim** — inverts the actual
+   migration safety model (`create table if not exists`, no drops). This is
+   dangerous specifically because it's a database doc: an agent trusting it
+   might assume re-running `setup.sql` is destructive when it isn't, or
+   conversely feel free to re-run it against prod believing tables get
+   dropped and cleanly recreated when in fact `IF NOT EXISTS` means schema
+   changes silently no-op against an existing table.
+
+5. **docs/conventions.md and docs/state-management.md's `aruna-watchlist` vs
+   `aruna_watchlist` key mismatch** — smaller blast radius (one wrong string
+   in a reference table) but concrete: an agent implementing a new
+   guest-data feature that reads this table verbatim would read/write the
+   wrong localStorage key and silently fail to find the user's actual
+   watchlist data.
+
+6. **docs/coding-standards.md's "no global error boundary"** — inconsistent
+   with the codebase's own `known-issues.md` Phase 7 section three docs
+   over; low risk since it only affects an agent deciding whether to add
+   error-boundary code (they'd likely check for existing ones anyway), but
+   still a direct code-vs-doc contradiction within the same doc set.
+
+7. **docs/tech-stack.md / docs/dependencies.md yahoo-finance2 version
+   (^3.14.3 vs actual ^4.0.0)** and **docs/folder-structure.md missing
+   `mini-chart.jsx`/`toast.jsx`** — lowest priority; version-number and
+   file-tree staleness that doesn't mislead architectural decisions, just
+   needs a routine sync pass.

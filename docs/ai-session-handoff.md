@@ -1,6 +1,68 @@
 # AI Session Handoff
 
-**Last Updated**: 2026-07-31
+**Last Updated**: 2026-08-12
+
+**Summary**: Executed all 7 phases of `docs/MAINTENANCE_PLAN.md` (synthesized
+from `TECH_DEBT.md`, `UI_AUDIT.md`, `DOCS_DRIFT_REPORT.md`) in one session:
+doc-drift corrections, `encodePayload()` safeguards, dead code deletion,
+business-logic dedupe, motion/microinteraction polish, component-primitive
+consolidation, and large-page decomposition. Architecture preserved — no new
+paradigms introduced. `npm run lint` clean after every phase.
+
+## Maintenance Plan — Files Modified
+
+| Phase | File(s) | Change |
+|---|---|---|
+| 1 | `src/app/api/discussions/route.js` | Wrapped DELETE config-missing branch in `encodePayload()` |
+| 1 | `docs/architecture-decisions.md`, `known-issues.md`, `database.md`, `conventions.md`, `state-management.md`, `coding-standards.md`, `tech-stack.md`, `dependencies.md`, `folder-structure.md` | Corrected stale architectural/version claims |
+| 2 | `src/app/api/momentum/route.js`, `src/app/api/rotation/route.js` | Wrapped remaining error branches in `encodePayload()` |
+| 3 | Deleted `src/components/ui/sidebar.jsx`, `radio-group.jsx`; deleted dead exports `isCryptoTicker`, `dayOfYearToMonthDate`, `sortByNearestInclusion`, `formatDecimalPercent` | Confirmed zero imports first |
+| 4 | `src/app/api/msci/route.js`, `src/app/chart/page.jsx` | Wired up `calculateSummaryStats`; `formatPriceValue` replaced with `lib/utils.js#formatPrice`; `formatPlainNumber` kept as a thin wrapper (range-string passthrough from `formatRange()`) |
+| 5 | `src/app/chart/page.jsx`, `src/app/msci/page.jsx`, `ticker-row.jsx`, `trending-marquee.jsx`, `explore/page.jsx`, `portfolio-tracker/page.jsx`, `watchlist/page.jsx`, `pricing/page.jsx`, `trial-banner.jsx`, `toast.jsx`, `ui/input.jsx`, `ui/select.jsx` | `scaleX` progress bars, `Button` back control, `DURATION_CLASS.base` timing, lucide `<X>` toast dismiss, dropped `box-shadow` from focus transitions |
+| 6 | `add-asset-modal.jsx`, `portfolio-tracker/page.jsx`, `discussion/page.jsx`, `not-found.jsx`, `error.jsx`, `manage-watchlist-dialog.jsx` | Raw `<input>` → `<Input>`; extracted `MessageListSkeleton`; `<Button>`/`buttonVariants` CTAs; FLIP-animated watchlist drag-reorder |
+| 7 | `src/app/chart/page.jsx` | Extracted `ChartMainSkeleton`/`ChartSidebarSkeleton`; promoted repeated `h-[260px]` to `SECONDARY_CHART_HEIGHT_CLASS` |
+| 7 | `src/app/explore/page.jsx` | Extracted `MarketSymbolCard({ item, marketTimeframe })` |
+| 7 | `src/app/portfolio-tracker/page.jsx` | Extracted `AddAssetForm` (state kept in parent, passed as props) |
+
+## Maintenance Plan — Rescoped Items
+
+- **Phase 4**: `formatPlainNumber` not fully replaced — `fiftyTwoWeekRange`/
+  `dayRange` are pre-formatted range strings from `api/fundamentals/route.js`,
+  not numbers; a full swap to `formatPrice()` would silently show the
+  fallback dash.
+- **Phase 5**: `chart/page.jsx`'s stacked recommendation-trend bar
+  (segmented, each sibling's `width` sets flex-item layout size) left as
+  `width` + `transition-all` — `scaleX` is visual-only and would collapse
+  the segments.
+- **Phase 6**: `global-error.jsx` kept hand-rolled — it replaces the entire
+  root `<html>`/`<body>` and doesn't import `globals.css` itself, so neither
+  `Button` nor the existing markup is guaranteed styled there.
+- **Phase 7**: chart-page extraction target changed from the two
+  originally-named ranges (already narrow, non-repeated) to the actual
+  duplicated block — the loading skeletons. Spacing pass found only one
+  genuine repeat (`h-[260px]` ×2); all other arbitrary `[Npx]` values in the
+  file are true one-offs, left alone.
+
+## Maintenance Plan — Validation
+
+- `npm run lint`: clean after every phase (final: 0 errors / 0 warnings).
+- Manual browser walk-through **not yet run** — recommended before this is
+  considered fully done: chart fullscreen toggle, MSCI progress bar, toast
+  dismiss, add-asset modal (both pages), discussion page load, watchlist
+  manager drag-reorder (verify FLIP animation), not-found/error pages,
+  explore market card grid.
+
+## Maintenance Plan — Next Recommended Task
+
+Manually verify the UI changes in-browser (list above), then decide on
+`docs/MAINTENANCE_PLAN.md`'s Unresolved Question #1: whether native
+Mac/iOS-feel work (spring-physics transitions, gesture navigation) needs its
+own follow-up design-system phase — none of the 7 phases just completed add
+that, they were maintenance/debt cleanup only.
+
+---
+
+## Phase 8 Record
 
 **Summary**: Executed **Phase 8 — Feature Stabilization & UX** (functional
 bugs, UX polish, money-flow flag). Architecture preserved; no refactoring.

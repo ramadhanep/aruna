@@ -1,5 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export default function NotFound() {
   return (
@@ -25,13 +27,13 @@ export default function NotFound() {
       <div className="flex items-center gap-3">
         <Link
           href="/"
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-full hover:opacity-90 transition-opacity"
+          className={cn(buttonVariants({ size: "lg" }), "rounded-full")}
         >
           Back to Explore
         </Link>
         <Link
           href="/chart"
-          className="inline-flex items-center gap-2 px-5 py-2.5 bg-muted text-foreground text-sm font-medium rounded-full hover:bg-muted/80 transition-colors"
+          className={cn(buttonVariants({ variant: "secondary", size: "lg" }), "rounded-full")}
         >
           Open Charts
         </Link>

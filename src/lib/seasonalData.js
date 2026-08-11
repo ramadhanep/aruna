@@ -127,15 +127,6 @@ export function computeSingleYearPattern(data, singleYear) {
 }
 
 /**
- * Convert day of year to month/date string (for x-axis labels)
- */
-export function dayOfYearToMonthDate(dayOfYear) {
-  const date = new Date(2000, 0, 1);
-  date.setDate(date.getDate() + dayOfYear - 1);
-  return date;
-}
-
-/**
  * Forward-fill missing days in a single-year pattern to create an unbroken line.
  * Assumes input sorted ascending by dayOfYear.
  */
