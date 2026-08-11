@@ -71,7 +71,6 @@
 │   │   │   ├── input.jsx
 │   │   │   ├── label.jsx
 │   │   │   ├── select.jsx
-│   │   │   ├── separator.jsx
 │   │   │   ├── segmented-control.jsx # Behavior wrapper: maps options to Buttons, owns selection state
 │   │   │   ├── sheet.jsx
 │   │   │   ├── skeleton.jsx
