@@ -7,39 +7,30 @@ import { AccordionItem, AccordionTrigger, AccordionContent } from "@/components/
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { Badge } from "@/components/ui/badge";
+import { SegmentedControl } from "@/components/ui/segmented-control";
 import { formatCompactNumber, formatPercent, formatPrice, formatTickerDisplay, getChangeTone } from "@/lib/utils";
 
-const signalStyles = {
-  "Strong Accumulation": "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-  Accumulation: "bg-teal-500/10 text-teal-500 border-teal-500/20",
-  Neutral: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-  Distribution: "bg-rose-500/10 text-rose-500 border-rose-500/20",
+const SIGNAL_VARIANTS = {
+  "Strong Accumulation": "success",
+  Accumulation: "accumulation",
+  Neutral: "warning",
+  Distribution: "danger",
 };
 
-const riskStyles = {
-  LOW: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-  MEDIUM: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-  HIGH: "bg-orange-500/10 text-orange-500 border-orange-500/20",
-  CRITICAL: "bg-rose-500/10 text-rose-500 border-rose-500/20",
+const RISK_VARIANTS = {
+  LOW: "success",
+  MEDIUM: "warning",
+  HIGH: "highrisk",
+  CRITICAL: "danger",
 };
 
 function SignalBadge({ signal }) {
-  const className = signalStyles[signal] || signalStyles.Neutral;
-  return (
-    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-2xs font-semibold border ${className}`}>
-      {signal}
-    </span>
-  );
+  return <Badge variant={SIGNAL_VARIANTS[signal] || "warning"}>{signal}</Badge>;
 }
 
 function RiskBadge({ level }) {
   const risk = String(level || "LOW").toUpperCase();
-  const className = riskStyles[risk] || riskStyles.LOW;
-  return (
-    <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-2xs font-semibold border ${className}`}>
-      {risk}
-    </span>
-  );
+  return <Badge variant={RISK_VARIANTS[risk] || "success"}>{risk}</Badge>;
 }
 
 export function MoneyFlowCard({ report, isExpandedView = false }) {
@@ -302,20 +293,17 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                 </div>
 
                 <div className="flex items-center bg-background/80 rounded-xl border border-border/40 p-0.5">
-                  <button
-                    type="button"
-                    onClick={() => setIsNetView(false)}
-                    className={`px-2.5 py-1 text-2xs font-semibold rounded-lg transition-all ${!isNetView ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                  >
-                    Gross
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsNetView(true)}
-                    className={`px-2.5 py-1 text-2xs font-semibold rounded-lg transition-all ${isNetView ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'}`}
-                  >
-                    Net
-                  </button>
+                  <SegmentedControl
+                    value={isNetView ? 'net' : 'gross'}
+                    onValueChange={(value) => setIsNetView(value === 'net')}
+                    options={[
+                      { value: 'gross', label: 'Gross' },
+                      { value: 'net', label: 'Net' },
+                    ]}
+                    className="px-2.5 py-1 text-2xs font-semibold rounded-lg"
+                    activeClassName="bg-muted text-foreground"
+                    inactiveClassName="text-muted-foreground hover:text-foreground"
+                  />
                 </div>
               </div>
 

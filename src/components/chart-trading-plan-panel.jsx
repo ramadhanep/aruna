@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { toFiniteNumber, TP_FALLBACK_META } from "@/lib/chart-helpers";
 
@@ -368,7 +369,7 @@ export function ChartTradingPlanPanel({
 
         <div className="grid grid-cols-2 gap-2.5">
           <div className="space-y-1">
-            <label className="text-2xs font-medium text-muted-foreground">Account Balance</label>
+            <Label className="text-2xs font-medium text-muted-foreground">Account Balance</Label>
             <Input
               type="number"
               inputMode="decimal"
@@ -381,7 +382,7 @@ export function ChartTradingPlanPanel({
             />
           </div>
           <div className="space-y-1">
-            <label className="text-2xs font-medium text-muted-foreground">Risk %</label>
+            <Label className="text-2xs font-medium text-muted-foreground">Risk %</Label>
             <Input
               type="number"
               inputMode="decimal"
@@ -408,7 +409,7 @@ export function ChartTradingPlanPanel({
         </div>
 
         <div className="space-y-1">
-          <label className="text-2xs font-medium text-muted-foreground">Your Entry Price</label>
+          <Label className="text-2xs font-medium text-muted-foreground">Your Entry Price</Label>
           <Input
             type="number"
             inputMode="decimal"

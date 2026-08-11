@@ -13,6 +13,8 @@ const badgeVariants = cva(
         neutral: "border-amber-500/20 bg-amber-500/10 text-amber-500",
         info: "border-blue-500/20 bg-blue-500/10 text-blue-500",
         new: "border-emerald-500/20 bg-emerald-500/10 text-emerald-500",
+        accumulation: "border-teal-500/20 bg-teal-500/10 text-teal-500",
+        highrisk: "border-orange-500/20 bg-orange-500/10 text-orange-500",
       },
     },
     defaultVariants: {

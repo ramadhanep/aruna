@@ -44,6 +44,7 @@ import { formatTickerDisplay, getChangeTone, formatPrice } from "@/lib/utils";
 import { MOTION } from "@/lib/motion";
 import { ChartHeaderBar } from "@/components/chart-header-bar";
 import { SegmentedControl } from "@/components/ui/segmented-control";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { AnalystGaugeChart } from "@/components/analyst-gauge-chart";
 import { ChartTradingPlanPanel } from "@/components/chart-trading-plan-panel";
 import { ChartSeasonalityPanel } from "@/components/chart-seasonality-panel";
@@ -1402,14 +1403,16 @@ function ElectionCyclePageContent() {
               <CardTitle className="text-sm mb-2">Trading Snapshot</CardTitle>
             </CardHeader>
             <CardContent>
-              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                {snapshotRows.map((item) => (
-                  <div key={item.label} className="space-y-0.5">
-                    <dt className="text-muted-foreground">{item.label}</dt>
-                    <dd className="font-semibold text-foreground">{item.value}</dd>
-                  </div>
-                ))}
-              </dl>
+              <Table>
+                <TableBody>
+                  {snapshotRows.map((item) => (
+                    <TableRow key={item.label}>
+                      <TableCell className="py-2 text-xs text-muted-foreground">{item.label}</TableCell>
+                      <TableCell className="py-2 text-xs font-semibold text-right text-foreground">{item.value}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         )}
@@ -2012,32 +2015,34 @@ function ElectionCyclePageContent() {
               <CardTitle className="text-sm">Upcoming Events</CardTitle>
             </CardHeader>
             <CardContent>
-              <dl className="grid grid-cols-1 gap-3">
-                {cal.earningsDate?.length > 0 && (
-                  <div className="flex items-center justify-between py-2 border-b border-border/20">
-                    <dt className="text-xs text-muted-foreground">Next Earnings</dt>
-                    <dd className="text-xs font-medium">{formatDate(cal.earningsDate[0])}</dd>
-                  </div>
-                )}
-                {cal.exDividendDate && (
-                  <div className="flex items-center justify-between py-2 border-b border-border/20">
-                    <dt className="text-xs text-muted-foreground">Ex-Dividend Date</dt>
-                    <dd className="text-xs font-medium">{formatDate(cal.exDividendDate)}</dd>
-                  </div>
-                )}
-                {cal.dividendDate && (
-                  <div className="flex items-center justify-between py-2">
-                    <dt className="text-xs text-muted-foreground">Dividend Pay Date</dt>
-                    <dd className="text-xs font-medium">{formatDate(cal.dividendDate)}</dd>
-                  </div>
-                )}
-                {marketData?.earningsCallTimestampStart && (
-                  <div className="flex items-center justify-between py-2 border-t border-border/20">
-                    <dt className="text-xs text-muted-foreground">Earnings Call</dt>
-                    <dd className="text-xs font-medium">{formatTimestamp(marketData.earningsCallTimestampStart) ?? '—'}</dd>
-                  </div>
-                )}
-              </dl>
+              <Table>
+                <TableBody>
+                  {cal.earningsDate?.length > 0 && (
+                    <TableRow>
+                      <TableCell className="py-2 text-xs text-muted-foreground">Next Earnings</TableCell>
+                      <TableCell className="py-2 text-xs font-medium text-right">{formatDate(cal.earningsDate[0])}</TableCell>
+                    </TableRow>
+                  )}
+                  {cal.exDividendDate && (
+                    <TableRow>
+                      <TableCell className="py-2 text-xs text-muted-foreground">Ex-Dividend Date</TableCell>
+                      <TableCell className="py-2 text-xs font-medium text-right">{formatDate(cal.exDividendDate)}</TableCell>
+                    </TableRow>
+                  )}
+                  {cal.dividendDate && (
+                    <TableRow>
+                      <TableCell className="py-2 text-xs text-muted-foreground">Dividend Pay Date</TableCell>
+                      <TableCell className="py-2 text-xs font-medium text-right">{formatDate(cal.dividendDate)}</TableCell>
+                    </TableRow>
+                  )}
+                  {marketData?.earningsCallTimestampStart && (
+                    <TableRow>
+                      <TableCell className="py-2 text-xs text-muted-foreground">Earnings Call</TableCell>
+                      <TableCell className="py-2 text-xs font-medium text-right">{formatTimestamp(marketData.earningsCallTimestampStart) ?? '—'}</TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         )}
@@ -2049,47 +2054,49 @@ function ElectionCyclePageContent() {
               <CardTitle className="text-sm">Financial Health</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-y-3 gap-x-4">
-                {[
-                  { label: 'Total Revenue', value: formatNum(fh.totalRevenue) },
-                  {
-                    label: 'Free Cash Flow',
-                    value: formatNum(fh.freeCashflow),
-                    highlight: fh.freeCashflow != null ? (fh.freeCashflow >= 0 ? 'pos' : 'neg') : null,
-                  },
-                  { label: 'Total Cash', value: formatNum(fh.totalCash) },
-                  {
-                    label: 'Total Debt',
-                    value: formatNum(fh.totalDebt),
-                    highlight: fh.totalDebt != null && fh.totalCash != null
-                      ? (fh.totalDebt < fh.totalCash ? 'pos' : 'neg')
-                      : null,
-                  },
-                  {
-                    label: 'Debt / Equity',
-                    value: fh.debtToEquity != null ? fh.debtToEquity.toFixed(2) : '—',
-                    highlight: fh.debtToEquity != null ? (fh.debtToEquity < 100 ? 'pos' : 'neg') : null,
-                  },
-                  {
-                    label: 'Current Ratio',
-                    value: fh.currentRatio != null ? fh.currentRatio.toFixed(2) : '—',
-                    highlight: fh.currentRatio != null ? (fh.currentRatio >= 1 ? 'pos' : 'neg') : null,
-                  },
-                  {
-                    label: 'Quick Ratio',
-                    value: fh.quickRatio != null ? fh.quickRatio.toFixed(2) : '—',
-                    highlight: fh.quickRatio != null ? (fh.quickRatio >= 1 ? 'pos' : 'neg') : null,
-                  },
-                  { label: 'Revenue / Share', value: fh.revenuePerShare != null ? fh.revenuePerShare.toFixed(2) : '—' },
-                ].filter(item => item.value !== '—').map((item) => (
-                  <div key={item.label} className="space-y-0.5">
-                    <dt className="text-1xs text-muted-foreground">{item.label}</dt>
-                    <dd className={`text-xs font-semibold ${item.highlight === 'pos' ? 'text-emerald-500' : item.highlight === 'neg' ? 'text-red-500' : ''}`}>
-                      {item.value}
-                    </dd>
-                  </div>
-                ))}
-              </div>
+              <Table>
+                <TableBody>
+                  {[
+                    { label: 'Total Revenue', value: formatNum(fh.totalRevenue) },
+                    {
+                      label: 'Free Cash Flow',
+                      value: formatNum(fh.freeCashflow),
+                      highlight: fh.freeCashflow != null ? (fh.freeCashflow >= 0 ? 'pos' : 'neg') : null,
+                    },
+                    { label: 'Total Cash', value: formatNum(fh.totalCash) },
+                    {
+                      label: 'Total Debt',
+                      value: formatNum(fh.totalDebt),
+                      highlight: fh.totalDebt != null && fh.totalCash != null
+                        ? (fh.totalDebt < fh.totalCash ? 'pos' : 'neg')
+                        : null,
+                    },
+                    {
+                      label: 'Debt / Equity',
+                      value: fh.debtToEquity != null ? fh.debtToEquity.toFixed(2) : '—',
+                      highlight: fh.debtToEquity != null ? (fh.debtToEquity < 100 ? 'pos' : 'neg') : null,
+                    },
+                    {
+                      label: 'Current Ratio',
+                      value: fh.currentRatio != null ? fh.currentRatio.toFixed(2) : '—',
+                      highlight: fh.currentRatio != null ? (fh.currentRatio >= 1 ? 'pos' : 'neg') : null,
+                    },
+                    {
+                      label: 'Quick Ratio',
+                      value: fh.quickRatio != null ? fh.quickRatio.toFixed(2) : '—',
+                      highlight: fh.quickRatio != null ? (fh.quickRatio >= 1 ? 'pos' : 'neg') : null,
+                    },
+                    { label: 'Revenue / Share', value: fh.revenuePerShare != null ? fh.revenuePerShare.toFixed(2) : '—' },
+                  ].filter(item => item.value !== '—').map((item) => (
+                    <TableRow key={item.label}>
+                      <TableCell className="py-2 text-1xs text-muted-foreground">{item.label}</TableCell>
+                      <TableCell className={`py-2 text-xs font-semibold text-right ${item.highlight === 'pos' ? 'text-emerald-500' : item.highlight === 'neg' ? 'text-red-500' : ''}`}>
+                        {item.value}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
         )}
@@ -2680,7 +2687,7 @@ function ElectionCyclePageContent() {
                       <TabsTrigger
                         key={tab.value}
                         value={tab.value}
-                        className="flex-shrink-0 px-2 py-2 uppercase font-semibold text-muted-foreground data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 after:bg-emerald-700 dark:after:bg-emerald-400"
+                        className="flex-shrink-0 px-2 py-2 uppercase font-semibold text-[11px] text-muted-foreground data-[state=active]:text-emerald-700 dark:data-[state=active]:text-emerald-400 after:bg-emerald-700 dark:after:bg-emerald-400"
                       >
                         {tab.label}
                       </TabsTrigger>
