@@ -7,6 +7,7 @@ import { fetchEncodedJson } from "@/lib/api-client";
 import { formatTickerDisplay, getChangeTone } from "@/lib/utils";
 import { DURATION_CLASS } from "@/lib/motion";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SectionHeader } from "@/components/section-header";
 
 function TrendingItem({ symbol, quote }) {
   if (!quote) return null;
@@ -75,14 +76,6 @@ function getTrendingOrder() {
     return ["us", "idx", "crypto"];
   }
   return ["idx", "us", "crypto"];
-}
-
-function SectionHeader({ title }) {
-  return (
-    <div className="py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-      {title}
-    </div>
-  );
 }
 
 export function TrendingMarquee({ supabase }) {

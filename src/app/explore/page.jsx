@@ -16,6 +16,7 @@ import { TickerAvatar } from "@/components/ticker-avatar";
 import { TrendingMarquee } from "@/components/trending-marquee";
 import { MiniChart } from "@/components/mini-chart";
 import { SegmentedControl } from "@/components/ui/segmented-control";
+import { SectionHeader } from "@/components/section-header";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { cn, formatPercent, formatPrice, formatTickerDisplay, getChangeTone } from "@/lib/utils";
 import { toast } from "sonner";
@@ -1198,7 +1199,7 @@ export default function ExplorePage() {
       {/* ───── Explore Tools Hub ───── */}
       <section className="w-full space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Explore Tools</h2>
+          <SectionHeader as="h2" title="Explore Tools" />
         </div>
 
         {/* Compact widgets */}
@@ -1309,9 +1310,7 @@ export default function ExplorePage() {
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="text-1xs uppercase tracking-wider font-semibold text-muted-foreground">
-                          Technical Breakout in {section.title}
-                        </p>
+                        <SectionHeader title={`Technical Breakout in ${section.title}`} className="py-0 text-1xs" />
                       </div>
                       {section.lastScreened && (
                         <p className="text-1xs text-muted-foreground/70">

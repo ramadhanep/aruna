@@ -17,6 +17,7 @@ import { TrendingMarquee } from "@/components/trending-marquee";
 import { formatTickerDisplay } from "@/lib/utils";
 import { MOTION, DURATION_CLASS } from "@/lib/motion";
 import { useTrial } from "@/components/trial-provider";
+import { SectionHeader } from "@/components/section-header";
 
 function areWatchlistsEqual(a = [], b = []) {
   if (a.length !== b.length) return false;
@@ -43,14 +44,6 @@ async function fetchBatchQuotes(symbols) {
     console.warn('Failed to fetch batch quotes', e);
     return {};
   }
-}
-
-function SectionHeader({ title }) {
-  return (
-    <div className="py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-      {title}
-    </div>
-  );
 }
 
 export default function HomePage() {
