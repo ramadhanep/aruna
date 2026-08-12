@@ -8,7 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { Badge } from "@/components/ui/badge";
 import { SegmentedControl } from "@/components/ui/segmented-control";
-import { formatCompactNumber, formatPercent, formatPrice, formatTickerDisplay, getChangeTone } from "@/lib/utils";
+import { formatCompactNumber, formatPercent, formatPriceTrim, formatTickerDisplay, getChangeTone } from "@/lib/utils";
 
 const SIGNAL_VARIANTS = {
   "Strong Accumulation": "success",
@@ -136,7 +136,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                 <p className="text-2xs text-muted-foreground dark:text-white/50 uppercase tracking-wide">Price</p>
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold tabular-nums">
-                    {formatPrice(report.current_price || 0, { locale: "en-US", zeroIsEmpty: false })}
+                    {formatPriceTrim(report.current_price || 0, report.symbol)}
                   </p>
                 </div>
               </div>
@@ -339,12 +339,12 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                         {/* Buy Side */}
                         <TableCell className="text-1xs font-bold px-2.5 text-emerald-600 dark:text-emerald-400">{row.bCode}</TableCell>
                         <TableCell className="text-1xs text-right px-2.5 tabular-nums">{row.bVal === 0 ? '-' : formatCompactNumber(row.bVal)}</TableCell>
-                        <TableCell className="text-1xs text-right px-2.5 font-medium text-emerald-600 dark:text-emerald-400 tabular-nums">{row.bAvg > 0 ? formatPrice(row.bAvg, { locale: "en-US", zeroIsEmpty: false }) : '-'}</TableCell>
+                        <TableCell className="text-1xs text-right px-2.5 font-medium text-emerald-600 dark:text-emerald-400 tabular-nums">{row.bAvg > 0 ? formatPriceTrim(row.bAvg, 'IDX.JK') : '-'}</TableCell>
 
                         {/* Sell Side */}
                         <TableCell className="text-1xs font-bold text-center px-2.5 border-l border-border/20 text-rose-500 dark:text-rose-400">{row.sCode}</TableCell>
                         <TableCell className="text-1xs text-right px-2.5 text-rose-500 dark:text-rose-400 tabular-nums">{row.sVal === 0 ? '-' : formatCompactNumber(row.sVal)}</TableCell>
-                        <TableCell className="text-1xs text-right px-2.5 font-medium text-rose-600 dark:text-rose-400 tabular-nums">{row.sAvg > 0 ? formatPrice(row.sAvg, { locale: "en-US", zeroIsEmpty: false }) : '-'}</TableCell>
+                        <TableCell className="text-1xs text-right px-2.5 font-medium text-rose-600 dark:text-rose-400 tabular-nums">{row.sAvg > 0 ? formatPriceTrim(row.sAvg, 'IDX.JK') : '-'}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

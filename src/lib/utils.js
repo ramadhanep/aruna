@@ -99,6 +99,20 @@ export function formatPrice(value, {
  * @param {number} value - Percentage value
  * @returns {string} Formatted percentage
  */
+export function formatPriceTrim(value, symbol, opts = {}) {
+  const formatted = formatPrice(value, {
+    locale: 'en-US',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+    zeroIsEmpty: false,
+    ...opts,
+  });
+  if (symbol?.endsWith('.JK') || symbol === 'BTC-USD') {
+    return formatted.replace(/[.,]00$/, '');
+  }
+  return formatted;
+}
+
 export function formatPercent(value, {
   fractionDigits = 1,
   fallback = '—',

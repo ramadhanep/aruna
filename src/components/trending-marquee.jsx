@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { TickerAvatar } from "./ticker-avatar";
 import { fetchEncodedJson } from "@/lib/api-client";
-import { formatTickerDisplay, getChangeTone } from "@/lib/utils";
+import { formatPriceTrim, formatTickerDisplay, getChangeTone } from "@/lib/utils";
 import { DURATION_CLASS } from "@/lib/motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SectionHeader } from "@/components/section-header";
@@ -14,9 +14,7 @@ function TrendingItem({ symbol, quote }) {
 
   const isPositive = (quote.change ?? 0) >= 0;
   const color = getChangeTone(quote.change ?? 0);
-  const formattedPrice = typeof quote.price === "number"
-    ? quote.price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : "-";
+  const formattedPrice = typeof quote.price === "number" ? formatPriceTrim(quote.price, symbol) : "-";
   const formattedChange = typeof quote.changePercent === "number"
     ? `${isPositive ? "+" : ""}${quote.changePercent.toFixed(2)}%`
     : "-";

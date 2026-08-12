@@ -2,7 +2,7 @@ import Link from "next/link";
 import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { MiniChart } from "@/components/mini-chart";
-import { formatTickerDisplay, getChangeTone } from "@/lib/utils";
+import { formatPriceTrim, formatTickerDisplay, getChangeTone } from "@/lib/utils";
 import { DURATION_CLASS } from "@/lib/motion";
 import { Badge } from "@/components/ui/badge";
 
@@ -23,9 +23,7 @@ export function TickerRow({
   const isPositive = change >= 0;
   const color = getChangeTone(change);
   const hasChart = Array.isArray(chartData) && chartData.length > 0;
-  const formattedPrice = typeof price === "number"
-    ? price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-    : "-";
+  const formattedPrice = typeof price === "number" ? formatPriceTrim(price, symbol) : "-";
 
   return (
     <Link

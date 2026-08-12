@@ -75,7 +75,7 @@ export function MobileBottomNav() {
 
   return (
     <nav
-      className={cn("fixed bottom-safe left-1/2 -translate-x-1/2 z-50 border border-border bg-card p-1.5 rounded-xl w-max transition-transform", DURATION_CLASS.base, isMinimized && "translate-y-2 -translate-x-1/2 opacity-95")}
+      className={cn("fixed bottom-safe left-1/2 -translate-x-1/2 z-50 border border-border bg-card p-1.5 rounded-full w-max transition-transform", DURATION_CLASS.base, isMinimized && "translate-y-2 -translate-x-1/2 opacity-95")}
       style={{
         transformOrigin: "center bottom",
         willChange: "transform, opacity",
@@ -94,7 +94,7 @@ export function MobileBottomNav() {
               href={item.url}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "relative flex flex-col items-center justify-center gap-0.5 rounded-md min-w-16 px-3 py-1.5 select-none transition-colors",
+                "relative flex flex-col items-center justify-center gap-0.5 rounded-full min-w-16 px-3 py-1.5 select-none transition-colors",
                 DURATION_CLASS.fast,
                 isActive
                   ? "bg-accent text-foreground"

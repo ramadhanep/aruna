@@ -18,7 +18,7 @@ import { MiniChart } from "@/components/mini-chart";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { SectionHeader } from "@/components/section-header";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
-import { cn, formatPercent, formatPrice, formatTickerDisplay, getChangeTone } from "@/lib/utils";
+import { cn, formatPercent, formatPriceTrim, formatTickerDisplay, getChangeTone } from "@/lib/utils";
 import { toast } from "sonner";
 
 const CATEGORY_LABELS = {
@@ -394,7 +394,7 @@ function MarketSymbolCard({ item, marketTimeframe }) {
       <div className="mt-3 flex items-end justify-between gap-2">
         <div>
           <p className="text-base font-bold text-foreground tabular-nums">
-            {q ? formatPrice(q.price, { locale: "en-US", minimumFractionDigits: 2, maximumFractionDigits: 2, zeroIsEmpty: false }) : "—"}
+            {q ? formatPriceTrim(q.price, item.symbol) : "—"}
           </p>
           <p className={`text-xs font-semibold mt-0.5 ${getChangeTone(isPositive ? 1 : -1)}`}>
             {tfChange !== null
@@ -484,7 +484,7 @@ function MarketPulseMarquee({ items }) {
               className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted/40 transition-colors"
             >
               <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
-              <span className="text-xs font-bold tabular-nums">{q ? formatPrice(q.price, { locale: "en-US", minimumFractionDigits: 2, maximumFractionDigits: 2, zeroIsEmpty: false }) : "—"}</span>
+              <span className="text-xs font-bold tabular-nums">{q ? formatPriceTrim(q.price, item.symbol) : "—"}</span>
               {q && typeof q.changePercent === "number" ? (
                 <span className={`text-1xs font-semibold flex items-center gap-0.5 ${getChangeTone(isPos ? 1 : -1)}`}>
                   {isPos ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
@@ -505,7 +505,7 @@ function MarketPulseMarquee({ items }) {
               className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted/40 transition-colors"
             >
               <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
-              <span className="text-xs font-bold tabular-nums">{q ? formatPrice(q.price, { locale: "en-US", minimumFractionDigits: 2, maximumFractionDigits: 2, zeroIsEmpty: false }) : "—"}</span>
+              <span className="text-xs font-bold tabular-nums">{q ? formatPriceTrim(q.price, item.symbol) : "—"}</span>
               {q && typeof q.changePercent === "number" ? (
                 <span className={`text-1xs font-semibold flex items-center gap-0.5 ${getChangeTone(isPos ? 1 : -1)}`}>
                   {isPos ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
@@ -1119,7 +1119,7 @@ export default function ExplorePage() {
                 className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted/40 transition-colors"
               >
                 <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
-                <span className="text-xs font-bold tabular-nums">{q ? formatPrice(q.price, { locale: "en-US", minimumFractionDigits: 2, maximumFractionDigits: 2, zeroIsEmpty: false }) : "—"}</span>
+                <span className="text-xs font-bold tabular-nums">{q ? formatPriceTrim(q.price, item.symbol) : "—"}</span>
                 {q && typeof q.changePercent === "number" ? (
                   <span className={`text-1xs font-semibold flex items-center gap-0.5 ${getChangeTone(isPos ? 1 : -1)}`}>
                     {isPos ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}

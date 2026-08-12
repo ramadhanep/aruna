@@ -40,7 +40,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist";
 import { ArunaWatermark } from "@/components/aruna-watermark";
 import { TickerAvatar } from "@/components/ticker-avatar";
-import { formatTickerDisplay, getChangeTone, formatPrice } from "@/lib/utils";
+import { formatTickerDisplay, getChangeTone, formatPrice, formatPriceTrim } from "@/lib/utils";
 import { MOTION } from "@/lib/motion";
 import { ChartHeaderBar } from "@/components/chart-header-bar";
 import { SegmentedControl } from "@/components/ui/segmented-control";
@@ -626,14 +626,8 @@ function ElectionCyclePageContent() {
   );
 
   const formatPriceValue = useCallback(
-    (value) => formatPrice(value, {
-      locale: 'en-US',
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-      zeroIsEmpty: false,
-      fallback: '-',
-    }),
-    []
+    (value) => formatPriceTrim(value, symbol, { fallback: '-' }),
+    [symbol]
   );
 
   const currencyCode = fundamentals?.profile?.currency || symbolInfo?.currency || 'USD';
@@ -2350,12 +2344,7 @@ function ElectionCyclePageContent() {
                     <div className="flex flex-col gap-1">
                       <div className="flex items-baseline gap-2">
                         <span className="text-xl font-bold">
-                          {displayedPrice != null
-                            ? displayedPrice.toLocaleString('en-US', {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 2,
-                            })
-                            : '-'}
+                          {formatPriceTrim(displayedPrice, symbol, { fallback: '-' })}
                         </span>
                         {symbolInfo?.currency && (
                           <span className="text-xs text-muted-foreground">{symbolInfo.currency}</span>
