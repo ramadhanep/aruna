@@ -166,7 +166,7 @@ function ElectionCyclePageContent() {
       current: CURRENT_LINE_COLOR,
     };
   }, [resolvedTheme]);
-  const { loading, error, retry, rawLinesData, symbolInfo, assetName, monthlyHeatmap, quarterlyHeatmap } = useChartData(symbol, selectedCycles, scaleChoice, colors.allYears);
+  const { loading, error, retry, rawLinesData, symbolInfo, assetName, monthlyHeatmap, quarterlyHeatmap } = useChartData(symbol, selectedCycles, colors.allYears);
   const { fundamentals, fundamentalsLoading, revenuePeriod, setRevenuePeriod } = useChartFundamentals(symbol, infoTab);
 
   const [portfolioDialogOpen, setPortfolioDialogOpen] = useState(false);
@@ -2589,9 +2589,9 @@ function ElectionCyclePageContent() {
                     { value: 'Q3', label: 'Q3' },
                     { value: 'Q4', label: 'Q4' },
                   ]}
-                  className="w-16 h-6 text-xs font-semibold rounded-sm border-1.5"
-                  activeClassName="border-primary bg-primary text-primary-foreground"
-                  inactiveClassName="border-muted bg-popover hover:bg-accent hover:text-accent-foreground"
+                  className="rounded-sm px-2 min-w-[2.1rem] font-bold py-0 text-1xs"
+                  activeClassName="bg-emerald-700 text-white/80 hover:bg-emerald-700"
+                  inactiveClassName="border-border/20 text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 />
               </div>
             )}

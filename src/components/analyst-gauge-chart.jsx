@@ -44,6 +44,10 @@ export function AnalystGaugeChart({ score }) {
       {zones.map(([a1, a2], i) => (
         <path key={i} d={arc(a1, a2)} fill="none" stroke="currentColor" strokeOpacity={0.12} strokeWidth={trackW} strokeLinecap="butt" />
       ))}
+      {/* Active zone fill */}
+      {tip && needleAngle != null && (
+        <path d={arc(Math.PI, needleAngle)} fill="none" stroke={activeColor} strokeWidth={trackW} strokeLinecap="butt" />
+      )}
       {/* Zone labels */}
       {labelDefs.map(({ angle, text, anchor, offR }, i) => {
         const pt = toPoint(angle, r + offR);

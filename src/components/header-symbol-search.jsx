@@ -133,7 +133,7 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
           />
         </div>
 
-        <Command className="max-h-full overflow-hidden rounded-md border">
+        <Command className="mt-2 flex-1 min-h-0 max-h-full overflow-hidden rounded-md border bg-background">
           <CommandList>
             {loading && (
               <div className="flex items-center justify-center py-6 text-muted-foreground text-sm">

@@ -16,7 +16,7 @@ import {
 } from '@/lib/seasonalData';
 import { CURRENT_LINE_COLOR } from '@/lib/chart-helpers';
 
-export function useChartData(symbol, selectedCycles, scaleChoice, baseLineColor = '#F9F9F9F9') {
+export function useChartData(symbol, selectedCycles, baseLineColor = '#F9F9F9F9') {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [attempt, setAttempt] = useState(0);
@@ -160,9 +160,6 @@ export function useChartData(symbol, selectedCycles, scaleChoice, baseLineColor 
         setAssetName(symbolName);
 
         let currentPrice = null;
-        let startPrice = null;
-        let predictedPrice = null;
-        let predictedPct = null;
         let dailyChange = null;
         let dailyChangePct = null;
 
@@ -179,28 +176,6 @@ export function useChartData(symbol, selectedCycles, scaleChoice, baseLineColor 
           }
         }
 
-        if (currentRaw.length > 0) {
-          startPrice = currentRaw[0].adjclose;
-        }
-
-        const currentCycleLabel = getElectionCycleLabel(currentYear);
-        const cycleKeyMap = {
-          'Pre-Election Year': 'preElection',
-          'Election Year': 'election',
-          'Mid-Term Year': 'midTerm',
-          'Post-Election Year': 'postElection',
-        };
-        const targetKey = cycleKeyMap[currentCycleLabel];
-        const benchmarkLine = linesData.find(line => line.key === targetKey);
-
-        if (benchmarkLine && benchmarkLine.data.length > 0 && startPrice) {
-          const lastPoint = benchmarkLine.data[benchmarkLine.data.length - 1];
-          if (scaleChoice === 'linear') {
-            predictedPct = lastPoint.pctChangeYtd;
-            predictedPrice = startPrice * (1.0 + predictedPct / 100.0);
-          }
-        }
-
         const marketState = data.meta?.marketState ? String(data.meta.marketState).toUpperCase() : 'CLOSED';
         const isMarketOpen = ['REGULAR', 'OPEN', 'TRADING'].some(state => marketState.includes(state));
 
@@ -208,8 +183,6 @@ export function useChartData(symbol, selectedCycles, scaleChoice, baseLineColor 
           logo: data.meta?.logo,
           name: symbolName,
           currentPrice,
-          predictedPrice,
-          predictedPct,
           dailyChange,
           dailyChangePct,
           isMarketOpen,
@@ -239,7 +212,7 @@ export function useChartData(symbol, selectedCycles, scaleChoice, baseLineColor 
       cancelled = true;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [symbol, selectedCycles, scaleChoice, attempt]);
+  }, [symbol, selectedCycles, attempt]);
 
   return { loading, error, retry, rawLinesData, symbolInfo, assetName, monthlyHeatmap, quarterlyHeatmap };
 }
