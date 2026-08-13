@@ -3,7 +3,7 @@
 ## Philosophy
 
 No global state management library (Redux, Zustand, Jotai, etc.). State is managed through:
-- **React Context** for cross-component shared state (auth, theme, appearance mode, trial).
+- **React Context** for cross-component shared state (auth, theme, appearance mode).
 - **localStorage** for persistent user data (watchlist, portfolio, preferences).
 - **Component-local state** (`useState`, `useEffect`) for page-specific data.
 
@@ -67,13 +67,7 @@ const {
 - Persisted to `localStorage` key `aruna-appearance-mode`.
 - Options: `pro` (show logos), `lite` (hide logos).
 
-### 5. Trial State — `TrialProvider` (React Context)
-
-- Persisted to `localStorage` key `aruna-trial-state`, storing `{ startedAt, expiresAt }`.
-- 60-minute guest trial (`TRIAL_DURATION_MS = 60 * 60 * 1000` in `trial-provider.jsx`).
-- Provides `isTrialActive()` check, plus `restartTrial()`/`expireTrial()` for manual control.
-
-### 6. Page-Level Data — Component State
+### 5. Page-Level Data — Component State
 
 Each page fetches its own data via `useState` + `useEffect`:
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
@@ -9,43 +9,13 @@ import { HeaderAccountMenu } from "@/components/header-account-menu";
 import { AccountSidebar } from "@/components/account-sidebar";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { DesktopNavbar } from "@/components/desktop-navbar";
-import { useAuth } from "@/components/auth-provider";
-import { useTrial } from "@/components/trial-provider";
-import { TrialBanner } from "@/components/trial-banner";
-import { Skeleton } from "@/components/ui/skeleton";
 import { MOTION } from "@/lib/motion";
-
-const PUBLIC_ROUTES = new Set(["/", "/signin", "/offline", "/pricing", "/explore"]);
 
 export function AppLayoutClient({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
-  const { user, loading } = useAuth();
-  const { initialized, isTrialActive } = useTrial();
-  const active = isTrialActive();
   const isLandingPage = pathname === "/";
-  const isPublicRoute = PUBLIC_ROUTES.has(pathname);
-  const isProtectedRoute = !isPublicRoute;
-  const canAccessWithoutAuth = Boolean(user) || (initialized && active) || isPublicRoute;
-  const shouldBlockProtectedContent = isProtectedRoute && !canAccessWithoutAuth && (loading || !user);
-
-  useEffect(() => {
-    if (!isProtectedRoute || loading || !initialized || user || (initialized && active)) return;
-
-    const currentPath =
-      typeof window !== "undefined"
-        ? `${window.location.pathname}${window.location.search}`
-        : pathname || "/";
-    const redirectPath = currentPath.startsWith("/") ? currentPath : "/";
-
-    if (initialized && !active) {
-      router.replace("/pricing");
-      return;
-    }
-
-    router.replace(`/signin?redirect=${encodeURIComponent(redirectPath)}`);
-  }, [isProtectedRoute, loading, pathname, router, user, initialized, active]);
 
   const mobileBackHeaderRoutes = {
     "/idx-momentum": "IDX Momentum",
@@ -72,22 +42,9 @@ export function AppLayoutClient({ children }) {
   const needsBackHeader = Boolean(mobileBackHeaderRoutes[pathname]);
   const hideDefaultMobileChrome = hideDefaultMobileChromeRoutes.has(pathname);
   const hideDesktopNavbar = hideDesktopNavbarRoutes.has(pathname);
-  const mainContent = shouldBlockProtectedContent ? (
-    <div className="space-y-4">
-      <Skeleton className="h-8 w-44 rounded-lg" />
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {[...Array(6)].map((_, index) => (
-          <Skeleton key={index} className="h-28 rounded-xl" />
-        ))}
-      </div>
-    </div>
-  ) : (
-    children
-  );
 
   return (
     <>
-      <TrialBanner />
       <AccountSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
       
       <div className="flex flex-col min-h-screen relative w-full overflow-x-hidden">
@@ -131,7 +88,7 @@ export function AppLayoutClient({ children }) {
           <div className={isLandingPage ? "w-full" : "p-4 w-full max-w-[768px] lg:max-w-[1400px] lg:px-6"}>
             {/* Keyed by pathname so only the content fades between routes; the shell stays stable. */}
             <div key={pathname} className={MOTION.fadeIn}>
-              {mainContent}
+              {children}
             </div>
           </div>
         </main>

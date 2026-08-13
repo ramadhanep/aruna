@@ -122,12 +122,11 @@ image-optimization usage). Revisit only if the app grows real image payloads.
   `SegmentedControl` `activeClassName` lacked `dark:hover:bg-*`; the ghost
   variant's `dark:hover:bg-accent/50` won on hover. Fixed by adding
   `dark:hover:bg-primary` / `dark:hover:bg-foreground`.
-- **Authenticated users landing on `/pricing`** → OAuth callback pages carry
-  `?code=` while the session exchange is still in flight; guards treated the
-  pre-session moment as an expired guest and redirected. `AuthProvider` now
-  keeps `loading=true` until the first session event (10 s fallback),
-  `TrialGuard` waits on `auth.loading`, and `/account` waits for auth before
-  redirecting.
+- **OAuth callback redirect race** → OAuth callback pages carry `?code=`
+  while the session exchange is still in flight; a premature redirect could
+  bounce the user back through sign-in. `AuthProvider` keeps `loading=true`
+  until the first session event (10 s fallback) and `/account` waits for auth
+  before redirecting.
 - **Device-aware first load** → `/` is now a client redirect: authenticated
   users go to `/watchlist` on mobile and `/explore` on desktop; guests keep
   the existing `/explore` onboarding. `/account`'s no-param default matches.

@@ -13,18 +13,11 @@ No admin, moderator, or multi-role system exists.
 
 ## Access Control Mechanism
 
-### 1. Client-Level Route Gating (`AppLayoutClient.jsx`)
+### 1. Client-Level Feature Locking
 
-```javascript
-const PUBLIC_ROUTES = new Set(["/", "/signin", "/offline", "/pricing", "/explore"]);
-
-// Protected routes redirect to /signin if:
-// - Not authenticated AND no active trial
-```
-
-- `TrialProvider` manages trial state (stored in localStorage).
-- `TrialGuard` wraps the app — blocks content if trial expired.
-- `TrialBanner` shows expiry warning.
+All routes are browsable without authentication. Certain features are locked/blurred
+for unauthenticated users; sign-in is only required for write actions (e.g. syncing
+watchlist/portfolio, posting discussions).
 
 ### 2. Feature-Level Locking
 
@@ -64,5 +57,5 @@ Two distinct server-side auth mechanisms coexist in this codebase: Bearer-token 
 
 ## Future Considerations
 
-- Subscription-based feature gating (pricing page exists but not fully active).
+- Subscription-based feature gating (not implemented; `/pricing` was removed).
 - Rate limiting for API routes (not implemented).

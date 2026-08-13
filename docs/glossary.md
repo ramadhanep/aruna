@@ -24,4 +24,3 @@
 | **Vanta.js** | JavaScript library for animated 3D website backgrounds (used on old landing page, since removed — see commit "add landing image and enhance landing page with Vanta.js background" for history). |
 | **Butter-Smooth** | A code comment pattern emphasizing smooth scrolling performance (`src/components/mobile-bottom-nav.jsx:71`, re: passive scroll listener for iOS). |
 | **shadcn/ui** | Collection of re-usable React components built with Radix UI and Tailwind CSS. Components are copied into the project, not installed as a package. |
-| **Trial Guard** | A `TrialGuard` wrapper component that blocks content access when the user's trial has expired. |

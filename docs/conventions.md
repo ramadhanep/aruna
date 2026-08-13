@@ -71,7 +71,6 @@ Exceptions (no XOR encoding):
 | `aruna_watchlist` | Local watchlist (guest mode) |
 | `aruna-portfolio` | Local portfolio (guest mode) |
 | `aruna_header_symbol_history` | Recent symbol search history |
-| `aruna-trial-state` | Trial `{ startedAt, expiresAt }` state (60-minute guest trial) |
 | `aruna_appearance_mode` | Appearance mode (pro/lite) |
 | `aruna_install_prompt_shown` | PWA install dialog dismissed |
 | `aruna_last_election_symbol` | Last chart symbol |

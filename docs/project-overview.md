@@ -38,7 +38,6 @@ Indonesian retail stock traders and investors tracking IDX (Indonesia Stock Exch
 | Community chat | Production |
 | PWA support | Production |
 | Landing page | Production |
-| Pricing & trial gating | In development |
 | Mobile app (Flutter) | Discontinued / archive |
 
 ## Business Goals
@@ -46,4 +45,4 @@ Indonesian retail stock traders and investors tracking IDX (Indonesia Stock Exch
 - Provide retail investors with institutional-grade analysis tools.
 - Aggregate scattered market data (Yahoo, Stockbit, Ajaib, Bibit) into one interface.
 - Build community around Indonesian stock analysis.
-- Monetize via subscription (pricing page exists, not fully active).
+- Open access (no trial/pricing gate; monetization not implemented — `/pricing` was removed).

@@ -16,7 +16,6 @@ import { getDefaultWatchlist, readStoredWatchlist, writeStoredWatchlist } from "
 import { TrendingMarquee } from "@/components/trending-marquee";
 import { formatTickerDisplay } from "@/lib/utils";
 import { MOTION, DURATION_CLASS } from "@/lib/motion";
-import { useTrial } from "@/components/trial-provider";
 import { SectionHeader } from "@/components/section-header";
 
 function areWatchlistsEqual(a = [], b = []) {
@@ -73,9 +72,8 @@ export default function HomePage() {
     watchlistLoaded,
     syncWatchlist,
   } = useAuth();
-  const { initialized, isTrialActive } = useTrial();
   const isAuthenticated = Boolean(user);
-  const canUseProtectedActions = isAuthenticated || (initialized && isTrialActive());
+  const canUseProtectedActions = isAuthenticated;
 
   const redirectToSignIn = useCallback(() => {
     const currentPath =

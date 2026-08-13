@@ -39,8 +39,6 @@
 │   │   │   └── page.jsx
 │   │   ├── account/                 # OAuth callback redirect stub
 │   │   │   └── page.jsx
-│   │   ├── pricing/                 # Subscription/pricing page
-│   │   │   └── page.jsx
 │   │   ├── offline/                 # PWA offline fallback
 │   │   │   └── page.jsx
 │   │   └── api/                     # API Route Handlers
@@ -100,9 +98,6 @@
 │   │   ├── add-asset-modal.jsx      # Add asset to portfolio
 │   │   ├── theme-provider.jsx       # next-themes wrapper
 │   │   ├── appearance-mode-provider.jsx  # Visual mode (pro/lite)
-│   │   ├── trial-provider.jsx       # Trial gating state
-│   │   ├── trial-banner.jsx         # Trial expiry banner
-│   │   ├── trial-guard.jsx          # Trial access guard wrapper
 │   │   ├── pwa-register.jsx         # Service worker registration
 │   │   ├── pwa-install-dialog.jsx   # PWA install prompt
 │   │   ├── aruna-watermark.jsx      # SVG watermark overlay

@@ -269,13 +269,6 @@ export default function DiscussionPage() {
   const [messagesLoading, setMessagesLoading] = useState(true);
   const messagesEndRef = useRef(null);
 
-  // Allow anonymous trial visitors to view the discussion experience.
-  useEffect(() => {
-    if (!authLoading && !user) {
-      return;
-    }
-  }, [user, authLoading]);
-
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
@@ -315,7 +308,7 @@ export default function DiscussionPage() {
     };
   }, [user, scrollToBottom]);
 
-  // Show loading while checking auth, but keep the discussion experience available for trial users.
+  // Show loading while checking auth.
   if (authLoading) {
     return (
       <div

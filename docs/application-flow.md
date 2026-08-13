@@ -7,11 +7,9 @@
 3. Provider hierarchy initializes:
    - `ThemeProvider` (next-themes) — reads `aruna-theme` from localStorage, applies dark/light class.
    - `AuthProvider` — checks existing Supabase session in `aruna_auth` localStorage key, subscribes to `onAuthStateChange`.
-   - `TrialProvider` — checks trial expiry from localStorage.
    - `AppearanceModeProvider` — checks `aruna-appearance-mode`.
    - `PWARegister` — registers service worker if not already.
    - `PWAInstallDialog` — shows install prompt if criteria met.
-   - `TrialGuard` — blocks content if trial expired.
    - `AppLayoutClient` — renders navigation chrome and content.
 
 4. Root page (`src/app/page.jsx`) redirects to `/explore`.
@@ -55,7 +53,7 @@ Browser ──fetchEncodedJson()──► decodeApiResponse() ──► data
 
 ### Guest User
 1. Visits `/explore` — sees market overview, trending stocks, screener results.
-2. `/watchlist` — default watchlist (12 popular symbols).
+2. `/watchlist` — default watchlist (12 popular symbols). Editing requires sign-in.
 3. `/chart` — can view seasonal charts and fundamentals.
 4. `/portfolio-tracker` — local-only, stored in localStorage.
 5. Money flow, momentum, MSCI — limited preview (5 items max, then lock UI).
@@ -69,13 +67,12 @@ Same as guest, plus:
 - Can post in `/discussion`.
 - Can delete account via `account-sidebar.jsx`.
 
-### First-Time Visitor (no trial)
-1. Navigates to protected route.
-2. `AppLayoutClient` checks: no user, no trial.
-3. Redirects to `/signin?redirect=<original-path>`.
-4. Signs in with Google OAuth.
-5. Callback lands on `/account?redirect=<original-path>`.
-6. `account/page.jsx` redirects to original path (or `/portfolio-tracker`).
+### First-Time Visitor
+1. All routes are browsable without authentication — no trial or pricing gate.
+2. Sign-in is required for write actions (watchlist/portfolio sync, discussions).
+3. Signs in with Google OAuth.
+4. Callback lands on `/account?redirect=<original-path>`.
+5. `account/page.jsx` redirects to original path (or `/portfolio-tracker`).
 
 ## Data Flow
 
@@ -114,7 +111,6 @@ Vercel Cron ──GET /api/cron/idx──► Route Handler
 - **API errors**: Returned as `{ payload: encodePayload({ error: "message" }) }` with appropriate HTTP status.
 - **Network failures**: Client-side components show loading states, then inline error messages.
 - **Authentication failures**: Redirect to `/signin`.
-- **Trial expired**: Redirect to `/pricing`.
 - **404 page**: Custom `not-found.jsx` with navigation options.
 
 ## Loading Flow

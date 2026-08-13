@@ -98,7 +98,7 @@ import { cn } from '../../lib/utils';
 
 ## Code Style Rules
 
-- Semicolons are used throughout — not omitted (verified: `trial-provider.jsx`, `utils.js`, `discussions/route.js` all use them consistently).
+- Semicolons are used throughout — not omitted (verified: `auth-provider.jsx`, `utils.js`, `discussions/route.js` all use them consistently).
 - Quote style is mixed, not a strict single-quote convention — both `'...'` and `"..."` appear across files (and within the same file, e.g. `utils.js`). No enforced rule; match the surrounding file when editing.
 - Trailing commas in multiline objects/arrays.
 - 2-space indentation.

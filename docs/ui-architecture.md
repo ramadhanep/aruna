@@ -6,17 +6,14 @@
 RootLayout (src/app/layout.jsx)
 ├── ThemeProvider (next-themes)
 ├── AuthProvider (auth context)
-├── TrialProvider (trial gating)
 ├── AppearanceModeProvider (pro/lite mode)
 ├── PWARegister + PWAInstallDialog
-├── TrialGuard
 └── AppLayoutClient
-    ├── TrialBanner
     ├── AccountSidebar (slide-out)
     ├── DesktopNavbar (hidden on mobile/tablet)
     ├── Mobile Header (hidden on lg+)
     ├── Page Content
-    ├── MobileBottomNav (hidden on lg+)
+    └── MobileBottomNav (hidden on lg+)
 ```
 
 ## Responsive Breakpoints

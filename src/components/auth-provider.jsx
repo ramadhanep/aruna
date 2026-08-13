@@ -54,7 +54,7 @@ export function AuthProvider({ children }) {
 
     // OAuth callback pages carry `?code=` (or an `error=`) before the session
     // exchange completes. Keep `loading` true until the session event arrives so
-    // guards don't treat a logged-in user as a guest and redirect to /pricing.
+    // guards don't redirect before the session is available.
     const params = typeof window !== "undefined" ? window.location.search : "";
     const isOAuthCallback = /[?&](code|access_token)=/.test(params);
     const hasOAuthError = /[?&]error=/.test(params);

@@ -6,8 +6,6 @@ import { PWARegister } from "@/components/pwa-register";
 import { PWAInstallDialog } from "@/components/pwa-install-dialog";
 import { Toaster } from "@/components/ui/sonner";
 import { AppLayoutClient } from "@/components/app-layout-client";
-import { TrialProvider } from "@/components/trial-provider";
-import { TrialGuard } from "@/components/trial-guard";
 
 export const viewport = {
   width: 'device-width',
@@ -56,18 +54,14 @@ export default function RootLayout({ children }) {
           storageKey="aruna-theme"
         >
           <AuthProvider>
-            <TrialProvider>
-              <AppearanceModeProvider>
-                <PWARegister />
-                <PWAInstallDialog />
-                <Toaster position="top-center" />
-                <TrialGuard>
-                  <AppLayoutClient>
-                    {children}
-                  </AppLayoutClient>
-                </TrialGuard>
-              </AppearanceModeProvider>
-            </TrialProvider>
+            <AppearanceModeProvider>
+              <PWARegister />
+              <PWAInstallDialog />
+              <Toaster position="top-center" />
+              <AppLayoutClient>
+                {children}
+              </AppLayoutClient>
+            </AppearanceModeProvider>
           </AuthProvider>
         </ThemeProvider>
       </body>

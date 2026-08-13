@@ -1304,7 +1304,7 @@ function ElectionCyclePageContent() {
                   })}
                 {governance.governanceEpochDate && (
                   <p className="text-2xs text-muted-foreground pt-1">
-                    As of {formatTimestamp(governance.governanceEpochDate, { dateOnly: true }) ?? '—'}
+                    As of {formatTimestamp(Number(governance.governanceEpochDate) * 1000, { dateOnly: true }) ?? '—'}
                   </p>
                 )}
               </div>

@@ -1,6 +1,6 @@
 # AI Session Handoff
 
-**Last Updated**: 2026-08-12
+**Last Updated**: 2026-08-14
 
 **Summary**: Executed all 7 phases of `docs/MAINTENANCE_PLAN.md` (synthesized
 from `TECH_DEBT.md`, `UI_AUDIT.md`, `DOCS_DRIFT_REPORT.md`) in one session:
@@ -13,6 +13,11 @@ Subsequent phases: **Phase 8** (feature stabilization & UX) and **Phase 9**
 (shadcn-first UI migration per `docs/SHADCN_MIGRATION.md` — sonner, Sheet,
 Tooltip, SegmentedControl, cmdk Command, Tabs, Progress, Accordion, Badge,
 DropdownMenuCheckboxItem). Both lint+build clean.
+
+**Phase 10**: Removed the trial/pricing system — deleted `TrialProvider`,
+`TrialGuard`, `TrialBanner`, and `src/app/pricing`; all routes now browsable
+without auth (sign-in only gates write actions); fixed ESG `governanceEpochDate`
+epoch-seconds bug in `chart/page.jsx` (now `* 1000`). Lint clean.
 
 ## Maintenance Plan — Files Modified
 
