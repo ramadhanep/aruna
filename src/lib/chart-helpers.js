@@ -57,14 +57,17 @@ export function formatTimestamp(v, { dateOnly = false } = {}) {
   try {
     const d = new Date(v);
     if (Number.isNaN(d.getTime())) return null;
-    const pad = (n) => String(n).padStart(2, '0');
-    const year = d.getFullYear();
-    const month = pad(d.getMonth() + 1);
-    const day = pad(d.getDate());
-    if (dateOnly) return `${year}-${month}-${day}`;
-    const hours = pad(d.getHours());
-    const minutes = pad(d.getMinutes());
-    return `${year}-${month}-${day} ${hours}:${minutes}`;
+    const datePart = d.toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+    if (dateOnly) return datePart;
+    const timePart = d.toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+    return `${datePart}, ${timePart}`;
   } catch {
     return null;
   }

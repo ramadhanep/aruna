@@ -94,7 +94,7 @@ export function MobileBottomNav() {
               href={item.url}
               aria-current={isActive ? "page" : undefined}
               className={cn(
-                "relative flex flex-col items-center justify-center gap-0.5 rounded-full min-w-16 px-3 py-1.5 select-none transition-colors",
+                "relative flex flex-col items-center justify-center gap-0.5 rounded-full w-20 px-2 py-1.5 select-none transition-colors",
                 DURATION_CLASS.fast,
                 isActive
                   ? "bg-accent text-foreground"

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Download } from "lucide-react";
 import { ArunaWatermark } from "./aruna-watermark";
 import { fetchEncodedJson } from "@/lib/api-client";
@@ -10,6 +11,7 @@ import { ScatterSkeleton } from "./scatter-skeleton";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 
 export function MarketBubbles({ fullScreen = false }) {
+  const router = useRouter();
   const [stocks, setStocks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState("weekly");
@@ -18,6 +20,7 @@ export function MarketBubbles({ fullScreen = false }) {
   const [isDragging, setIsDragging] = useState(false);
   const [draggedCode, setDraggedCode] = useState(null);
   const dragInfoRef = useRef(null);
+  const hasMovedRef = useRef(false);
   const svgRef = useRef(null);
   const containerRef = useRef(null);
 
@@ -207,6 +210,7 @@ export function MarketBubbles({ fullScreen = false }) {
     e.stopPropagation();
     setIsDragging(true);
     setDraggedCode(bubble.code);
+    hasMovedRef.current = false;
 
     const svg = svgRef.current;
     if (!svg) return;
@@ -244,6 +248,10 @@ export function MarketBubbles({ fullScreen = false }) {
 
     const deltaX = svgP.x - dragInfoRef.current.startX;
     const deltaY = svgP.y - dragInfoRef.current.startY;
+
+    if (Math.abs(deltaX) > 3 || Math.abs(deltaY) > 3) {
+      hasMovedRef.current = true;
+    }
 
     const newX = dragInfoRef.current.bubbleStartX + deltaX;
     const newY = dragInfoRef.current.bubbleStartY + deltaY;
@@ -292,10 +300,13 @@ export function MarketBubbles({ fullScreen = false }) {
   }, [isDragging, packedBubbles, dimensions]);
 
   const handlePointerUp = useCallback(() => {
+    if (!hasMovedRef.current && dragInfoRef.current) {
+      router.push(`/chart?symbol=${encodeURIComponent(dragInfoRef.current.code)}.JK&cycle=normal`);
+    }
     setIsDragging(false);
     setDraggedCode(null);
     dragInfoRef.current = null;
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (isDragging) {

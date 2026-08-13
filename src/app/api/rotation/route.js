@@ -10,7 +10,7 @@ export const revalidate = 0;
 
 /**
  * GET /api/rotation
- * Fetches top 50 IDX stocks by market cap for rotation analysis
+ * Fetches top 200 IDX stocks by market cap for rotation analysis
  * Returns price change data for weekly and monthly timeframes
  */
 export async function GET() {
@@ -24,13 +24,13 @@ export async function GET() {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch top 50 stocks by market cap
+    // Fetch top 200 stocks by market cap
     const { data: stocks, error } = await supabase
       .from('ajaib_stocks')
       .select('code, name, price, market_cap, volume, price_1_week_pct_change, price_1_month_pct_change')
       .not('market_cap', 'is', null)
       .order('market_cap', { ascending: false })
-      .limit(50);
+      .limit(200);
 
     if (error) {
       console.error('Database error:', error);

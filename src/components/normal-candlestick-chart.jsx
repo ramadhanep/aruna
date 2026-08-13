@@ -178,7 +178,6 @@ export function NormalCandlestickChart({
           borderColor: isDark ? "rgba(148, 163, 184, 0.2)" : "rgba(15, 23, 42, 0.12)",
           scaleMargins: { top: 0.1, bottom: 0.15 },
           mode: initialScaleMode,
-          minimumWidth: 80,
         },
         timeScale: {
           borderColor: isDark ? "rgba(148, 163, 184, 0.25)" : "rgba(15, 23, 42, 0.1)",

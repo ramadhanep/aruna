@@ -1144,7 +1144,7 @@ export default function ExplorePage() {
               onValueChange={setActiveMarketTab}
               variant="ghost"
               className="rounded-full text-xs font-semibold px-4 py-2 h-auto"
-              activeClassName="bg-primary text-primary-foreground hover:bg-primary dark:hover:bg-primary"
+              activeClassName="bg-primary text-primary-foreground dark:hover:text-black hover:bg-primary dark:hover:bg-primary"
               inactiveClassName="bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
               options={MARKET_CATEGORIES.map((cat) => {
                 const CatIcon = cat.icon;

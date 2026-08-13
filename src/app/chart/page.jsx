@@ -1088,6 +1088,35 @@ function ElectionCyclePageContent() {
     return { label: 'Market Closed', tone: 'text-muted-foreground', Icon: MoonStar };
   }, [fundamentals?.profile?.marketState, symbolInfo?.isMarketOpen]);
 
+  const formatMarketState = useCallback((stateRaw) => {
+    if (!stateRaw) return null;
+    const state = String(stateRaw).toUpperCase();
+    if (state.includes('REGULAR') || state === 'OPEN') return 'Market Open';
+    if (state.includes('PRE')) return 'Pre-Market';
+    if (state.includes('POST')) return 'Post-Market';
+    if (state.includes('CLOSED')) return 'Market Closed';
+    return stateRaw;
+  }, []);
+
+  const formatRecommendationPeriod = useCallback((periodRaw) => {
+    if (!periodRaw) return null;
+    const match = String(periodRaw).match(/^(-?\d+)m$/);
+    if (!match) return periodRaw;
+    const months = Number(match[1]);
+    if (months === 0) return 'Current Month';
+    const abs = Math.abs(months);
+    return `${abs} Month${abs > 1 ? 's' : ''} Ago`;
+  }, []);
+
+  const formatQuoteType = useCallback((typeRaw) => {
+    if (!typeRaw) return null;
+    return String(typeRaw)
+      .toLowerCase()
+      .split('_')
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  }, []);
+
   const MarketStateIcon = marketStateInfo?.Icon;
   const isFavorite = useMemo(
     () => watchlist.some((item) => item.symbol === symbol),
@@ -1168,8 +1197,8 @@ function ElectionCyclePageContent() {
 
     const keyFacts = [
       { label: 'Exchange', value: profileInfo?.exchange },
-      { label: 'Quote Type', value: profileInfo?.quoteType },
-      { label: 'Market State', value: profileInfo?.marketState },
+      { label: 'Quote Type', value: formatQuoteType(profileInfo?.quoteType) },
+      { label: 'Market State', value: formatMarketState(profileInfo?.marketState) },
       { label: 'Sector', value: extendedProfile?.sector || profileInfo?.sector },
       { label: 'Industry', value: extendedProfile?.industry || profileInfo?.industry },
       { label: 'Country', value: extendedProfile?.country || null },
@@ -1346,7 +1375,7 @@ function ElectionCyclePageContent() {
         : null;
     const snapshotRows = marketData
       ? [
-        { label: 'Market State', value: marketData.marketState || null },
+        { label: 'Market State', value: formatMarketState(marketData.marketState) },
         { label: 'Quote Source', value: marketData.quoteSourceName || null },
         { label: 'Bid', value: formatPlainNumber(marketData.bid) },
         { label: 'Ask', value: formatPlainNumber(marketData.ask) },
@@ -1359,7 +1388,7 @@ function ElectionCyclePageContent() {
               ? `${formatPlainNumber(spread)}${spreadPct != null ? ` (${spreadPct.toFixed(3)}%)` : ''}`
               : null,
         },
-        { label: 'Timezone', value: marketData.exchangeTimezoneName || null },
+        { label: 'Timezone', value: marketData.exchangeTimezoneName?.replace(/_/g, ' ') || null },
         { label: 'Regular Session', value: formatTimestamp(marketData.regularMarketTime) || null },
         { label: 'Pre-Market', value: formatTimestamp(marketData.preMarketTime) || null },
         { label: 'Post-Market', value: formatTimestamp(marketData.postMarketTime) || null },
@@ -1869,7 +1898,9 @@ function ElectionCyclePageContent() {
                 return (
                   <div key={`rec-trend-${idx}`} className="space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="font-semibold text-foreground">{entry.period || `-${idx}m`}</span>
+                      <span className="font-semibold text-foreground">
+                        {formatRecommendationPeriod(entry.period) || formatRecommendationPeriod(`-${idx}m`)}
+                      </span>
                       <span className="text-muted-foreground tabular-nums">{totals} analysts</span>
                     </div>
                     {/* Stacked horizontal bar */}
@@ -2415,7 +2446,7 @@ function ElectionCyclePageContent() {
                               src="/anteck.gif"
                               alt="IDX"
                               className="absolute w-16 h-16 lg:w-24 lg:h-24 object-contain opacity-50 rounded-md"
-                              style={{ bottom: '3rem', right: '5rem' }}
+                              style={{ bottom: '3.5rem', right: '5.5rem' }}
                             />
                           </div>
                         )}

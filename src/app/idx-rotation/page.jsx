@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ArrowLeft, Download } from "lucide-react";
 import { ArunaWatermark } from "@/components/aruna-watermark";
 import { fetchEncodedJson } from "@/lib/api-client";
@@ -15,6 +16,7 @@ const QUADRANT_COLORS = {
 };
 
 export default function IdxRotationPage() {
+  const router = useRouter();
   const [stocks, setStocks] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -162,7 +164,7 @@ export default function IdxRotationPage() {
 
         <div className="flex-1 text-center">
           <h1 className="text-sm font-semibold text-foreground/80">Market Rotation</h1>
-          <p className="text-2xs text-muted-foreground">Top 50 by Market Cap</p>
+          <p className="text-2xs text-muted-foreground">Top 200 by Market Cap</p>
         </div>
 
         <button
@@ -353,6 +355,7 @@ export default function IdxRotationPage() {
                 onMouseEnter={() => setHoveredStock(stock.code)}
                 onMouseLeave={() => setHoveredStock(null)}
                 onTouchStart={() => setHoveredStock(stock.code)}
+                onClick={() => router.push(`/chart?symbol=${encodeURIComponent(stock.code)}.JK&cycle=normal`)}
               >
                 <title>{`${stock.code}\n${stock.name}\nWeekly: ${stock.weeklyChange > 0 ? '+' : ''}${stock.weeklyChange.toFixed(2)}%\nMonthly: ${stock.monthlyChange > 0 ? '+' : ''}${stock.monthlyChange.toFixed(2)}%`}</title>
               </circle>
