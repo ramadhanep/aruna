@@ -559,7 +559,7 @@ export default function PortfolioTrackerPage() {
 
   if (initialLoading) {
     return (
-      <div className={`flex flex-col gap-4 ${isMobile ? 'pb-28' : ''}`}>
+      <div className={`skeleton-stagger flex flex-col gap-4 ${isMobile ? 'pb-28' : ''}`}>
         <Card className={isMobile ? 'rounded-3xl' : ''}>
           <CardHeader className="flex flex-row items-center justify-between pb-2 gap-2">
             <Skeleton className="h-4 w-20 rounded-md" />

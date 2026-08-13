@@ -210,7 +210,7 @@ function StockCard({ stock, isLocked = false }) {
 
 function LoadingSkeleton() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+    <div className="skeleton-stagger grid grid-cols-1 lg:grid-cols-2 gap-3">
       {[1, 2, 3, 4].map((i) => (
         <Card key={i}>
           <CardContent className="p-4 space-y-3">

@@ -254,6 +254,27 @@
     animation: skeleton-breathe 2.2s ease-in-out infinite;
   }
 
+  /* Staggered entrance for skeleton blocks so loading feels alive instead of
+     a static sheet. Children rise in with a slight delay. */
+  .skeleton-stagger > * {
+    opacity: 0;
+    animation: skeleton-rise 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .skeleton-stagger > *:nth-child(1) { animation-delay: 40ms; }
+  .skeleton-stagger > *:nth-child(2) { animation-delay: 95ms; }
+  .skeleton-stagger > *:nth-child(3) { animation-delay: 150ms; }
+  .skeleton-stagger > *:nth-child(4) { animation-delay: 205ms; }
+  .skeleton-stagger > *:nth-child(5) { animation-delay: 260ms; }
+  .skeleton-stagger > *:nth-child(6) { animation-delay: 315ms; }
+  .skeleton-stagger > *:nth-child(7) { animation-delay: 370ms; }
+  .skeleton-stagger > *:nth-child(8) { animation-delay: 425ms; }
+  .skeleton-stagger > *:nth-child(9) { animation-delay: 480ms; }
+  .skeleton-stagger > *:nth-child(10) { animation-delay: 535ms; }
+  .skeleton-stagger > *:nth-child(11) { animation-delay: 590ms; }
+  .skeleton-stagger > *:nth-child(12) { animation-delay: 645ms; }
+  .skeleton-stagger > *:nth-child(n + 13) { animation-delay: 700ms; }
+
   .btn-glow:hover {
     box-shadow: none;
   }
@@ -289,6 +310,18 @@
 
   50% {
     opacity: 1;
+  }
+}
+
+@keyframes skeleton-rise {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -363,6 +396,7 @@ button[data-slot="dialog-close"].ring-offset-background {
   ::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }

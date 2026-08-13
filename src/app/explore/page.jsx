@@ -1000,7 +1000,7 @@ export default function ExplorePage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col gap-6">
+      <div className="skeleton-stagger flex flex-col gap-6">
         <section className="w-full overflow-x-auto scrollbar-hide -mx-1 px-1">
           <div className="flex items-center gap-3 min-w-max">
             {MARKET_PULSE_SYMBOLS.map((item) => (

@@ -61,20 +61,20 @@ const SECONDARY_CHART_HEIGHT_CLASS = "h-[260px]";
 
 function ChartMainSkeleton() {
   return (
-    <>
+    <div className="skeleton-stagger flex flex-col gap-2">
       <Card className="bg-transparent border-none rounded-none">
         <CardHeader>
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 space-y-2">
               <Skeleton className="h-3 w-28 rounded-full" />
-              <Skeleton className="h-8 w-32 rounded-xl" />
+              <div className="flex items-baseline gap-2">
+                <Skeleton className="h-7 w-36 rounded-lg" />
+                <Skeleton className="h-3 w-10 rounded-full" />
+              </div>
               <Skeleton className="h-4 w-24 rounded-full" />
-              <Skeleton className="h-4 w-20 rounded-full" />
+              <Skeleton className="h-3 w-20 rounded-full" />
             </div>
-            <div className="flex flex-col gap-2">
-              <Skeleton className="h-6 w-40 rounded-full" />
-              <Skeleton className="h-6 w-32 rounded-full" />
-            </div>
+            <Skeleton className="h-12 w-12 rounded-xl shrink-0" />
           </div>
         </CardHeader>
         <CardContent className="px-0 pb-0">
@@ -87,28 +87,30 @@ function ChartMainSkeleton() {
           <Skeleton key={i} className="flex-1 h-7 rounded-full" />
         ))}
       </div>
-    </>
+    </div>
   );
 }
 
-function ChartSidebarSkeleton() {
+function ChartSidebarSkeleton({ hasPortfolioPosition }) {
   return (
-    <div className="mt-4 flex flex-col gap-4 lg:mt-0">
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between gap-3">
-            <div className="space-y-2">
-              <Skeleton className="h-3 w-32 rounded-full" />
-              <Skeleton className="h-6 w-36 rounded-full" />
+    <div className="skeleton-stagger space-y-4 mt-6 lg:mt-0">
+      {hasPortfolioPosition && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="space-y-2">
+                <Skeleton className="h-3 w-32 rounded-full" />
+                <Skeleton className="h-6 w-36 rounded-full" />
+              </div>
+              <Skeleton className="h-6 w-14 rounded-full" />
             </div>
-            <Skeleton className="h-6 w-14 rounded-full" />
-          </div>
-        </CardContent>
-      </Card>
-      <Skeleton className="h-9 w-full rounded-xl" />
-      <div className="flex gap-2 border-b border-border/20 pb-2">
-        {[...Array(5)].map((_, idx) => (
-          <Skeleton key={`tab-${idx}`} className="h-6 w-14 rounded-full" />
+          </CardContent>
+        </Card>
+      )}
+      <Skeleton className="h-10 w-full rounded-xl" />
+      <div className="flex gap-2 overflow-x-auto hide-scrollbar border-b border-border/30 pb-1">
+        {["w-24", "w-12", "w-16", "w-14", "w-16", "w-16"].map((width, idx) => (
+          <Skeleton key={`tab-${idx}`} className={`h-7 ${width} rounded-full shrink-0`} />
         ))}
       </div>
       <Card>
@@ -2620,7 +2622,7 @@ function ElectionCyclePageContent() {
       </div>
 
       <div className="lg:col-span-4 flex flex-col gap-4">
-        {loading && <ChartSidebarSkeleton />}
+        {loading && <ChartSidebarSkeleton hasPortfolioPosition={hasPortfolioPosition} />}
 
         {showChartSection && (
           <div className={`space-y-4 mt-6 lg:mt-0 ${MOTION.fadeIn}`}>

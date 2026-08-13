@@ -19,6 +19,17 @@ DropdownMenuCheckboxItem). Both lint+build clean.
 without auth (sign-in only gates write actions); fixed ESG `governanceEpochDate`
 epoch-seconds bug in `chart/page.jsx` (now `* 1000`). Lint clean.
 
+**Phase 10 Addendum**: Skeleton polish pass — added a `skeleton-stagger`
+utility (CSS-only, `@layer utilities`) that rises blocks in with a 55 ms
+staircase delay, applied across chart, explore, portfolio-tracker, msci,
+money-flow, discussion, watchlist, and signin. `/chart` skeletons rebuilt to
+mirror the loaded layout: header right side is now a single 48px avatar block
+(matches `TickerAvatar`), left column mirrors price/change/market-state rows,
+sidebar tabs now match the real 6-tab row (heights/widths, `hide-scrollbar`),
+and the sidebar portfolio card is only shown while loading if
+`hasPortfolioPosition`. Reduced-motion now also zeroes `animation-delay`.
+Lint + build clean; server restarted on :3000.
+
 ## Maintenance Plan — Files Modified
 
 | Phase | File(s) | Change |

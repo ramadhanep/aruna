@@ -249,7 +249,7 @@ function EmptyState() {
 
 function MessageListSkeleton() {
   return (
-    <div className="space-y-2.5">
+    <div className="skeleton-stagger space-y-2.5">
       {Array.from({ length: 4 }).map((_, i) => (
         <div key={i} className={`flex ${i % 2 ? 'justify-end' : 'justify-start'}`}>
           <Skeleton
@@ -312,7 +312,7 @@ export default function DiscussionPage() {
   if (authLoading) {
     return (
       <div
-        className="fixed inset-0 w-screen flex justify-center bg-background"
+        className="skeleton-stagger fixed inset-0 w-screen flex justify-center bg-background"
         style={{ height: '100dvh' }}
       >
         <div className="w-full max-w-3xl flex flex-col h-full lg:border-x border-border/30 bg-background">

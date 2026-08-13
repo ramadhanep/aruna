@@ -260,7 +260,7 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col lg:grid lg:grid-cols-12 lg:content-start gap-4 pb-12">
+      <div className="skeleton-stagger flex flex-col lg:grid lg:grid-cols-12 lg:content-start gap-4 pb-12">
         <div className="lg:col-span-12">
           <Skeleton className="h-10 w-full rounded-xl" />
         </div>
@@ -275,7 +275,7 @@ export default function HomePage() {
 
             <div className="overflow-hidden">
               <SectionHeader title="Watchlist" />
-              <div className="lg:grid lg:grid-cols-2 lg:gap-x-8 lg:gap-y-1">
+              <div className="skeleton-stagger lg:grid lg:grid-cols-2 lg:gap-x-8 lg:gap-y-1">
                 {[...Array(8)].map((_, i) => <TickerRowSkeleton key={i} />)}
               </div>
               <div className="border-t border-border/20 py-2.5 mt-2 flex justify-center">

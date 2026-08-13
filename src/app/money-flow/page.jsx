@@ -19,7 +19,7 @@ const MONEY_FLOW_ENABLED = process.env.NEXT_PUBLIC_MONEY_FLOW_ENABLED !== "false
 
 function LoadingState() {
   return (
-    <div className="space-y-3">
+    <div className="skeleton-stagger space-y-3">
       {[1, 2, 3, 4].map((key) => (
         <Card key={key}>
           <CardContent className="p-4 space-y-3">
