@@ -1,31 +1,18 @@
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { fetchEncodedJson } from '@/lib/api-client';
 
 export function useChartNews(symbol, infoTab) {
   const [news, setNews] = useState(null);
   const [newsLoading, setNewsLoading] = useState(false);
-  const newsCacheRef = useRef({});
 
   useEffect(() => {
-    if (!symbol) {
-      return;
-    }
-
-    const needsNews = infoTab === 'news';
-    if (!needsNews) {
-      return;
-    }
-
-    if (newsCacheRef.current[symbol]) {
-      setNews(newsCacheRef.current[symbol]);
-      setNewsLoading(false);
+    if (infoTab !== 'news' || !symbol) {
       return;
     }
 
     let cancelled = false;
-    setNews(null);
     setNewsLoading(true);
 
     (async () => {
@@ -38,7 +25,6 @@ export function useChartNews(symbol, infoTab) {
         }
         if (!cancelled) {
           setNews(data.news);
-          newsCacheRef.current[symbol] = data.news;
         }
       } catch (error) {
         console.warn('Failed to fetch news', error);
@@ -56,11 +42,6 @@ export function useChartNews(symbol, infoTab) {
       cancelled = true;
     };
   }, [symbol, infoTab]);
-
-  useEffect(() => {
-    if (!news) return;
-    // Optional: could auto-switch to quarterly if needed
-  }, [news]);
 
   return { news, newsLoading };
 }

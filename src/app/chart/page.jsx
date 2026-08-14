@@ -1375,40 +1375,17 @@ function ElectionCyclePageContent() {
           const title = item.title || '—';
           const publisher = item.publisher || '—';
           const time = item.providerPublishTime ? new Date(item.providerPublishTime).toLocaleDateString('en-US') : '—';
-          const link = item.link || '#';
-          const thumbnail = item.thumbnail?.resolutions?.[0]?.url || null;
-          const summary = item.description || '';
 
           return (
-            <Card key={idx} className="hover:shadow-sm transition-shadow">
-              <CardHeader className="flex flex-col">
+            <Card key={idx} className="hover:cursor-pointer hover:shadow-sm transition-shadow">
+              <CardHeader className="flex flex-col gap-1">
                 <CardTitle className="text-sm">{title}</CardTitle>
                 <CardDescription className="text-xs text-muted-foreground">
                   {publisher} • {time}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-3">
-                <a
-                  href={link}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-emerald-600 hover:underline text-sm"
-                >
-                  Read full article
-                </a>
-                {thumbnail && (
-                  <img
-                    src={thumbnail}
-                    alt={title}
-                    className="mt-2 w-full h-32 object-cover rounded-md"
-                    loading="lazy"
-                  />
-                )}
-                {summary && (
-                  <p className="mt-2 text-xs text-muted-foreground line-clamp-2">
-                    {summary}
-                  </p>
-                )}
+              <CardContent className="pt-2">
+                <p className="text-xs text-foreground">{item.description || ''}</p>
               </CardContent>
             </Card>
           );
