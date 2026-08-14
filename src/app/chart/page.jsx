@@ -1338,7 +1338,7 @@ function ElectionCyclePageContent() {
     );
   };
 
-  const renderNewsTab = () => {
+const renderNewsTab = () => {
     if (newsLoading) {
       return (
         <div className="space-y-4">
@@ -1376,6 +1376,7 @@ function ElectionCyclePageContent() {
           const publisher = item.publisher || '—';
           const time = item.providerPublishTime ? new Date(item.providerPublishTime).toLocaleDateString('en-US') : '—';
           const link = item.link || '#';
+          const thumbnail = item.thumbnail?.resolutions?.[0]?.url || null;
 
           return (
             <Card
@@ -1384,11 +1385,20 @@ function ElectionCyclePageContent() {
               onClick={() => window.open(link, '_blank')}
               style={{ cursor: 'pointer' }}
             >
-              <CardHeader className="flex flex-col gap-1 px-1">
-                <CardTitle className="text-xs font-medium text-foreground truncate">{title}</CardTitle>
-                <CardDescription className="text-[0.85rem] text-muted-foreground truncate">
-                  {publisher} • {time}
-                </CardDescription>
+              <CardHeader className="flex items-start gap-3 px-1 pb-1">
+                {thumbnail ? (
+                  <img
+                    src={thumbnail}
+                    alt={title}
+                    className="rounded-lg w-14 h-14 object-cover flex-shrink-0"
+                  />
+                ) : null}
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-xs font-medium text-foreground truncate">{title}</CardTitle>
+                  <CardDescription className="text-[0.85rem] text-muted-foreground text-truncate">
+                    {publisher} • {time}
+                  </CardDescription>
+                </div>
               </CardHeader>
               <CardContent className="pt-1">
                 <p className="text-[0.75rem] text-muted-foreground line-clamp-2">
