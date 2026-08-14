@@ -4,6 +4,16 @@ const SECURE_PAYLOAD_KEY = process.env.SECURE_PAYLOAD_KEY;
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   /* config options here */
+  // Next 16 blocks dev-resource requests (/_next/static/chunks, etc.) from any
+  // host not in this list with a 403, as DNS-rebinding protection. Localhost and
+  // 127.0.0.1 are always allowed; add other dev origins used to reach the server
+  // (e.g. a .local mDNS hostname or LAN IP) so chunks load in the browser.
+  allowedDevOrigins: [
+    'thursday.local',
+    'localhost',
+    '127.0.0.1',
+    '192.168.1.10',
+  ],
   env: {
     NEXT_PUBLIC_APP_NAME: 'Aruna',
     NEXT_PUBLIC_APP_VERSION: '1.7.56',

@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ManageWatchlistDialog } from "@/components/manage-watchlist-dialog";
 import { useAuth } from "@/components/auth-provider";
-import { fetchEncodedJson } from "@/lib/api-client";
+import { fetchBatchQuotes } from "@/lib/api-client";
 import { MiniChart } from "@/components/mini-chart";
 import { TickerRowSkeleton } from "@/components/ticker-row-skeleton";
 import { TickerRow } from "@/components/ticker-row";
@@ -26,23 +26,6 @@ function areWatchlistsEqual(a = [], b = []) {
     }
   }
   return true;
-}
-
-async function fetchBatchQuotes(symbols) {
-  try {
-    const { response, data } = await fetchEncodedJson('/api/quotes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ symbols }),
-    });
-    if (!response.ok) {
-      throw new Error(data?.error || 'Failed to load quotes');
-    }
-    return data?.quotes || {};
-  } catch (e) {
-    console.warn('Failed to fetch batch quotes', e);
-    return {};
-  }
 }
 
 // Live-price polling cadence. Matches the quotes cache TTL so every cycle

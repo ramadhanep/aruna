@@ -67,3 +67,24 @@ export async function fetchLatestQuote(symbol) {
   }
 }
 
+/**
+ * Fetch latest quotes for multiple symbols in a single batched request via
+ * POST /api/quotes. Returns the quotes map as-is (keyed by uppercased symbol):
+ * { AAPL: { price, change, changePercent, logo, ... }, ... }.
+ * ponytail: collapses the per-symbol N+1 loop into one network round-trip.
+ * Returns {} on any failure so callers degrade gracefully.
+ */
+export async function fetchBatchQuotes(symbols, timeframe = '1D') {
+  try {
+    const { response, data } = await fetchEncodedJson('/api/quotes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ symbols, timeframe }),
+    });
+    if (!response.ok) return {};
+    return data?.quotes || {};
+  } catch {
+    return {};
+  }
+}
+

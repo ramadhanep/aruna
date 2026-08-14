@@ -42,7 +42,16 @@ Yahoo Finance OHLCV proxy with logo auto-upload.
 | events | string | ❌ | — | `div\|split\|earn` |
 | includePrePost | boolean | ❌ | `false` | Include pre/post market data |
 
-Response: `{ prices[], events?, meta }`
+Response: `{ data: prices[], events?, meta }`
+
+> **Caching:** responses are cached per `(symbol, interval, start, end)` in the
+> `price_series_cache` table (TTL 60 s). The chart fetch is deduped in-flight, so
+> concurrent requests for the same key share one Yahoo call. Cache misses hit
+> Yahoo; best-effort — any cache failure falls back to a live fetch.
+>
+> **Quote-metadata bug fix:** the `quote()` call that resolves logos is
+> best-effort — if it fails, logo auto-resolution is skipped gracefully
+> (`quoteMeta?.market`) instead of throwing a null-dereference.
 
 ### `POST /api/quotes`
 
@@ -258,6 +267,10 @@ search and latest-price lookups):
   window (`getRecentUnixRange()`), returns `{ price, logo, name }` or `null`.
   Narrow contract: latest quote only. Series/seasonal/historical fetches are
   separate call sites and must not be folded into this helper.
+- **`fetchBatchQuotes(symbols, timeframe?)`** — single batched `POST /api/quotes`,
+  returns the quotes map keyed by uppercased symbol. Use this instead of looping
+  `fetchLatestQuote` per symbol (eliminates N+1 network fan-out). Tolerant:
+  returns `{}` on failure.
 
 ## Error Handling
 

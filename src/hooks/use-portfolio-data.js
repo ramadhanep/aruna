@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/components/auth-provider';
 import { loadPortfolio } from '@/lib/portfolio-storage';
-import { fetchEncodedJson, fetchLatestQuote } from '@/lib/api-client';
+import { fetchEncodedJson, fetchLatestQuote, fetchBatchQuotes } from '@/lib/api-client';
 
 const DEFAULT_PORTFOLIO_ENTRIES = [
   { symbol: 'BTC-USD', name: 'Bitcoin', amount: 1, unit: 'share', avgPrice: 65000, type: 'digital' },
@@ -55,15 +55,19 @@ export function usePortfolioData() {
     if (sgd?.price) setSgdPerUsd(sgd.price);
   }, []);
 
+  // ponytail: one batched /api/quotes round-trip instead of N per-symbol
+  // /api/finance calls (the N+1 that choked the portfolio tracker on large
+  // watchlists). Quotes are keyed by uppercased symbol by the server.
   const refreshPrices = useCallback(async (list) => {
     const uniqueSymbols = [...new Set(list.map(e => e.symbol))];
+    const quotesMap = await fetchBatchQuotes(uniqueSymbols);
     const updates = {};
     const logos = {};
     for (const sym of uniqueSymbols) {
-      const result = await fetchLatestQuote(sym);
-      if (!result) continue;
-      if (result.price != null) updates[sym] = result.price;
-      if (result.logo) logos[sym] = result.logo;
+      const quote = quotesMap[sym.toUpperCase()];
+      if (!quote) continue;
+      if (quote.price != null) updates[sym] = quote.price;
+      if (quote.logo) logos[sym] = quote.logo;
     }
     if (Object.keys(updates).length) setPriceMap(pm => ({ ...pm, ...updates }));
     if (Object.keys(logos).length) setLogoMap(prev => ({ ...prev, ...logos }));

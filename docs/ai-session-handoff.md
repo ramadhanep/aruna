@@ -2,6 +2,28 @@
 
 **Last Updated**: 2026-08-14
 
+## Phase 14 — Finance route hardening + portfolio N+1
+
+- `src/app/api/finance/route.js`: fixed null-deref where `quoteMeta.market`
+  threw a TypeError when the best-effort `quote()` logo-metadata fetch failed
+  (now `quoteMeta?.market`, graceful skip). Added best-effort DB cache
+  (reuses `price_series_cache` with a `finance:<interval>:<start>:<end>`
+  composite key, 60 s TTL) plus in-flight dedupe on the `chart()` call,
+  mirroring the `/api/price-series` pattern. Any cache failure falls back to a
+  live fetch so the API never breaks.
+- `src/lib/api-client.js`: added shared `fetchBatchQuotes(symbols, timeframe?)`
+  (single `POST /api/quotes` round-trip returning the full quotes map).
+- `src/hooks/use-portfolio-data.js`: `refreshPrices` now calls
+  `fetchBatchQuotes` instead of looping `fetchLatestQuote` per symbol —
+  collapses N+1 `/api/finance` calls into one batched `/api/quotes` call.
+  `fetchLatestQuote` kept (still used for the IDR=X/SGD=X FX pair and
+  single-symbol add-asset lookups).
+- `src/app/watchlist/page.jsx`: removed the local `fetchBatchQuotes`
+  duplicate, imports the shared `fetchBatchQuotes` from `@/lib/api-client`.
+
+**Validation**: lint 0/0, tests 113/113, build passes (27 routes + Proxy).
+Docs updated: `docs/api.md`, `docs/ai-session-handoff.md`.
+
 **Summary**: Executed all 7 phases of `docs/MAINTENANCE_PLAN.md` (synthesized
 from `TECH_DEBT.md`, `UI_AUDIT.md`, `DOCS_DRIFT_REPORT.md`) in one session:
 doc-drift corrections, `encodePayload()` safeguards, dead code deletion,

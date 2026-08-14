@@ -3,6 +3,34 @@ import { encodePayload } from '@/lib/secure-payload';
 import { writeYahooRawLog } from '@/lib/yahoo-raw-log';
 import { ensureUsLogo } from '@/lib/logo-cache';
 import { getIdxLogoUrl, getUsLogoUrl } from '@/lib/supabase-storage';
+import { readMarketDataCache, writeMarketDataCache, dedupeInflight } from '@/lib/market-data-cache';
+
+// ponytail: finance takes arbitrary date ranges (unlike the fixed timeframes of
+// /api/quotes and /api/price-series), so the cache key encodes interval + bounds.
+// Reuses the generic price_series_cache (symbol, timeframe, payload, cached_at)
+// table — timeframe here is just a string token, no schema change needed.
+const CACHE_TABLE = 'price_series_cache';
+
+function financeCacheKey(interval, start, end) {
+  return `finance:${interval}:${start}:${end}`;
+}
+
+// Signature of the finance payload's volatile surface. Unchanged rows only bump
+// cached_at (skip-write), avoiding jsonb/MVCC churn on the polling cycle.
+function financeSignature(payload) {
+  const last = Array.isArray(payload.data) && payload.data.length > 0
+    ? payload.data[payload.data.length - 1]
+    : null;
+  return [
+    payload.meta?.symbol,
+    payload.meta?.currency,
+    payload.meta?.regularMarketPrice,
+    payload.meta?.marketState,
+    payload.data?.length,
+    last?.date,
+    last?.close ?? last?.adjclose,
+  ].join('|');
+}
 
 /**
  * Yahoo Finance API proxy route
@@ -44,6 +72,20 @@ export async function GET(request) {
     );
   }
 
+  // Best-effort cache: reuse a fresh row instead of re-hitting Yahoo for the
+  // same (symbol, interval, start, end) within the TTL. Never a hard dep —
+  // any cache miss/error falls through to a live fetch below.
+  const cacheKey = financeCacheKey(interval, start, end);
+  try {
+    const cachedMap = await readMarketDataCache(CACHE_TABLE, [symbol], cacheKey);
+    const cachedPayload = cachedMap.get(symbol);
+    if (cachedPayload) {
+      return Response.json({ payload: encodePayload(cachedPayload) });
+    }
+  } catch {
+    // cache read failed — continue to live fetch
+  }
+
   let quoteMeta = null;
   try {
     quoteMeta = await yahooFinance.quote(symbol, {
@@ -76,7 +118,10 @@ export async function GET(request) {
       chartOptions.includePrePost = true;
     }
 
-    const result = await yahooFinance.chart(symbol, chartOptions);
+    const result = await dedupeInflight(
+      `finance:chart:${cacheKey}`,
+      () => yahooFinance.chart(symbol, chartOptions)
+    );
     await writeYahooRawLog({
       endpoint: 'finance-chart',
       symbol,
@@ -113,9 +158,9 @@ export async function GET(request) {
     const normalizedSymbol = symbol.toUpperCase();
     let logoUrl = quoteMeta?.companyLogoUrl || quoteMeta?.logoUrl || null;
     if (!logoUrl) {
-      if (quoteMeta.market == 'id_market') {
+      if (quoteMeta?.market == 'id_market') {
         logoUrl = getIdxLogoUrl(normalizedSymbol);
-      } else if (quoteMeta.market == 'us_market') {
+      } else if (quoteMeta?.market == 'us_market') {
         logoUrl = await ensureUsLogo(normalizedSymbol) || getUsLogoUrl(normalizedSymbol);
       }
     }
@@ -139,36 +184,45 @@ export async function GET(request) {
       }
     }
 
-    return Response.json({
-      payload: encodePayload({
-        data: prices,
-        events: Object.keys(eventsData).length > 0 ? eventsData : undefined,
-        meta: {
-          symbol: meta.symbol,
-          name: meta.longName || meta.shortName || meta.symbol || symbol,
-          logo: logoUrl,
-          currency: meta.currency,
-          exchangeName: meta.exchangeName,
-          fullExchangeName: meta.fullExchangeName,
-          instrumentType: meta.instrumentType,
-          firstTradeDate: meta.firstTradeDate,
-          regularMarketTime: meta.regularMarketTime,
-          regularMarketPrice: meta.regularMarketPrice,
-          chartPreviousClose: meta.chartPreviousClose,
-          previousClose: meta.previousClose,
-          scale: meta.scale,
-          priceHint: meta.priceHint,
-          dataGranularity: meta.dataGranularity,
-          range: meta.range,
-          validRanges: meta.validRanges,
-          gmtoffset: meta.gmtoffset,
-          timezone: meta.exchangeTimezoneName,
-          currentTradingPeriod: meta.currentTradingPeriod,
-          marketState: meta.marketState, // Add marketState for pages to detect market status
-          provider: 'yahoo-finance2',
-        },
-      }),
-    });
+    const payload = {
+      data: prices,
+      events: Object.keys(eventsData).length > 0 ? eventsData : undefined,
+      meta: {
+        symbol: meta.symbol,
+        name: meta.longName || meta.shortName || meta.symbol || symbol,
+        logo: logoUrl,
+        currency: meta.currency,
+        exchangeName: meta.exchangeName,
+        fullExchangeName: meta.fullExchangeName,
+        instrumentType: meta.instrumentType,
+        firstTradeDate: meta.firstTradeDate,
+        regularMarketTime: meta.regularMarketTime,
+        regularMarketPrice: meta.regularMarketPrice,
+        chartPreviousClose: meta.chartPreviousClose,
+        previousClose: meta.previousClose,
+        scale: meta.scale,
+        priceHint: meta.priceHint,
+        dataGranularity: meta.dataGranularity,
+        range: meta.range,
+        validRanges: meta.validRanges,
+        gmtoffset: meta.gmtoffset,
+        timezone: meta.exchangeTimezoneName,
+        currentTradingPeriod: meta.currentTradingPeriod,
+        marketState: meta.marketState, // Add marketState for pages to detect market status
+        provider: 'yahoo-finance2',
+      },
+    };
+
+    // Cache the resolved payload (incl. logo) — best-effort, never breaks the
+    // response. Falls back silently so a cache outage never breaks the API.
+    await writeMarketDataCache(
+      CACHE_TABLE,
+      cacheKey,
+      [{ symbol, payload }],
+      financeSignature
+    );
+
+    return Response.json({ payload: encodePayload(payload) });
   } catch (error) {
     console.error('Error fetching Yahoo Finance chart data:', error);
 
