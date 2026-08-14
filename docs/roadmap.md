@@ -41,6 +41,9 @@
 - ✅ Live price polling — 60 s silent auto-refresh on watchlist + intraday chart
   (visibility-aware pause, no loading flicker), cadence aligned to cache TTL;
   signature-compare skip-write + 3-day retention for free-tier write efficiency
+- ✅ Testing infrastructure — Vitest unit tests (`tests/unit/`, 113 tests) for
+  lib business logic + Playwright E2E smoke tests (`e2e/`, Chromium desktop +
+  mobile), wired into CI (lint → test → build, plus a dedicated e2e job)
 
 ## In Progress
 
@@ -48,7 +51,6 @@
 
 ## Planned
 
-- 📋 Testing infrastructure (Jest/Vitest + Playwright + E2E)
 - 📋 Live USD/IDR exchange rate for MSCI calculations
 - 📋 Full API rate limiting (all routes, not just screeners)
 - 📋 Database migrations tooling

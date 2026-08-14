@@ -41,6 +41,8 @@
 |---|---|---|
 | `eslint` | ^9 | Linting |
 | `eslint-config-next` | ^16.0.1 | Next.js ESLint rules |
+| `vitest` | ^4 | Unit/integration test runner (`tests/`, via `vitest.config.mjs`) |
+| `@playwright/test` | ^1.62 | E2E browser tests (`e2e/`, via `playwright.config.mjs`) |
 
 ## Non-NPM Dependencies (External Services)
 

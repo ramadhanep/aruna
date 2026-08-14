@@ -54,6 +54,22 @@ folder-structure, state-management, roadmap).
   updates the chart/header price without a loading state. Cadence matches the
   60 s cache TTL so every poll returns fresh data.
 
+**Phase 12 — Testing infrastructure** (roadmap item):
+- **Vitest** unit tests (`tests/unit/*.test.js`, 113 tests, 9 files) for lib
+  business logic: utils, portfolio-metrics, secure-payload, msci-calculations,
+  chart-helpers, money-flow, time, default-watchlist, stock-universe.
+  Config `vitest.config.mjs` (node env, `@/` alias). Scripts `test` /
+  `test:watch`. CI step `npm run test` added to the lint-and-build job.
+- **Playwright** E2E smoke tests (`e2e/smoke.spec.mjs`) — app-shell render +
+  mobile bottom-nav navigation + unauthenticated homepage redirect. Config
+  `playwright.config.mjs` (chromium + mobile-chromium projects, auto-boots
+  `next start` on :3100). Separate `e2e` CI job installs chromium with deps.
+- **Bugs found by the new tests**: `formatMarketCap` emitted "450.0B"
+  (now trims the trailing ".0"); `CRYPTO_TOP100_SYMBOLS` had 3 duplicate
+  tickers (SOL-USD, USDC-USD, WETH-USD — removed second occurrences).
+- Tests are offline/deterministic (no network/Supabase); Intl assertions
+  normalized for ICU variance (nb-sp, currency glyphs).
+
 ## Maintenance Plan — Files Modified
 
 | Phase | File(s) | Change |

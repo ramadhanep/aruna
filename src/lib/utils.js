@@ -63,13 +63,13 @@ export function formatMarketCap(value) {
   const million = 1_000_000;
 
   if (value >= trillion) {
-    return `${(value / trillion).toFixed(1)}T`;
+    return `${Number((value / trillion).toFixed(1))}T`;
   }
   if (value >= billion) {
-    return `${(value / billion).toFixed(1)}B`;
+    return `${Number((value / billion).toFixed(1))}B`;
   }
   if (value >= million) {
-    return `${(value / million).toFixed(1)}M`;
+    return `${Number((value / million).toFixed(1))}M`;
   }
   return value.toLocaleString('id-ID');
 }
