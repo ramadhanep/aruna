@@ -1375,17 +1375,25 @@ function ElectionCyclePageContent() {
           const title = item.title || '—';
           const publisher = item.publisher || '—';
           const time = item.providerPublishTime ? new Date(item.providerPublishTime).toLocaleDateString('en-US') : '—';
+          const link = item.link || '#';
 
           return (
-            <Card key={idx} className="hover:cursor-pointer hover:shadow-sm transition-shadow">
-              <CardHeader className="flex flex-col gap-1">
-                <CardTitle className="text-sm">{title}</CardTitle>
-                <CardDescription className="text-xs text-muted-foreground">
+            <Card
+              key={idx}
+              className="hover:cursor-pointer hover:shadow-sm transition-shadow"
+              onClick={() => window.open(link, '_blank')}
+              style={{ cursor: 'pointer' }}
+            >
+              <CardHeader className="flex flex-col gap-1 px-1">
+                <CardTitle className="text-xs font-medium text-foreground truncate">{title}</CardTitle>
+                <CardDescription className="text-[0.85rem] text-muted-foreground truncate">
                   {publisher} • {time}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pt-2">
-                <p className="text-xs text-foreground">{item.description || ''}</p>
+              <CardContent className="pt-1">
+                <p className="text-[0.75rem] text-muted-foreground line-clamp-2">
+                  {item.description || ''}
+                </p>
               </CardContent>
             </Card>
           );
