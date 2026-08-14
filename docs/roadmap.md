@@ -38,6 +38,9 @@
 - ✅ Market data caching — `/api/quotes` + `/api/price-series` via DB cache
   tables (`quote_cache`, `price_series_cache`), per-timeframe TTL, deterministic
   prune on write, in-flight dedupe, best-effort fallback to live fetch, no edge cache
+- ✅ Live price polling — 60 s silent auto-refresh on watchlist + intraday chart
+  (visibility-aware pause, no loading flicker), cadence aligned to cache TTL;
+  signature-compare skip-write + 3-day retention for free-tier write efficiency
 
 ## In Progress
 
