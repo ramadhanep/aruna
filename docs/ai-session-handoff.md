@@ -70,6 +70,38 @@ folder-structure, state-management, roadmap).
 - Tests are offline/deterministic (no network/Supabase); Intl assertions
   normalized for ICU variance (nb-sp, currency glyphs).
 
+**Phase 13 — Initial-JS reduction** (roadmap item, user-picked "kurangi JS awal"):
+- Measured per-page initial JS (Playwright, fresh context, cold cache): `/explore`
+  284 KB, `/watchlist` 278 KB, `/portfolio-tracker` 313 KB, `/chart` 450 KB
+  (compressed). The earlier ~1.8 MB figure for `/watchlist` was **route
+  prefetch** — Next auto-prefetches nav-link routes, pulling `/chart`'s heavy
+  chunks (incl. 362 KB raw recharts) in the background on mobile first paint.
+- recharts was the single biggest avoidable chunk and was only used by `/chart`
+  (3 inline charts: earnings `ComposedChart` in the keystats tab, revenue
+  `BarChart` in the keystats tab, seasonality `AreaChart` in the non-normal
+  view). Extracted each into a lazy component (`src/components/recharts/
+  earnings-chart.jsx`, `revenue-chart.jsx`, `seasonality-chart.jsx`) loaded via
+  `next/dynamic` with `ssr: false` (matches the existing `PortfolioPie` pattern).
+  All chart formatters stayed in `page.jsx` and are passed as props, so the
+  diff is pure JSX substitution — no branch logic touched.
+- Result: `/chart` initial script 450 KB → **340 KB** (-110 KB compressed);
+  watchlist idle prefetch raw 1.8 MB → **1.4 MB** (recharts no longer
+  prefetched). Earnings/revenue charts verified rendering via the lazy import
+  (~5 s in, 2 `.recharts-responsive-container`, 4 `.recharts-surface`, no
+  console/page errors). Lint 0, tests 113/113, e2e 5 pass, build OK, server
+  restarted on :3000.
+- **Prefetch=false pass**: `next/dynamic` only removed recharts from the
+  critical path — App Router still auto-prefetches nav-link routes, so `/chart`
+  route chunks (~360 KB raw) were still pulled in the background from lists.
+  Added `prefetch={false}` to every list/nav link that targets `/chart`:
+  `mobile-bottom-nav.jsx` (all 4 tabs), `ticker-row.jsx` (reused across
+  watchlist/explore/msci/money-flow/rotation), `trending-marquee.jsx`,
+  explore `PickerCard` + tool cards + market pulse strips. Result: mobile
+  `/watchlist` idle background pull 1.36 MB → **950 KB** raw (17 scripts vs 27),
+  `/explore` → 968 KB. Desktop navbar keeps prefetch for instant tab switching
+  (desktop bandwidth); `not-found.jsx` link untouched. Lint 0, tests 113/113,
+  e2e 5 pass, build OK, server restarted on :3000.
+
 ## Maintenance Plan — Files Modified
 
 | Phase | File(s) | Change |

@@ -44,6 +44,14 @@
 - ✅ Testing infrastructure — Vitest unit tests (`tests/unit/`, 113 tests) for
   lib business logic + Playwright E2E smoke tests (`e2e/`, Chromium desktop +
   mobile), wired into CI (lint → test → build, plus a dedicated e2e job)
+- ✅ Initial-JS reduction — recharts removed from `/chart` critical path: the
+  earnings/revenue/seasonality charts moved to lazy-loaded components
+  (`src/components/recharts/*` via `next/dynamic`, `ssr:false`), cutting `/chart`
+  initial script ~450 KB → ~340 KB (compressed) and dropping the 362 KB raw
+  recharts chunk from route prefetch (watchlist idle prefetch ~1.8 MB → ~1.4 MB);
+  plus `prefetch={false}` on list/marquee/nav links to `/chart` (mobile
+  bottom-nav, ticker rows, trending marquee, explore cards/strip), cutting idle
+  background pull to ~950 KB raw total
 
 ## In Progress
 

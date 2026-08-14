@@ -22,6 +22,7 @@ function TrendingItem({ symbol, quote }) {
   return (
     <Link
       href={`/chart?symbol=${encodeURIComponent(symbol)}&cycle=normal`}
+      prefetch={false}
       className={`inline-flex items-center gap-2.5 px-3.5 py-2.5 hover:bg-accent/40 transition-all ${DURATION_CLASS.base} rounded-xl`}
     >
       <TickerAvatar symbol={symbol} logo={quote.logo} size="sm" />

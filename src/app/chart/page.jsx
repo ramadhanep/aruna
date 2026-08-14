@@ -20,7 +20,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import { AreaChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, ComposedChart, ErrorBar } from 'recharts';
+import dynamic from 'next/dynamic';
+const LazyEarningsChart = dynamic(() => import('@/components/recharts/earnings-chart').then((m) => m.EarningsChart), { ssr: false });
+const LazyRevenueChart = dynamic(() => import('@/components/recharts/revenue-chart').then((m) => m.RevenueChart), { ssr: false });
+const LazySeasonalityChart = dynamic(() => import('@/components/recharts/seasonality-chart').then((m) => m.SeasonalityChart), { ssr: false });
 import { Loader2, Sun, MoonStar, Clock3, Fullscreen, ArrowLeft, Settings, CandlestickChart, LineChart, BarChart2 } from "lucide-react";
 import { Tooltip as RadixTooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useTheme } from 'next-themes';
@@ -1481,64 +1484,15 @@ function ElectionCyclePageContent() {
                     </div>
                   </CardHeader>
                   <CardContent className={SECONDARY_CHART_HEIGHT_CLASS}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <ComposedChart
-                        data={earningsChartData}
-                        margin={{ top: 20, right: 48, bottom: 32, left: -10 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                        <XAxis
-                          dataKey="periodLabel"
-                          interval={0}
-                          height={48}
-                          tick={renderEarningsTick}
-                        />
-                        <YAxis
-                          tickFormatter={(value) =>
-                            value == null ? '' : formatEarningsValue(value)
-                          }
-                          width={50}
-                          axisLine={false}
-                          tick={{ fontSize: 10 }}
-                        />
-                        <Tooltip
-                          formatter={earningsTooltipFormatter}
-                          labelFormatter={(_, payload) =>
-                            payload?.[0]?.payload?.periodLabel || ''
-                          }
-                          contentStyle={{
-                            backgroundColor: 'hsl(var(--background))',
-                            border: '1px solid hsl(var(--border))',
-                            borderRadius: '8px',
-                            fontSize: '12px',
-                          }}
-                        />
-                        <Line
-                          key="earnings-estimate"
-                          type="monotone"
-                          dataKey="estimate"
-                          stroke="transparent"
-                          dot={renderEstimateDot}
-                          activeDot={false}
-                        />
-                        <Line
-                          key="earnings-actual"
-                          type="monotone"
-                          dataKey="actual"
-                          stroke="transparent"
-                          dot={renderActualDot}
-                          activeDot={false}
-                        >
-                          <ErrorBar
-                            dataKey="range"
-                            direction="y"
-                            stroke={secondaryChartColor}
-                            strokeDasharray="3 3"
-                            width={0}
-                          />
-                        </Line>
-                      </ComposedChart>
-                    </ResponsiveContainer>
+                    <LazyEarningsChart
+                      data={earningsChartData}
+                      secondaryColor={secondaryChartColor}
+                      formatEarningsValue={formatEarningsValue}
+                      renderEarningsTick={renderEarningsTick}
+                      renderEstimateDot={renderEstimateDot}
+                      renderActualDot={renderActualDot}
+                      earningsTooltipFormatter={earningsTooltipFormatter}
+                    />
                   </CardContent>
                 </Card>
               </div>
@@ -1580,47 +1534,14 @@ function ElectionCyclePageContent() {
                     </div>
                   </CardHeader>
                   <CardContent className={SECONDARY_CHART_HEIGHT_CLASS}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart
-                        data={revenueChartData}
-                        margin={{ top: 16, right: 32, bottom: 12, left: -12 }}
-                      >
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                        <XAxis dataKey="periodLabel" tick={{ fontSize: 10 }} />
-                        <YAxis
-                          tickFormatter={(value) =>
-                            value == null ? '' : compactNumberFormatter.format(value)
-                          }
-                          width={60}
-                          axisLine={false}
-                          tick={{ fontSize: 10 }}
-                        />
-                        <Tooltip
-                          formatter={revenueTooltipFormatter}
-                          labelFormatter={(_, payload) => payload?.[0]?.payload?.periodLabel || ''}
-                          cursor={{ fill: 'transparent' }}
-                          contentStyle={{
-                            backgroundColor: 'hsl(var(--background))',
-                            border: '1px solid hsl(var(--border))',
-                            borderRadius: '8px',
-                            fontSize: '12px',
-                          }}
-                        />
-                        <Legend wrapperStyle={{ fontSize: '11px' }} />
-                        <Bar
-                          dataKey="revenue"
-                          name={`Revenue${analysisCurrency ? ` (${analysisCurrency})` : ''}`}
-                          fill={primaryChartColor}
-                          radius={[6, 6, 2, 2]}
-                        />
-                        <Bar
-                          dataKey="earnings"
-                          name={`Earnings${analysisCurrency ? ` (${analysisCurrency})` : ''}`}
-                          fill={secondaryChartColor}
-                          radius={[6, 6, 2, 2]}
-                        />
-                      </BarChart>
-                    </ResponsiveContainer>
+                    <LazyRevenueChart
+                      data={revenueChartData}
+                      primaryColor={primaryChartColor}
+                      secondaryColor={secondaryChartColor}
+                      analysisCurrency={analysisCurrency}
+                      compactNumberFormatter={compactNumberFormatter}
+                      revenueTooltipFormatter={revenueTooltipFormatter}
+                    />
                   </CardContent>
                 </Card>
               </div>
@@ -2461,59 +2382,16 @@ function ElectionCyclePageContent() {
                   )
                 ) : (
                   <div className={`relative ${CHART_HEIGHT_CLASS}`}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart
-                        data={filteredChartData}
-                        margin={{ top: 5, right: 5, left: 0, bottom: 5 }}
-                      >
-                        <XAxis
-                          dataKey="dayOfYear"
-                          tickFormatter={formatTick}
-                          ticks={quarterFilter === 'all' ? [1, 91, 182, 274] : undefined}
-                          className="text-2xs"
-                          height={30}
-                        />
-                        <YAxis
-                          orientation="right"
-                          scale={scaleChoice === 'log' ? 'log' : 'linear'}
-                          domain={scaleChoice === 'log' ? ['auto', 'auto'] : ['auto', 'auto']}
-                          tickFormatter={formatYAxis}
-                          className="text-2xs"
-                          width={45}
-                          allowDataOverflow={false}
-                        />
-                        <Tooltip
-                          formatter={formatTooltip}
-                          labelFormatter={formatTooltipDate}
-                          contentStyle={{
-                            backgroundColor: 'hsl(var(--background))',
-                            border: '1px solid hsl(var(--border))',
-                            borderRadius: '8px',
-                            fontSize: '12px',
-                          }}
-                        />
-                        {chartData.linesData.length > 0 ? (
-                          <Legend
-                            align="left"
-                            verticalAlign="bottom"
-                            wrapperStyle={{ paddingTop: '10px', fontSize: '11px' }}
-                          />
-                        ) : null}
-                        {chartData.linesData.map((line) => (
-                          <Area
-                            key={line.key}
-                            type="monotone"
-                            dataKey={line.key}
-                            stroke={line.color}
-                            fill="transparent"
-                            fillOpacity={0}
-                            name={line.name}
-                            dot={false}
-                            strokeWidth={1.5}
-                          />
-                        ))}
-                      </AreaChart>
-                    </ResponsiveContainer>
+                    <LazySeasonalityChart
+                      data={filteredChartData}
+                      linesData={chartData.linesData}
+                      quarterFilter={quarterFilter}
+                      scaleChoice={scaleChoice}
+                      formatTick={formatTick}
+                      formatYAxis={formatYAxis}
+                      formatTooltip={formatTooltip}
+                      formatTooltipDate={formatTooltipDate}
+                    />
                     <ArunaWatermark className="absolute inset-0 flex items-end justify-start bottom-18 left-4" />
                     {selectedCycles.includes('trump') && (
                       <div className="absolute inset-0 pointer-events-none">

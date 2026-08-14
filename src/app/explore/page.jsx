@@ -372,6 +372,7 @@ function MarketSymbolCard({ item, marketTimeframe }) {
   return (
     <Link
       href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
+      prefetch={false}
       className={cn(
         "rounded-xl p-3.5 border transition-all block card-hover bg-card",
         DURATION_CLASS.base,
@@ -439,7 +440,7 @@ function ToolCard({ href, icon, title, subtitle, trailing = "Open →" }) {
   if (href.startsWith("#")) {
     return <a href={href} className={className}>{content}</a>;
   }
-  return <Link href={href} className={className}>{content}</Link>;
+  return <Link href={href} prefetch={false} className={className}>{content}</Link>;
 }
 
 function pickToRowProps(pick, quote) {
@@ -481,6 +482,7 @@ function MarketPulseMarquee({ items }) {
             <Link
               key={`pulse-mq-${item.symbol}`}
               href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
+              prefetch={false}
               className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted/40 transition-colors"
             >
               <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
@@ -502,6 +504,7 @@ function MarketPulseMarquee({ items }) {
             <Link
               key={`pulse-mq-dup-${item.symbol}`}
               href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
+              prefetch={false}
               className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted/40 transition-colors"
             >
               <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
@@ -1116,6 +1119,7 @@ export default function ExplorePage() {
               <Link
                 key={item.symbol}
                 href={`/chart?symbol=${encodeURIComponent(item.symbol)}&cycle=normal`}
+                prefetch={false}
                 className="flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-muted/40 transition-colors"
               >
                 <span className="text-xs font-semibold text-muted-foreground">{item.label}</span>
