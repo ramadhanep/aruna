@@ -60,7 +60,9 @@ Response: `{ quotes: { [symbol]: { price, change, changePercent, chartData[], ch
 > hit Yahoo; concurrent requests for the same symbol are deduped in-flight.
 > Response `meta` includes `cached` (served from cache) and `fetched` (from
 > Yahoo). The cache is best-effort — any Supabase failure falls back to a live
-> fetch, and stale rows are pruned on write (7-day retention).
+> fetch, and stale rows are pruned on write (3-day retention). Free-tier
+> friendly: a poll that returns an unchanged quote only bumps `cached_at`
+> (signature-compare skip-write) instead of rewriting the jsonb payload.
 
 ### `GET /api/price-series`
 
@@ -78,6 +80,7 @@ Response: `{ data: [{ timestamp, date, price, open, high, low, close, volume }],
 > `price_series_cache` table. TTL varies by timeframe: 60 s for intraday
 > (`15M`/`1H`/`2H`/`4H`), 15 min for `D`, 1 h for `W`, 6 h for `M`. Cache
 > misses hit Yahoo; in-flight requests are deduped. Best-effort (see `/api/quotes`).
+> Same signature-compare skip-write applies — unchanged series only bump `cached_at`.
 
 ### `GET /api/symbol-search`
 

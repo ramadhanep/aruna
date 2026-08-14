@@ -45,6 +45,10 @@ async function fetchBatchQuotes(symbols) {
   }
 }
 
+// Live-price polling cadence. Matches the quotes cache TTL so every cycle
+// actually returns fresh data instead of replaying the same cached rows.
+const AUTO_REFRESH_MS = 60_000;
+
 export default function HomePage() {
   const router = useRouter();
   const [watchlist, setWatchlist] = useState([]);
@@ -131,6 +135,47 @@ export default function HomePage() {
       cancelled = true;
     };
   }, [loadQuotes, watchlistReady]);
+
+  // Silent live-price polling: refresh quotes in place every minute while the
+  // tab is visible. No loading state, no flicker — rows re-render from state.
+  // Paused when the tab is hidden (saves battery and server load).
+  useEffect(() => {
+    if (!watchlistReady || watchlist.length === 0) {
+      return;
+    }
+    let timer = null;
+    let polling = false;
+
+    const tick = async () => {
+      if (typeof document === 'undefined' || document.visibilityState !== 'visible') {
+        return;
+      }
+      if (polling || isRefreshing) {
+        return;
+      }
+      polling = true;
+      try {
+        await loadQuotes();
+      } catch (e) {
+        console.warn('Auto refresh failed', e);
+      } finally {
+        polling = false;
+      }
+    };
+
+    timer = setInterval(tick, AUTO_REFRESH_MS);
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        tick();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [watchlistReady, watchlist.length, loadQuotes, isRefreshing]);
 
   useEffect(() => {
     if (authLoading) return;

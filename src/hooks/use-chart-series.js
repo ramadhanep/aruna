@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { fetchEncodedJson } from '@/lib/api-client';
 import {
   NORMAL_TIMEFRAME_OPTIONS,
@@ -30,49 +30,105 @@ export function useChartSeries(symbol, isNormalView, screeningSignal) {
   );
   const normalTimeframeLabel = normalTimeframeOption?.label ?? normalTimeframe.toUpperCase();
 
+  const abortRef = useRef(null);
+
+  // `silent` refreshes update the series in place without toggling the loading
+  // state — used by the live intraday polling so the chart never flickers.
+  const loadSeries = useCallback(
+    async ({ silent = false } = {}) => {
+      if (!symbol || !isNormalView) {
+        setNormalSeriesLoading(false);
+        return;
+      }
+      if (!silent) {
+        setNormalSeriesLoading(true);
+        setNormalSeriesError(null);
+        setNormalSeries([]);
+      }
+
+      abortRef.current?.abort();
+      const controller = new AbortController();
+      abortRef.current = controller;
+
+      try {
+        const params = new URLSearchParams({ symbol, timeframe: normalTimeframe });
+        const { response, data } = await fetchEncodedJson(`/api/price-series?${params.toString()}`, {
+          signal: controller.signal,
+        });
+        if (controller.signal.aborted) return;
+        if (!response.ok) {
+          throw new Error(data?.error || 'Failed to load price data');
+        }
+        setNormalSeries(Array.isArray(data?.data) ? data.data : []);
+        setNormalSeriesError(null);
+      } catch (error) {
+        if (error.name === 'AbortError' || controller.signal.aborted) return;
+        if (silent) return;
+        setNormalSeries([]);
+        setNormalSeriesError(error.message || 'Failed to load price data');
+      } finally {
+        if (!silent) {
+          setNormalSeriesLoading(false);
+        }
+      }
+    },
+    [symbol, normalTimeframe, isNormalView]
+  );
+
   useEffect(() => {
     if (!symbol || !isNormalView) {
       queueMicrotask(() => setNormalSeriesLoading(false));
       return;
     }
 
-    const controller = new AbortController();
-    let cancelled = false;
+    queueMicrotask(() => loadSeries({ silent: false }));
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, [symbol, isNormalView, loadSeries]);
 
-    async function loadSeries() {
-      setNormalSeriesLoading(true);
-      setNormalSeriesError(null);
-      setNormalSeries([]);
-      try {
-        const params = new URLSearchParams({ symbol, timeframe: normalTimeframe });
-        const { response, data } = await fetchEncodedJson(`/api/price-series?${params.toString()}`, {
-          signal: controller.signal,
-        });
-        if (!response.ok) {
-          throw new Error(data?.error || 'Failed to load price data');
-        }
-        if (!cancelled) {
-          setNormalSeries(Array.isArray(data?.data) ? data.data : []);
-        }
-      } catch (error) {
-        if (error.name === 'AbortError') return;
-        if (!cancelled) {
-          setNormalSeries([]);
-          setNormalSeriesError(error.message || 'Failed to load price data');
-        }
-      } finally {
-        if (!cancelled) {
-          setNormalSeriesLoading(false);
-        }
-      }
+  // Live intraday refresh: silent polling every minute while visible. Matches
+  // the price-series cache TTL for intraday timeframes (60 s) so each poll
+  // returns fresh data. Skipped for daily/weekly/monthly (candles only change
+  // once per period) and paused when the tab is hidden.
+  useEffect(() => {
+    if (!symbol || !isNormalView || !isIntradayTimeframe) {
+      return;
     }
 
-    queueMicrotask(() => loadSeries());
-    return () => {
-      cancelled = true;
-      controller.abort();
+    let timer = null;
+    let polling = false;
+
+    const tick = async () => {
+      if (typeof document === 'undefined' || document.visibilityState !== 'visible') {
+        return;
+      }
+      if (polling) {
+        return;
+      }
+      polling = true;
+      try {
+        await loadSeries({ silent: true });
+      } catch {
+        // silent refresh never surfaces errors — keep the last good chart
+      } finally {
+        polling = false;
+      }
     };
-  }, [symbol, normalTimeframe, isNormalView]);
+
+    timer = setInterval(tick, 60_000);
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        tick();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+
+    return () => {
+      clearInterval(timer);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [symbol, normalTimeframe, isNormalView, isIntradayTimeframe, loadSeries]);
 
   useEffect(() => {
     if (!isNormalView && normalFullscreenOpen) {

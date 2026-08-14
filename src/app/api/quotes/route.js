@@ -6,6 +6,30 @@ import { readMarketDataCache, writeMarketDataCache, dedupeInflight } from '@/lib
 
 const CACHE_TABLE = 'quote_cache';
 
+// Signature of the user-visible quote shape. When it is unchanged between
+// polls, the cache row is not rewritten (free-tier friendly — only cached_at
+// is bumped). Deliberately excludes volatile meta fields the UI never shows.
+function quoteSignature(quote) {
+    const lastPrice = Array.isArray(quote.chartData) ? quote.chartData[quote.chartData.length - 1] : null;
+    const lastTs = Array.isArray(quote.chartTimestamps)
+        ? quote.chartTimestamps[quote.chartTimestamps.length - 1]
+        : null;
+    return [
+        quote.symbol,
+        quote.name,
+        quote.price,
+        quote.change,
+        quote.changePercent,
+        quote.timeframeChange,
+        quote.logo,
+        quote.chartData?.length,
+        lastPrice,
+        lastTs,
+        quote.meta?.currency,
+        quote.meta?.marketState,
+    ].join('|');
+}
+
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 // Max symbols per request to prevent abuse
@@ -299,7 +323,8 @@ export async function POST(request) {
         await writeMarketDataCache(
             CACHE_TABLE,
             timeframe,
-            fetchedResults.map((result) => ({ symbol: result.symbol, payload: result }))
+            fetchedResults.map((result) => ({ symbol: result.symbol, payload: result })),
+            quoteSignature
         );
 
         // Build results map: fresh cache first, then live fetches override.

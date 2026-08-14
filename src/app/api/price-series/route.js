@@ -4,6 +4,24 @@ import { readMarketDataCache, writeMarketDataCache, dedupeInflight } from '@/lib
 
 const CACHE_TABLE = 'price_series_cache';
 
+// Signature of the fetched series. Unchanged rows are only touched (cached_at
+// bumped), not rewritten — keeps MVCC write amplification low on the
+// free-tier database during the 60 s chart polling cycle.
+function seriesSignature(payload) {
+  const last = Array.isArray(payload.data) && payload.data.length > 0
+    ? payload.data[payload.data.length - 1]
+    : null;
+  return [
+    payload.meta?.symbol,
+    payload.meta?.currency,
+    payload.meta?.interval,
+    payload.meta?.timeframe,
+    payload.data?.length,
+    last?.timestamp,
+    last?.close,
+  ].join('|');
+}
+
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 const TIMEFRAME_CONFIG = {
@@ -226,7 +244,7 @@ export async function GET(request) {
     };
 
     // Cache the series for (symbol, timeframe) — best-effort.
-    await writeMarketDataCache(CACHE_TABLE, timeframeParam, [{ symbol, payload }]);
+    await writeMarketDataCache(CACHE_TABLE, timeframeParam, [{ symbol, payload }], seriesSignature);
 
     return Response.json({
       payload: encodePayload(payload),

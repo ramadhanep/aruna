@@ -42,6 +42,18 @@ fall back to live fetch so caching never breaks the API; quotes meta now
 reports `cached`/`fetched` counts. Docs updated (database, api, architecture,
 folder-structure, state-management, roadmap).
 
+**Phase 11 Addendum — free-tier efficiency + live polling**:
+- `market-data-cache.js` now uses **signature-compare skip-write**: unchanged
+  payloads only bump `cached_at` (tiny tuple update; the TOASTed jsonb blob is
+  untouched) instead of rewriting — cuts MVCC write amplification from the 60 s
+  poll cycle on the 500 MB free-tier DB. Retention lowered 7 → 3 days. Routes
+  pass a `quoteSignature` / `seriesSignature`.
+- **Live polling (60 s)**: watchlist refreshes quotes in place every minute
+  (silent, no loading/flicker, paused when tab hidden); `use-chart-series.js`
+  refactored to `loadSeries({ silent })` + intraday-only silent polling that
+  updates the chart/header price without a loading state. Cadence matches the
+  60 s cache TTL so every poll returns fresh data.
+
 ## Maintenance Plan — Files Modified
 
 | Phase | File(s) | Change |
