@@ -1385,7 +1385,7 @@ const renderNewsTab = () => {
               onClick={() => window.open(link, '_blank')}
               style={{ cursor: 'pointer' }}
             >
-              <CardHeader className="flex items-start gap-3 px-1 pb-1">
+              <CardHeader className="flex items-start gap-3 px-1 pb-2">
                 {thumbnail ? (
                   <img
                     src={thumbnail}
@@ -1394,8 +1394,8 @@ const renderNewsTab = () => {
                   />
                 ) : null}
                 <div className="flex-1 min-w-0">
-                  <CardTitle className="text-xs font-medium text-foreground truncate">{title}</CardTitle>
-                  <CardDescription className="text-[0.85rem] text-muted-foreground text-truncate">
+                  <CardTitle className="text-xs font-medium text-foreground truncate line-clamp-2">{title}</CardTitle>
+                  <CardDescription className="text-[0.7rem] text-muted-foreground mt-1">
                     {publisher} • {time}
                   </CardDescription>
                 </div>
