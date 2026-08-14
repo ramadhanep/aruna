@@ -27,6 +27,8 @@
 | `trending_stocks` | `(category, symbol)` | Trending stocks for marquee component |
 | `msci_stocks` | `id` (uuid) | MSCI stocks with index type and status |
 | `msci_snapshot_cache` | `ticker` (text) | Cached prices for MSCI calculation |
+| `quote_cache` | `(symbol, timeframe)` | Short-TTL cache of `/api/quotes` responses |
+| `price_series_cache` | `(symbol, timeframe)` | Short-TTL cache of `/api/price-series` responses |
 | `ajaib_stocks` | `code` (text) | IDX stock snapshot from Ajaib API |
 | `bibit_stocks` | `id` (integer) | Alternative IDX snapshot from Bibit API |
 | `discussion_messages` | `id` (uuid) | Chat messages with threading |
@@ -64,6 +66,8 @@ money_flow_reports
 | `trending_stocks` | PUBLIC | SERVICE | SERVICE | SERVICE |
 | `msci_stocks` | PUBLIC | SERVICE | SERVICE | SERVICE |
 | `msci_snapshot_cache` | PUBLIC | SERVICE | SERVICE | SERVICE |
+| `quote_cache` | PUBLIC | SERVICE | SERVICE | SERVICE |
+| `price_series_cache` | PUBLIC | SERVICE | SERVICE | SERVICE |
 | `ajaib_stocks` | PUBLIC | SERVICE | SERVICE | SERVICE |
 | `bibit_stocks` | PUBLIC | SERVICE | SERVICE | SERVICE |
 | `discussion_messages` | PUBLIC | AUTH | N/A | OWNER |

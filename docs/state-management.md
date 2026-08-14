@@ -97,7 +97,9 @@ useEffect(() => {
 ## Caching
 
 - No client-side cache layer (React Query, SWR, etc.).
-- No server-side cache configuration.
+- **Server-side**: `/api/quotes` and `/api/price-series` use a best-effort DB
+  cache (`quote_cache` / `price_series_cache`, TTL per timeframe, pruned on
+  write). Other API routes are uncached.
 - Browser HTTP cache used for static assets and API responses (implicitly).
 - Service worker caches app shell (network-first for pages, stale-while-revalidate for assets).
 

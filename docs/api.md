@@ -55,6 +55,13 @@ Batch quote fetch (up to 50 symbols) with mini-chart data.
 
 Response: `{ quotes: { [symbol]: { price, change, changePercent, chartData[], chartTimestamps[], logo, meta } }, meta }`
 
+> **Caching:** responses are cached per `(symbol, timeframe)` in the
+> `quote_cache` table (TTL 60 s, row keyed by `cached_at`). Only cache misses
+> hit Yahoo; concurrent requests for the same symbol are deduped in-flight.
+> Response `meta` includes `cached` (served from cache) and `fetched` (from
+> Yahoo). The cache is best-effort — any Supabase failure falls back to a live
+> fetch, and stale rows are pruned on write (7-day retention).
+
 ### `GET /api/price-series`
 
 Price series data with multiple timeframe support.
@@ -66,6 +73,11 @@ Price series data with multiple timeframe support.
 | range | string | ❌ | `D` | Alias for timeframe |
 
 Response: `{ data: [{ timestamp, date, price, open, high, low, close, volume }], meta }`
+
+> **Caching:** responses are cached per `(symbol, timeframe)` in the
+> `price_series_cache` table. TTL varies by timeframe: 60 s for intraday
+> (`15M`/`1H`/`2H`/`4H`), 15 min for `D`, 1 h for `W`, 6 h for `M`. Cache
+> misses hit Yahoo; in-flight requests are deduped. Best-effort (see `/api/quotes`).
 
 ### `GET /api/symbol-search`
 

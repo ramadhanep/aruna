@@ -125,6 +125,7 @@
 │       ├── supabase-server.js       # Service-role Supabase client + getUserFromRequest
 │       ├── supabase-storage.js      # SUPABASE_STORAGE_BASE, PLUANG_CDN_BASE, getIdxLogoUrl, getUsLogoUrl
 │       ├── logo-cache.js            # ensureUsLogo — server-only US logo HEAD/download/upload cache
+│       ├── market-data-cache.js     # Best-effort quotes/price-series DB cache (TTL, prune, in-flight dedupe)
 │       ├── yahoo-finance.js         # Configured yahoo-finance2 instance
 │       ├── yahoo-raw-log.js         # Dev-only Yahoo API response logging
 │       ├── money-flow.js            # Stockbit URL builders, score calculations

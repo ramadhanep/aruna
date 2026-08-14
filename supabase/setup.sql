@@ -184,6 +184,41 @@ create index if not exists msci_stocks_index_status_idx on public.msci_stocks (m
 create index if not exists msci_stocks_order_idx on public.msci_stocks ("order");
 create index if not exists msci_snapshot_cache_updated_idx on public.msci_snapshot_cache (last_updated_at desc);
 
+-- Market data cache (Yahoo quotes + price series, short TTL, deterministic cleanup)
+create table if not exists public.quote_cache (
+  symbol text not null,
+  timeframe text not null,
+  payload jsonb not null,
+  cached_at timestamptz default now(),
+  primary key (symbol, timeframe)
+);
+
+create table if not exists public.price_series_cache (
+  symbol text not null,
+  timeframe text not null,
+  payload jsonb not null,
+  cached_at timestamptz default now(),
+  primary key (symbol, timeframe)
+);
+
+alter table public.quote_cache enable row level security;
+alter table public.price_series_cache enable row level security;
+
+create policy "Anyone can view quote cache" on public.quote_cache
+  for select using (true);
+
+create policy "Anyone can view price series cache" on public.price_series_cache
+  for select using (true);
+
+create policy "Service role maintains quote cache" on public.quote_cache
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+create policy "Service role maintains price series cache" on public.price_series_cache
+  for all using (auth.role() = 'service_role') with check (auth.role() = 'service_role');
+
+create index if not exists quote_cache_cached_at_idx on public.quote_cache (cached_at);
+create index if not exists price_series_cache_cached_at_idx on public.price_series_cache (cached_at);
+
 -- Ajaib stock data table (real-time snapshot from Ajaib API)
 create table if not exists public.ajaib_stocks (
   code text primary key,

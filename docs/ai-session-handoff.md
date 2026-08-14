@@ -30,6 +30,18 @@ and the sidebar portfolio card is only shown while loading if
 `hasPortfolioPosition`. Reduced-motion now also zeroes `animation-delay`.
 Lint + build clean; server restarted on :3000.
 
+**Phase 11 — Market data caching** (roadmap item, previously scoped-not-implemented):
+new `src/lib/market-data-cache.js` — best-effort Supabase DB cache for
+`/api/quotes` (TTL 60 s) and `/api/price-series` (60 s intraday, 15 min `D`,
+1 h `W`, 6 h `M`). Reads serve fresh rows only, misses hit Yahoo, writes
+upsert + prune stale rows past 7-day retention (deterministic cleanup, no
+cron), and in-flight fetches are deduped per key. New tables
+`quote_cache` / `price_series_cache` (`(symbol, timeframe)` PK, jsonb payload,
+RLS public-select / service-role-write) in `supabase/setup.sql`. All failures
+fall back to live fetch so caching never breaks the API; quotes meta now
+reports `cached`/`fetched` counts. Docs updated (database, api, architecture,
+folder-structure, state-management, roadmap).
+
 ## Maintenance Plan — Files Modified
 
 | Phase | File(s) | Change |

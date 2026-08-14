@@ -2,6 +2,9 @@ import yahooFinance from '@/lib/yahoo-finance';
 import { encodePayload } from '@/lib/secure-payload';
 import { ensureUsLogo } from '@/lib/logo-cache';
 import { getIdxLogoUrl, getUsLogoUrl } from '@/lib/supabase-storage';
+import { readMarketDataCache, writeMarketDataCache, dedupeInflight } from '@/lib/market-data-cache';
+
+const CACHE_TABLE = 'quote_cache';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
@@ -279,18 +282,33 @@ export async function POST(request) {
             );
         }
 
-        // Fetch all quotes with concurrency control
-        const tasks = uniqueSymbols.map(
-            (symbol) => () => fetchSymbolQuote(symbol, timeframe)
+        // Serve fresh cached quotes where possible; only fetch misses from Yahoo.
+        const cachedMap = await readMarketDataCache(CACHE_TABLE, uniqueSymbols, timeframe);
+        const misses = uniqueSymbols.filter((symbol) => !cachedMap.has(symbol));
+
+        // Fetch missing quotes with concurrency control, deduped in-flight.
+        const tasks = misses.map(
+            (symbol) => () =>
+                dedupeInflight(`quote:${timeframe}:${symbol}`, () => fetchSymbolQuote(symbol, timeframe))
         );
         const results = await promisePool(tasks, CONCURRENCY_LIMIT);
 
-        // Build results map
+        const fetchedResults = results.filter(Boolean);
+
+        // Refresh cache for everything we fetched from Yahoo (best-effort).
+        await writeMarketDataCache(
+            CACHE_TABLE,
+            timeframe,
+            fetchedResults.map((result) => ({ symbol: result.symbol, payload: result }))
+        );
+
+        // Build results map: fresh cache first, then live fetches override.
         const quotesMap = {};
-        results.forEach((result) => {
-            if (result) {
-                quotesMap[result.symbol] = result;
-            }
+        cachedMap.forEach((payload, symbol) => {
+            quotesMap[symbol] = payload;
+        });
+        fetchedResults.forEach((result) => {
+            quotesMap[result.symbol] = result;
         });
 
         return Response.json({
@@ -299,6 +317,8 @@ export async function POST(request) {
                 meta: {
                     requested: uniqueSymbols.length,
                     resolved: Object.keys(quotesMap).length,
+                    cached: cachedMap.size,
+                    fetched: fetchedResults.length,
                     provider: 'yahoo-finance2',
                     timeframe,
                 },

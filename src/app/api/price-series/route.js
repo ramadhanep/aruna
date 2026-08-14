@@ -1,5 +1,8 @@
 import yahooFinance from '@/lib/yahoo-finance';
 import { encodePayload } from '@/lib/secure-payload';
+import { readMarketDataCache, writeMarketDataCache, dedupeInflight } from '@/lib/market-data-cache';
+
+const CACHE_TABLE = 'price_series_cache';
 
 const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
@@ -144,12 +147,21 @@ export async function GET(request) {
   }
 
   try {
-    const result = await yahooFinance.chart(symbol, {
-      period1,
-      period2: now,
-      interval: config.interval,
-      includePrePost: true,
-    });
+    // Serve from cache when a fresh row exists for (symbol, timeframe).
+    const cached = await readMarketDataCache(CACHE_TABLE, [symbol], timeframeParam);
+    const cachedPayload = cached.get(symbol);
+    if (cachedPayload) {
+      return Response.json({ payload: encodePayload(cachedPayload) });
+    }
+
+    const result = await dedupeInflight(`series:${timeframeParam}:${symbol}`, () =>
+      yahooFinance.chart(symbol, {
+        period1,
+        period2: now,
+        interval: config.interval,
+        includePrePost: true,
+      })
+    );
 
     const quotes = result?.quotes ?? [];
     if (quotes.length === 0) {
@@ -201,18 +213,23 @@ export async function GET(request) {
     const processedPoints = aggregateCandles(rawPoints, config.groupSize ?? 1, config.interval);
     const data = processedPoints.length > 0 ? processedPoints : rawPoints;
 
+    const payload = {
+      data,
+      meta: {
+        symbol: result?.meta?.symbol ?? symbol,
+        currency: result?.meta?.currency,
+        interval: config.interval,
+        timeframe: timeframeParam,
+        range: timeframeParam,
+        provider: 'yahoo-finance2',
+      },
+    };
+
+    // Cache the series for (symbol, timeframe) — best-effort.
+    await writeMarketDataCache(CACHE_TABLE, timeframeParam, [{ symbol, payload }]);
+
     return Response.json({
-      payload: encodePayload({
-        data,
-        meta: {
-          symbol: result?.meta?.symbol ?? symbol,
-          currency: result?.meta?.currency,
-          interval: config.interval,
-          timeframe: timeframeParam,
-          range: timeframeParam,
-          provider: 'yahoo-finance2',
-        },
-      }),
+      payload: encodePayload(payload),
     });
   } catch (error) {
     console.error('[price-series] Failed to fetch data:', error);
