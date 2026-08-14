@@ -36,9 +36,11 @@ Some page files are very large:
 
 ## Infrastructure
 
-### No Testing
-No test runner or test files. CI (`.github/workflows/ci.yml`) runs `lint` +
-`build` on push/PR — regression gate only, no automated tests.
+### Testing — RESOLVED (Phase 12)
+Vitest unit tests (`tests/unit/`, 113 tests) + Playwright E2E smoke tests
+(`e2e/`) are now configured and wired into CI. Remaining gaps are coverage,
+not infrastructure: no component tests (jsdom + Testing Library), no API-route
+integration tests against a Supabase emulator, no authenticated E2E flows.
 
 ### No External Monitoring — PARTIALLY RESOLVED (Phase 7)
 No external platform (Sentry etc.) — intentionally out of scope for Phase 7.

@@ -55,6 +55,8 @@
 | Tool | Version / Config | Role |
 |---|---|---|
 | ESLint | ^9 | Linting (`eslint-config-next` for Next.js rules) |
+| Vitest | ^4 | Unit tests (`vitest.config.mjs`, `tests/`) |
+| Playwright | ^1.62 | E2E smoke tests (`playwright.config.mjs`, `e2e/`) |
 | PostCSS | (via `@tailwindcss/postcss`) | CSS processing |
 | npm | (package manager) | Dependency management |
 | `jsconfig.json` | `@/*` → `./src/*` | Path aliases |

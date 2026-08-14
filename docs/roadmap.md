@@ -27,7 +27,7 @@
 - ✅ Security headers (CSP report-only, HSTS, frame/type/referrer/permissions)
 - ✅ Screener rate limiting (20 req/min/IP in `src/proxy.js`)
 - ✅ Liveness health endpoint (`/api/health`)
-- ✅ CI gate (GitHub Actions: lint + build)
+- ✅ CI gate (GitHub Actions: lint + test + build, plus a dedicated Playwright e2e job)
 - ✅ Structured request logging (Yahoo + cron summary lines)
 - ✅ Cron scheduling decision (disabled, documented)
 - ✅ Fetch timeouts (Yahoo/Stockbit/cron/client)

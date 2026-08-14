@@ -154,9 +154,13 @@
 ├── vercel.json                       # Vercel deployment + cron config
 ├── components.json                  # shadcn/ui configuration
 ├── eslint.config.mjs                # ESLint configuration
+├── vitest.config.mjs                # Vitest unit test configuration (tests/)
+├── playwright.config.mjs            # Playwright E2E configuration (e2e/)
 ├── jsconfig.json                    # JS path aliases (@/ → src/)
 ├── postcss.config.mjs               # PostCSS configuration
 ├── package.json                     # Dependencies and scripts
+├── tests/                           # Vitest unit tests (tests/unit/*.test.js)
+├── e2e/                             # Playwright E2E specs (e2e/*.spec.mjs)
 └── aruna-api.json                   # Postman/Bruno API collection
 ```
 
@@ -170,5 +174,7 @@
 | New feature component | `src/components/<name>.jsx` |
 | New business logic | `src/lib/<name>.js` |
 | New hook | `src/hooks/use-<name>.js` |
+| New unit test | `tests/unit/<name>.test.js` |
+| New E2E spec | `e2e/<name>.spec.mjs` |
 | New DB table | Add to `supabase/setup.sql` |
 | New environment variable | Add to `.env.template` and `docs/environment.md` |

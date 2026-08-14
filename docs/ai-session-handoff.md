@@ -316,5 +316,5 @@ Product decisions recorded this phase:
 Release to production: deploy, then walk the manual verification checklist in
 the Phase 7 assessment (error boundary on bad symbol, 429 behavior, health
 probe, PWA offline cold-launch to `/explore`, sw.js update flow). Then retire
-the remaining Known Issues (testing infra, live FX rate, full rate limiting,
+the remaining Known Issues (live FX rate, full rate limiting,
 external monitoring) as prioritized in `docs/roadmap.md`.

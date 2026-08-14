@@ -1,7 +1,7 @@
 # Aruna — AI Session Context
 
 **Version:** 1.7.56
-**Project:** Mobile-first stock market analysis platform for Indonesian retail investors (IDX, US equities, crypto). Next.js 16 App Router, React 19, Supabase, Tailwind v4. No test suite exists.
+**Project:** Mobile-first stock market analysis platform for Indonesian retail investors (IDX, US equities, crypto). Next.js 16 App Router, React 19, Supabase, Tailwind v4.
 
 ## Commands
 
@@ -10,6 +10,8 @@ npm run dev      # Start dev server (localhost:3000)
 npm run build    # Production build
 npm start        # Run production build
 npm run lint     # ESLint (eslint.config.mjs) — run before committing
+npm run test     # Vitest unit tests (tests/unit/*.test.js)
+npm run test:e2e # Playwright E2E smoke tests (needs `npx playwright install chromium`)
 ```
 
 Trigger cron jobs manually in dev (not auto-scheduled locally):
