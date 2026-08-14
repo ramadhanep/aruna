@@ -36,6 +36,7 @@ import { useChartState } from '@/hooks/use-chart-state';
 import { useChartData } from '@/hooks/use-chart-data';
 import { useChartSeries } from '@/hooks/use-chart-series';
 import { useChartFundamentals } from '@/hooks/use-chart-fundamentals';
+import { useChartNews } from '@/hooks/use-chart-news';
 import { useChartScreening } from '@/hooks/use-chart-screening';
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -173,6 +174,7 @@ function ElectionCyclePageContent() {
   }, [resolvedTheme]);
   const { loading, error, retry, rawLinesData, symbolInfo, assetName, monthlyHeatmap, quarterlyHeatmap } = useChartData(symbol, selectedCycles, colors.allYears);
   const { fundamentals, fundamentalsLoading, revenuePeriod, setRevenuePeriod } = useChartFundamentals(symbol, infoTab);
+  const { news, newsLoading } = useChartNews(symbol, infoTab);
 
   const [portfolioDialogOpen, setPortfolioDialogOpen] = useState(false);
   const [portfolioEntries, setPortfolioEntries] = useState([]);
@@ -1332,6 +1334,85 @@ function ElectionCyclePageContent() {
             </CardContent>
           </Card>
         )}
+      </div>
+    );
+  };
+
+  const renderNewsTab = () => {
+    if (newsLoading) {
+      return (
+        <div className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm mb-2">News</CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 space-y-3">
+              {[...Array(3)].map((_, idx) => (
+                <div key={idx} className="space-y-2">
+                  <Skeleton className="h-3 w-32 rounded-full" />
+                  <Skeleton className="h-4 w-24 rounded-full" />
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    if (!news || news.length === 0) {
+      return (
+        <Card>
+          <CardContent className="text-xs text-muted-foreground">
+            No news available for {symbol}.
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {news.slice(0, 10).map((item, idx) => {
+          const title = item.title || '—';
+          const publisher = item.publisher || '—';
+          const time = item.providerPublishTime ? new Date(item.providerPublishTime).toLocaleDateString('en-US') : '—';
+          const link = item.link || '#';
+          const thumbnail = item.thumbnail?.resolutions?.[0]?.url || null;
+          const summary = item.description || '';
+
+          return (
+            <Card key={idx} className="hover:shadow-sm transition-shadow">
+              <CardHeader className="flex flex-col">
+                <CardTitle className="text-sm">{title}</CardTitle>
+                <CardDescription className="text-xs text-muted-foreground">
+                  {publisher} • {time}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-3">
+                <a
+                  href={link}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-emerald-600 hover:underline text-sm"
+                >
+                  Read full article
+                </a>
+                {thumbnail && (
+                  <img
+                    src={thumbnail}
+                    alt={title}
+                    className="mt-2 w-full h-32 object-cover rounded-md"
+                    loading="lazy"
+                  />
+                )}
+                {summary && (
+                  <p className="mt-2 text-xs text-muted-foreground line-clamp-2">
+                    {summary}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
     );
   };
@@ -2609,6 +2690,7 @@ function ElectionCyclePageContent() {
                   {infoTab === 'keystats' && renderKeyStatsTab()}
                   {infoTab === 'analysis' && renderAnalysisTab()}
                   {infoTab === 'financials' && renderFinancialsTab()}
+                  {infoTab === 'news' && renderNewsTab()}
                   {infoTab === 'seasonality' && (
                     <ChartSeasonalityPanel
                       quarterlyHeatmap={quarterlyHeatmap}

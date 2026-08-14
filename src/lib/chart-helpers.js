@@ -97,6 +97,7 @@ export const NORMAL_TIMEFRAME_OPTIONS = [
 export const INTRADAY_TIMEFRAMES = new Set(['15m', '1h', '2h', '4h']);
 
 export const BASE_INFO_TABS = [
+  { value: 'news', label: 'NEWS' },
   { value: 'keystats', label: 'KEYSTATS' },
   { value: 'analysis', label: 'ANALYSIS' },
   { value: 'financials', label: 'FINANCIALS' },
@@ -118,6 +119,7 @@ export const INFO_TAB_QUERY_LOOKUP = {
   seasonality: 'seasonality',
   profile: 'profile',
   about: 'profile',
+  news: 'news',
 };
 
 export function normalizeInfoTabParam(value) {
