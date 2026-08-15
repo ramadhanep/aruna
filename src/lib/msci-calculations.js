@@ -9,8 +9,8 @@ export const MSCI_THRESHOLDS = {
   small_cap: 300_000_000,  // $300M USD
 };
 
-// TODO: Replace with live exchange rate fetch
-const USD_TO_IDR = 15_800;
+// Fallback USD/IDR rate used when no live rate is available
+const FALLBACK_USD_TO_IDR = 15_800;
 
 /**
  * Calculate free float market cap
@@ -28,9 +28,9 @@ export function calculateFreeFloatMcap(marketCap, freeFloatPercent) {
  * @param {string} indexType - 'standard' or 'small_cap'
  * @returns {number} Threshold in IDR
  */
-export function getMSCIThresholdIDR(indexType) {
+export function getMSCIThresholdIDR(indexType, usdToIdr = FALLBACK_USD_TO_IDR) {
   const thresholdUSD = MSCI_THRESHOLDS[indexType] || MSCI_THRESHOLDS.standard;
-  return thresholdUSD * USD_TO_IDR;
+  return thresholdUSD * usdToIdr;
 }
 
 /**
@@ -39,8 +39,8 @@ export function getMSCIThresholdIDR(indexType) {
  * @param {string} indexType - 'standard' or 'small_cap'
  * @returns {number} Progress percentage (0-100+)
  */
-export function calculateProgress(freeFloatMcap, indexType) {
-  const threshold = getMSCIThresholdIDR(indexType);
+export function calculateProgress(freeFloatMcap, indexType, usdToIdr = FALLBACK_USD_TO_IDR) {
+  const threshold = getMSCIThresholdIDR(indexType, usdToIdr);
   if (!threshold || !freeFloatMcap) return 0;
   return Math.min((freeFloatMcap / threshold) * 100, 999);
 }
@@ -52,8 +52,8 @@ export function calculateProgress(freeFloatMcap, indexType) {
  * @param {string} indexType - 'standard' or 'small_cap'
  * @returns {number} Target price
  */
-export function calculateTargetPrice(currentPrice, freeFloatMcap, indexType) {
-  const threshold = getMSCIThresholdIDR(indexType);
+export function calculateTargetPrice(currentPrice, freeFloatMcap, indexType, usdToIdr = FALLBACK_USD_TO_IDR) {
+  const threshold = getMSCIThresholdIDR(indexType, usdToIdr);
   if (!currentPrice || !freeFloatMcap || freeFloatMcap >= threshold) {
     return currentPrice;
   }
@@ -108,7 +108,7 @@ export { formatMarketCap, formatPrice, formatPercent } from '@/lib/utils';
  * @param {object} stock - Stock object with price and fundamental data
  * @returns {object} Complete MSCI metrics
  */
-export function calculateMSCIMetrics(stock) {
+export function calculateMSCIMetrics(stock, usdToIdr = FALLBACK_USD_TO_IDR) {
   const {
     price,
     market_cap,
@@ -120,10 +120,10 @@ export function calculateMSCIMetrics(stock) {
   const freeFloatMcap = calculateFreeFloatMcap(market_cap, free_float_percent);
   
   // Calculate progress toward threshold
-  const progress = calculateProgress(freeFloatMcap, msci_index);
+  const progress = calculateProgress(freeFloatMcap, msci_index, usdToIdr);
   
   // Calculate target price
-  const targetPrice = calculateTargetPrice(price, freeFloatMcap, msci_index);
+  const targetPrice = calculateTargetPrice(price, freeFloatMcap, msci_index, usdToIdr);
   
   // Calculate upside
   const upside = calculateUpside(price, targetPrice);
@@ -137,7 +137,7 @@ export function calculateMSCIMetrics(stock) {
     targetPrice,
     upside,
     status,
-    thresholdIDR: getMSCIThresholdIDR(msci_index),
+    thresholdIDR: getMSCIThresholdIDR(msci_index, usdToIdr),
   };
 }
 

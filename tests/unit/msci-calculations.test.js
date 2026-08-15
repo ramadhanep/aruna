@@ -28,6 +28,16 @@ describe('msci-calculations', () => {
     it('falls back to standard for unknown index type', () => {
       expect(getMSCIThresholdIDR('bogus')).toBe(2_000_000_000 * USD_TO_IDR);
     });
+
+    it('uses a provided live rate over the fallback', () => {
+      expect(getMSCIThresholdIDR('standard', 16_000)).toBe(2_000_000_000 * 16_000);
+      expect(calculateMSCIMetrics({
+        price: 100,
+        market_cap: 1_000_000_000_000,
+        free_float_percent: 50,
+        msci_index: 'standard',
+      }, 16_000).thresholdIDR).toBe(2_000_000_000 * 16_000);
+    });
   });
 
   describe('calculateFreeFloatMcap', () => {

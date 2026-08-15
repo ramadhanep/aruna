@@ -3,9 +3,45 @@ import { createClient } from '@supabase/supabase-js';
 import { encodePayload } from '@/lib/secure-payload';
 import { calculateMSCIMetrics, calculateSummaryStats } from '@/lib/msci-calculations';
 import { getIdxLogoUrl } from '@/lib/supabase-storage';
+import yahooFinance from '@/lib/yahoo-finance';
+import { readMarketDataCache, writeMarketDataCache, dedupeInflight } from '@/lib/market-data-cache';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+const FX_SYMBOL = 'IDR=X';
+const FALLBACK_USD_TO_IDR = 15_800;
+
+/**
+ * Live USD/IDR rate, cached in quote_cache like every other quote (60 s TTL).
+ * Falls back to 15_800 on any failure — a stale rate beats a broken page.
+ */
+async function getUsdToIdr() {
+  try {
+    const cached = await readMarketDataCache('quote_cache', [FX_SYMBOL], '1D');
+    const fresh = cached.get(FX_SYMBOL);
+    if (fresh && Number.isFinite(fresh.price) && fresh.price > 0) {
+      return fresh.price;
+    }
+  } catch {
+    // fall through to live fetch
+  }
+
+  try {
+    const quote = await dedupeInflight(`quote:1D:${FX_SYMBOL}`, () => yahooFinance.quote(FX_SYMBOL));
+    const rate = quote?.regularMarketPrice;
+    if (typeof rate === 'number' && Number.isFinite(rate) && rate > 0) {
+      await writeMarketDataCache('quote_cache', '1D', [
+        { symbol: FX_SYMBOL, payload: { symbol: FX_SYMBOL, price: rate } },
+      ]);
+      return rate;
+    }
+  } catch (error) {
+    console.warn('[msci] USD/IDR fetch failed, using fallback:', error.message);
+  }
+
+  return FALLBACK_USD_TO_IDR;
+}
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -22,6 +58,8 @@ export async function GET(request) {
         { status: 500 }
       );
     }
+
+    const usdToIdr = await getUsdToIdr();
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { searchParams } = new URL(request.url);
@@ -117,7 +155,7 @@ export async function GET(request) {
         price_1_month: 0, // Bibit doesn't provide this, set to 0
       };
 
-      const metrics = calculateMSCIMetrics(stockWithMarketData);
+      const metrics = calculateMSCIMetrics(stockWithMarketData, usdToIdr);
 
       return {
         ...stockWithMarketData,
@@ -163,6 +201,7 @@ export async function GET(request) {
             stocks: enrichedStocks,
             summary,
             lastUpdated,
+            usdToIdr,
         })
     });
 
