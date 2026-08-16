@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SegmentedControl } from "@/components/ui/segmented-control";
 import { toFiniteNumber, TP_FALLBACK_META } from "@/lib/chart-helpers";
+import { useTranslations } from "next-intl";
 
 export function ChartTradingPlanPanel({
   payload,
@@ -15,6 +16,7 @@ export function ChartTradingPlanPanel({
   formatPriceValue,
   formatDetailedCurrency,
 }) {
+  const t = useTranslations("chartTradingPlan");
   const [entryInput, setEntryInput] = useState('');
   const [balanceInput, setBalanceInput] = useState('');
   const [riskPercentInput, setRiskPercentInput] = useState('1');
@@ -65,8 +67,8 @@ export function ChartTradingPlanPanel({
   const stopLossPrice = useMemo(() => toFiniteNumber(payload?.stop_loss), [payload]);
 
   const stopLossReason = useMemo(
-    () => payload?.stop_loss_reason || 'Below Key Technical Level',
-    [payload]
+    () => payload?.stop_loss_reason || t('stopLossReasonFallback'),
+    [payload, t]
   );
 
   const stopLossPct = useMemo(() => {
@@ -95,9 +97,9 @@ export function ChartTradingPlanPanel({
       low: low != null ? Math.min(low, high ?? low) : null,
       high: high != null ? Math.max(low ?? high, high) : null,
       type: payload?.entry_type || 'Market',
-      reason: payload?.entry_reason || 'Breakout confirmed by trend and volume',
+      reason: payload?.entry_reason || t('entryReasonFallback'),
     };
-  }, [payload, entryPrice]);
+  }, [payload, entryPrice, t]);
 
   const targets = useMemo(() => {
     if (!payload?.tp_targets) {
@@ -153,13 +155,13 @@ export function ChartTradingPlanPanel({
     const tier = payload?.quality_tier ||
       (rr == null ? 'fair' : rr >= 3 ? 'excellent' : rr >= 2 ? 'good' : rr >= 1.2 ? 'fair' : 'poor');
     const meta = {
-      excellent: { label: 'Excellent Setup', variant: 'success' },
-      good: { label: 'Good Setup', variant: 'success' },
-      fair: { label: 'Fair Setup', variant: 'warning' },
-      poor: { label: 'Weak Setup', variant: 'danger' },
+      excellent: { label: t('excellentSetup'), variant: 'success' },
+      good: { label: t('goodSetup'), variant: 'success' },
+      fair: { label: t('fairSetup'), variant: 'warning' },
+      poor: { label: t('weakSetup'), variant: 'danger' },
     };
     return { tier, ...(meta[tier] || meta.fair) };
-  }, [payload, riskReward]);
+  }, [payload, riskReward, t]);
 
   const basisValues = useMemo(() => {
     if (!payload?.basis) {
@@ -175,19 +177,19 @@ export function ChartTradingPlanPanel({
 
   const technicalConfirmations = useMemo(() => {
     const items = [];
-    items.push('Price reclaimed EMA20 with rising slope');
+    items.push(t('priceReclaimed'));
     const volumeRatio = toFiniteNumber(payload?.volume_ratio);
     items.push(
       volumeRatio != null
-        ? `Volume ${volumeRatio.toFixed(2)}x above 31-day average`
-        : 'Volume above 31-day average'
+        ? t('volumeRatio', { ratio: volumeRatio.toFixed(2) })
+        : t('volumeAbove')
     );
     const slope = toFiniteNumber(payload?.ema_slope_pct);
     if (slope != null) {
-      items.push(`EMA20 trending up (${slope >= 0 ? '+' : ''}${slope.toFixed(2)}%/day)`);
+      items.push(t('emaTrending', { slope: `${slope >= 0 ? '+' : ''}${slope.toFixed(2)}` }));
     }
     return items;
-  }, [payload]);
+  }, [payload, t]);
 
   // --- Position size calculator: risk-first, never requires manual share math ---
   const balanceValue = useMemo(() => {
@@ -223,10 +225,10 @@ export function ChartTradingPlanPanel({
     if (lotEligible) {
       const lotShares = (lotCount ?? 0) * 100;
       const lotLabel = (lotCount ?? 0).toLocaleString('en-US', { maximumFractionDigits: 0 });
-      return `${lotLabel} lots (${lotShares.toLocaleString('en-US')} shares)`;
+      return t('lotsSummary', { lots: lotLabel, shares: lotShares.toLocaleString('en-US') });
     }
-    return `${shareLabel} shares`;
-  }, [shareCount, lotCount, lotEligible]);
+    return t('sharesSummary', { shares: shareLabel });
+  }, [shareCount, lotCount, lotEligible, t]);
 
   const positionCost = useMemo(() => {
     if (shareCount <= 0 || entryPrice == null) return null;
@@ -251,9 +253,9 @@ export function ChartTradingPlanPanel({
   if (!payload) {
     return (
       <div className="rounded-xl border border-border/60 py-10 px-4 flex flex-col items-center justify-center gap-1.5 text-center">
-        <p className="text-sm font-semibold text-foreground">No Trading Plan Available</p>
+        <p className="text-sm font-semibold text-foreground">{t('noPlanTitle')}</p>
         <p className="text-xs text-muted-foreground max-w-xs">
-          A plan appears automatically once a breakout signal is detected for this symbol.
+          {t('noPlanBody')}
         </p>
       </div>
     );
@@ -290,14 +292,18 @@ export function ChartTradingPlanPanel({
       {/* 2. Risk : Reward — the headline metric */}
       <div className="rounded-xl border border-border/60 bg-card px-4 py-3.5 flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-2xs uppercase tracking-wide text-muted-foreground mb-0.5">Risk : Reward</p>
+          <p className="text-2xs uppercase tracking-wide text-muted-foreground mb-0.5">{t('riskReward')}</p>
           <p className={`text-2xl font-bold leading-none ${rrTone}`}>{rrLabel}</p>
           <p className="text-2xs text-muted-foreground mt-1.5">
-            Risk {formatPriceValue(riskPerUnit)} to reach {primaryTarget?.label ?? 'target'} · {primaryTarget?.reason ?? '—'}
+            {t('riskToReach', {
+              price: formatPriceValue(riskPerUnit),
+              label: primaryTarget?.label ?? 'target',
+              reason: primaryTarget?.reason ?? '—',
+            })}
           </p>
         </div>
         <div className="text-right shrink-0">
-          <p className="text-2xs text-muted-foreground mb-0.5">Range TP1→TP3</p>
+          <p className="text-2xs text-muted-foreground mb-0.5">{t('rangeTp1Tp3')}</p>
           <p className="text-xs font-semibold text-foreground">
             {firstRR != null ? `1:${firstRR.toFixed(1)}` : '—'} → {lastRR != null ? `1:${lastRR.toFixed(1)}` : '—'}
           </p>
@@ -307,7 +313,7 @@ export function ChartTradingPlanPanel({
       {/* 3. Entry */}
       <div className="rounded-xl border border-border/60 p-3 space-y-1">
         <div className="flex items-center justify-between">
-          <p className="text-1xs font-semibold text-foreground">Entry</p>
+          <p className="text-1xs font-semibold text-foreground">{t('entry')}</p>
           <Badge className="border-transparent bg-primary/10 text-primary">
             {entryZone.type}
           </Badge>
@@ -315,7 +321,10 @@ export function ChartTradingPlanPanel({
         <div className="flex items-baseline justify-between gap-2">
           <p className="text-base font-bold text-foreground">{formatPriceValue(entryPrice)}</p>
           <p className="text-2xs text-muted-foreground text-right">
-            Buy zone {formatPriceValue(entryZone.low)}–{formatPriceValue(entryZone.high)}
+            {t('buyZone', {
+              low: formatPriceValue(entryZone.low),
+              high: formatPriceValue(entryZone.high),
+            })}
           </p>
         </div>
         <p className="text-2xs text-muted-foreground">{entryZone.reason}</p>
@@ -324,7 +333,7 @@ export function ChartTradingPlanPanel({
       {/* 4. Stop Loss */}
       <div className="rounded-xl border border-border/60 p-3 space-y-1">
         <div className="flex items-center justify-between">
-          <p className="text-1xs font-semibold text-foreground">Stop Loss</p>
+          <p className="text-1xs font-semibold text-foreground">{t('stopLoss')}</p>
           <span className="text-2xs font-semibold text-red-600 dark:text-red-400">
             {stopLossPct != null ? `${stopLossPct.toFixed(2)}%` : '—'}
           </span>
@@ -335,7 +344,7 @@ export function ChartTradingPlanPanel({
 
       {/* 5. Take Profit Strategy */}
       <div className="rounded-xl border border-border/60 p-3 space-y-2">
-        <p className="text-1xs font-semibold text-foreground">Take Profit Strategy</p>
+        <p className="text-1xs font-semibold text-foreground">{t('takeProfitStrategy')}</p>
         <div className="space-y-2">
           {targets.map((target) => (
             <div
@@ -348,7 +357,7 @@ export function ChartTradingPlanPanel({
                   <span className="text-2xs text-muted-foreground truncate">{target.reason}</span>
                 </div>
                 <p className="text-2xs text-muted-foreground mt-0.5">
-                  Sell {target.sellPercent}% · {target.action}
+                  {t('sellAction', { percent: target.sellPercent, action: target.action })}
                 </p>
               </div>
               <div className="text-right shrink-0">
@@ -365,11 +374,11 @@ export function ChartTradingPlanPanel({
 
       {/* 6. Position Size Calculator — risk-first, no manual share math */}
       <div className="rounded-xl border border-border/60 p-3 space-y-3">
-        <p className="text-1xs font-semibold text-foreground">Position Size Calculator</p>
+        <p className="text-1xs font-semibold text-foreground">{t('positionSizeCalculator')}</p>
 
         <div className="grid grid-cols-2 gap-2.5">
           <div className="space-y-1">
-            <Label className="text-2xs font-medium text-muted-foreground">Account Balance</Label>
+            <Label className="text-2xs font-medium text-muted-foreground">{t('accountBalance')}</Label>
             <Input
               type="number"
               inputMode="decimal"
@@ -378,11 +387,11 @@ export function ChartTradingPlanPanel({
               value={balanceInput}
               onChange={(event) => setBalanceInput(event.target.value)}
               className="text-xs h-8"
-              placeholder="e.g. 50,000"
+              placeholder={t('balancePlaceholder')}
             />
           </div>
           <div className="space-y-1">
-            <Label className="text-2xs font-medium text-muted-foreground">Risk %</Label>
+            <Label className="text-2xs font-medium text-muted-foreground">{t('riskPercent')}</Label>
             <Input
               type="number"
               inputMode="decimal"
@@ -409,7 +418,7 @@ export function ChartTradingPlanPanel({
         </div>
 
         <div className="space-y-1">
-          <Label className="text-2xs font-medium text-muted-foreground">Your Entry Price</Label>
+          <Label className="text-2xs font-medium text-muted-foreground">{t('yourEntryPrice')}</Label>
           <Input
             type="number"
             inputMode="decimal"
@@ -418,37 +427,37 @@ export function ChartTradingPlanPanel({
             value={entryInput}
             onChange={(event) => setEntryInput(event.target.value)}
             className="text-xs h-8"
-            placeholder={payload?.entry_price ? `Default: ${payload.entry_price}` : 'e.g. 125.50'}
+            placeholder={payload?.entry_price ? t('defaultPrice', { price: payload.entry_price }) : t('entryPlaceholder')}
           />
         </div>
 
         <div className="rounded-lg bg-muted/30 p-2.5 grid grid-cols-2 gap-y-2.5 gap-x-2">
           <div>
-            <p className="text-2xs text-muted-foreground">Max Risk Amount</p>
+            <p className="text-2xs text-muted-foreground">{t('maxRiskAmount')}</p>
             <p className="text-xs font-semibold text-red-600 dark:text-red-400">{formatPlanCurrencyValue(maxRiskAmount)}</p>
           </div>
           <div>
-            <p className="text-2xs text-muted-foreground">Position Size</p>
+            <p className="text-2xs text-muted-foreground">{t('positionSize')}</p>
             <p className="text-xs font-semibold text-foreground">{sizeSummary || '—'}</p>
           </div>
           <div>
-            <p className="text-2xs text-muted-foreground">Position Cost</p>
+            <p className="text-2xs text-muted-foreground">{t('positionCost')}</p>
             <p className="text-xs font-semibold text-foreground">{formatPlanCurrencyValue(positionCost)}</p>
           </div>
           <div>
-            <p className="text-2xs text-muted-foreground">Risk : Reward</p>
+            <p className="text-2xs text-muted-foreground">{t('riskReward')}</p>
             <p className="text-xs font-semibold text-foreground">
               {calculatorRiskReward != null ? `1 : ${calculatorRiskReward.toFixed(1)}` : '—'}
             </p>
           </div>
           <div>
-            <p className="text-2xs text-muted-foreground">Expected Loss (at SL)</p>
+            <p className="text-2xs text-muted-foreground">{t('expectedLoss')}</p>
             <p className="text-xs font-semibold text-red-600 dark:text-red-400">
               {formatPlanCurrencyDelta(expectedLoss != null ? -expectedLoss : null)}
             </p>
           </div>
           <div>
-            <p className="text-2xs text-muted-foreground">Expected Profit ({primaryTarget?.label ?? 'TP'})</p>
+            <p className="text-2xs text-muted-foreground">{t('expectedProfit', { label: primaryTarget?.label ?? 'TP' })}</p>
             <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
               {formatPlanCurrencyDelta(expectedProfit)}
             </p>
@@ -458,7 +467,7 @@ export function ChartTradingPlanPanel({
 
       {/* 7. Technical Confirmation */}
       <div className="rounded-xl border border-border/60 p-3 space-y-2">
-        <p className="text-1xs font-semibold text-foreground">Technical Confirmation</p>
+        <p className="text-1xs font-semibold text-foreground">{t('technicalConfirmation')}</p>
         <ul className="space-y-1">
           {technicalConfirmations.map((line, index) => (
             <li key={index} className="flex items-start gap-1.5 text-1xs text-muted-foreground">
@@ -469,15 +478,15 @@ export function ChartTradingPlanPanel({
         </ul>
         <div className="grid grid-cols-3 gap-2 pt-1.5 border-t border-border/40">
           <div>
-            <p className="text-2xs text-muted-foreground">Swing Low</p>
+            <p className="text-2xs text-muted-foreground">{t('swingLow')}</p>
             <p className="text-1xs font-semibold">{formatPriceValue(basisValues.swing)}</p>
           </div>
           <div>
-            <p className="text-2xs text-muted-foreground">EMA20</p>
+            <p className="text-2xs text-muted-foreground">{t('ema20')}</p>
             <p className="text-1xs font-semibold">{formatPriceValue(basisValues.ema)}</p>
           </div>
           <div>
-            <p className="text-2xs text-muted-foreground">ATR(14)</p>
+            <p className="text-2xs text-muted-foreground">{t('atr14')}</p>
             <p className="text-1xs font-semibold">{formatPriceValue(basisValues.atr)}</p>
           </div>
         </div>

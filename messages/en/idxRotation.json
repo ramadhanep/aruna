@@ -1,0 +1,17 @@
+{
+  "idxRotation": {
+    "goBack": "Go back",
+    "title": "Market Rotation",
+    "subtitle": "Top 200 by Market Cap",
+    "downloadImage": "Download as image",
+    "leading": "Leading",
+    "weakening": "Weakening",
+    "lagging": "Lagging",
+    "improving": "Improving",
+    "strongMomentum": "Strong Momentum →",
+    "weakMomentum": "← Weak Momentum",
+    "uptrend": "↑ Uptrend",
+    "downtrend": "↓ Downtrend",
+    "stockTooltip": "{code}\n{name}\nWeekly: {weekly}\nMonthly: {monthly}"
+  }
+}

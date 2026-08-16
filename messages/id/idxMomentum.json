@@ -1,0 +1,28 @@
+{
+  "idxMomentum": {
+    "tabAll": "Semua",
+    "tabGainers": "Pendaki",
+    "tabLosers": "Penerjun",
+    "sortStocks": "Urutkan saham",
+    "momentumScore": "Skor Momentum",
+    "weeklyChange": "Perubahan Mingguan",
+    "monthlyChange": "Perubahan Bulanan",
+    "marketSentiment": "Sentimen Pasar",
+    "total": "Total",
+    "neutral": "Netral",
+    "avgMomentumScore": "Rata-rata Skor Momentum",
+    "price": "Harga",
+    "weekChange": "1 Minggu",
+    "monthChange": "1 Bulan",
+    "signInToUnlock": "Masuk untuk membuka",
+    "topGainers": "Pendaki Teratas",
+    "topLosers": "Penerjun Teratas",
+    "title": "Analisis Momentum & Tren Harga IDX",
+    "failedToLoadData": "Gagal memuat data",
+    "fetchError": "Gagal memuat data momentum",
+    "showingStocks": "Menampilkan {shown} dari {total} saham",
+    "noMoreStocks": "Tidak ada lagi saham untuk dimuat",
+    "noStocksFound": "Tidak ada saham yang cocok dengan filter ini.",
+    "lastUpdated": "Terakhir diperbarui: {time}"
+  }
+}

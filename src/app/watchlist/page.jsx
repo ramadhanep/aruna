@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Loader2, Download, Edit, BarChart3 } from "lucide-react";
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,6 +34,7 @@ function areWatchlistsEqual(a = [], b = []) {
 const AUTO_REFRESH_MS = 60_000;
 
 export default function HomePage() {
+  const t = useTranslations();
   const router = useRouter();
   const [watchlist, setWatchlist] = useState([]);
   const [watchlistReady, setWatchlistReady] = useState(false);
@@ -302,7 +304,7 @@ export default function HomePage() {
             </Card>
 
             <div className="overflow-hidden">
-              <SectionHeader title="Watchlist" />
+              <SectionHeader title={t("watchlist.header")} />
               <div className="skeleton-stagger lg:grid lg:grid-cols-2 lg:gap-x-8 lg:gap-y-1">
                 {[...Array(8)].map((_, i) => <TickerRowSkeleton key={i} />)}
               </div>
@@ -371,13 +373,13 @@ export default function HomePage() {
           <Card>
             <CardContent className="p-4">
               <p className="text-xs leading-relaxed text-foreground/90 font-medium">
-                We search through historical data looking for anomalous patterns that we would not expect to occur at random.
+                {t("watchlist.intro")}
               </p>
             </CardContent>
           </Card>
 
           <div className="overflow-hidden">
-            <SectionHeader title="Watchlist" />
+            <SectionHeader title={t("watchlist.header")} />
             <div className="lg:grid lg:grid-cols-2 lg:gap-x-8 lg:gap-y-1">
               {quotes.map(quote => (
                 <div key={quote.symbol}>
@@ -412,7 +414,7 @@ export default function HomePage() {
                 className="w-full flex items-center gap-2 justify-center py-1 h-auto"
               >
                 <Edit className="h-4 w-4" />
-                <span className="text-sm font-semibold">Edit Watchlist</span>
+                <span className="text-sm font-semibold">{t("watchlist.editWatchlist")}</span>
               </Button>
             </div>
           </div>
@@ -424,14 +426,14 @@ export default function HomePage() {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <BarChart3 className="h-5 w-5 text-muted-foreground" />
-                  <CardTitle className="text-sm font-bold">Highlights</CardTitle>
+                  <CardTitle className="text-sm font-bold">{t("watchlist.highlights")}</CardTitle>
                 </div>
-                <CardDescription className="text-xs">How your watchlist is moving today</CardDescription>
+                <CardDescription className="text-xs">{t("watchlist.highlightsSubtitle")}</CardDescription>
               </CardHeader>
               <CardContent className="mt-4 grid gap-3">
                 <div className="flex items-center justify-between rounded-xl">
                   <div>
-                    <p className="text-xs text-muted-foreground">Top Gainer</p>
+                    <p className="text-xs text-muted-foreground">{t("watchlist.topGainer")}</p>
                     <p className="text-sm font-semibold uppercase">{formatTickerDisplay(marketPulse.topGainer.symbol)}</p>
                     <p className={`text-xs font-medium ${marketPulse.topGainer.change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                       {marketPulse.topGainer.change >= 0 ? '+' : ''}{marketPulse.topGainer.change.toFixed(2)} ({marketPulse.topGainer.changePercent.toFixed(2)}%)
@@ -449,7 +451,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex items-center justify-between rounded-lg">
                   <div>
-                    <p className="text-xs text-muted-foreground">Top Loser</p>
+                    <p className="text-xs text-muted-foreground">{t("watchlist.topLoser")}</p>
                     <p className="text-sm font-semibold uppercase">{formatTickerDisplay(marketPulse.topLoser.symbol)}</p>
                     <p className={`text-xs font-medium ${marketPulse.topLoser.change >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                       {marketPulse.topLoser.change >= 0 ? '+' : ''}{marketPulse.topLoser.change.toFixed(2)} ({marketPulse.topLoser.changePercent.toFixed(2)}%)
@@ -466,7 +468,7 @@ export default function HomePage() {
                   </div>
                 </div>
                 <div className="rounded-xl mt-2">
-                  <p className="text-xs text-muted-foreground">Average Change</p>
+                  <p className="text-xs text-muted-foreground">{t("watchlist.averageChange")}</p>
                   <p className={`text-sm font-semibold ${marketPulse.averageChange >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                     {marketPulse.averageChange >= 0 ? '+' : ''}{marketPulse.averageChange.toFixed(2)}%
                   </p>
@@ -481,7 +483,7 @@ export default function HomePage() {
               className="w-full bg-foreground hover:bg-foreground/90 flex items-center gap-2 text-xs text-background rounded-md"
             >
               <Download className="h-4 w-4" />
-              Install App
+              {t("common.installApp")}
             </Button>
           )}
         </div>

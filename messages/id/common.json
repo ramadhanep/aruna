@@ -1,0 +1,12 @@
+{
+  "common": {
+    "installApp": "Pasang Aplikasi",
+    "signIn": "Masuk",
+    "loading": "Memuat",
+    "save": "Simpan",
+    "cancel": "Batal",
+    "done": "Selesai",
+    "search": "Cari",
+    "back": "Kembali"
+  }
+}

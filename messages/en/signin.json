@@ -1,0 +1,13 @@
+{
+  "signin": {
+    "welcomeBack": "Welcome back",
+    "signInToContinue": "Sign in to continue",
+    "syncTagline": "Sync your watchlist and portfolio securely across every device.",
+    "signInWithGoogle": "Sign in with Google",
+    "redirecting": "Redirecting…",
+    "errSignIn": "Unable to start Google sign-in. Please try again.",
+    "errProvider": "Provider credentials are missing. Add them to enable sign-in.",
+    "providerWarning": "Provider credentials are not configured. Remote sync will be disabled until you add them.",
+    "authNotice": "By continuing you agree to our use of Google for authentication. We only use your email to keep your data in sync."
+  }
+}

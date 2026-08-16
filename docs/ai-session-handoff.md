@@ -1,6 +1,27 @@
 # AI Session Handoff
 
-**Last Updated**: 2026-08-14
+**Last Updated**: 2026-08-15
+
+## i18n — Internationalization with `next-intl`
+
+- `next-intl@4.13.6` installed; wired `next-intl/plugin` in `next.config.mjs`
+  and `NextIntlClientProvider` + `getLocale()` in root `layout.jsx`.
+- `src/i18n/request.js` resolves the `locale` cookie (`en` default, `id` opt-in)
+  and statically merges per-namespace JSON catalogs from
+  `messages/{en,id}/` into a single message map.
+- Migrated all 14 pages + shared components (watchlist, explore, account-sidebar,
+  chart, msci, portfolio-tracker, money-flow, idx-*, discussion, signin, offline,
+  tools, ticker-row, manage-watchlist-dialog, add-asset-modal, etc.) to
+  `useTranslations`/`getTranslations`. 42 JSON catalogs, all valid.
+- Language switcher in `account-sidebar.jsx`: EN / *Bahasa Indonesia* buttons
+  set the `locale` cookie via `document.cookie` + `router.refresh()`. Verified
+  live: `/explore` and `/chart` serve EN by default and ID with `Cookie: locale=id`.
+- Bumped version 1.7.56 → **1.8.0** (package.json, package-lock.json,
+  next.config.mjs `NEXT_PUBLIC_APP_VERSION` env, public/sw.js `VERSION`, CLAUDE.md).
+- Fixes: `money-flow/page.jsx` useEffect missing `t` dep; `use-chart-news.js`
+  `set-state-in-effect` (moved `setNewsLoading(true)` into async IIFE); `src/app/explore/page.jsx` market tabs `t(cat.titleKey)` → `t(`explore.${cat.titleKey}`)` with root `useTranslations()`, CATEGORY_LABELS hardcoded labels → translated via `t("explore.category"+cap(category))`, manual Screener button labels `category.toUpperCase()` → `t("explore.screener"+cap(category))`, added keys categoryIdx/screenerIdx/screenerUs/screenerCrypto to both explore.json locales.
+- Verification: 42/42 JSON valid; `npm run lint` 0 errors (1 pre-existing `<img>`
+  warning); `npm run build` passes; `npm run test` 114/114; `next start` on :3000.
 
 ## Phase 14 — Finance route hardening + portfolio N+1
 

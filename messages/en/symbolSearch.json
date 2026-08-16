@@ -1,0 +1,14 @@
+{
+  "headerSymbolSearch": {
+    "title": "Search Ticker",
+    "placeholder": "Search ticker or company name",
+    "searching": "Searching...",
+    "recent": "Recent",
+    "clear": "Clear",
+    "results": "Results",
+    "noMatches": "No matches for \"{query}\"",
+    "cancel": "Cancel",
+    "triggerAria": "Search ticker",
+    "triggerPlaceholder": "Search ticker or company..."
+  }
+}

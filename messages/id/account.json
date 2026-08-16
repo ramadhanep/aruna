@@ -1,0 +1,43 @@
+{
+  "accountSidebar": {
+    "profile": "Profil",
+    "guestMode": "Kamu sedang menjelajah sebagai tamu",
+    "signInToSync": "Masuk untuk sinkronkan daftar pantauan & portofolio",
+    "mode": "Mode",
+    "synced": "Tersinkron",
+    "guest": "Tamu",
+    "server": "Server",
+    "connected": "Terhubung",
+    "offline": "Offline",
+    "signInPrompt": "Masuk dengan Google untuk menyinkronkan daftar pantauan dan portofolio dengan aman.",
+    "signInWithGoogle": "Masuk dengan Google",
+    "appearance": "Tampilan",
+    "appearanceHint": "Pilih tampilan yang paling nyaman di perangkatmu. Light tetap terang, dark hemat baterai.",
+    "light": "Light",
+    "dark": "Dark",
+    "visualMode": "Mode Visual",
+    "visualModeHint": "Mode Lite melewati gambar logo ticker agar lebih ringan.",
+    "lite": "Lite",
+    "pro": "Pro",
+    "dataPrivacy": "Data & Privasi",
+    "clearData": "Hapus Data",
+    "clearDataHint": "Hapus item daftar pantauan & portofolio dari akunmu.",
+    "signOut": "Keluar",
+    "logOutTitle": "Keluar?",
+    "logOutDesc": "Kamu akan keluar dari perangkat ini. Kamu bisa masuk lagi kapan saja untuk menyinkronkan datamu.",
+    "loggingOut": "Keluar…",
+    "logOut": "Keluar",
+    "providerWarning": "Kredensial provider belum dikonfigurasi. Sinkronisasi jarak jauh akan dinonaktifkan sampai ditambahkan.",
+    "language": "Bahasa",
+    "languageHint": "Pilih bahasa yang kamu inginkan untuk aplikasi.",
+    "accountTitle": "Akun",
+    "accountDesc": "Pengaturan akun, tampilan, dan pengelolaan data.",
+    "version": "Versi {version}",
+    "errSignIn": "Gagal memulai login Google. Silakan coba lagi.",
+    "errProvider": "Kredensial provider tidak ada. Tambahkan ke environment untuk mengaktifkan login.",
+    "errSignOut": "Gagal keluar. Silakan coba lagi."
+  },
+  "accountPage": {
+    "redirecting": "Mengalihkan..."
+  }
+}

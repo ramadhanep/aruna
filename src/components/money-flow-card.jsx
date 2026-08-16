@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { TrendingUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
@@ -34,6 +35,7 @@ function RiskBadge({ level }) {
 }
 
 export function MoneyFlowCard({ report, isExpandedView = false }) {
+  const t = useTranslations("moneyFlowCard");
   const [isNetView, setIsNetView] = useState(true);
 
   const score = Number(report.money_flow_score || 0);
@@ -42,17 +44,17 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
   const logo = screenerSnapshot?.icon_url || null;
 
   const timeframe = report?.timeframe || "weekly";
-  let changeLabel = "1W Change";
+  let changeLabel = t("change.1w");
   let changeValue = report?.price_change_5d;
   let changeFormatted = "";
 
   if (timeframe === "monthly") {
-    changeLabel = "1M Change";
+    changeLabel = t("change.1m");
     changeValue = report?.price_change_1m;
     const numeric = Number(changeValue || 0) * 100;
     changeFormatted = `${numeric >= 0 ? "+" : ""}${numeric.toFixed(2)}%`;
   } else if (timeframe === "quarterly") {
-    changeLabel = "3M Change";
+    changeLabel = t("change.3m");
     changeValue = report?.price_change_3m;
     const numeric = Number(changeValue || 0);
     changeFormatted = `${numeric >= 0 ? "+" : ""}${numeric.toFixed(2)}%`;
@@ -120,7 +122,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                   <SignalBadge signal={report.signal} />
                 </div>
                 <p className="text-1xs text-muted-foreground dark:text-white/70 truncate">
-                  {screenerSnapshot?.company_name || screenerSnapshot?.name || report.market_phase || "Indeterminate Phase"}
+                  {screenerSnapshot?.company_name || screenerSnapshot?.name || report.market_phase || t("indeterminatePhase")}
                 </p>
               </div>
               {logo && (
@@ -133,7 +135,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             {/* Stats Grid */}
             <div className="grid grid-cols-3 gap-3 mt-1">
               <div className="space-y-0.5">
-                <p className="text-2xs text-muted-foreground dark:text-white/50 uppercase tracking-wide">Price</p>
+                <p className="text-2xs text-muted-foreground dark:text-white/50 uppercase tracking-wide">{t("price")}</p>
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold tabular-nums">
                     {formatPriceTrim(report.current_price || 0, report.symbol)}
@@ -141,7 +143,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                 </div>
               </div>
               <div className="space-y-0.5">
-                <p className="text-2xs text-muted-foreground dark:text-white/50 uppercase tracking-wide">Flow Score</p>
+                <p className="text-2xs text-muted-foreground dark:text-white/50 uppercase tracking-wide">{t("flowScore")}</p>
                 <div className="flex items-center gap-2">
                   <p className="text-sm font-semibold flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
                     <TrendingUp className="h-3.5 w-3.5" />
@@ -161,32 +163,32 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             {isExpandedView && (
               <>
                 <div className="flex items-center justify-between p-2 bg-black/5 dark:bg-white/5 rounded-lg">
-                  <span className="text-2xs text-muted-foreground dark:text-white/70">Top 3 Buy</span>
+                  <span className="text-2xs text-muted-foreground dark:text-white/70">{t("top3Buy")}</span>
                   <span className="text-xs font-semibold">{formatPercent(report.top3_percent, { fractionDigits: 2, nullAsZero: true })}</span>
                 </div>
 
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between text-2xs">
-                    <span className="text-muted-foreground dark:text-white/70">Vol Spike</span>
+                    <span className="text-muted-foreground dark:text-white/70">{t("volSpike")}</span>
                     <span className="font-semibold text-emerald-600 dark:text-emerald-400">{Number(report.volume_spike || 0).toFixed(2)}x</span>
                   </div>
                   <div className="flex items-center justify-between text-2xs">
-                    <span className="text-muted-foreground dark:text-white/70">Absorption Strength</span>
+                    <span className="text-muted-foreground dark:text-white/70">{t("absorptionStrength")}</span>
                     <span className="font-semibold text-emerald-600 dark:text-emerald-400">{formatPercent(report?.absorption_strength?.value, { fractionDigits: 2, nullAsZero: true })}</span>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3 pt-2 dark:border-white/10">
                   <div className="space-y-0.5">
-                    <p className="text-2xs text-muted-foreground dark:text-white/50 uppercase tracking-wide">Manipulation Risk</p>
+                    <p className="text-2xs text-muted-foreground dark:text-white/50 uppercase tracking-wide">{t("manipulationRisk")}</p>
                     <div className="mt-1">
                       <RiskBadge level={riskLevel} />
                     </div>
                   </div>
                   <div className="space-y-0.5">
-                    <p className="text-2xs text-muted-foreground dark:text-white/50 uppercase tracking-wide">Phase</p>
+                    <p className="text-2xs text-muted-foreground dark:text-white/50 uppercase tracking-wide">{t("phase")}</p>
                     <p className="text-xs font-semibold text-foreground dark:text-white">
-                      {report.market_phase || "Indeterminate"}
+                      {report.market_phase || t("indeterminate")}
                     </p>
                   </div>
                 </div>
@@ -194,7 +196,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             )}
             {!isExpandedView && (
               <div className="flex items-center justify-between p-1.5 bg-black/5 dark:bg-white/5 rounded-lg mt-1">
-                <span className="text-2xs text-muted-foreground dark:text-white/70">Top 3 Buy</span>
+                <span className="text-2xs text-muted-foreground dark:text-white/70">{t("top3Buy")}</span>
                 <span className="text-xs font-semibold">{Number(report.top3_percent || 0).toFixed(1)}%</span>
               </div>
             )}
@@ -207,12 +209,12 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             {isExpandedView && (
               <div className="grid grid-cols-2 gap-2 text-1xs">
                 <div className="rounded-lg px-2 py-1.5">
-                  <p className="text-muted-foreground">Broker Cost</p>
+                  <p className="text-muted-foreground">{t("brokerCost")}</p>
                   <p className="font-semibold">{formatCompactNumber(report?.broker_cost_analysis?.estimated_cost)}</p>
                   <p className="text-2xs text-muted-foreground">{report?.broker_cost_analysis?.interpretation || "-"}</p>
                 </div>
                 <div className="rounded-lg px-2 py-1.5">
-                  <p className="text-muted-foreground">Concentration</p>
+                  <p className="text-muted-foreground">{t("concentration")}</p>
                   <p className="font-semibold">{formatPercent(report?.broker_concentration?.top3_buy_percent, { fractionDigits: 2, nullAsZero: true })}</p>
                   <p className="text-2xs text-muted-foreground">{report?.broker_concentration?.interpretation || "-"}</p>
                 </div>
@@ -221,11 +223,11 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             {!isExpandedView && (
               <div className="grid grid-cols-2 gap-2 text-2xs">
                 <div className="rounded-md px-2 py-1.5">
-                  <p className="text-muted-foreground">Phase</p>
-                  <p className="font-semibold">{report.market_phase || "Indeterminate"}</p>
+                  <p className="text-muted-foreground">{t("phase")}</p>
+                  <p className="font-semibold">{report.market_phase || t("indeterminate")}</p>
                 </div>
                 <div className="rounded-md px-2 py-1.5">
-                  <p className="text-muted-foreground">Risk</p>
+                  <p className="text-muted-foreground">{t("risk")}</p>
                   <p className={`font-semibold ${riskLevel === "LOW" ? "text-emerald-600 dark:text-emerald-400" : "text-amber-500"}`}>{riskLevel}</p>
                 </div>
               </div>
@@ -235,7 +237,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             {Array.isArray(report?.manipulation_risk?.reasons) && report.manipulation_risk.reasons.length > 0 && (
               <Card className="rounded-xl bg-amber-500/5 shadow-none">
                 <CardContent className="p-3">
-                  <p className="text-1xs font-semibold mb-1">Risk notes</p>
+                  <p className="text-1xs font-semibold mb-1">{t("riskNotes")}</p>
                   <ul className="text-1xs text-muted-foreground space-y-1">
                     {report.manipulation_risk.reasons.map((reason, index) => (
                       <li key={`${report.symbol}-risk-${index}`}>• {reason}</li>
@@ -248,7 +250,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             {report.analysis_summary && (
               <Card className="rounded-xl shadow-none">
                 <CardContent className="p-3 space-y-2">
-                  <p className="text-1xs font-semibold">Smart Money Summary</p>
+                  <p className="text-1xs font-semibold">{t("smartMoneySummary")}</p>
                   {String(report.analysis_summary)
                     .split("\n\n")
                     .filter(Boolean)
@@ -264,17 +266,17 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             {isExpandedView && screenerSnapshot && (
               <div className="grid grid-cols-3 gap-2 text-1xs">
                 <div className="rounded-lg px-2 py-1.5">
-                  <p className="text-muted-foreground">Price vs MA20</p>
+                  <p className="text-muted-foreground">{t("priceVsMa20")}</p>
                   <p className={`font-semibold ${getChangeTone(Number(screenerSnapshot?.derived?.price_vs_ma20_pct || 0))}`}>
                     {formatPercent(screenerSnapshot?.derived?.price_vs_ma20_pct, { fractionDigits: 2, nullAsZero: true })}
                   </p>
                 </div>
                 <div className="rounded-lg px-2 py-1.5">
-                  <p className="text-muted-foreground">Volume Ratio</p>
+                  <p className="text-muted-foreground">{t("volumeRatio")}</p>
                   <p className="font-semibold">{Number(screenerSnapshot?.derived?.volume_ratio || 0).toFixed(2)}x</p>
                 </div>
                 <div className="rounded-lg px-2 py-1.5">
-                  <p className="text-muted-foreground">Bandar Delta</p>
+                  <p className="text-muted-foreground">{t("bandarDelta")}</p>
                   <p className={`font-semibold ${getChangeTone(Number(screenerSnapshot?.derived?.bandar_delta || 0))}`}>
                     {formatCompactNumber(screenerSnapshot?.derived?.bandar_delta)}
                   </p>
@@ -286,9 +288,9 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
             <div className="rounded-lg overflow-hidden border border-border bg-card">
               <div className="px-3 py-2.5 border-b border-border/40 flex items-center justify-between bg-black/5 dark:bg-white/5">
                 <div className="flex items-center gap-2">
-                  <p className="text-xs font-semibold">Broker Action</p>
+                  <p className="text-xs font-semibold">{t("brokerAction")}</p>
                   <Badge className="hidden sm:inline-flex">
-                    Top 10 pairs
+                    {t("top10Pairs")}
                   </Badge>
                 </div>
 
@@ -297,8 +299,8 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                     value={isNetView ? 'net' : 'gross'}
                     onValueChange={(value) => setIsNetView(value === 'net')}
                     options={[
-                      { value: 'gross', label: 'Gross' },
-                      { value: 'net', label: 'Net' },
+                      { value: 'gross', label: t('gross') },
+                      { value: 'net', label: t('net') },
                     ]}
                     className="px-2.5 py-1 text-2xs font-semibold rounded-lg"
                     activeClassName="bg-muted text-foreground"
@@ -311,8 +313,8 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                 {/* Visual Indicator Line (Big Dist -> Big Acc) */}
                 <div className="w-full h-px bg-border" />
                 <div className="hidden sm:flex items-center justify-between px-3 py-2 text-2xs text-muted-foreground border-b border-border/30">
-                  <span className="font-medium text-emerald-600 dark:text-emerald-400">Buyer side accumulation</span>
-                  <span className="font-medium text-rose-500 dark:text-rose-400">Seller side distribution</span>
+                  <span className="font-medium text-emerald-600 dark:text-emerald-400">{t("buyerSideAccumulation")}</span>
+                  <span className="font-medium text-rose-500 dark:text-rose-400">{t("sellerSideDistribution")}</span>
                 </div>
 
                 <Table>
@@ -330,7 +332,7 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
                     {brokers.length === 0 && (
                       <TableRow>
                         <TableCell colSpan={6} className="text-1xs text-center text-muted-foreground h-24">
-                          No broker data available
+                          {t("noBrokerData")}
                         </TableCell>
                       </TableRow>
                     )}

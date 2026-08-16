@@ -1,0 +1,62 @@
+{
+  "moneyFlow": {
+    "intro": "Smart-money breakdown based on broker flow, market phase, absorption, and screener-synced symbols.",
+    "windowStart": "Window start: {date}",
+    "noResults": "No results found",
+    "noResultsHint": "Try adjusting your filters or search query",
+    "disabledTitle": "Money Flow is not available",
+    "disabledDescription": "This feature is temporarily disabled.",
+    "sortReports": "Sort reports",
+    "descending": "Descending",
+    "ascending": "Ascending",
+    "statsReports": "Reports",
+    "statsAccumulation": "Accumulation",
+    "statsAvgVolSpike": "Avg Vol Spike",
+    "statsTimeframe": "Timeframe",
+    "fetchError": "Failed to fetch money flow data",
+    "loadError": "Failed to load money flow data",
+    "errorTitle": "Failed to load money-flow data",
+    "lastUpdated": "Last updated: {time}",
+    "timeframe": {
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "quarterly": "Quarterly"
+    },
+    "sort": {
+      "score": "Money Flow Score",
+      "volumeSpike": "Volume Spike",
+      "priceChange": "Price Change"
+    }
+  },
+  "moneyFlowCard": {
+    "indeterminatePhase": "Indeterminate Phase",
+    "indeterminate": "Indeterminate",
+    "price": "Price",
+    "flowScore": "Flow Score",
+    "change": {
+      "1w": "1W Change",
+      "1m": "1M Change",
+      "3m": "3M Change"
+    },
+    "top3Buy": "Top 3 Buy",
+    "volSpike": "Vol Spike",
+    "absorptionStrength": "Absorption Strength",
+    "manipulationRisk": "Manipulation Risk",
+    "phase": "Phase",
+    "brokerCost": "Broker Cost",
+    "concentration": "Concentration",
+    "risk": "Risk",
+    "riskNotes": "Risk notes",
+    "smartMoneySummary": "Smart Money Summary",
+    "priceVsMa20": "Price vs MA20",
+    "volumeRatio": "Volume Ratio",
+    "bandarDelta": "Bandar Delta",
+    "brokerAction": "Broker Action",
+    "top10Pairs": "Top 10 pairs",
+    "gross": "Gross",
+    "net": "Net",
+    "buyerSideAccumulation": "Buyer side accumulation",
+    "sellerSideDistribution": "Seller side distribution",
+    "noBrokerData": "No broker data available"
+  }
+}

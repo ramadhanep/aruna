@@ -1,0 +1,28 @@
+{
+  "watchlist": {
+    "header": "Daftar Pantauan",
+    "intro": "Kami menelusuri data historis untuk menemukan pola anomali yang tidak wajar terjadi secara acak.",
+    "editWatchlist": "Ubah Daftar Pantauan",
+    "highlights": "Sorotan",
+    "highlightsSubtitle": "Pergerakan daftar pantauanmu hari ini",
+    "topGainer": "Top Naik",
+    "topLoser": "Top Turun",
+    "averageChange": "Rata-rata Perubahan"
+  },
+  "trendingMarquee": {
+    "title": "Tren"
+  },
+  "manageWatchlistDialog": {
+    "title": "Kelola Daftar Pantauan",
+    "searchPlaceholder": "Cari ticker...",
+    "clearSearch": "Hapus pencarian",
+    "dragToReorder": "Seret untuk mengurutkan",
+    "reorder": "Urutkan ulang {symbol}",
+    "remove": "Hapus {symbol}",
+    "emptyTitle": "Tidak ada saham di daftar pantauan",
+    "emptyHint": "Cari dan tambahkan saham di atas"
+  },
+  "tickerRow": {
+    "highVolumeWarning": "Volume tinggi vs kapitalisasi pasar"
+  }
+}

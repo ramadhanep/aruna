@@ -1,0 +1,7 @@
+{
+  "offline": {
+    "title": "Kamu sedang offline",
+    "description": "Sepertinya koneksi internet kamu terputus. Beberapa fitur mungkin masih berfungsi dari cache.",
+    "retry": "Coba Lagi"
+  }
+}

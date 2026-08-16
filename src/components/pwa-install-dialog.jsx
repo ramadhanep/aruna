@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 
 
 const INSTALL_PROMPT_KEY = 'aruna_install_prompt_shown';
 
 export function PWAInstallDialog() {
+  const t = useTranslations("pwaInstallDialog");
   const [open, setOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
 
@@ -63,16 +65,16 @@ export function PWAInstallDialog() {
       <DialogContent className="max-w-sm" closeButtonPosition="right">
         <div className="flex flex-col items-center gap-4 text-center">
           <Image src="/aruna.png" alt="aruna" width={48} height={48} className="h-12 w-12" />
-          <DialogTitle className="text-sm font-bold">Install Aruna</DialogTitle>
+          <DialogTitle className="text-sm font-bold">{t("installTitle")}</DialogTitle>
           <DialogDescription className="text-sm">
-            Install aruna on your device for quick access and a better experience. No app store needed!
+            {t("installDescription")}
           </DialogDescription>
           <div className="flex w-full gap-2">
             <Button variant="outline" onClick={handleDismiss} className="flex-1 text-sm">
-              Not Now
+              {t("notNow")}
             </Button>
             <Button onClick={handleInstall} className="flex-1 font-semibold text-sm">
-              Install
+              {t("install")}
             </Button>
           </div>
         </div>

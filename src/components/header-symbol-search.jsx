@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import { formatTickerDisplay, cn } from "@/lib/utils";
 const SEARCH_HISTORY_KEY = "aruna_header_symbol_history";
 
 export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
+  const t = useTranslations("headerSymbolSearch");
   const router = useRouter();
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(false);
@@ -121,14 +123,14 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
       {trigger ? <DialogTrigger asChild>{trigger}</DialogTrigger> : null}
       <DialogContent variant="fullscreen" className="p-4" closeButtonPosition="right">
         <DialogHeader className="space-y-1">
-          <DialogTitle className="text-base font-semibold">Search Ticker</DialogTitle>
+          <DialogTitle className="text-base font-semibold">{t("title")}</DialogTitle>
         </DialogHeader>
         <div className="mt-2 flex items-center gap-2">
           <Input
             autoFocus
             value={query}
             onChange={(event) => setQuery((event.target.value || '').toUpperCase())}
-            placeholder="Search ticker or company name"
+            placeholder={t("placeholder")}
             className="flex-1"
           />
         </div>
@@ -138,7 +140,7 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
             {loading && (
               <div className="flex items-center justify-center py-6 text-muted-foreground text-sm">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Searching...
+                {t("searching")}
               </div>
             )}
 
@@ -147,10 +149,10 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
                 heading={
                   <span className="flex items-center justify-between pr-2">
                     <span className="flex items-center gap-2">
-                      <Clock className="h-3.5 w-3.5" /> Recent
+                      <Clock className="h-3.5 w-3.5" /> {t("recent")}
                     </span>
                     <Button variant="ghost" size="sm" className="text-xs h-7" onClick={clearHistory}>
-                      Clear
+                      {t("clear")}
                     </Button>
                   </span>
                 }
@@ -164,7 +166,7 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
             )}
 
             {!loading && results.length > 0 && (
-              <CommandGroup heading="Results">
+              <CommandGroup heading={t("results")}>
                 {results.map((item) => (
                   <CommandItem key={item.symbol} value={item.symbol} onSelect={() => handleSelect(item.symbol)}>
                     <span className="flex-1">
@@ -177,13 +179,13 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
             )}
 
             {query.trim() && !loading && !results.length && (
-              <CommandEmpty>No matches for &ldquo;{query.trim()}&rdquo;</CommandEmpty>
+              <CommandEmpty>{t("noMatches", { query: query.trim() })}</CommandEmpty>
             )}
           </CommandList>
         </Command>
 
         <Button variant="outline" className="w-full text-sm mt-2" onClick={() => handleOpenChange(false)}>
-          Cancel
+          {t("cancel")}
         </Button>
       </DialogContent>
     </Dialog>
@@ -191,6 +193,7 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
 }
 
 export function HeaderSymbolSearch({ variant = "icon", className }) {
+  const t = useTranslations("headerSymbolSearch");
   const [open, setOpen] = useState(false);
   const router = useRouter();
 
@@ -202,10 +205,10 @@ export function HeaderSymbolSearch({ variant = "icon", className }) {
         "h-9 w-[220px] justify-start rounded-md border-border bg-card px-3 text-muted-foreground hover:bg-accent md:w-[260px] xl:w-[320px]",
         className
       )}
-      aria-label="Search ticker"
+      aria-label={t("triggerAria")}
     >
       <Search className="mr-2 size-4 shrink-0" />
-      <span className="truncate text-xs font-normal">Search ticker or company...</span>
+      <span className="truncate text-xs font-normal">{t("triggerPlaceholder")}</span>
     </Button>
   ) : (
     <Button
@@ -215,7 +218,7 @@ export function HeaderSymbolSearch({ variant = "icon", className }) {
         "rounded-full p-2 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
         className
       )}
-      aria-label="Search ticker"
+      aria-label={t("triggerAria")}
     >
       <Search className="size-5" />
     </Button>

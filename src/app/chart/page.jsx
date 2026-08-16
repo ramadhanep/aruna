@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from 'react';
+import { useTranslations } from "next-intl";
 import {
   CURRENT_LINE_COLOR,
   areWatchlistsEqual,
@@ -132,6 +133,7 @@ function ChartSidebarSkeleton({ hasPortfolioPosition }) {
 }
 
 function ElectionCyclePageContent() {
+  const t = useTranslations("chart");
   const { resolvedTheme } = useTheme();
   const {
     supabase,
@@ -204,11 +206,20 @@ function ElectionCyclePageContent() {
   const lotEligible = useMemo(() => isIdxLotSymbol(symbol), [symbol]);
   const hasTradingPlan = Boolean(tradingPlanPayload);
   const infoTabs = useMemo(() => {
-    if (hasTradingPlan) {
-      return [{ value: 'trading-plan', label: 'TRADING PLAN' }, ...BASE_INFO_TABS];
-    }
-    return BASE_INFO_TABS;
-  }, [hasTradingPlan]);
+    const labels = {
+      'trading-plan': t('tabTradingPlan'),
+      news: t('tabNews'),
+      keystats: t('tabKeystats'),
+      analysis: t('tabAnalysis'),
+      financials: t('tabFinancials'),
+      seasonality: t('tabSeasonality'),
+      profile: t('tabProfile'),
+    };
+    const base = BASE_INFO_TABS.map((tab) => ({ ...tab, label: labels[tab.value] ?? tab.label }));
+    return hasTradingPlan
+      ? [{ value: 'trading-plan', label: labels['trading-plan'] }, ...base]
+      : base;
+  }, [hasTradingPlan, t]);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -490,12 +501,12 @@ function ElectionCyclePageContent() {
               className="h-6 w-6 rounded-full border border-border/30 p-0 text-muted-foreground"
               onClick={() => setNormalFullscreenOpen(true)}
               disabled={normalSeriesLoading || !normalChartReady}
-              aria-label="Open candlestick fullscreen"
+              aria-label={t('openFullscreenAria')}
             >
               <Fullscreen className="h-4 w-4" />
             </Button>
           </TooltipTrigger>
-          <TooltipContent side="bottom">Fullscreen {normalTimeframeLabel} candlestick</TooltipContent>
+          <TooltipContent side="bottom">{t('fullscreenTooltip', { timeframe: normalTimeframeLabel })}</TooltipContent>
         </RadixTooltip>
       ) : null}
     </>
@@ -511,7 +522,7 @@ function ElectionCyclePageContent() {
               size="sm"
               variant="ghost"
               className="h-6 rounded-md border border-border/30 px-2 gap-1.5 text-muted-foreground text-1xs font-semibold"
-              aria-label="Chart type"
+              aria-label={t('chartTypeAria')}
             >
               {chartDisplayType === 'line' ? (
                 <LineChart className="h-3.5 w-3.5" />
@@ -524,9 +535,9 @@ function ElectionCyclePageContent() {
           </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-44 z-[130]">
         {[
-          { key: 'heikinAshi', label: 'Heikin Ashi', icon: CandlestickChart },
-          { key: 'candle', label: 'Candlestick', icon: BarChart2 },
-          { key: 'line', label: 'Line', icon: LineChart },
+          { key: 'heikinAshi', label: t('heikinAshiType'), icon: CandlestickChart },
+          { key: 'candle', label: t('candleType'), icon: BarChart2 },
+          { key: 'line', label: t('lineType'), icon: LineChart },
         ].map((opt) => {
           const Icon = opt.icon;
           return (
@@ -548,7 +559,7 @@ function ElectionCyclePageContent() {
       </DropdownMenuContent>
       </DropdownMenu>
     </TooltipTrigger>
-      <TooltipContent side="bottom">Chart Type</TooltipContent>
+      <TooltipContent side="bottom">{t('chartType')}</TooltipContent>
     </RadixTooltip>
   );
 
@@ -562,7 +573,7 @@ function ElectionCyclePageContent() {
           size="sm"
           variant="ghost"
           className="h-6 w-6 rounded-full border border-border/30 p-0 text-muted-foreground"
-          aria-label="Chart settings"
+          aria-label={t('chartSettingsAria')}
         >
           <Settings className="h-4 w-4" />
         </Button>
@@ -574,7 +585,7 @@ function ElectionCyclePageContent() {
           className="cursor-pointer"
           onSelect={(e) => e.preventDefault()}
         >
-          <span className="text-sm">Logarithmic</span>
+          <span className="text-sm">{t('logarithmic')}</span>
         </DropdownMenuCheckboxItem>
         <DropdownMenuCheckboxItem
           checked={showLivermoreKey}
@@ -582,12 +593,12 @@ function ElectionCyclePageContent() {
           className="cursor-pointer"
           onSelect={(e) => e.preventDefault()}
         >
-          <span className="text-sm">Livermore Key</span>
+          <span className="text-sm">{t('livermoreKey')}</span>
         </DropdownMenuCheckboxItem>
       </DropdownMenuContent>
       </DropdownMenu>
     </TooltipTrigger>
-      <TooltipContent side="bottom">Chart Settings</TooltipContent>
+      <TooltipContent side="bottom">{t('chartSettings')}</TooltipContent>
     </RadixTooltip>
   );
 
@@ -744,7 +755,7 @@ function ElectionCyclePageContent() {
       { label: 'EV/Revenue', value: formatRatio(valuations.evToRevenue) },
       { label: 'PEG', value: formatRatio(valuations.pegRatio) },
       { label: '52W Range', value: formatPlainNumber(priceInfo.fiftyTwoWeekRange) },
-      { label: 'Day Range', value: formatPlainNumber(priceInfo.dayRange) },
+      { label: t('dayRange'), value: formatPlainNumber(priceInfo.dayRange) },
       { label: 'Volume', value: formatPlainNumber(priceInfo.volume) },
       { label: 'Avg Volume (3M)', value: formatPlainNumber(marketData.averageDailyVolume3Month) },
       { label: 'Avg Volume (10D)', value: formatPlainNumber(marketData.averageDailyVolume10Day) },
@@ -785,11 +796,11 @@ function ElectionCyclePageContent() {
             ? `${distFrom52wLow >= 0 ? '+' : ''}${distFrom52wLow.toFixed(2)}%`
             : '—',
       },
-      { label: 'Previous Close', value: formatPlainNumber(priceInfo.previousClose) },
-      { label: 'Open', value: formatPlainNumber(priceInfo.open) },
+      { label: t('previousClose'), value: formatPlainNumber(priceInfo.previousClose) },
+      { label: t('open'), value: formatPlainNumber(priceInfo.open) },
     ];
     return stats.filter((item) => item.value && item.value !== '—');
-  }, [fundamentals, formatCompactCurrency, formatRatio, formatPlainNumber, displayedPrice, symbolInfo?.currentPrice]);
+  }, [fundamentals, formatCompactCurrency, formatRatio, formatPlainNumber, displayedPrice, symbolInfo?.currentPrice, t]);
 
   const currentYtdReturn = useMemo(() => {
     const currentLine = rawLinesData.find((entry) => entry.key === 'current');
@@ -822,7 +833,7 @@ function ElectionCyclePageContent() {
     const entries = [];
     if (cycleSummary?.cagr != null) {
       entries.push({
-        label: `${cycleSummary.label} CAGR`,
+        label: t('cagrLabel', { cycle: cycleSummary.label }),
         value: formatPercentage(cycleSummary.cagr),
       });
     }
@@ -833,7 +844,7 @@ function ElectionCyclePageContent() {
       });
     }
     return entries;
-  }, [cycleSummary, currentYtdReturn, formatPercentage, isNormalView]);
+  }, [cycleSummary, currentYtdReturn, formatPercentage, isNormalView, t]);
 
   const summaryStats = useMemo(() => {
     if (!cycleSummaryStats.length && !quickStats.length) {
@@ -1059,61 +1070,61 @@ function ElectionCyclePageContent() {
   const earningsTooltipFormatter = useCallback(
     (value, name) => {
       if (value == null || Number.isNaN(Number(value))) return ['—', name];
-      const label = name === 'actual' ? 'Actual' : 'Estimate';
+      const label = name === 'actual' ? t('actual') : t('estimate');
       return [formatSignedEarnings(value), label];
     },
-    [formatSignedEarnings]
+    [formatSignedEarnings, t]
   );
 
   const revenueTooltipFormatter = useCallback(
     (value, name) => {
       if (value == null || Number.isNaN(Number(value))) return ['—', name];
-      const label = name === 'revenue' ? 'Revenue' : 'Earnings';
+      const label = name === 'revenue' ? t('revenue') : t('earnings');
       return [formatRevenueValue(value), label];
     },
-    [formatRevenueValue]
+    [formatRevenueValue, t]
   );
 
   const marketStateInfo = useMemo(() => {
     const stateRaw = fundamentals?.profile?.marketState;
     if (!stateRaw) {
       if (symbolInfo?.isMarketOpen) {
-        return { label: 'Market Open', tone: 'text-emerald-600 dark:text-emerald-400', Icon: Sun };
+        return { label: t('marketOpen'), tone: 'text-emerald-600 dark:text-emerald-400', Icon: Sun };
       }
       return null;
     }
     const state = String(stateRaw).toUpperCase();
     if (state.includes('REGULAR') || state === 'OPEN') {
-      return { label: 'Market Open', tone: 'text-emerald-700 dark:text-emerald-700', Icon: Sun };
+      return { label: t('marketOpen'), tone: 'text-emerald-700 dark:text-emerald-700', Icon: Sun };
     }
     if (state.includes('PRE')) {
-      return { label: 'Pre-Market', tone: 'text-amber-600', Icon: Clock3 };
+      return { label: t('preMarket'), tone: 'text-amber-600', Icon: Clock3 };
     }
     if (state.includes('POST')) {
-      return { label: 'Post-Market', tone: 'text-blue-500', Icon: Clock3 };
+      return { label: t('postMarket'), tone: 'text-blue-500', Icon: Clock3 };
     }
-    return { label: 'Market Closed', tone: 'text-muted-foreground', Icon: MoonStar };
-  }, [fundamentals?.profile?.marketState, symbolInfo?.isMarketOpen]);
+    return { label: t('marketClosed'), tone: 'text-muted-foreground', Icon: MoonStar };
+  }, [fundamentals?.profile?.marketState, symbolInfo?.isMarketOpen, t]);
 
   const formatMarketState = useCallback((stateRaw) => {
     if (!stateRaw) return null;
     const state = String(stateRaw).toUpperCase();
-    if (state.includes('REGULAR') || state === 'OPEN') return 'Market Open';
-    if (state.includes('PRE')) return 'Pre-Market';
-    if (state.includes('POST')) return 'Post-Market';
-    if (state.includes('CLOSED')) return 'Market Closed';
+    if (state.includes('REGULAR') || state === 'OPEN') return t('marketOpen');
+    if (state.includes('PRE')) return t('preMarket');
+    if (state.includes('POST')) return t('postMarket');
+    if (state.includes('CLOSED')) return t('marketClosed');
     return stateRaw;
-  }, []);
+  }, [t]);
 
   const formatRecommendationPeriod = useCallback((periodRaw) => {
     if (!periodRaw) return null;
     const match = String(periodRaw).match(/^(-?\d+)m$/);
     if (!match) return periodRaw;
     const months = Number(match[1]);
-    if (months === 0) return 'Current Month';
+    if (months === 0) return t('currentMonth');
     const abs = Math.abs(months);
-    return `${abs} Month${abs > 1 ? 's' : ''} Ago`;
-  }, []);
+    return t('monthsAgo', { count: abs });
+  }, [t]);
 
   const formatQuoteType = useCallback((typeRaw) => {
     if (!typeRaw) return null;
@@ -1157,7 +1168,7 @@ function ElectionCyclePageContent() {
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Company Profile</CardTitle>
+              <CardTitle className="text-sm">{t('companyProfile')}</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-3">
               {[...Array(6)].map((_, idx) => (
@@ -1178,7 +1189,7 @@ function ElectionCyclePageContent() {
       return (
         <Card>
           <CardContent className="text-xs text-muted-foreground">
-            Company profile unavailable for {symbol}.
+            {t('companyProfileUnavailable', { symbol })}
           </CardContent>
         </Card>
       );
@@ -1203,23 +1214,23 @@ function ElectionCyclePageContent() {
     const governance = fundamentals?.governance;
 
     const keyFacts = [
-      { label: 'Exchange', value: profileInfo?.exchange },
-      { label: 'Quote Type', value: formatQuoteType(profileInfo?.quoteType) },
-      { label: 'Market State', value: formatMarketState(profileInfo?.marketState) },
-      { label: 'Sector', value: extendedProfile?.sector || profileInfo?.sector },
-      { label: 'Industry', value: extendedProfile?.industry || profileInfo?.industry },
-      { label: 'Country', value: extendedProfile?.country || null },
-      { label: 'Phone', value: extendedProfile?.phone || null },
+      { label: t('exchange'), value: profileInfo?.exchange },
+      { label: t('quoteType'), value: formatQuoteType(profileInfo?.quoteType) },
+      { label: t('marketState'), value: formatMarketState(profileInfo?.marketState) },
+      { label: t('sector'), value: extendedProfile?.sector || profileInfo?.sector },
+      { label: t('industry'), value: extendedProfile?.industry || profileInfo?.industry },
+      { label: t('country'), value: extendedProfile?.country || null },
+      { label: t('phone'), value: extendedProfile?.phone || null },
       {
-        label: 'Employees',
+        label: t('employees'),
         value:
           extendedProfile?.fullTimeEmployees != null
             ? Number(extendedProfile.fullTimeEmployees).toLocaleString('en-US')
             : null,
       },
-      { label: 'Headquarters', value: headquarters || null },
+      { label: t('headquarters'), value: headquarters || null },
       {
-        label: 'Website',
+        label: t('website'),
         value: website ? (
           <a
             href={website}
@@ -1232,7 +1243,7 @@ function ElectionCyclePageContent() {
         ) : null,
       },
       {
-        label: 'Investor Relations',
+        label: t('investorRelations'),
         value: extendedProfile?.irWebsite ? (
           <a
             href={extendedProfile.irWebsite}
@@ -1240,7 +1251,7 @@ function ElectionCyclePageContent() {
             rel="noreferrer"
             className="text-emerald-600 hover:underline"
           >
-            IR Site
+            {t('irSite')}
           </a>
         ) : null,
       },
@@ -1251,7 +1262,7 @@ function ElectionCyclePageContent() {
         {keyFacts.length > 0 && (
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm mb-2">Company Profile</CardTitle>
+              <CardTitle className="text-sm mb-2">{t('companyProfile')}</CardTitle>
             </CardHeader>
             <CardContent>
               <dl className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2">
@@ -1269,7 +1280,7 @@ function ElectionCyclePageContent() {
         {extendedProfile?.longBusinessSummary && (
           <Card className="mt-4 pt-4">
             <CardHeader>
-              <CardTitle className="text-sm mb-2">Company Background</CardTitle>
+              <CardTitle className="text-sm mb-2">{t('companyBackground')}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-xs leading-relaxed text-muted-foreground whitespace-pre-line">
@@ -1282,16 +1293,16 @@ function ElectionCyclePageContent() {
         {governance && Object.values(governance).some((value) => value != null) && (
           <Card className="mt-4 pt-4">
             <CardHeader>
-              <CardTitle className="text-sm mb-2">Governance Risk</CardTitle>
+              <CardTitle className="text-sm mb-2">{t('governanceRisk')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {[
-                  { label: 'Overall Risk', value: governance.overallRisk },
-                  { label: 'Audit Risk', value: governance.auditRisk },
-                  { label: 'Board Risk', value: governance.boardRisk },
-                  { label: 'Compensation Risk', value: governance.compensationRisk },
-                  { label: 'Shareholder Rights', value: governance.shareHolderRightsRisk },
+                  { label: t('overallRisk'), value: governance.overallRisk },
+                  { label: t('auditRisk'), value: governance.auditRisk },
+                  { label: t('boardRisk'), value: governance.boardRisk },
+                  { label: t('compensationRisk'), value: governance.compensationRisk },
+                  { label: t('shareholderRights'), value: governance.shareHolderRightsRisk },
                 ]
                   .filter((item) => item.value != null)
                   .map((item) => {
@@ -1311,7 +1322,9 @@ function ElectionCyclePageContent() {
                   })}
                 {governance.governanceEpochDate && (
                   <p className="text-2xs text-muted-foreground pt-1">
-                    As of {formatTimestamp(Number(governance.governanceEpochDate) * 1000, { dateOnly: true }) ?? '—'}
+                    {t('asOf', {
+                      date: formatTimestamp(Number(governance.governanceEpochDate) * 1000, { dateOnly: true }) ?? '—',
+                    })}
                   </p>
                 )}
               </div>
@@ -1322,13 +1335,13 @@ function ElectionCyclePageContent() {
         {officers.length > 0 && (
           <Card className="mt-4 pt-4">
             <CardHeader>
-              <CardTitle className="text-sm mb-2">Leadership</CardTitle>
+              <CardTitle className="text-sm mb-2">{t('leadership')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {officers.map((officer, idx) => (
                 <div key={`${officer.name}-${idx}`} className="">
                   <p className="text-xs font-semibold dark:text-white/70 text-black/70">{officer.name}</p>
-                  <p className="text-xs text-muted-foreground">{officer.title || 'Executive'}</p>
+                  <p className="text-xs text-muted-foreground">{officer.title || t('executive')}</p>
                 </div>
               ))}
             </CardContent>
@@ -1344,7 +1357,7 @@ const renderNewsTab = () => {
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm mb-2">News</CardTitle>
+              <CardTitle className="text-sm mb-2">{t('news')}</CardTitle>
             </CardHeader>
             <CardContent className="p-4 space-y-3">
               {[...Array(3)].map((_, idx) => (
@@ -1363,7 +1376,7 @@ const renderNewsTab = () => {
       return (
         <Card>
           <CardContent className="text-xs text-muted-foreground">
-            No news available for {symbol}.
+            {t('noNews', { symbol })}
           </CardContent>
         </Card>
       );
@@ -1418,7 +1431,7 @@ const renderNewsTab = () => {
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm mb-2">Summary</CardTitle>
+              <CardTitle className="text-sm mb-2">{t('summary')}</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-2 gap-3">
               {[...Array(6)].map((_, idx) => (
@@ -1456,8 +1469,8 @@ const renderNewsTab = () => {
         : null;
     const snapshotRows = marketData
       ? [
-        { label: 'Market State', value: formatMarketState(marketData.marketState) },
-        { label: 'Quote Source', value: marketData.quoteSourceName || null },
+        { label: t('marketState'), value: formatMarketState(marketData.marketState) },
+        { label: t('quoteSource'), value: marketData.quoteSourceName || null },
         { label: 'Bid', value: formatPlainNumber(marketData.bid) },
         { label: 'Ask', value: formatPlainNumber(marketData.ask) },
         { label: 'Bid Size', value: formatQuantityValue(marketData.bidSize) },
@@ -1469,11 +1482,11 @@ const renderNewsTab = () => {
               ? `${formatPlainNumber(spread)}${spreadPct != null ? ` (${spreadPct.toFixed(3)}%)` : ''}`
               : null,
         },
-        { label: 'Timezone', value: marketData.exchangeTimezoneName?.replace(/_/g, ' ') || null },
-        { label: 'Regular Session', value: formatTimestamp(marketData.regularMarketTime) || null },
-        { label: 'Pre-Market', value: formatTimestamp(marketData.preMarketTime) || null },
-        { label: 'Post-Market', value: formatTimestamp(marketData.postMarketTime) || null },
-        { label: 'Analyst Summary', value: marketData.averageAnalystRating || null },
+        { label: t('timezone'), value: marketData.exchangeTimezoneName?.replace(/_/g, ' ') || null },
+        { label: t('regularSession'), value: formatTimestamp(marketData.regularMarketTime) || null },
+        { label: t('preMarket'), value: formatTimestamp(marketData.preMarketTime) || null },
+        { label: t('postMarket'), value: formatTimestamp(marketData.postMarketTime) || null },
+        { label: t('analystSummary'), value: marketData.averageAnalystRating || null },
       ].filter((item) => item.value && item.value !== '—')
       : [];
 
@@ -1481,7 +1494,7 @@ const renderNewsTab = () => {
       <div className="space-y-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-sm mb-2">Summary</CardTitle>
+            <CardTitle className="text-sm mb-2">{t('summary')}</CardTitle>
           </CardHeader>
           <CardContent>
             {summaryStats.length > 0 ? (
@@ -1495,7 +1508,7 @@ const renderNewsTab = () => {
               </dl>
             ) : (
               <p className="text-xs text-muted-foreground">
-                Summary data unavailable for {symbol}.
+                {t('summaryUnavailable', { symbol })}
               </p>
             )}
           </CardContent>
@@ -1504,7 +1517,7 @@ const renderNewsTab = () => {
         {snapshotRows.length > 0 && (
           <Card className="mt-8">
             <CardHeader>
-              <CardTitle className="text-sm mb-2">Trading Snapshot</CardTitle>
+              <CardTitle className="text-sm mb-2">{t('tradingSnapshot')}</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
@@ -1529,16 +1542,16 @@ const renderNewsTab = () => {
                   <CardHeader className="gap-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="space-y-1">
-                        <CardTitle className="text-sm mb-4">Earnings Results</CardTitle>
+                        <CardTitle className="text-sm mb-4">{t('earningsResults')}</CardTitle>
                         <p className="text-xs text-muted-foreground">
                           <span className="font-semibold text-foreground">
                             {latestEarningsPoint.periodLabel}
                           </span>{' '}
-                          • Estimate{' '}
+                          • {t('estimate')}{' '}
                           <span className="font-medium text-muted-foreground">
                             {formatSignedEarnings(latestEarningsPoint.estimate)}
                           </span>{' '}
-                          • Actual{' '}
+                          • {t('actual')}{' '}
                           <span className="font-medium text-emerald-700">
                             {formatSignedEarnings(latestEarningsPoint.actual)}
                           </span>
@@ -1555,7 +1568,7 @@ const renderNewsTab = () => {
                         ) : null}
                       </div>
                       <Badge className="px-3 py-1 uppercase tracking-wide">
-                        Normalized
+                        {t('normalized')}
                       </Badge>
                     </div>
                   </CardHeader>
@@ -1580,15 +1593,15 @@ const renderNewsTab = () => {
                   <CardHeader className="gap-2">
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex flex-col">
-                        <CardTitle className="text-sm mb-4">Revenue vs Earnings</CardTitle>
+                        <CardTitle className="text-sm mb-4">{t('revenueVsEarnings')}</CardTitle>
                         {latestRevenuePoint && (
                           <p className="text-xs text-muted-foreground">
                             <span style={{ color: primaryChartColor }}>
-                              Revenue {formatRevenueValue(latestRevenuePoint.revenue)}
+                              {t('revenue')} {formatRevenueValue(latestRevenuePoint.revenue)}
                             </span>{' '}
                             •{' '}
                             <span style={{ color: secondaryChartColor }}>
-                              Earnings {formatRevenueValue(latestRevenuePoint.earnings)}
+                              {t('earnings')} {formatRevenueValue(latestRevenuePoint.earnings)}
                             </span>
                           </p>
                         )}
@@ -1602,8 +1615,8 @@ const renderNewsTab = () => {
                           activeClassName="bg-foreground text-background hover:bg-foreground/90 dark:hover:bg-foreground/90 shadow-sm"
                           inactiveClassName="text-foreground hover:bg-accent hover:text-accent-foreground"
                           options={[
-                            { value: 'annual', label: 'Annual', disabled: !hasAnnualRevenue },
-                            { value: 'quarterly', label: 'Quarterly' },
+                            { value: 'annual', label: t('annual'), disabled: !hasAnnualRevenue },
+                            { value: 'quarterly', label: t('quarterly') },
                           ]}
                         />
                       </div>
@@ -1626,7 +1639,7 @@ const renderNewsTab = () => {
         ) : (
           <Card>
             <CardContent className="text-xs text-muted-foreground">
-              Earnings and revenue analysis unavailable.
+              {t('earningsRevenueUnavailable')}
             </CardContent>
           </Card>
         )}
@@ -1640,7 +1653,7 @@ const renderNewsTab = () => {
         <div className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle className="text-sm">Analyst Rating</CardTitle>
+              <CardTitle className="text-sm">{t('analystRating')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-3">
@@ -1661,7 +1674,7 @@ const renderNewsTab = () => {
       return (
         <Card>
           <CardContent className="text-xs text-muted-foreground">
-            Analyst insights unavailable for {symbol}.
+            {t('analystInsightsUnavailable', { symbol })}
           </CardContent>
         </Card>
       );
@@ -1692,13 +1705,13 @@ const renderNewsTab = () => {
     const consensusColumns = revenueChartData.slice(-4);
     const consensusRows = [
       {
-        label: `Revenue${analysisCurrency ? ` (${analysisCurrency})` : ''}`,
+        label: `${t('revenue')}${analysisCurrency ? ` (${analysisCurrency})` : ''}`,
         values: consensusColumns.map((entry) =>
           entry?.revenue != null ? formatRevenueValue(entry.revenue) : '—'
         ),
       },
       {
-        label: `Earnings${analysisCurrency ? ` (${analysisCurrency})` : ''}`,
+        label: `${t('earnings')}${analysisCurrency ? ` (${analysisCurrency})` : ''}`,
         values: consensusColumns.map((entry) =>
           entry?.earnings != null ? formatRevenueValue(entry.earnings) : '—'
         ),

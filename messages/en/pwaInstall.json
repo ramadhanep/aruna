@@ -1,0 +1,8 @@
+{
+  "pwaInstallDialog": {
+    "installTitle": "Install Aruna",
+    "installDescription": "Install aruna on your device for quick access and a better experience. No app store needed!",
+    "notNow": "Not Now",
+    "install": "Install"
+  }
+}

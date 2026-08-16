@@ -1,4 +1,4 @@
-const VERSION = '1.7.56';
+const VERSION = '1.8.0';
 const STATIC_CACHE = `aruna-static-${VERSION}`;
 const PAGE_CACHE = `aruna-pages-${VERSION}`;
 const DATA_CACHE = `aruna-data-${VERSION}`;

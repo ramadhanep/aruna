@@ -3,6 +3,7 @@
 import { Suspense, useState, useMemo, useEffect, useRef, useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { ClearDataButton } from "@/components/clear-data-button";
@@ -17,12 +18,20 @@ import {
   UserRound,
   ShieldAlert,
   Cookie,
+  Languages,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 
+function getCookieLocale() {
+  if (typeof document === "undefined") return "en";
+  const match = document.cookie.match(/(?:^|;\s*)locale=([^;]+)/);
+  return match ? match[1] : "en";
+}
+
 function AccountSidebarContent() {
+  const t = useTranslations();
   const {
     user,
     loading,
@@ -39,6 +48,7 @@ function AccountSidebarContent() {
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState(null);
+  const [locale, setLocale] = useState(getCookieLocale);
   const isClient = useSyncExternalStore(
     () => () => {},
     () => true,
@@ -46,9 +56,16 @@ function AccountSidebarContent() {
   );
 
   const activeThemeMode = isClient ? (theme === "dark" ? "dark" : "light") : null;
+  const activeLocale = isClient ? locale : null;
   const redirectHandledRef = useRef(false);
   const rawRedirect = searchParams?.get("redirect") || null;
   const redirectParam = rawRedirect && rawRedirect.startsWith("/") ? rawRedirect : null;
+
+  const handleSetLocale = (next) => {
+    setLocale(next);
+    document.cookie = `locale=${next};path=/;max-age=31536000;SameSite=Lax`;
+    router.refresh();
+  };
   const avatarUrl = useMemo(() => {
     if (!user) return null;
     return (
@@ -89,8 +106,8 @@ function AccountSidebarContent() {
       console.error("Failed to start Google sign-in", error);
       setAuthError(
         supabaseConfigured
-          ? "Unable to start Google sign-in. Please try again."
-          : "Provider credentials are missing. Add them to your environment to enable sign-in."
+          ? t("accountSidebar.errSignIn")
+          : t("accountSidebar.errProvider")
       );
     }
   };
@@ -103,7 +120,7 @@ function AccountSidebarContent() {
       setShowSignOutConfirm(false);
     } catch (error) {
       console.error("Failed to sign out", error);
-      setSignOutError("Failed to log out. Please try again.");
+      setSignOutError(t("accountSidebar.errSignOut"));
     } finally {
       setSigningOut(false);
     }
@@ -114,7 +131,7 @@ function AccountSidebarContent() {
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-7 pb-12">
         <section className="space-y-3">
-          <p className="text-1xs font-semibold uppercase tracking-wide text-muted-foreground">Profile</p>
+          <p className="text-1xs font-semibold uppercase tracking-wide text-muted-foreground">{t("accountSidebar.profile")}</p>
           <div className="rounded-3xl bg-card border border-border/30 px-4 py-5 text-foreground">
             {isClient ? (
               <>
@@ -137,22 +154,22 @@ function AccountSidebarContent() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-semibold">
-                      {user ? fullName : "You're browsing in guest mode"}
+                      {user ? fullName : t("accountSidebar.guestMode")}
                     </p>
                     <p className="text-1xs text-foreground/80 dark:text-white/80 truncate">
-                      {user ? primaryEmail : "Sign in to sync watchlist & portfolio"}
+                      {user ? primaryEmail : t("accountSidebar.signInToSync")}
                     </p>
                   </div>
                 </div>
                 <div className="mt-4 grid grid-cols-2 gap-2 text-1xs">
                   <div className="rounded-2xl  px-3 py-2">
-                    <p className="uppercase tracking-wide text-foreground/60 dark:text-white/60">Mode</p>
-                    <p className="text-sm font-semibold text-foreground dark:text-white">{user ? "Synced" : "Guest"}</p>
+                    <p className="uppercase tracking-wide text-foreground/60 dark:text-white/60">{t("accountSidebar.mode")}</p>
+                    <p className="text-sm font-semibold text-foreground dark:text-white">{user ? t("accountSidebar.synced") : t("accountSidebar.guest")}</p>
                   </div>
                   <div className="rounded-2xl  px-3 py-2">
-                    <p className="uppercase tracking-wide text-foreground/60 dark:text-white/60">Server</p>
+                    <p className="uppercase tracking-wide text-foreground/60 dark:text-white/60">{t("accountSidebar.server")}</p>
                     <p className="text-sm font-semibold text-foreground dark:text-white">
-                      {supabaseConfigured ? "Connected" : "Offline"}
+                      {supabaseConfigured ? t("accountSidebar.connected") : t("accountSidebar.offline")}
                     </p>
                   </div>
                 </div>
@@ -163,7 +180,7 @@ function AccountSidebarContent() {
                 ) : user ? null : (
                   <div className="mt-4 space-y-3 rounded-2xl bg-black/1 dark:bg-white/1 px-4 py-4">
                     <p className="text-1xs text-foreground/80 dark:text-white/80">
-                      Sign in with Google to sync your watchlist and portfolio securely.
+                      {t("accountSidebar.signInPrompt")}
                     </p>
                     <Button
                       type="button"
@@ -171,7 +188,7 @@ function AccountSidebarContent() {
                       className="w-full justify-center gap-3 rounded-full bg-foreground text-[12px] font-semibold text-background hover:bg-foreground/90"
                     >
                       <GoogleGlyph />
-                      <span>Sign in with Google</span>
+                      <span>{t("accountSidebar.signInWithGoogle")}</span>
                     </Button>
                     {authError ? (
                       <div className="rounded-2xl bg-red-600/15 px-3 py-2 text-1xs text-red-100">
@@ -194,10 +211,10 @@ function AccountSidebarContent() {
         </section>
 
         <section className="space-y-3">
-          <p className="text-1xs font-semibold uppercase tracking-wide text-muted-foreground">Appearance</p>
+          <p className="text-1xs font-semibold uppercase tracking-wide text-muted-foreground">{t("accountSidebar.appearance")}</p>
           <div className="rounded-3xl bg-card border border-border/30 px-4 py-4">
             <p className="text-1xs text-muted-foreground">
-              Pick the look that feels best on your device. Light stays bright, dark saves battery.
+              {t("accountSidebar.appearanceHint")}
             </p>
             <div className="mt-3 flex gap-2">
               <Button
@@ -207,7 +224,7 @@ function AccountSidebarContent() {
                 onClick={() => setTheme("light")}
               >
                 <Sun className="h-4 w-4" />
-                Light
+                {t("accountSidebar.light")}
               </Button>
               <Button
                 type="button"
@@ -216,13 +233,13 @@ function AccountSidebarContent() {
                 onClick={() => setTheme("dark")}
               >
                 <Moon className="h-4 w-4" />
-                Dark
+                {t("accountSidebar.dark")}
               </Button>
             </div>
             <div className="mt-3 flex items-center justify-between rounded-2xl border border-border/40 bg-muted/20 px-3 py-2.5">
               <div>
-                <p className="text-xs font-medium">Visual Mode</p>
-                <p className="text-1xs text-muted-foreground">Lite mode skips ticker logo images to keep it lighter.</p>
+                <p className="text-xs font-medium">{t("accountSidebar.visualMode")}</p>
+                <p className="text-1xs text-muted-foreground">{t("accountSidebar.visualModeHint")}</p>
               </div>
               <Button
                 type="button"
@@ -230,14 +247,43 @@ function AccountSidebarContent() {
                 className="min-w-[118px] justify-center gap-2 rounded-xl text-xs"
                 onClick={() => setMode(mode === "lite" ? "pro" : "lite")}
               >
-                {mode === "lite" ? "Lite" : "Pro"}
+                {mode === "lite" ? t("accountSidebar.lite") : t("accountSidebar.pro")}
               </Button>
             </div>
           </div>
         </section>
 
         <section className="space-y-3">
-          <p className="text-1xs font-semibold uppercase tracking-wide text-muted-foreground">Data & Privacy</p>
+          <p className="text-1xs font-semibold uppercase tracking-wide text-muted-foreground">{t("accountSidebar.language")}</p>
+          <div className="rounded-3xl bg-card border border-border/30 px-4 py-4">
+            <p className="text-1xs text-muted-foreground">
+              {t("accountSidebar.languageHint")}
+            </p>
+            <div className="mt-3 flex gap-2">
+              <Button
+                type="button"
+                variant={activeLocale === "en" ? "default" : "outline"}
+                className="flex-1 justify-center gap-2 rounded-2xl text-xs"
+                onClick={() => handleSetLocale("en")}
+              >
+                <Languages className="h-4 w-4" />
+                English
+              </Button>
+              <Button
+                type="button"
+                variant={activeLocale === "id" ? "default" : "outline"}
+                className="flex-1 justify-center gap-2 rounded-2xl text-xs"
+                onClick={() => handleSetLocale("id")}
+              >
+                <Languages className="h-4 w-4" />
+                Bahasa Indonesia
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <section className="space-y-3">
+          <p className="text-1xs font-semibold uppercase tracking-wide text-muted-foreground">{t("accountSidebar.dataPrivacy")}</p>
           <div className="rounded-3xl bg-card border border-border/30 px-4 py-4 space-y-4">
             <ClearDataButton
               onCleared={user ? clearRemoteData : undefined}
@@ -247,9 +293,9 @@ function AccountSidebarContent() {
                   className="flex w-full items-center justify-between rounded-2xl bg-black/1 dark:bg-white/1 px-3 py-3 text-left text-xs"
                 >
                   <div>
-                    <p className="font-semibold text-foreground">Clear Data</p>
+                    <p className="font-semibold text-foreground">{t("accountSidebar.clearData")}</p>
                     <p className="text-1xs text-muted-foreground">
-                      Remove watchlist & portfolio items from your account.
+                      {t("accountSidebar.clearDataHint")}
                     </p>
                   </div>
                   <Cookie className="h-4 w-4 text-muted-foreground" />
@@ -274,14 +320,14 @@ function AccountSidebarContent() {
                     className="w-full justify-center gap-2 rounded-2xl text-xs"
                   >
                     <LogOut className="h-4 w-4" />
-                    Sign out
+                    {t("accountSidebar.signOut")}
                   </Button>
                 </DialogTrigger>
                 <DialogContent closeButtonPosition="right">
                   <DialogHeader>
-                    <DialogTitle className="text-sm font-semibold">Log out?</DialogTitle>
+                    <DialogTitle className="text-sm font-semibold">{t("accountSidebar.logOutTitle")}</DialogTitle>
                     <DialogDescription className="text-1xs text-muted-foreground">
-                      We&apos;ll sign you out of this device. You can sign back in anytime to sync your data again.
+                      {t("accountSidebar.logOutDesc")}
                     </DialogDescription>
                   </DialogHeader>
                   {signOutError ? (
@@ -292,7 +338,7 @@ function AccountSidebarContent() {
                   <DialogFooter className="gap-2">
                     <DialogClose asChild>
                       <Button variant="outline" className="text-xs" disabled={signingOut}>
-                        Cancel
+                        {t("common.cancel")}
                       </Button>
                     </DialogClose>
                     <Button
@@ -304,10 +350,10 @@ function AccountSidebarContent() {
                       {signingOut ? (
                         <span className="flex items-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          Logging out…
+                          {t("accountSidebar.loggingOut")}
                         </span>
                       ) : (
-                        "Log out"
+                        t("accountSidebar.logOut")
                       )}
                     </Button>
                   </DialogFooter>
@@ -317,7 +363,7 @@ function AccountSidebarContent() {
             {user && !supabaseConfigured ? (
               <div className="flex items-start gap-2 rounded-2xl bg-amber-500/10 px-3 py-3 text-1xs text-amber-800">
                 <ShieldAlert className="h-4 w-4 flex-shrink-0" />
-                Provider credentials are not configured. Remote sync will be disabled until you add them.
+                {t("accountSidebar.providerWarning")}
               </div>
             ) : null}
           </div>
@@ -325,7 +371,7 @@ function AccountSidebarContent() {
 
         <section className="rounded-3xl bg-card border border-border/30 px-4 py-5 text-center">
           <p className="text-1xs text-muted-foreground">
-            Version {process.env.NEXT_PUBLIC_APP_VERSION || "1.0.0"}
+            {t("accountSidebar.version", { version: process.env.NEXT_PUBLIC_APP_VERSION || "1.0.0" })}
           </p>
         </section>
       </div>
@@ -334,14 +380,15 @@ function AccountSidebarContent() {
 }
 
 export function AccountSidebar({ open, onClose }) {
+  const t = useTranslations();
   return (
     <Sheet open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
       <SheetContent
         side="left"
         className="w-full sm:max-w-3xl max-w-3xl border-r"
       >
-        <SheetTitle className="sr-only">Account</SheetTitle>
-        <SheetDescription className="sr-only">Account settings, appearance, and data management.</SheetDescription>
+        <SheetTitle className="sr-only">{t("accountSidebar.accountTitle")}</SheetTitle>
+        <SheetDescription className="sr-only">{t("accountSidebar.accountDesc")}</SheetDescription>
         <Suspense
           fallback={
             <div className="p-4 space-y-3">

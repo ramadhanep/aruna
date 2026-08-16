@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { TickerAvatar } from "./ticker-avatar";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { formatPriceTrim, formatTickerDisplay, getChangeTone } from "@/lib/utils";
@@ -78,6 +79,7 @@ function getTrendingOrder() {
 }
 
 export function TrendingMarquee({ supabase }) {
+  const t = useTranslations();
   const [trendingStocks, setTrendingStocks] = useState([]);
   const [quotes, setQuotes] = useState({});
   const [loading, setLoading] = useState(true);
@@ -180,7 +182,7 @@ export function TrendingMarquee({ supabase }) {
   if (loading) {
     return (
       <div className="overflow-hidden">
-        <SectionHeader title="Trending" />
+        <SectionHeader title={t("trendingMarquee.title")} />
         <div className="flex overflow-hidden border-y border-border bg-card py-2">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="flex items-center gap-2.5 px-3.5 py-2.5 shrink-0">
@@ -202,7 +204,7 @@ export function TrendingMarquee({ supabase }) {
 
   return (
     <div className="overflow-hidden">
-      <SectionHeader title="Trending" />
+      <SectionHeader title={t("trendingMarquee.title")} />
       <div
         ref={scrollContainerRef}
         className="relative overflow-x-auto overflow-y-hidden border-y border-border bg-card py-2 scrollbar-hide"

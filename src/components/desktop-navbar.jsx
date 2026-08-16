@@ -4,31 +4,33 @@ import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Star, AlignHorizontalDistributeCenter, ChartPie, LayoutGrid, UserRound, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DURATION_CLASS } from "@/lib/motion";
 import { HeaderSymbolSearch } from "@/components/header-symbol-search";
 import { ModeToggle } from "@/components/mode-toggle";
+import { LanguageToggle } from "@/components/language-toggle";
 import { TOOLS_ITEMS } from "@/lib/tools-menu";
 
 const navItems = [
   {
-    title: "Explore",
+    key: "explore",
     url: "/explore",
     icon: LayoutGrid,
   },
   {
-    title: "Supercharts",
+    key: "supercharts",
     url: "/chart",
     icon: AlignHorizontalDistributeCenter,
   },
   {
-    title: "Watchlist",
+    key: "watchlist",
     url: "/watchlist",
     icon: Star,
   },
   {
-    title: "Portfolio",
+    key: "portfolio",
     url: "/portfolio-tracker",
     icon: ChartPie,
   },
@@ -36,6 +38,7 @@ const navItems = [
 
 export function DesktopNavbar({ onOpenAccountSidebar }) {
   const pathname = usePathname();
+  const t = useTranslations("desktopNavbar");
   const [toolsOpen, setToolsOpen] = useState(false);
   const toolsRef = useRef(null);
   const timeoutRef = useRef(null);
@@ -85,7 +88,7 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
                 )}
               >
                 <Icon className="h-4 w-4" />
-                <span>{item.title}</span>
+                <span>{t(`nav.${item.key}`)}</span>
               </Link>
             );
           })}
@@ -107,7 +110,7 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
               )}
               onClick={() => setToolsOpen(!toolsOpen)}
             >
-              <span>Tools</span>
+              <span>{t("tools")}</span>
               <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", DURATION_CLASS.fast, toolsOpen && "rotate-180")} />
             </button>
 
@@ -145,10 +148,11 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
         <div className="flex items-center gap-2 ml-auto">
           <HeaderSymbolSearch variant="input" />
           <ModeToggle />
+          <LanguageToggle />
           <button
             onClick={onOpenAccountSidebar}
             className="flex items-center justify-center h-8 w-8 rounded-md bg-card hover:bg-accent transition-colors text-muted-foreground hover:text-foreground"
-            aria-label="Profile"
+            aria-label={t("profile")}
           >
             <UserRound className="size-5" />
           </button>

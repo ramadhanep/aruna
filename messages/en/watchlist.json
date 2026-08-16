@@ -1,0 +1,28 @@
+{
+  "watchlist": {
+    "header": "Watchlist",
+    "intro": "We search through historical data looking for anomalous patterns that we would not expect to occur at random.",
+    "editWatchlist": "Edit Watchlist",
+    "highlights": "Highlights",
+    "highlightsSubtitle": "How your watchlist is moving today",
+    "topGainer": "Top Gainer",
+    "topLoser": "Top Loser",
+    "averageChange": "Average Change"
+  },
+  "trendingMarquee": {
+    "title": "Trending"
+  },
+  "manageWatchlistDialog": {
+    "title": "Manage Watchlist",
+    "searchPlaceholder": "Search ticker...",
+    "clearSearch": "Clear search",
+    "dragToReorder": "Drag to reorder",
+    "reorder": "Reorder {symbol}",
+    "remove": "Remove {symbol}",
+    "emptyTitle": "No symbols in watchlist",
+    "emptyHint": "Search and add symbols above"
+  },
+  "tickerRow": {
+    "highVolumeWarning": "High volume vs market cap"
+  }
+}

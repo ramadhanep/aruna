@@ -1,0 +1,9 @@
+{
+  "clearData": {
+    "ariaLabel": "Clear local data",
+    "title": "Clear data?",
+    "description": "This removes your stored watchlist, portfolio, and local preferences. You can't undo this action.",
+    "cancel": "Cancel",
+    "confirm": "Yes, clear data"
+  }
+}

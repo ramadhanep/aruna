@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTranslations } from "next-intl";
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
@@ -12,6 +13,7 @@ import { formatTickerDisplay } from '@/lib/utils';
 import { toast } from 'sonner';
 
 export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }) {
+  const t = useTranslations("addAssetModal");
   const [symbolQuery, setSymbolQuery] = useState(initialSymbol);
   const [symbolResults, setSymbolResults] = useState([]);
   const [form, setForm] = useState({ symbol: initialSymbol, name: '', amount: '', unit: 'share', avgPrice: '' });
@@ -108,7 +110,7 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
       if (quote?.price != null) avgPriceNum = quote.price;
     }
     if (avgPriceNum == null || isNaN(avgPriceNum)) {
-      toast.error('Could not determine average price for this symbol. Please enter it manually.');
+      toast.error(t("avgPriceError"));
       return;
     }
 
@@ -130,28 +132,28 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent variant="fullscreen" closeButtonPosition="right">
         <div className="flex items-center gap-2 p-4 border-b">
-          <DialogTitle className="text-base">Add Asset</DialogTitle>
+          <DialogTitle className="text-base">{t("title")}</DialogTitle>
         </div>
         
         <div className="flex-1 overflow-auto">
           <div className="p-4">
-            <DialogDescription className="mb-4 text-xs">Record your position details. Prices in your account&apos;s currency.</DialogDescription>
+            <DialogDescription className="mb-4 text-xs">{t("modalDescription")}</DialogDescription>
             {loadingPrice && (
               <div className="flex items-center justify-center py-4">
-                <p className="text-sm text-muted-foreground">Loading symbol data...</p>
+                <p className="text-sm text-muted-foreground">{t("loadingSymbolData")}</p>
               </div>
             )}
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
               <div className="relative flex flex-col gap-1">
-                <Label htmlFor="symbolSearch">Symbol</Label>
+                <Label htmlFor="symbolSearch">{t("symbol")}</Label>
                 <Input
                   id="symbolSearch"
                   value={symbolQuery}
                   onChange={(e) => { setSymbolQuery(e.target.value); setForm(f => ({ ...f, symbol: e.target.value })); }}
-                  placeholder="Search ticker (e.g. AAPL)"
+                  placeholder={t("searchTicker", { examples: "AAPL" })}
                   disabled={loadingPrice}
                 />
-                {loadingSearch && <p className="text-xs text-muted-foreground">Searching...</p>}
+                {loadingSearch && <p className="text-xs text-muted-foreground">{t("searching")}</p>}
                 {!loadingSearch && symbolResults.length > 0 && (
                   <Command
                     shouldFilter={false}
@@ -176,7 +178,7 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1">
-                  <Label htmlFor="amount">Amount</Label>
+                  <Label htmlFor="amount">{t("amount")}</Label>
                   <Input
                     id="amount"
                     value={form.amount}
@@ -187,25 +189,25 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
                   />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <Label htmlFor="unit">Unit</Label>
+                  <Label htmlFor="unit">{t("unit")}</Label>
                   <Select
                     value={effectiveUnit}
                     onValueChange={(value) => setForm(f => ({ ...f, unit: value }))}
                     disabled={unitLocked}
                   >
                     <SelectTrigger id="unit" className="w-full h-9 px-3 text-sm">
-                      <SelectValue placeholder="Select unit" />
+                      <SelectValue placeholder={t("selectUnit")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="share">Share</SelectItem>
-                      <SelectItem value="lot">Lot</SelectItem>
+                      <SelectItem value="share">{t("share")}</SelectItem>
+                      <SelectItem value="lot">{t("lot")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
 
               <div className="flex flex-col gap-1">
-                <Label htmlFor="avgPrice">Average Price</Label>
+                <Label htmlFor="avgPrice">{t("averagePrice")}</Label>
                 <Input
                   id="avgPrice"
                   value={form.avgPrice}
@@ -218,9 +220,9 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
 
               <div className="flex justify-end gap-2">
                 <DialogClose asChild>
-                  <Button type="button" variant="ghost">Cancel</Button>
+                  <Button type="button" variant="ghost">{t("cancel")}</Button>
                 </DialogClose>
-                <Button type="submit">Add</Button>
+                <Button type="submit">{t("add")}</Button>
               </div>
             </form>
           </div>

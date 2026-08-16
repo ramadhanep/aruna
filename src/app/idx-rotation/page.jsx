@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { ArrowLeft, Download } from "lucide-react";
 import { ArunaWatermark } from "@/components/aruna-watermark";
 import { fetchEncodedJson } from "@/lib/api-client";
@@ -17,6 +18,7 @@ const QUADRANT_COLORS = {
 
 export default function IdxRotationPage() {
   const router = useRouter();
+  const t = useTranslations("idxRotation");
   const [stocks, setStocks] = useState([]);
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -158,19 +160,19 @@ export default function IdxRotationPage() {
     <div className="fixed inset-0 w-screen h-screen overflow-hidden">
       {/* Header */}
       <div className="pt-safe absolute top-0 left-0 right-0 z-50 flex items-center justify-between px-3 py-2 sm:px-4 sm:py-3 gap-2">
-        <Link href="/" className="flex h-11 w-11 items-center justify-center rounded-lg bg-accent hover:bg-accent/80 transition-colors shrink-0" aria-label="Go back">
+        <Link href="/" className="flex h-11 w-11 items-center justify-center rounded-lg bg-accent hover:bg-accent/80 transition-colors shrink-0" aria-label={t("goBack")}>
           <ArrowLeft className="size-6 text-muted-foreground" />
         </Link>
 
         <div className="flex-1 text-center">
-          <h1 className="text-sm font-semibold text-foreground/80">Market Rotation</h1>
-          <p className="text-2xs text-muted-foreground">Top 200 by Market Cap</p>
+          <h1 className="text-sm font-semibold text-foreground/80">{t("title")}</h1>
+          <p className="text-2xs text-muted-foreground">{t("subtitle")}</p>
         </div>
 
         <button
           onClick={handleDownload}
           className="h-11 w-11 rounded-lg bg-accent hover:bg-accent/80 transition-colors shrink-0"
-          aria-label="Download as image"
+          aria-label={t("downloadImage")}
         >
           <Download className="size-6 text-muted-foreground" />
         </button>
@@ -185,7 +187,7 @@ export default function IdxRotationPage() {
               style={{ backgroundColor: value.bg }}
             />
             <span className={`text-2xs font-medium ${value.text}`}>
-              {value.label}: {summary?.[key] || 0}
+              {t(key)}: {summary?.[key] || 0}
             </span>
           </div>
         ))}
@@ -263,7 +265,7 @@ export default function IdxRotationPage() {
           fontSize="10"
           textAnchor="end"
         >
-          Strong Momentum →
+          {t("strongMomentum")}
         </text>
         <text
           x={chartConfig.padding + 5}
@@ -272,7 +274,7 @@ export default function IdxRotationPage() {
           fontSize="10"
           textAnchor="start"
         >
-          ← Weak Momentum
+          {t("weakMomentum")}
         </text>
         <text
           x={chartConfig.centerX + 8}
@@ -281,7 +283,7 @@ export default function IdxRotationPage() {
           fontSize="10"
           textAnchor="start"
         >
-          ↑ Uptrend
+          {t("uptrend")}
         </text>
         <text
           x={chartConfig.centerX + 8}
@@ -290,7 +292,7 @@ export default function IdxRotationPage() {
           fontSize="10"
           textAnchor="start"
         >
-          ↓ Downtrend
+          {t("downtrend")}
         </text>
 
         {/* Quadrant labels */}
@@ -302,7 +304,7 @@ export default function IdxRotationPage() {
           fontWeight="bold"
           textAnchor="middle"
         >
-          LEADING
+          {t("leading").toUpperCase()}
         </text>
         <text
           x={chartConfig.padding + chartConfig.chartWidth / 4}
@@ -312,7 +314,7 @@ export default function IdxRotationPage() {
           fontWeight="bold"
           textAnchor="middle"
         >
-          WEAKENING
+          {t("weakening").toUpperCase()}
         </text>
         <text
           x={chartConfig.padding + chartConfig.chartWidth / 4}
@@ -322,7 +324,7 @@ export default function IdxRotationPage() {
           fontWeight="bold"
           textAnchor="middle"
         >
-          LAGGING
+          {t("lagging").toUpperCase()}
         </text>
         <text
           x={chartConfig.centerX + chartConfig.chartWidth / 4}
@@ -332,7 +334,7 @@ export default function IdxRotationPage() {
           fontWeight="bold"
           textAnchor="middle"
         >
-          IMPROVING
+          {t("improving").toUpperCase()}
         </text>
 
         {/* Stock dots */}
@@ -357,7 +359,12 @@ export default function IdxRotationPage() {
                 onTouchStart={() => setHoveredStock(stock.code)}
                 onClick={() => router.push(`/chart?symbol=${encodeURIComponent(stock.code)}.JK&cycle=normal`)}
               >
-                <title>{`${stock.code}\n${stock.name}\nWeekly: ${stock.weeklyChange > 0 ? '+' : ''}${stock.weeklyChange.toFixed(2)}%\nMonthly: ${stock.monthlyChange > 0 ? '+' : ''}${stock.monthlyChange.toFixed(2)}%`}</title>
+                <title>{t("stockTooltip", {
+                  code: stock.code,
+                  name: stock.name,
+                  weekly: `${stock.weeklyChange > 0 ? '+' : ''}${stock.weeklyChange.toFixed(2)}%`,
+                  monthly: `${stock.monthlyChange > 0 ? '+' : ''}${stock.monthlyChange.toFixed(2)}%`,
+                })}</title>
               </circle>
 
               {/* Stock code label */}

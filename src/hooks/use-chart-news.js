@@ -11,11 +11,10 @@ export function useChartNews(symbol, infoTab) {
     if (infoTab !== 'news' || !symbol) {
       return;
     }
-
     let cancelled = false;
-    setNewsLoading(true);
 
     (async () => {
+      setNewsLoading(true);
       try {
         const { response, data } = await fetchEncodedJson(
           `/api/news?symbol=${encodeURIComponent(symbol)}`

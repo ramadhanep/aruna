@@ -1,0 +1,14 @@
+{
+  "headerSymbolSearch": {
+    "title": "Cari Ticker",
+    "placeholder": "Cari ticker atau nama perusahaan",
+    "searching": "Mencari...",
+    "recent": "Terbaru",
+    "clear": "Bersihkan",
+    "results": "Hasil",
+    "noMatches": "Tidak ada hasil untuk \"{query}\"",
+    "cancel": "Batal",
+    "triggerAria": "Cari ticker",
+    "triggerPlaceholder": "Cari ticker atau perusahaan..."
+  }
+}

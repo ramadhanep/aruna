@@ -1,0 +1,24 @@
+{
+  "msci": {
+    "info": "Saham Indonesia dengan potensi masuk ke indeks MSCI Global dan Small Cap, mempertimbangkan kriteria pasar utama.",
+    "msciStandard": "MSCI Standard",
+    "msciSmallCap": "MSCI Small Cap",
+    "sortAria": "Urutkan saham",
+    "sortAlpha": "A sampai Z",
+    "sortMarket": "Nilai Pasar",
+    "sortStrong": "Kandidat Kuat",
+    "sortBorderline": "Perbatasan",
+    "sortEarly": "Tahap Awal",
+    "price": "Harga",
+    "marketCap": "Market Cap",
+    "freeFloat": "Free Float",
+    "progressToMSCI": "Progres ke MSCI",
+    "qualificationPrice": "Harga Kualifikasi MSCI",
+    "potentialUpside": "Potensi Kenaikan",
+    "signInToUnlock": "Masuk untuk membuka",
+    "loadError": "Gagal memuat data",
+    "fetchError": "Gagal memuat data MSCI",
+    "empty": "Tidak ada saham ditemukan untuk indeks MSCI ini.",
+    "lastUpdated": "Terakhir diperbarui:"
+  }
+}

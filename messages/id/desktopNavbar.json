@@ -1,0 +1,12 @@
+{
+  "desktopNavbar": {
+    "nav": {
+      "explore": "Jelajah",
+      "supercharts": "Supercharts",
+      "watchlist": "Daftar Pantauan",
+      "portfolio": "Portofolio"
+    },
+    "tools": "Alat",
+    "profile": "Profil"
+  }
+}

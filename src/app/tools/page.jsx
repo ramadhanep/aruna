@@ -1,20 +1,21 @@
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { Card, CardContent } from "@/components/ui/card";
 import { TOOLS_ITEMS } from "@/lib/tools-menu";
 
-export const metadata = {
-  title: "Tools | aruna",
-};
+export async function generateMetadata() {
+  const t = await getTranslations("tools");
+  return { title: t("metaTitle") };
+}
 
-export default function ToolsPage() {
+export default async function ToolsPage() {
+  const t = await getTranslations("tools");
   return (
     <div className="mx-auto max-w-4xl pb-24">
       <section className="mb-5">
-        <h1 className="mt-2 text-2xl font-bold tracking-tight">Explore all tools</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Access the same tools menu from desktop in a mobile-friendly list.
-        </p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight">{t("title")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
       </section>
 
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">

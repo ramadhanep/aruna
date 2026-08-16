@@ -1,0 +1,13 @@
+{
+  "signin": {
+    "welcomeBack": "Selamat datang kembali",
+    "signInToContinue": "Masuk untuk melanjutkan",
+    "syncTagline": "Sinkronkan daftar pantauan dan portofolio dengan aman di semua perangkat.",
+    "signInWithGoogle": "Masuk dengan Google",
+    "redirecting": "Mengalihkan…",
+    "errSignIn": "Gagal memulai login Google. Silakan coba lagi.",
+    "errProvider": "Kredensial provider tidak ada. Tambahkan untuk mengaktifkan login.",
+    "providerWarning": "Kredensial provider belum dikonfigurasi. Sinkronisasi jarak jauh akan dinonaktifkan sampai ditambahkan.",
+    "authNotice": "Dengan melanjutkan, kamu menyetujui penggunaan Google untuk autentikasi. Kami hanya menggunakan email untuk menjaga data tetap sinkron."
+  }
+}

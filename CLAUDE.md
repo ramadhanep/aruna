@@ -1,6 +1,6 @@
 # Aruna — AI Session Context
 
-**Version:** 1.7.56
+**Version:** 1.8.0
 **Project:** Mobile-first stock market analysis platform for Indonesian retail investors (IDX, US equities, crypto). Next.js 16 App Router, React 19, Supabase, Tailwind v4.
 
 ## Commands

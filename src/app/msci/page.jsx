@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,6 +19,7 @@ import { TickerAvatar } from "@/components/ticker-avatar";
 import { formatTickerDisplay } from "@/lib/utils";
 
 function SegmentControl({ value, onChange, sortBy, onSortChange }) {
+  const t = useTranslations("msci");
   return (
     <div className="sticky top-14 z-30 bg-background border-b border-border -mx-4 px-4 py-3">
       <div className="flex items-center gap-2">
@@ -31,7 +33,7 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
               }`}
             onClick={() => onChange("standard")}
           >
-            MSCI Standard
+            {t("msciStandard")}
           </Button>
           <Button
             type="button"
@@ -42,7 +44,7 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
               }`}
             onClick={() => onChange("small_cap")}
           >
-            MSCI Small Cap
+            {t("msciSmallCap")}
           </Button>
         </div>
         <DropdownMenu>
@@ -51,7 +53,7 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
               variant="ghost"
               size="icon"
               className="h-8 w-8 p-0 flex-shrink-0"
-              aria-label="Sort stocks"
+              aria-label={t("sortAria")}
             >
               <ArrowUpDown className="h-4 w-4" />
             </Button>
@@ -64,7 +66,7 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
               <Check
                 className={`h-3 w-3 ${sortBy === 'alpha' ? 'opacity-100' : 'opacity-0'}`}
               />
-              A to Z
+              {t("sortAlpha")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onSortChange('market')}
@@ -73,7 +75,7 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
               <Check
                 className={`h-3 w-3 ${sortBy === 'market' ? 'opacity-100' : 'opacity-0'}`}
               />
-              Market Value
+              {t("sortMarket")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onSortChange('strong')}
@@ -82,7 +84,7 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
               <Check
                 className={`h-3 w-3 ${sortBy === 'strong' ? 'opacity-100' : 'opacity-0'}`}
               />
-              Strong Candidate
+              {t("sortStrong")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onSortChange('borderline')}
@@ -91,7 +93,7 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
               <Check
                 className={`h-3 w-3 ${sortBy === 'borderline' ? 'opacity-100' : 'opacity-0'}`}
               />
-              Borderline
+              {t("sortBorderline")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onSortChange('early')}
@@ -100,7 +102,7 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
               <Check
                 className={`h-3 w-3 ${sortBy === 'early' ? 'opacity-100' : 'opacity-0'}`}
               />
-              Early Stage
+              {t("sortEarly")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -123,6 +125,7 @@ function StatusBadge({ status }) {
 }
 
 function StockCard({ stock, isLocked = false }) {
+  const t = useTranslations("msci");
   const progressPercent = Math.min(stock.progress, 100);
   return (
     <Card className="overflow-hidden relative">
@@ -148,25 +151,25 @@ function StockCard({ stock, isLocked = false }) {
         {/* Price & Market Cap */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-0.5">
-            <p className="text-2xs text-muted-foreground uppercase tracking-wide">Price</p>
+            <p className="text-2xs text-muted-foreground uppercase tracking-wide">{t("price")}</p>
             <p className="text-sm font-semibold">Rp {formatPrice(stock.price)}</p>
           </div>
           <div className="space-y-0.5">
-            <p className="text-2xs text-muted-foreground uppercase tracking-wide">Market Cap</p>
+            <p className="text-2xs text-muted-foreground uppercase tracking-wide">{t("marketCap")}</p>
             <p className="text-sm font-semibold">{formatMarketCap(stock.market_cap)}</p>
           </div>
         </div>
 
         {/* Free Float */}
         <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
-          <span className="text-2xs text-muted-foreground">Free Float</span>
+          <span className="text-2xs text-muted-foreground">{t("freeFloat")}</span>
           <span className="text-xs font-semibold">{formatPercent(stock.free_float_percent)}</span>
         </div>
 
         {/* Progress Bar */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between text-2xs">
-            <span className="text-muted-foreground">Progress to MSCI</span>
+            <span className="text-muted-foreground">{t("progressToMSCI")}</span>
             <span className="font-semibold text-emerald-600 dark:text-emerald-400">
               {formatPercent(stock.progress)}
             </span>
@@ -182,13 +185,13 @@ function StockCard({ stock, isLocked = false }) {
         {/* Target Price & Upside */}
         <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border">
           <div className="space-y-0.5">
-            <p className="text-2xs text-muted-foreground uppercase tracking-wide">MSCI Qualification Price</p>
+            <p className="text-2xs text-muted-foreground uppercase tracking-wide">{t("qualificationPrice")}</p>
             <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
               Rp {formatPrice(stock.targetPrice)}
             </p>
           </div>
           <div className="space-y-0.5">
-            <p className="text-2xs text-muted-foreground uppercase tracking-wide">Potential Upside</p>
+            <p className="text-2xs text-muted-foreground uppercase tracking-wide">{t("potentialUpside")}</p>
             <p className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
               <TrendingUp className="h-3 w-3" />
               {formatPercent(stock.upside)}
@@ -200,7 +203,7 @@ function StockCard({ stock, isLocked = false }) {
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/90 px-6 text-center pointer-events-none">
           <Lock className="h-4 w-4 text-muted-foreground" />
           <p className="text-xs font-semibold text-muted-foreground">
-            Sign in to unlock
+            {t("signInToUnlock")}
           </p>
         </div>
       )}
@@ -257,6 +260,7 @@ function LoadingSkeleton() {
 }
 
 export default function MSCIPage() {
+  const t = useTranslations("msci");
   const { user } = useAuth();
   const isAuthenticated = !!user;
   const [selectedIndex, setSelectedIndex] = useState("standard");
@@ -274,14 +278,14 @@ export default function MSCIPage() {
         setData(result);
       } catch (err) {
         console.error("Failed to fetch MSCI data:", err);
-        setError(err.message || "Failed to load MSCI data");
+        setError(err.message || t("fetchError"));
       } finally {
         setLoading(false);
       }
     }
 
     fetchData();
-  }, [selectedIndex]);
+  }, [selectedIndex, t]);
 
   const filteredStocks = data?.data?.stocks?.filter(
     (s) => s.msci_index === selectedIndex
@@ -331,7 +335,7 @@ export default function MSCIPage() {
       <Card>
         <CardContent className="p-4">
           <p className="text-xs leading-relaxed text-foreground/90 font-medium">
-            Indonesian stocks with potential inclusion in the MSCI Global and Small Cap indices, considering key market criteria.
+            {t("info")}
           </p>
         </CardContent>
       </Card>
@@ -350,7 +354,7 @@ export default function MSCIPage() {
           <CardContent className="p-4 flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0" />
             <div>
-              <p className="text-xs font-semibold text-red-600">Failed to load data</p>
+              <p className="text-xs font-semibold text-red-600">{t("loadError")}</p>
               <p className="text-xs text-red-600/80">{error}</p>
             </div>
           </CardContent>
@@ -365,7 +369,7 @@ export default function MSCIPage() {
         <Card className="bg-muted/20">
           <CardContent className="p-8 text-center">
             <p className="text-sm text-muted-foreground">
-              No stocks found for this MSCI index.
+              {t("empty")}
             </p>
           </CardContent>
         </Card>
@@ -387,7 +391,7 @@ export default function MSCIPage() {
       {/* Last Updated */}
       {data?.lastUpdated && (
         <p className="text-2xs text-center text-muted-foreground pt-4">
-          Last updated: {new Date(data.lastUpdated).toLocaleTimeString()}
+          {t("lastUpdated")} {new Date(data.lastUpdated).toLocaleTimeString()}
         </p>
       )}
     </div>

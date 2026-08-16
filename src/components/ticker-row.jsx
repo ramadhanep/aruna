@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { MiniChart } from "@/components/mini-chart";
@@ -18,6 +19,7 @@ export function TickerRow({
   isNew = false,
   isWarning = false,
 }) {
+  const t = useTranslations();
   if (!symbol) return null;
 
   const isPositive = change >= 0;
@@ -42,7 +44,7 @@ export function TickerRow({
               <Badge variant="new" className="px-1.5 py-[2px] rounded-md">NEW</Badge>
             ) : null}
             {isWarning ? (
-              <AlertTriangle className="h-3.5 w-3.5 text-amber-500" title="High volume vs market cap" />
+              <AlertTriangle className="h-3.5 w-3.5 text-amber-500" title={t("tickerRow.highVolumeWarning")} />
             ) : null}
           </div>
           <div className="text-xs text-muted-foreground truncate mt-0.5">{name}</div>

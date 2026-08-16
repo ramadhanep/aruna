@@ -1,3 +1,5 @@
+import createNextIntlPlugin from 'next-intl/plugin';
+
 const APP_URL = process.env.APP_URL;
 const SECURE_PAYLOAD_KEY = process.env.SECURE_PAYLOAD_KEY;
 
@@ -16,7 +18,7 @@ const nextConfig = {
   ],
   env: {
     NEXT_PUBLIC_APP_NAME: 'Aruna',
-    NEXT_PUBLIC_APP_VERSION: '1.7.56',
+    NEXT_PUBLIC_APP_VERSION: '1.8.0',
     NEXT_PUBLIC_APP_URL: APP_URL,
     SECURE_PAYLOAD_KEY,
   },
@@ -35,7 +37,7 @@ const nextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
-          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(), interest-cohort=()' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
           { key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' },
           // ponytail: report-only CSP. Next/Tailwind emit inline styles; audit the
           // reports in prod before tightening to enforce mode.
@@ -49,4 +51,5 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+const withNextIntl = createNextIntlPlugin();
+export default withNextIntl(nextConfig);

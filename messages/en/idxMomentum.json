@@ -1,0 +1,28 @@
+{
+  "idxMomentum": {
+    "tabAll": "All",
+    "tabGainers": "Gainers",
+    "tabLosers": "Losers",
+    "sortStocks": "Sort stocks",
+    "momentumScore": "Momentum Score",
+    "weeklyChange": "Weekly Change",
+    "monthlyChange": "Monthly Change",
+    "marketSentiment": "Market Sentiment",
+    "total": "Total",
+    "neutral": "Neutral",
+    "avgMomentumScore": "Avg Momentum Score",
+    "price": "Price",
+    "weekChange": "1 Week",
+    "monthChange": "1 Month",
+    "signInToUnlock": "Sign in to unlock",
+    "topGainers": "Top Gainers",
+    "topLosers": "Top Losers",
+    "title": "IDX Momentum & Price Trend Analysis",
+    "failedToLoadData": "Failed to load data",
+    "fetchError": "Failed to load momentum data",
+    "showingStocks": "Showing {shown} of {total} stocks",
+    "noMoreStocks": "No more stocks to load",
+    "noStocksFound": "No stocks found with this filter.",
+    "lastUpdated": "Last updated: {time}"
+  }
+}

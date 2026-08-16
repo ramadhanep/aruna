@@ -1,0 +1,12 @@
+{
+  "desktopNavbar": {
+    "nav": {
+      "explore": "Explore",
+      "supercharts": "Supercharts",
+      "watchlist": "Watchlist",
+      "portfolio": "Portfolio"
+    },
+    "tools": "Tools",
+    "profile": "Profile"
+  }
+}

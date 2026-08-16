@@ -1,0 +1,62 @@
+{
+  "moneyFlow": {
+    "intro": "Analisis smart money berdasarkan arus broker, fase pasar, absorpsi, dan simbol yang tersinkronisasi dengan screener.",
+    "windowStart": "Awal jendela: {date}",
+    "noResults": "Tidak ada hasil ditemukan",
+    "noResultsHint": "Coba sesuaikan filter atau kata kunci pencarian",
+    "disabledTitle": "Money Flow tidak tersedia",
+    "disabledDescription": "Fitur ini untuk sementara dinonaktifkan.",
+    "sortReports": "Urutkan laporan",
+    "descending": "Menurun",
+    "ascending": "Menaik",
+    "statsReports": "Laporan",
+    "statsAccumulation": "Akumulasi",
+    "statsAvgVolSpike": "Rata-rata Vol Spike",
+    "statsTimeframe": "Jangka Waktu",
+    "fetchError": "Gagal mengambil data money flow",
+    "loadError": "Gagal memuat data money flow",
+    "errorTitle": "Gagal memuat data money-flow",
+    "lastUpdated": "Terakhir diperbarui: {time}",
+    "timeframe": {
+      "weekly": "Mingguan",
+      "monthly": "Bulanan",
+      "quarterly": "Kuartalan"
+    },
+    "sort": {
+      "score": "Skor Money Flow",
+      "volumeSpike": "Volume Spike",
+      "priceChange": "Perubahan Harga"
+    }
+  },
+  "moneyFlowCard": {
+    "indeterminatePhase": "Fase Tidak Dapat Ditentukan",
+    "indeterminate": "Tidak Dapat Ditentukan",
+    "price": "Harga",
+    "flowScore": "Skor Flow",
+    "change": {
+      "1w": "Perubahan 1W",
+      "1m": "Perubahan 1M",
+      "3m": "Perubahan 3M"
+    },
+    "top3Buy": "Top 3 Beli",
+    "volSpike": "Vol Spike",
+    "absorptionStrength": "Absorption Strength",
+    "manipulationRisk": "Risiko Manipulasi",
+    "phase": "Fase",
+    "brokerCost": "Biaya Broker",
+    "concentration": "Konsentrasi",
+    "risk": "Risiko",
+    "riskNotes": "Catatan risiko",
+    "smartMoneySummary": "Ringkasan Smart Money",
+    "priceVsMa20": "Harga vs MA20",
+    "volumeRatio": "Volume Ratio",
+    "bandarDelta": "Bandar Delta",
+    "brokerAction": "Aksi Broker",
+    "top10Pairs": "10 pasangan teratas",
+    "gross": "Kotor",
+    "net": "Bersih",
+    "buyerSideAccumulation": "Akumulasi sisi pembeli",
+    "sellerSideDistribution": "Distribusi sisi penjual",
+    "noBrokerData": "Tidak ada data broker tersedia"
+  }
+}

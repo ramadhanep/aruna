@@ -3,6 +3,7 @@
 import { ChevronDown, Star, Bitcoin } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatTickerDisplay } from "@/lib/utils";
+import { useTranslations } from "next-intl";
 
 export function ChartHeaderBar({
   symbol,
@@ -12,6 +13,7 @@ export function ChartHeaderBar({
   selectedCycles,
   onCyclesChange,
 }) {
+  const t = useTranslations("chartHeaderBar");
   return (
     <div className="lg:col-span-12 flex justify-between gap-2 mb-4 lg:mb-0">
       <div className="flex flex-wrap items-center gap-2">
@@ -50,7 +52,7 @@ export function ChartHeaderBar({
           onValueChange={(value) => onCyclesChange(value.split(','))}
         >
           <SelectTrigger className="h-8 text-1xs">
-            <SelectValue placeholder="Select cycles" />
+            <SelectValue placeholder={t("selectCycles")} />
           </SelectTrigger>
           <SelectContent>
             <SelectItem className="text-1xs" value="normal">Normal</SelectItem>
@@ -66,7 +68,7 @@ export function ChartHeaderBar({
           type="button"
           onClick={onToggleFavorite}
           aria-pressed={isFavorite}
-          aria-label={isFavorite ? `Remove ${symbol} from favorites` : `Add ${symbol} to favorites`}
+          aria-label={isFavorite ? t("removeFavorite", { symbol }) : t("addFavorite", { symbol })}
           className={`rounded-full p-1 transition-colors ${isFavorite ? 'text-amber-600 hover:text-amber-400' : 'text-muted-foreground hover:text-foreground'}`}
         >
           <Star

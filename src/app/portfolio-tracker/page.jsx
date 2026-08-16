@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from "next-intl";
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -48,11 +49,12 @@ function AddAssetForm({
   unitLocked,
   handleSubmit,
 }) {
+  const t = useTranslations("addAssetModal");
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       {/* Asset Type Selection */}
       <div className="flex flex-col gap-2">
-        <Label>Asset Type</Label>
+        <Label>{t("assetType")}</Label>
         <div className="flex gap-2">
           <Button
             type="button"
@@ -62,7 +64,7 @@ function AddAssetForm({
             className="flex-1"
           >
             <TrendingUp className="h-4 w-4 mr-2" />
-            Digital Assets
+            {t("digitalAssets")}
           </Button>
           <Button
             type="button"
@@ -72,7 +74,7 @@ function AddAssetForm({
             className="flex-1"
           >
             <CreditCard className="h-4 w-4 mr-2" />
-            Cash
+            {t("cash")}
           </Button>
         </div>
       </div>
@@ -81,14 +83,14 @@ function AddAssetForm({
         <>
           {/* Digital Asset Fields */}
           <div className="relative flex flex-col gap-2">
-            <Label htmlFor="symbolSearch">Symbol</Label>
+            <Label htmlFor="symbolSearch">{t("symbol")}</Label>
             <Input
               id="symbolSearch"
               value={symbolQuery}
               onChange={(e) => { setSymbolQuery(e.target.value); setForm(f => ({ ...f, symbol: e.target.value })); }}
-              placeholder="Search ticker (e.g. AAPL, BBCA.JK)"
+              placeholder={t("searchTicker", { examples: "AAPL, BBCA.JK" })}
             />
-            {loadingSearch && <p className="text-xs text-muted-foreground">Searching...</p>}
+            {loadingSearch && <p className="text-xs text-muted-foreground">{t("searching")}</p>}
             {!loadingSearch && symbolResults.length > 0 && (
               <Command
                 shouldFilter={false}
@@ -113,7 +115,7 @@ function AddAssetForm({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="amount">Amount</Label>
+              <Label htmlFor="amount">{t("amount")}</Label>
               <Input
                 id="amount"
                 value={form.amount}
@@ -124,25 +126,25 @@ function AddAssetForm({
               />
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="unit">Unit</Label>
+              <Label htmlFor="unit">{t("unit")}</Label>
               <Select
                 value={effectiveUnit}
                 onValueChange={(value) => setForm(f => ({ ...f, unit: value }))}
                 disabled={unitLocked}
               >
                 <SelectTrigger id="unit" className="w-full h-9 px-3 text-sm">
-                  <SelectValue placeholder="Select unit" />
+                  <SelectValue placeholder={t("selectUnit")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="share">Share</SelectItem>
-                  <SelectItem value="lot">Lot</SelectItem>
+                  <SelectItem value="share">{t("share")}</SelectItem>
+                  <SelectItem value="lot">{t("lot")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="avgPrice">Average Price</Label>
+            <Label htmlFor="avgPrice">{t("averagePrice")}</Label>
             <Input
               id="avgPrice"
               value={form.avgPrice}
@@ -151,25 +153,25 @@ function AddAssetForm({
               type="number"
               step="any"
             />
-            <p className="text-xs text-muted-foreground">Price per {effectiveUnit === 'lot' ? 'lot' : 'share'} in native currency</p>
+            <p className="text-xs text-muted-foreground">{t("pricePerUnit", { unit: effectiveUnit === 'lot' ? t("lot") : t("share") })}</p>
           </div>
         </>
       ) : (
         <>
           {/* Cash Asset Fields */}
           <div className="flex flex-col gap-2">
-            <Label htmlFor="category">Category</Label>
+            <Label htmlFor="category">{t("category")}</Label>
             <Input
               id="category"
               value={form.category}
               onChange={(e) => setForm(f => ({ ...f, category: e.target.value }))}
-              placeholder="e.g., Bank BCA, Gopay, etc."
+              placeholder={t("categoryPlaceholder")}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="flex flex-col gap-2">
-              <Label htmlFor="cashAmount">Amount</Label>
+              <Label htmlFor="cashAmount">{t("amount")}</Label>
               <Input
                 id="cashAmount"
                 value={form.amount}
@@ -178,16 +180,16 @@ function AddAssetForm({
                 type="number"
                 step="any"
               />
-              <p className="text-xs text-muted-foreground">Total cash in selected currency</p>
+              <p className="text-xs text-muted-foreground">{t("totalCashNote")}</p>
             </div>
             <div className="flex flex-col gap-2">
-              <Label htmlFor="cashCurrency">Currency</Label>
+              <Label htmlFor="cashCurrency">{t("currency")}</Label>
               <Select
                 value={form.cashCurrency}
                 onValueChange={(value) => setForm(f => ({ ...f, cashCurrency: value }))}
               >
                 <SelectTrigger id="cashCurrency" className="w-full h-9 px-3 text-sm">
-                  <SelectValue placeholder="Select currency" />
+                  <SelectValue placeholder={t("selectCurrency")} />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="IDR">🇮🇩 IDR</SelectItem>
@@ -202,9 +204,9 @@ function AddAssetForm({
 
       <div className="flex justify-end gap-2 pt-4">
         <DialogClose asChild>
-          <Button type="button" variant="ghost">Cancel</Button>
+          <Button type="button" variant="ghost">{t("cancel")}</Button>
         </DialogClose>
-        <Button type="submit">{editingIndex != null ? 'Save' : 'Add'}</Button>
+        <Button type="submit">{editingIndex != null ? t("save") : t("add")}</Button>
       </div>
     </form>
   );
@@ -213,6 +215,8 @@ function AddAssetForm({
 export default function PortfolioTrackerPage() {
   const router = useRouter();
   const isMobile = useIsMobile();
+  const t = useTranslations("portfolio");
+  const tModal = useTranslations("addAssetModal");
   const {
     user,
     loading: authLoading,
@@ -255,12 +259,12 @@ export default function PortfolioTrackerPage() {
       console.error('Failed to start Google sign-in', error);
       setAuthError(
         supabaseConfigured
-          ? 'Failed to sign in with Google. Please try again.'
-          : 'Sign-in is not configured yet.'
+          ? t("signInError")
+          : t("signInNotConfigured")
       );
       setSigningIn(false);
     }
-  }, [signInWithGoogle, supabaseConfigured]);
+  }, [signInWithGoogle, supabaseConfigured, t]);
 
   // Pull to refresh handler
   const handleRefresh = useCallback(async () => {
@@ -390,13 +394,13 @@ export default function PortfolioTrackerPage() {
     if (assetType === 'cash') {
       // Cash asset
       if (!form.category.trim()) {
-        toast.error('Please enter a category for cash asset (e.g., Bank BCA)');
+        toast.error(tModal("categoryRequired"));
         return;
       }
 
       const nativeAmount = amountNum;
       if (nativeAmount <= 0 || isNaN(nativeAmount)) {
-        toast.error('Please enter the cash amount');
+        toast.error(tModal("cashAmountRequired"));
         return;
       }
 
@@ -404,13 +408,13 @@ export default function PortfolioTrackerPage() {
       let totalUSD = nativeAmount;
       if (form.cashCurrency === 'IDR') {
         if (fxRate <= 0) {
-          toast.error('IDR FX rate unavailable. Please refresh to update rates.');
+          toast.error(tModal("idrFxError"));
           return;
         }
         totalUSD = nativeAmount * fxRate; // IDR * (USD per IDR) = USD
       } else if (form.cashCurrency === 'SGD') {
         if (sgdPerUsd <= 0) {
-          toast.error('SGD FX rate unavailable. Please refresh to update rates.');
+          toast.error(tModal("sgdFxError"));
           return;
         }
         totalUSD = nativeAmount / sgdPerUsd; // SGD / (SGD per USD) = USD
@@ -441,7 +445,7 @@ export default function PortfolioTrackerPage() {
     } else {
       // Digital asset
       if (!form.symbol) {
-        toast.error('Please select a symbol');
+        toast.error(tModal("selectSymbolError"));
         return;
       }
 
@@ -465,7 +469,7 @@ export default function PortfolioTrackerPage() {
         }
       }
       if (avgPriceNum == null || isNaN(avgPriceNum)) {
-        toast.error('Could not determine average price for this symbol. Please enter it manually.');
+        toast.error(tModal("avgPriceError"));
         return;
       }
 
@@ -535,7 +539,7 @@ export default function PortfolioTrackerPage() {
   }, [holdingsWithMetrics]);
 
   const hiddenPrimaryToken = '••••••';
-  const hiddenSecondaryToken = 'Hidden';
+  const hiddenSecondaryToken = t("hidden");
   const getDisplayValue = (usdAmount) =>
   (isPortfolioHidden
     ? { primary: hiddenPrimaryToken, secondary: hiddenSecondaryToken, tertiary: hiddenSecondaryToken }
@@ -546,7 +550,7 @@ export default function PortfolioTrackerPage() {
   const digitalMarketDisplay = getDisplayValue(digitalMarket);
   const digitalPnLDisplay = getDisplayValue(digitalPnL);
   const totalCashDisplay = getDisplayValue(totalCash);
-  const idrFxDisplay = idrPerUsd > 0 ? formatIDR(idrPerUsd) : 'loading...';
+  const idrFxDisplay = idrPerUsd > 0 ? formatIDR(idrPerUsd) : t("loading");
 
   if (authLoading) {
     return (
@@ -650,7 +654,7 @@ export default function PortfolioTrackerPage() {
       <div className={`${isMobile ? '' : 'lg:col-span-4'} flex flex-col gap-4`}>
         <Card className={isMobile ? 'rounded-3xl' : ''}>
           <CardHeader className="flex flex-row items-center justify-between pb-2 gap-2">
-            <CardTitle className="font-semibold text-sm">Overview</CardTitle>
+            <CardTitle className="font-semibold text-sm">{t("overview")}</CardTitle>
             <div className="flex items-center gap-2 shrink-0">
               <Button
                 type="button"
@@ -658,7 +662,7 @@ export default function PortfolioTrackerPage() {
                 size="icon"
                 className="h-8 w-8 rounded-full bg-muted/40"
                 aria-pressed={isPortfolioHidden}
-                aria-label={isPortfolioHidden ? 'Show portfolio' : 'Hide portfolio'}
+                aria-label={isPortfolioHidden ? t("showPortfolio") : t("hidePortfolio")}
                 onClick={() => setIsPortfolioHidden((prev) => !prev)}
               >
                 {isPortfolioHidden ? <EyeClosed className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -679,7 +683,7 @@ export default function PortfolioTrackerPage() {
             {/* Top summary always visible */}
             <div className="flex items-start gap-3">
               <div className="flex-1">
-                <p className="text-sm text-muted-foreground mb-1">Total Net Worth</p>
+                <p className="text-sm text-muted-foreground mb-1">{t("totalNetWorth")}</p>
                 <p className="text-xl font-bold tracking-tight">{totalNetWorthDisplay.primary}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{totalNetWorthDisplay.secondary}</p>
                 <div className="mt-1 flex items-center gap-1">
@@ -709,12 +713,12 @@ export default function PortfolioTrackerPage() {
               <Accordion type="single" collapsible className="rounded-xl border border-border/20">
                 <AccordionItem value="detail" className="border-b-0">
                   <AccordionTrigger className="justify-center py-2.5 text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400 [&>svg]:hidden">
-                    View Detail
+                    {t("viewDetail")}
                   </AccordionTrigger>
                   <AccordionContent className="space-y-3 pt-1">
                     <div className="flex items-start gap-3 p-3 rounded-xl border">
                       <div className="flex-1">
-                        <p className="text-sm text-muted-foreground mb-1">Digital Assets</p>
+                        <p className="text-sm text-muted-foreground mb-1">{t("digitalAssets")}</p>
                         <p className="text-base font-semibold">{digitalMarketDisplay.primary}</p>
                         <p className="text-xs text-muted-foreground">{digitalMarketDisplay.secondary}</p>
                         <div className="mt-1 flex items-center gap-1">
@@ -733,7 +737,7 @@ export default function PortfolioTrackerPage() {
 
                     <div className="flex items-start gap-3 p-3 rounded-xl border">
                       <div className="flex-1">
-                        <p className="text-sm text-muted-foreground mb-1">Total Cash</p>
+                        <p className="text-sm text-muted-foreground mb-1">{t("totalCash")}</p>
                         <p className="text-base font-semibold">{totalCashDisplay.primary}</p>
                         <p className="text-xs text-muted-foreground">{totalCashDisplay.secondary}</p>
                       </div>
@@ -748,7 +752,7 @@ export default function PortfolioTrackerPage() {
               <Accordion type="single" collapsible className="rounded-xl border border-border/20">
                 <AccordionItem value="allocation" className="border-b-0">
                   <AccordionTrigger className="justify-center py-2.5 text-center text-sm font-semibold text-emerald-600 dark:text-emerald-400 [&>svg]:hidden">
-                    View Allocation Chart
+                    {t("viewAllocationChart")}
                   </AccordionTrigger>
                   <AccordionContent>
                     <PortfolioPie
@@ -772,10 +776,9 @@ export default function PortfolioTrackerPage() {
         {!isAuthenticated && (
           <div className="rounded-2xl border border-border/40 bg-card px-4 py-4 space-y-3">
             <div>
-              <p className="text-xs font-semibold text-foreground">Local Portfolio</p>
+              <p className="text-xs font-semibold text-foreground">{t("localPortfolio")}</p>
               <p className="mt-1 text-1xs text-muted-foreground leading-relaxed">
-                Your portfolio is stored only on this device.
-                Sign in to securely sync across devices and prevent data loss.
+                {t("localPortfolioDesc")}
               </p>
             </div>
             <Button
@@ -785,7 +788,7 @@ export default function PortfolioTrackerPage() {
               className="w-full justify-center gap-2 rounded-full bg-foreground text-[12px] font-semibold text-background hover:bg-foreground/90 h-9"
             >
               {signingIn ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GoogleGlyph />}
-              {signingIn ? 'Connecting…' : 'Sync with Google'}
+              {signingIn ? t("connecting") : t("syncWithGoogle")}
             </Button>
             {authError && (
               <p className="text-1xs text-red-500 text-center">{authError}</p>
@@ -795,7 +798,7 @@ export default function PortfolioTrackerPage() {
 
         <div className="rounded-xl border border-border/40 bg-muted/20 px-3 py-2">
           <p className="text-2xs text-muted-foreground text-center">
-            FX (1 USD): {idrFxDisplay}
+            {t("fxLine", { value: idrFxDisplay })}
           </p>
         </div>
       </div>
@@ -804,7 +807,7 @@ export default function PortfolioTrackerPage() {
         <Card className={`h-full ${isMobile ? 'rounded-3xl' : ''}`}>
           <CardHeader className="flex items-center justify-between">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
-              Holdings
+              {t("holdings")}
             </CardTitle>
             {entries.length > 0 && (
               <DropdownMenu>
@@ -813,7 +816,7 @@ export default function PortfolioTrackerPage() {
                     variant="ghost"
                     size="icon"
                     className="h-8 w-8 p-0"
-                    aria-label="Sort holdings"
+                    aria-label={t("sortHoldings")}
                   >
                     <ArrowUpDown className="h-4 w-4" />
                   </Button>
@@ -826,7 +829,7 @@ export default function PortfolioTrackerPage() {
                     <Check
                       className={`h-3 w-3 ${holdingsSort === 'alpha' ? 'opacity-100' : 'opacity-0'}`}
                     />
-                    A to Z
+                    {t("aToZ")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setHoldingsSort('market')}
@@ -835,7 +838,7 @@ export default function PortfolioTrackerPage() {
                     <Check
                       className={`h-3 w-3 ${holdingsSort === 'market' ? 'opacity-100' : 'opacity-0'}`}
                     />
-                    Market Value
+                    {t("marketValue")}
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => setHoldingsSort('pnl')}
@@ -844,7 +847,7 @@ export default function PortfolioTrackerPage() {
                     <Check
                       className={`h-3 w-3 ${holdingsSort === 'pnl' ? 'opacity-100' : 'opacity-0'}`}
                     />
-                    P&L
+                    {t("pnl")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -857,10 +860,10 @@ export default function PortfolioTrackerPage() {
                   <TrendingUp className="h-7 w-7 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-foreground">Start Building Your Portfolio</p>
+                  <p className="text-sm font-semibold text-foreground">{t("emptyTitle")}</p>
                   <p className="mt-1.5 text-1xs text-muted-foreground leading-relaxed max-w-xs">
-                    Track your stocks, crypto and cash in one place.
-                    {!isAuthenticated && ' Everything is stored locally until you decide to sync with Google.'}
+                    {t("emptyDesc")}
+                    {!isAuthenticated && t("emptyDescLocal")}
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 w-full max-w-xs">
@@ -872,7 +875,7 @@ export default function PortfolioTrackerPage() {
                     }}
                     className="rounded-full bg-foreground text-background hover:bg-foreground/90 text-xs h-9"
                   >
-                    Create Starter Portfolio
+                    {t("createStarterPortfolio")}
                   </Button>
                   {!isAuthenticated && supabaseConfigured && (
                     <Button
@@ -882,7 +885,7 @@ export default function PortfolioTrackerPage() {
                       className="rounded-full text-xs h-9 gap-2"
                     >
                       {signingIn ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GoogleGlyph />}
-                      Sign in with Google
+                      {t("signInWithGoogle")}
                     </Button>
                   )}
                 </div>
@@ -972,7 +975,7 @@ export default function PortfolioTrackerPage() {
                               className="text-xs"
                             >
                               <Pencil className="mr-1 size-3" />
-                              Edit
+                              {t("edit")}
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onSelect={(event) => {
@@ -983,7 +986,7 @@ export default function PortfolioTrackerPage() {
                               className="text-xs text-red-600"
                             >
                               <Trash2 className="mr-1 size-3" />
-                              Delete
+                              {t("delete")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -1009,13 +1012,13 @@ export default function PortfolioTrackerPage() {
       >
         <DialogContent className="fixed max-w-none m-0 h-[86vh] lg:h-auto lg:max-h-[85vh] lg:w-[540px] lg:rounded-3xl lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 rounded-t-3xl p-0 flex flex-col mt-auto" closeButtonPosition="right">
           <div className="flex items-center gap-2 p-4 border-b">
-            <DialogTitle className="text-base">{editingIndex != null ? 'Edit Asset' : 'Add Asset'}</DialogTitle>
+            <DialogTitle className="text-base">{editingIndex != null ? tModal("editTitle") : tModal("title")}</DialogTitle>
           </div>
 
           <div className="flex-1 overflow-auto">
             <div className="p-4">
               <DialogDescription className="mb-4 text-xs">
-                Record your {assetType === 'cash' ? 'cash' : 'digital asset'} details.
+                {assetType === 'cash' ? tModal("descriptionCash") : tModal("description")}
               </DialogDescription>
 
               <AddAssetForm

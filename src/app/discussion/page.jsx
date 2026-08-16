@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useAuth } from "@/components/auth-provider";
@@ -79,6 +80,7 @@ function parseMessageContent(content) {
 
 function MessageBubble({ message, isOwn, onDelete }) {
   const router = useRouter();
+  const t = useTranslations("discussion");
   const parsedContent = parseMessageContent(message.content);
   const [showDelete, setShowDelete] = useState(false);
 
@@ -123,7 +125,7 @@ function MessageBubble({ message, isOwn, onDelete }) {
               </div>
             )}
             <span className="text-3xs text-muted-foreground font-medium">
-              {message.user?.name || 'Anonymous'}
+              {message.user?.name || t('anonymous')}
             </span>
           </div>
         )}
@@ -177,6 +179,7 @@ function MessageBubble({ message, isOwn, onDelete }) {
 }
 
 function MessageInput({ onSend, disabled }) {
+  const t = useTranslations("discussion");
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const inputRef = useRef(null);
@@ -209,7 +212,7 @@ function MessageInput({ onSend, disabled }) {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={disabled ? "Sign in to chat..." : "Type a message..."}
+          placeholder={disabled ? t('signInToChat') : t('typeMessage')}
           disabled={disabled || sending}
           maxLength={1000}
           rows={1}
@@ -234,14 +237,15 @@ function MessageInput({ onSend, disabled }) {
 }
 
 function EmptyState() {
+  const t = useTranslations("discussion");
   return (
     <div className="flex-1 flex flex-col items-center justify-center text-center gap-3">
       <div className="w-12 h-12 rounded-2xl bg-teal-900/20 flex items-center justify-center">
         <MessageCircle className="w-6 h-6 text-teal-500" />
       </div>
       <div>
-        <p className="text-xs text-foreground/60 dark:text-white/60 font-medium">No messages yet</p>
-        <p className="text-2xs text-muted-foreground mt-0.5">Start the conversation!</p>
+        <p className="text-xs text-foreground/60 dark:text-white/60 font-medium">{t('noMessagesYet')}</p>
+        <p className="text-2xs text-muted-foreground mt-0.5">{t('startConversation')}</p>
       </div>
     </div>
   );
@@ -263,6 +267,7 @@ function MessageListSkeleton() {
 
 export default function DiscussionPage() {
   const router = useRouter();
+  const t = useTranslations("discussion");
   const { user, loading: authLoading } = useAuth();
   const [supabase] = useState(() => getSupabaseBrowserClient());
   const [messages, setMessages] = useState([]);
@@ -378,21 +383,21 @@ export default function DiscussionPage() {
         updatedAt: data.updated_at,
         userId: data.user_id,
         user: profile ? {
-          name: profile.full_name || profile.email?.split('@')[0] || 'Anonymous',
+          name: profile.full_name || profile.email?.split('@')[0] || t('anonymous'),
           avatar: profile.avatar_url,
-        } : { name: 'Anonymous', avatar: null },
+        } : { name: t('anonymous'), avatar: null },
       };
 
       setMessages(prev => [...prev, newMessage]);
       setTimeout(scrollToBottom, 100);
     } catch (err) {
       console.error('Failed to send message:', err);
-      toast.error(err.message || 'Failed to send message');
+      toast.error(err.message || t('failedToSend'));
     }
   };
 
   const handleDeleteMessage = async (messageId) => {
-    if (!confirm('Delete this message?')) return;
+    if (!confirm(t('deleteConfirm'))) return;
 
     try {
       const { error } = await supabase
@@ -405,7 +410,7 @@ export default function DiscussionPage() {
       setMessages(prev => prev.filter(m => m.id !== messageId));
     } catch (err) {
       console.error('Failed to delete message:', err);
-      toast.error(err.message || 'Failed to delete message');
+      toast.error(err.message || t('failedToDelete'));
     }
   };
 
@@ -423,7 +428,7 @@ export default function DiscussionPage() {
           >
             <ArrowLeft className="size-5 text-muted-foreground" />
           </button>
-          <h1 className="text-sm font-bold">Discussion</h1>
+          <h1 className="text-sm font-bold">{t('title')}</h1>
           <div className="w-8" />
         </div>
 

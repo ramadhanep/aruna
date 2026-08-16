@@ -1,0 +1,24 @@
+{
+  "msci": {
+    "info": "Indonesian stocks with potential inclusion in the MSCI Global and Small Cap indices, considering key market criteria.",
+    "msciStandard": "MSCI Standard",
+    "msciSmallCap": "MSCI Small Cap",
+    "sortAria": "Sort stocks",
+    "sortAlpha": "A to Z",
+    "sortMarket": "Market Value",
+    "sortStrong": "Strong Candidate",
+    "sortBorderline": "Borderline",
+    "sortEarly": "Early Stage",
+    "price": "Price",
+    "marketCap": "Market Cap",
+    "freeFloat": "Free Float",
+    "progressToMSCI": "Progress to MSCI",
+    "qualificationPrice": "MSCI Qualification Price",
+    "potentialUpside": "Potential Upside",
+    "signInToUnlock": "Sign in to unlock",
+    "loadError": "Failed to load data",
+    "fetchError": "Failed to load MSCI data",
+    "empty": "No stocks found for this MSCI index.",
+    "lastUpdated": "Last updated:"
+  }
+}

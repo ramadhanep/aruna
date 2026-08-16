@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,17 +24,18 @@ import { TickerAvatar } from "@/components/ticker-avatar";
 import { formatMarketCap, formatPercent, formatPrice } from "@/lib/utils";
 
 function SegmentControl({ value, onChange, sortBy, onSortChange }) {
+  const t = useTranslations("idxMomentum");
   return (
     <div className="sticky top-14 z-30 bg-background border-b border-border -mx-4 px-4 py-3">
       <div className="flex items-center gap-2">
         <div className="flex-1 overflow-x-auto scrollbar-hide">
           <div className="flex gap-1.5 p-1 bg-muted/40 rounded-2xl min-w-max">
             {[
-              { key: "all", label: "All" },
+              { key: "all", label: t("tabAll") },
               { key: "bullish", label: "Bullish" },
               { key: "bearish", label: "Bearish" },
-              { key: "gainers", label: "Gainers" },
-              { key: "losers", label: "Losers" },
+              { key: "gainers", label: t("tabGainers") },
+              { key: "losers", label: t("tabLosers") },
             ].map((tab) => (
               <Button
                 key={tab.key}
@@ -56,7 +58,7 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
               variant="ghost"
               size="icon"
               className="h-7 w-7 p-0 flex-shrink-0"
-              aria-label="Sort stocks"
+              aria-label={t("sortStocks")}
             >
               <ArrowUpDown className="h-3.5 w-3.5" />
             </Button>
@@ -67,7 +69,7 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
               className="text-xs flex items-center gap-2"
             >
               <Check className={`h-3 w-3 ${sortBy === 'momentum' ? 'opacity-100' : 'opacity-0'}`} />
-              Momentum Score
+              {t("momentumScore")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onSortChange('market')}
@@ -81,14 +83,14 @@ function SegmentControl({ value, onChange, sortBy, onSortChange }) {
               className="text-xs flex items-center gap-2"
             >
               <Check className={`h-3 w-3 ${sortBy === 'week' ? 'opacity-100' : 'opacity-0'}`} />
-              Weekly Change
+              {t("weeklyChange")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => onSortChange('month')}
               className="text-xs flex items-center gap-2"
             >
               <Check className={`h-3 w-3 ${sortBy === 'month' ? 'opacity-100' : 'opacity-0'}`} />
-              Monthly Change
+              {t("monthlyChange")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -111,6 +113,7 @@ function StatusBadge({ status }) {
 }
 
 function SummaryCard({ summary }) {
+  const t = useTranslations("idxMomentum");
   const sentimentColor = summary.marketSentiment === 'Bullish'
     ? 'text-emerald-500'
     : summary.marketSentiment === 'Bearish'
@@ -124,7 +127,7 @@ function SummaryCard({ summary }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Activity className="h-4 w-4 text-muted-foreground" />
-            <span className="text-xs text-muted-foreground">Market Sentiment</span>
+            <span className="text-xs text-muted-foreground">{t("marketSentiment")}</span>
           </div>
           <span className={`text-xs font-bold ${sentimentColor}`}>
             {summary.marketSentiment}
@@ -134,7 +137,7 @@ function SummaryCard({ summary }) {
         {/* Stats Grid */}
         <div className="grid grid-cols-4 gap-2">
           <div className="text-center p-2 bg-muted/50 rounded-xl">
-            <p className="text-xs text-muted-foreground">Total</p>
+            <p className="text-xs text-muted-foreground">{t("total")}</p>
             <p className="text-xs font-bold">{summary.totalStocks}</p>
           </div>
           <div className="text-center p-2 bg-emerald-900/20 rounded-xl">
@@ -142,7 +145,7 @@ function SummaryCard({ summary }) {
             <p className="text-xs font-bold text-emerald-500">{summary.bullishCount}</p>
           </div>
           <div className="text-center p-2 bg-yellow-900/20 rounded-xl">
-            <p className="text-xs text-yellow-500/70">Neutral</p>
+            <p className="text-xs text-yellow-500/70">{t("neutral")}</p>
             <p className="text-xs font-bold text-yellow-500">{summary.neutralCount}</p>
           </div>
           <div className="text-center p-2 bg-red-900/20 rounded-xl">
@@ -153,7 +156,7 @@ function SummaryCard({ summary }) {
 
         {/* Avg Momentum */}
         <div className="flex items-center justify-between p-2 bg-muted/50 rounded-xl">
-          <span className="text-xs text-muted-foreground">Avg Momentum Score</span>
+          <span className="text-xs text-muted-foreground">{t("avgMomentumScore")}</span>
           <span className={`text-xs font-bold ${summary.avgMomentum >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
             {summary.avgMomentum > 0 ? '+' : ''}{summary.avgMomentum}
           </span>
@@ -164,6 +167,7 @@ function SummaryCard({ summary }) {
 }
 
 function StockCard({ stock, isLocked = false }) {
+  const t = useTranslations("idxMomentum");
   return (
     <Card className="overflow-hidden relative">
       <CardContent className={`p-3 space-y-2 ${isLocked ? "opacity-40" : ""}`}>
@@ -186,7 +190,7 @@ function StockCard({ stock, isLocked = false }) {
         {/* Price & Market Cap */}
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-0.5">
-            <p className="text-2xs text-muted-foreground uppercase tracking-wide">Price</p>
+            <p className="text-2xs text-muted-foreground uppercase tracking-wide">{t("price")}</p>
             <p className="text-xs font-semibold">Rp {formatPrice(stock.price)}</p>
           </div>
           <div className="space-y-0.5">
@@ -199,7 +203,7 @@ function StockCard({ stock, isLocked = false }) {
         <div className="flex items-center justify-between p-1.5 bg-muted/50 rounded-xl">
           <div className="flex items-center gap-1">
             <Zap className="h-3 w-3 text-muted-foreground" />
-            <span className="text-2xs text-muted-foreground">Momentum Score</span>
+            <span className="text-2xs text-muted-foreground">{t("momentumScore")}</span>
           </div>
           <span className={`text-xs font-bold ${stock.momentumScore >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
             {stock.momentumScore > 0 ? '+' : ''}{stock.momentumScore}
@@ -209,14 +213,14 @@ function StockCard({ stock, isLocked = false }) {
         {/* Price Changes */}
         <div className="grid grid-cols-2 gap-2 pt-1.5 border-t border-border">
           <div className="space-y-0.5">
-            <p className="text-2xs text-muted-foreground uppercase tracking-wide">1 Week</p>
+            <p className="text-2xs text-muted-foreground uppercase tracking-wide">{t("weekChange")}</p>
             <p className={`text-xs font-semibold flex items-center gap-0.5 ${stock.weekChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {stock.weekChange >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
               {formatPercent(stock.weekChange, { fractionDigits: 2, fallback: "-", showPositiveSign: true })}
             </p>
           </div>
           <div className="space-y-0.5">
-            <p className="text-2xs text-muted-foreground uppercase tracking-wide">1 Month</p>
+            <p className="text-2xs text-muted-foreground uppercase tracking-wide">{t("monthChange")}</p>
             <p className={`text-xs font-semibold flex items-center gap-0.5 ${stock.monthChange >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
               {stock.monthChange >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />}
               {formatPercent(stock.monthChange, { fractionDigits: 2, fallback: "-", showPositiveSign: true })}
@@ -227,7 +231,7 @@ function StockCard({ stock, isLocked = false }) {
       {isLocked && (
         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-1.5 rounded-xl bg-background/90 px-4 text-center pointer-events-none">
           <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-          <p className="text-xs font-semibold text-muted-foreground">Sign in to unlock</p>
+          <p className="text-xs font-semibold text-muted-foreground">{t("signInToUnlock")}</p>
         </div>
       )}
     </Card>
@@ -251,13 +255,14 @@ function MiniStockCard({ stock }) {
 }
 
 function TopMoversSection({ topGainers, topLosers }) {
+  const t = useTranslations("idxMomentum");
   return (
     <div className="space-y-3">
       {/* Top Gainers */}
       <div>
         <div className="flex items-center gap-1.5 mb-2">
           <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
-          <span className="text-xs font-semibold text-muted-foreground">Top Gainers</span>
+          <span className="text-xs font-semibold text-muted-foreground">{t("topGainers")}</span>
         </div>
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
           {topGainers.slice(0, 5).map((stock) => (
@@ -270,7 +275,7 @@ function TopMoversSection({ topGainers, topLosers }) {
       <div>
         <div className="flex items-center gap-1.5 mb-2">
           <TrendingDown className="h-3.5 w-3.5 text-red-500" />
-          <span className="text-xs font-semibold text-muted-foreground">Top Losers</span>
+          <span className="text-xs font-semibold text-muted-foreground">{t("topLosers")}</span>
         </div>
         <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
           {topLosers.slice(0, 5).map((stock) => (
@@ -342,6 +347,7 @@ function LoadingSkeleton() {
 }
 
 export default function MomentumPage() {
+  const t = useTranslations("idxMomentum");
   const { user } = useAuth();
   const isAuthenticated = !!user;
   const [filter, setFilter] = useState("all");
@@ -382,14 +388,14 @@ export default function MomentumPage() {
         setHasMore(sorted.length > ITEMS_PER_PAGE);
       } catch (err) {
         console.error("Failed to fetch momentum data:", err);
-        setError(err.message || "Failed to load momentum data");
+        setError(err.message || t("fetchError"));
       } finally {
         setLoading(false);
       }
     }
 
     fetchData();
-  }, [filter, sortBy]);
+  }, [filter, sortBy, t]);
 
   // Load more items
   const loadMore = useCallback(() => {
@@ -447,7 +453,7 @@ export default function MomentumPage() {
       <Card>
         <CardContent className="p-3">
           <p className="text-xs leading-relaxed text-foreground/90 font-semibold">
-            IDX Momentum & Price Trend Analysis
+            {t("title")}
           </p>
         </CardContent>
       </Card>
@@ -466,7 +472,7 @@ export default function MomentumPage() {
           <CardContent className="p-3 flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-red-600 flex-shrink-0" />
             <div>
-              <p className="text-xs font-semibold text-red-600">Failed to load data</p>
+              <p className="text-xs font-semibold text-red-600">{t("failedToLoadData")}</p>
               <p className="text-3xs text-red-600/80">{error}</p>
             </div>
           </CardContent>
@@ -498,7 +504,7 @@ export default function MomentumPage() {
             {displayedStocks.length > 0 ? (
               <div className="space-y-2">
                 <p className="text-xs text-muted-foreground pb-2">
-                  Showing {displayedStocks.length} of {data.stocks?.length || 0} stocks
+                  {t("showingStocks", { shown: displayedStocks.length, total: data.stocks?.length || 0 })}
                 </p>
                 {displayedStocks.map((stock, index) => (
                   <StockCard
@@ -523,7 +529,7 @@ export default function MomentumPage() {
                 {/* End of List */}
                 {!hasMore && displayedStocks.length > ITEMS_PER_PAGE && (
                   <p className="text-3xs text-center text-muted-foreground py-4">
-                    No more stocks to load
+                    {t("noMoreStocks")}
                   </p>
                 )}
               </div>
@@ -531,7 +537,7 @@ export default function MomentumPage() {
               <Card className="bg-muted/20">
                 <CardContent className="p-6 text-center">
                   <p className="text-xs text-muted-foreground">
-                    No stocks found with this filter.
+                    {t("noStocksFound")}
                   </p>
                 </CardContent>
               </Card>
@@ -543,7 +549,7 @@ export default function MomentumPage() {
       {/* Last Updated */}
       {data?.lastUpdated && (
         <p className="text-3xs text-center text-muted-foreground pt-4">
-          Last updated: {new Date(data.lastUpdated).toLocaleTimeString()}
+          {t("lastUpdated", { time: new Date(data.lastUpdated).toLocaleTimeString() })}
         </p>
       )}
     </div>

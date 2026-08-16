@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { AlertTriangle, ArrowUpDown, Check, FilterX } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -55,26 +56,28 @@ function LoadingState() {
 }
 
 const timeframeOptions = [
-  { key: "weekly", label: "Weekly" },
-  { key: "monthly", label: "Monthly" },
-  { key: "quarterly", label: "Quarterly" },
+  { key: "weekly", labelKey: "timeframe.weekly" },
+  { key: "monthly", labelKey: "timeframe.monthly" },
+  { key: "quarterly", labelKey: "timeframe.quarterly" },
 ];
 
 const sortOptions = [
-  { key: "score", label: "Money Flow Score" },
-  { key: "volume_spike", label: "Volume Spike" },
-  { key: "price_change", label: "Price Change" },
+  { key: "score", labelKey: "sort.score" },
+  { key: "volume_spike", labelKey: "sort.volumeSpike" },
+  { key: "price_change", labelKey: "sort.priceChange" },
 ];
 
 function ReportList({ reports }) {
+  const t = useTranslations("moneyFlow");
+
   if (!reports.length) {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center rounded-xl border border-border bg-muted/20">
         <div className="h-12 w-12 flex items-center justify-center mb-4">
           <FilterX className="h-6 w-6 text-muted-foreground" />
         </div>
-        <p className="text-sm font-medium">No results found</p>
-        <p className="text-xs text-muted-foreground mt-1">Try adjusting your filters or search query</p>
+        <p className="text-sm font-medium">{t("noResults")}</p>
+        <p className="text-xs text-muted-foreground mt-1">{t("noResultsHint")}</p>
       </div>
     );
   }
@@ -89,6 +92,7 @@ function ReportList({ reports }) {
 }
 
 export default function MoneyFlowPage() {
+  const t = useTranslations("moneyFlow");
   const [timeframe, setTimeframe] = useState("weekly");
   const [sortBy, setSortBy] = useState("score");
   const [sortOrder, setSortOrder] = useState("desc");
@@ -114,7 +118,7 @@ export default function MoneyFlowPage() {
 
         const { response, data } = await fetchEncodedJson(`/api/money-flow?${params.toString()}`);
         if (!response.ok || data?.error) {
-          throw new Error(data?.error || "Failed to fetch money flow data");
+          throw new Error(data?.error || t("fetchError"));
         }
 
         if (!cancelled) {
@@ -122,7 +126,7 @@ export default function MoneyFlowPage() {
         }
       } catch (fetchError) {
         if (!cancelled) {
-          setError(fetchError?.message || "Failed to load money flow data");
+          setError(fetchError?.message || t("loadError"));
         }
       } finally {
         if (!cancelled) {
@@ -136,7 +140,7 @@ export default function MoneyFlowPage() {
     return () => {
       cancelled = true;
     };
-  }, [timeframe, sortBy, sortOrder]);
+  }, [timeframe, sortBy, sortOrder, t]);
 
   const reports = useMemo(() => payload?.reports || [], [payload]);
   const positiveSignals = useMemo(
@@ -152,8 +156,8 @@ export default function MoneyFlowPage() {
   if (!MONEY_FLOW_ENABLED) {
     return (
       <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
-        <p className="text-sm font-semibold">Money Flow is not available</p>
-        <p className="text-1xs text-muted-foreground">This feature is temporarily disabled.</p>
+        <p className="text-sm font-semibold">{t("disabledTitle")}</p>
+        <p className="text-1xs text-muted-foreground">{t("disabledDescription")}</p>
       </div>
     );
   }
@@ -164,9 +168,9 @@ export default function MoneyFlowPage() {
         <Card>
           <CardContent className="p-4 space-y-2">
             <p className="text-xs text-foreground/85 leading-relaxed">
-              Smart-money breakdown based on broker flow, market phase, absorption, and screener-synced symbols.
+              {t("intro")}
             </p>
-            {payload?.start_date && <p className="text-2xs text-muted-foreground">Window start: {payload.start_date}</p>}
+            {payload?.start_date && <p className="text-2xs text-muted-foreground">{t("windowStart", { date: payload.start_date })}</p>}
           </CardContent>
         </Card>
 
@@ -184,13 +188,13 @@ export default function MoneyFlowPage() {
                     }`}
                   onClick={() => setTimeframe(option.key)}
                 >
-                  {option.label}
+                  {t(option.labelKey)}
                 </Button>
               ))}
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 p-0" aria-label="Sort reports">
+                <Button variant="ghost" size="icon" className="h-8 w-8 p-0" aria-label={t("sortReports")}>
                   <ArrowUpDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -202,16 +206,16 @@ export default function MoneyFlowPage() {
                     className="text-xs flex items-center gap-2"
                   >
                     <Check className={`h-3 w-3 ${sortBy === option.key ? "opacity-100" : "opacity-0"}`} />
-                    {option.label}
+                  {t(option.labelKey)}
                   </DropdownMenuItem>
                 ))}
                 <DropdownMenuItem onClick={() => setSortOrder("desc")} className="text-xs flex items-center gap-2">
                   <Check className={`h-3 w-3 ${sortOrder === "desc" ? "opacity-100" : "opacity-0"}`} />
-                  Descending
+                  {t("descending")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setSortOrder("asc")} className="text-xs flex items-center gap-2">
                   <Check className={`h-3 w-3 ${sortOrder === "asc" ? "opacity-100" : "opacity-0"}`} />
-                  Ascending
+                  {t("ascending")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -226,19 +230,19 @@ export default function MoneyFlowPage() {
             <CardContent className="p-4 space-y-3">
               <div className="grid grid-cols-2 gap-2">
                 <div className="rounded-xl border border-border bg-background/70 px-3 py-2">
-                  <p className="text-2xs text-muted-foreground">Reports</p>
+                  <p className="text-2xs text-muted-foreground">{t("statsReports")}</p>
                   <p className="text-lg font-semibold">{reports.length}</p>
                 </div>
                 <div className="rounded-xl border border-border bg-background/70 px-3 py-2">
-                  <p className="text-2xs text-muted-foreground">Accumulation</p>
+                  <p className="text-2xs text-muted-foreground">{t("statsAccumulation")}</p>
                   <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">{positiveSignals}</p>
                 </div>
                 <div className="rounded-xl border border-border bg-background/70 px-3 py-2">
-                  <p className="text-2xs text-muted-foreground">Avg Vol Spike</p>
+                  <p className="text-2xs text-muted-foreground">{t("statsAvgVolSpike")}</p>
                   <p className="text-lg font-semibold">{avgVolumeSpike.toFixed(2)}x</p>
                 </div>
                 <div className="rounded-xl border border-border bg-background/70 px-3 py-2">
-                  <p className="text-2xs text-muted-foreground">Timeframe</p>
+                  <p className="text-2xs text-muted-foreground">{t("statsTimeframe")}</p>
                   <p className="text-sm font-semibold capitalize">{timeframe}</p>
                 </div>
               </div>
@@ -252,7 +256,7 @@ export default function MoneyFlowPage() {
             <CardContent className="p-4 flex items-center gap-3">
               <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0" />
               <div>
-                <p className="text-xs font-semibold text-red-600">Failed to load money-flow data</p>
+                <p className="text-xs font-semibold text-red-600">{t("errorTitle")}</p>
                 <p className="text-xs text-red-600/80">{error}</p>
               </div>
             </CardContent>
@@ -264,7 +268,7 @@ export default function MoneyFlowPage() {
 
         {payload?.updated_at && (
           <p className="text-2xs text-center text-muted-foreground mt-4">
-            Last updated: {new Date(payload.updated_at).toLocaleString()}
+            {t("lastUpdated", { time: new Date(payload.updated_at).toLocaleString() })}
           </p>
         )}
         </div>

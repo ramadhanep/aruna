@@ -1,4 +1,6 @@
 import "./globals.css";
+import { getLocale } from "next-intl/server";
+import { NextIntlClientProvider } from "next-intl";
 import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/components/auth-provider";
 import { AppearanceModeProvider } from "@/components/appearance-mode-provider";
@@ -43,9 +45,10 @@ export const metadata = {
   },
 };
 
-export default function RootLayout({ children }) {
+export default async function RootLayout({ children }) {
+  const locale = await getLocale();
   return (
-    <html lang="en" suppressHydrationWarning data-scroll-behavior="smooth">
+    <html lang={locale} suppressHydrationWarning data-scroll-behavior="smooth">
       <body className="antialiased font-sans">
         <ThemeProvider
           attribute="class"
@@ -53,16 +56,18 @@ export default function RootLayout({ children }) {
           disableTransitionOnChange
           storageKey="aruna-theme"
         >
-          <AuthProvider>
-            <AppearanceModeProvider>
-              <PWARegister />
-              <PWAInstallDialog />
-              <Toaster position="top-center" />
-              <AppLayoutClient>
-                {children}
-              </AppLayoutClient>
-            </AppearanceModeProvider>
-          </AuthProvider>
+          <NextIntlClientProvider>
+            <AuthProvider>
+              <AppearanceModeProvider>
+                <PWARegister />
+                <PWAInstallDialog />
+                <Toaster position="top-center" />
+                <AppLayoutClient>
+                  {children}
+                </AppLayoutClient>
+              </AppearanceModeProvider>
+            </AuthProvider>
+          </NextIntlClientProvider>
         </ThemeProvider>
       </body>
     </html>

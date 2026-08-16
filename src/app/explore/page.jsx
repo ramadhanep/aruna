@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -21,11 +22,7 @@ import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { cn, formatPercent, formatPriceTrim, formatTickerDisplay, getChangeTone } from "@/lib/utils";
 import { toast } from "sonner";
 
-const CATEGORY_LABELS = {
-  idx: "IDX 🇮🇩",
-  us: "US 🇺🇸",
-  crypto: "Crypto ⚡",
-};
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const CATEGORY_ORDER = ["idx", "us", "crypto"];
 
@@ -44,7 +41,7 @@ const HIGHLIGHT_SYMBOLS = [
 const MARKET_CATEGORIES = [
   {
     id: "us",
-    title: "United States",
+    titleKey: "categoryUs",
     emoji: "🇺🇸",
     icon: null,
     marketTz: "America/New_York",
@@ -61,7 +58,7 @@ const MARKET_CATEGORIES = [
   },
   {
     id: "indonesia",
-    title: "Indonesia",
+    titleKey: "categoryIndonesia",
     emoji: "🇮🇩",
     icon: null,
     marketTz: "Asia/Jakarta",
@@ -78,7 +75,7 @@ const MARKET_CATEGORIES = [
   },
   {
     id: "global",
-    title: "Global Index",
+    titleKey: "categoryGlobal",
     emoji: null,
     icon: Globe,
     marketTz: "America/New_York",
@@ -95,7 +92,7 @@ const MARKET_CATEGORIES = [
   },
   {
     id: "crypto",
-    title: "Crypto",
+    titleKey: "categoryCrypto",
     emoji: null,
     icon: Zap,
     marketTz: null,
@@ -112,7 +109,7 @@ const MARKET_CATEGORIES = [
   },
   {
     id: "commodities",
-    title: "Commodities",
+    titleKey: "categoryCommodities",
     emoji: null,
     icon: Gem,
     marketTz: "America/New_York",
@@ -421,7 +418,8 @@ function MarketSymbolCard({ item, marketTimeframe }) {
   );
 }
 
-function ToolCard({ href, icon, title, subtitle, trailing = "Open →" }) {
+function ToolCard({ href, icon, title, subtitle, trailing }) {
+  const t = useTranslations();
   const className = "group card-hover flex items-center justify-between gap-3 rounded-xl";
   const content = (
     <>
@@ -434,7 +432,7 @@ function ToolCard({ href, icon, title, subtitle, trailing = "Open →" }) {
           <div className="text-1xs text-muted-foreground">{subtitle}</div>
         </div>
       </div>
-      <span className="whitespace-nowrap text-xs font-medium text-foreground">{trailing}</span>
+      <span className="whitespace-nowrap text-xs font-medium text-foreground">{trailing ?? t("explore.open")}</span>
     </>
   );
   if (href.startsWith("#")) {
@@ -527,6 +525,7 @@ function MarketPulseMarquee({ items }) {
 
 
 export default function ExplorePage() {
+  const t = useTranslations();
   const { supabase, user } = useAuth();
   const [snapshots, setSnapshots] = useState({});
   const [quotes, setQuotes] = useState({});
@@ -891,7 +890,7 @@ export default function ExplorePage() {
 
       categories.push({
         category,
-        title: CATEGORY_LABELS[category] ?? category,
+        title: t("explore.category" + cap(category)),
         snapshot,
         picks: sortedPicks,
         enriched,
@@ -927,7 +926,7 @@ export default function ExplorePage() {
       bestGainer,
       bestLoser,
     };
-  }, [quotes, snapshots]);
+  }, [quotes, snapshots, t]);
 
   const msciPreview = useMemo(() => {
     const stocks = Array.isArray(msciData?.stocks) ? msciData.stocks : [];
@@ -1157,7 +1156,7 @@ export default function ExplorePage() {
                   label: (
                     <>
                       {cat.emoji ? <span>{cat.emoji}</span> : CatIcon ? <CatIcon className="h-3.5 w-3.5" /> : null}
-                      {cat.title}
+                      {t(`explore.${cat.titleKey}`)}
                     </>
                   ),
                 };
@@ -1203,7 +1202,7 @@ export default function ExplorePage() {
       {/* ───── Explore Tools Hub ───── */}
       <section className="w-full space-y-4">
         <div className="flex items-center justify-between">
-          <SectionHeader as="h2" title="Explore Tools" />
+          <SectionHeader as="h2" title={t("explore.tools")} />
         </div>
 
         {/* Compact widgets */}
@@ -1211,17 +1210,17 @@ export default function ExplorePage() {
           <ToolCard
             href="/msci"
             icon={<Magnet className="h-4 w-4" />}
-            title="MSCI Tracker"
+            title={t("explore.msciTracker")}
             subtitle={
               msciLoading ? (
                 <Skeleton className="mt-1 h-3 w-28 rounded-full" />
               ) : msciPreview ? (
                 <span>
-                  {msciPreview.totalStocks} candidates
-                  {" · "}Top: <span className="text-emerald-500 font-medium">{formatTickerDisplay(msciPreview.strongest?.ticker) || "—"}</span>
+                  {t("explore.msciCandidates", { count: msciPreview.totalStocks })}
+                  {" · "}{t("explore.msciTop")} <span className="text-emerald-500 font-medium">{formatTickerDisplay(msciPreview.strongest?.ticker) || "—"}</span>
                 </span>
               ) : (
-                "MSCI free-float thresholds"
+                t("explore.msciFallback")
               )
             }
           />
@@ -1229,17 +1228,17 @@ export default function ExplorePage() {
           <ToolCard
             href="/idx-rotation"
             icon={<Rotate3D className="h-4 w-4" />}
-            title="IDX Rotation"
+            title={t("explore.rotationTitle")}
             subtitle={
               rotationLoading ? (
                 <Skeleton className="mt-1 h-3 w-28 rounded-full" />
               ) : rotationPreview ? (
                 <span>
-                  Lead: <span className="text-emerald-500 font-medium">{formatTickerDisplay(rotationPreview.strongest?.code) || "—"}</span>
-                  {" · "}Lag: <span className="text-red-500 font-medium">{formatTickerDisplay(rotationPreview.weakest?.code) || "—"}</span>
+                  {t("explore.rotationLead")} <span className="text-emerald-500 font-medium">{formatTickerDisplay(rotationPreview.strongest?.code) || "—"}</span>
+                  {" · "}{t("explore.rotationLag")} <span className="text-red-500 font-medium">{formatTickerDisplay(rotationPreview.weakest?.code) || "—"}</span>
                 </span>
               ) : (
-                "Sector momentum rotation"
+                t("explore.rotationFallback")
               )
             }
           />
@@ -1247,50 +1246,50 @@ export default function ExplorePage() {
           <ToolCard
             href="/idx-momentum"
             icon={<Axe className="h-4 w-4" />}
-            title="Momentum"
-            subtitle="IDX momentum scanner"
+            title={t("explore.momentumTitle")}
+            subtitle={t("explore.momentumSubtitle")}
           />
 
           <ToolCard
             href="/discussion"
             icon={<MessageCircleMore className="h-4 w-4" />}
-            title="Chat"
-            subtitle="Community discussion"
+            title={t("explore.chatTitle")}
+            subtitle={t("explore.chatSubtitle")}
           />
 
           <ToolCard
             href="#breakout-signals"
             icon={<Zap className="h-4 w-4" />}
-            title="Technical Breakout"
+            title={t("explore.breakoutTitle")}
             subtitle={
               <span>
-                {breakoutInsights.totalBreakouts} signals
+                {t("explore.breakoutSignals", { count: breakoutInsights.totalBreakouts })}
                 {breakoutInsights.bestGainer ? (
                   <>
-                    {" · "}Top: <span className="text-emerald-500 font-medium">{formatTickerDisplay(breakoutInsights.bestGainer.symbol)}</span>
+                    {" · "}{t("explore.msciTop")} <span className="text-emerald-500 font-medium">{formatTickerDisplay(breakoutInsights.bestGainer.symbol)}</span>
                   </>
                 ) : null}
               </span>
             }
-            trailing="View →"
+            trailing={t("explore.view")}
           />
 
           <ToolCard
             href="/idx-bubbles"
             icon={<Droplets className="h-4 w-4" />}
-            title="Top Movers"
+            title={t("explore.topMoversTitle")}
             subtitle={
               <span>
                 {topMoversPreview.bestGainer ? (
                   <>
-                    Gainer: <span className="text-emerald-500 font-medium">{formatTickerDisplay(topMoversPreview.bestGainer.symbol)}</span>
+                    {t("explore.topMoversGainer")} <span className="text-emerald-500 font-medium">{formatTickerDisplay(topMoversPreview.bestGainer.symbol)}</span>
                   </>
                 ) : (
-                  "Market bubble view"
+                  t("explore.topMoversFallback")
                 )}
                 {topMoversPreview.bestLoser ? (
                   <>
-                    {" · "}Loser: <span className="text-red-500 font-medium">{formatTickerDisplay(topMoversPreview.bestLoser.symbol)}</span>
+                    {" · "}{t("explore.topMoversLoser")} <span className="text-red-500 font-medium">{formatTickerDisplay(topMoversPreview.bestLoser.symbol)}</span>
                   </>
                 ) : null}
               </span>
@@ -1314,16 +1313,16 @@ export default function ExplorePage() {
                   <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <div className="flex items-center gap-2">
-                        <SectionHeader title={`Technical Breakout in ${section.title}`} className="py-0 text-1xs" />
+                        <SectionHeader title={t("explore.breakoutSectionTitle", { category: section.title })} className="py-0 text-1xs" />
                       </div>
                       {section.lastScreened && (
                         <p className="text-1xs text-muted-foreground/70">
-                          Updated {formatTimeAgo(section.lastScreened)}
+                          {t("explore.updated", { time: formatTimeAgo(section.lastScreened) })}
                         </p>
                       )}
                     </div>
                     <div className="flex flex-wrap items-center gap-2 text-1xs text-muted-foreground">
-                      <span className="tabular-nums font-medium">{section.picks.length} found</span>
+                      <span className="tabular-nums font-medium">{t("explore.found", { count: section.picks.length })}</span>
                       <Badge className="rounded-lg px-2.5 py-1 uppercase tracking-wider">
                         {section.snapshot?.status ?? "idle"}
                       </Badge>
@@ -1347,7 +1346,7 @@ export default function ExplorePage() {
                         <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 rounded-lg px-6 text-center">
                           <Lock className="h-4 w-4 text-muted-foreground" />
                           <p className="text-1xs font-semibold text-muted-foreground">
-                            Sign in to explore all signals
+                            {t("explore.signInToExplore")}
                           </p>
                         </div>
                       )}
@@ -1355,13 +1354,13 @@ export default function ExplorePage() {
                   )}
                   <div className="mt-3 flex flex-wrap items-center gap-3 text-1xs text-muted-foreground">
                     {typeof section.averageChange === "number" ? (
-                      <span>Average move {formatPercent(section.averageChange, { fractionDigits: 2, showPositiveSign: true })}</span>
+                      <span>{t("explore.averageMove", { value: formatPercent(section.averageChange, { fractionDigits: 2, showPositiveSign: true }) })}</span>
                     ) : null}
                     {section.snapshot?.metadata?.batchProcessed != null && (
-                      <span>Batch {section.snapshot.metadata.batchProcessed} symbols</span>
+                      <span>{t("explore.batchProcessed", { count: section.snapshot.metadata.batchProcessed })}</span>
                     )}
                     {section.snapshot?.metadata?.lastBatchDurationMs != null && (
-                      <span>Last run {(section.snapshot.metadata.lastBatchDurationMs / 1000).toFixed(1)}s</span>
+                      <span>{t("explore.lastRunDuration", { duration: (section.snapshot.metadata.lastBatchDurationMs / 1000).toFixed(1) })}</span>
                     )}
                   </div>
                 </section>
@@ -1374,7 +1373,7 @@ export default function ExplorePage() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-medium text-muted-foreground">
-                  Run a fresh screening pass for fresh breakout signals.
+                  {t("explore.runScreener")}
                 </p>
               </div>
             </div>
@@ -1385,7 +1384,7 @@ export default function ExplorePage() {
                   className="w-full bg-foreground hover:bg-foreground/90 flex items-center gap-2 text-xs text-background rounded-md"
                 >
                   <Download className="h-4 w-4" />
-                  Install App
+                  {t("common.installApp")}
                 </Button>
               </div>
             )}
@@ -1394,7 +1393,7 @@ export default function ExplorePage() {
                 const snapshot = snapshots[category];
                 const lastScreened = snapshot?.updated_at ? new Date(snapshot.updated_at) : null;
                 const screenedToday = isSameCalendarDay(lastScreened);
-                const label = category.toUpperCase();
+                const label = t("explore.screener" + cap(category));
                 return (
                   <div key={category} className="space-y-1 text-center">
                     <Button
@@ -1413,8 +1412,8 @@ export default function ExplorePage() {
                     </Button>
                     <p className="text-2xs text-muted-foreground">
                       {lastScreened
-                        ? `Last ${screenedToday ? "today" : formatLocalDateTimeLabel(lastScreened)}`
-                        : "Never screened"}
+                        ? t("explore.lastScreened", { time: screenedToday ? t("explore.lastToday") : formatLocalDateTimeLabel(lastScreened) })
+                        : t("explore.neverScreened")}
                     </p>
                   </div>
                 );

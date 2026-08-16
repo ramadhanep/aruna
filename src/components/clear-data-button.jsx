@@ -2,6 +2,7 @@
 
 import { useCallback } from "react";
 import { Cookie } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   Dialog,
   DialogContent,
@@ -28,9 +29,9 @@ const STORAGE_KEYS = [
 export function ClearDataButton({
   trigger,
   onCleared,
-  confirmLabel = "Yes, clear data",
+  confirmLabel,
 } = {}) {
-  const handleClear = useCallback(async () => {
+  const t = useTranslations("clearData");  const handleClear = useCallback(async () => {
     try {
       if (onCleared) {
         await onCleared();
@@ -53,7 +54,7 @@ export function ClearDataButton({
     <button
       type="button"
       className="rounded-full p-2 text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-      aria-label="Clear local data"
+      aria-label={t("ariaLabel")}
     >
       <Cookie className="h-5 w-5" />
     </button>
@@ -64,17 +65,17 @@ export function ClearDataButton({
       <DialogTrigger asChild>{trigger ?? defaultTrigger}</DialogTrigger>
       <DialogContent closeButtonPosition="right">
         <DialogHeader>
-          <DialogTitle className="text-sm font-semibold">Clear data?</DialogTitle>
+          <DialogTitle className="text-sm font-semibold">{t("title")}</DialogTitle>
           <DialogDescription className="text-xs">
-            This removes your stored watchlist, portfolio, and local preferences. You can&apos;t undo this action.
+            {t("description")}
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">Cancel</Button>
+            <Button variant="outline">{t("cancel")}</Button>
           </DialogClose>
           <Button variant="destructive" onClick={handleClear}>
-            {confirmLabel}
+            {confirmLabel ?? t("confirm")}
           </Button>
         </DialogFooter>
       </DialogContent>

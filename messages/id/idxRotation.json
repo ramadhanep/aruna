@@ -1,0 +1,17 @@
+{
+  "idxRotation": {
+    "goBack": "Kembali",
+    "title": "Market Rotation",
+    "subtitle": "200 Teratas berdasarkan Market Cap",
+    "downloadImage": "Unduh sebagai gambar",
+    "leading": "Pemimpin",
+    "weakening": "Melemah",
+    "lagging": "Tertinggal",
+    "improving": "Membaik",
+    "strongMomentum": "Momentum Kuat →",
+    "weakMomentum": "← Momentum Lemah",
+    "uptrend": "↑ Uptrend",
+    "downtrend": "↓ Downtrend",
+    "stockTooltip": "{code}\n{name}\nMingguan: {weekly}\nBulanan: {monthly}"
+  }
+}

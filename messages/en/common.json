@@ -1,0 +1,12 @@
+{
+  "common": {
+    "installApp": "Install App",
+    "signIn": "Sign in",
+    "loading": "Loading",
+    "save": "Save",
+    "cancel": "Cancel",
+    "done": "Done",
+    "search": "Search",
+    "back": "Back"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "clearData": {
+    "ariaLabel": "Hapus data lokal",
+    "title": "Hapus data?",
+    "description": "Ini menghapus daftar pantauan, portofolio, dan preferensi lokal yang tersimpan. Tindakan ini tidak bisa dibatalkan.",
+    "cancel": "Batal",
+    "confirm": "Ya, hapus data"
+  }
+}

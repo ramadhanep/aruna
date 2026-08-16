@@ -1,0 +1,13 @@
+{
+  "discussion": {
+    "title": "Discussion",
+    "anonymous": "Anonymous",
+    "signInToChat": "Sign in to chat...",
+    "typeMessage": "Type a message...",
+    "noMessagesYet": "No messages yet",
+    "startConversation": "Start the conversation!",
+    "failedToSend": "Failed to send message",
+    "failedToDelete": "Failed to delete message",
+    "deleteConfirm": "Delete this message?"
+  }
+}

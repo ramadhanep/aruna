@@ -4,6 +4,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Card, CardContent } from "@/components/ui/card";
 import { getReturnCellStyle } from "@/lib/chart-helpers";
 import { getWinRateCellStyle } from "@/lib/seasonalData";
+import { useTranslations } from "next-intl";
 
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const QUARTER_KEYS = [1, 2, 3, 4].map((q) => ({ key: `Q${q}`, label: `Q${q}` }));
@@ -19,7 +20,7 @@ function SeasonalityStatCard({ label, value, valueClass, sub }) {
   );
 }
 
-function HeatmapTable({ periods, heatmap, textClass, padClass, wrapClass }) {
+function HeatmapTable({ periods, heatmap, textClass, padClass, wrapClass, yearLabel, totalLabel, avgLabel, probLabel }) {
   const labels = periods.map((p) => p.label);
   const keys = periods.map((p) => p.key);
   const cellClass = `text-center py-2 ${padClass}`;
@@ -29,16 +30,16 @@ function HeatmapTable({ periods, heatmap, textClass, padClass, wrapClass }) {
       <table className={`w-full ${textClass}`}>
         <thead>
           <tr className="border-b">
-            <th className="text-left py-2 px-1 font-medium sticky left-0 bg-background">Year</th>
+            <th className="text-left py-2 px-1 font-medium sticky left-0 bg-background">{yearLabel}</th>
             {labels.map((label, idx) => (
               <th key={idx} className={headClass}>{label}</th>
             ))}
-            <th className={headClass}>Total</th>
+            <th className={headClass}>{totalLabel}</th>
           </tr>
         </thead>
         <tbody>
           <tr className="border-b-2 font-semibold bg-muted/50">
-            <td className="py-2 px-1 sticky left-0 bg-muted/50">Avg.</td>
+            <td className="py-2 px-1 sticky left-0 bg-muted/50">{avgLabel}</td>
             {keys.map((key) => {
               const value = heatmap.average[key];
               return (
@@ -68,7 +69,7 @@ function HeatmapTable({ periods, heatmap, textClass, padClass, wrapClass }) {
             </tr>
           ))}
           <tr className="border-t-2 font-semibold bg-muted/50">
-            <td className="py-2 px-1 sticky left-0 bg-muted/50">Prob.</td>
+            <td className="py-2 px-1 sticky left-0 bg-muted/50">{probLabel}</td>
             {keys.map((key) => {
               const value = heatmap.winRate?.[key];
               return (
@@ -87,16 +88,16 @@ function HeatmapTable({ periods, heatmap, textClass, padClass, wrapClass }) {
   );
 }
 
-function buildStatGroup(avgs, bestIdx, worstIdx, best, worst, winRate, names, winLabel) {
+function buildStatGroup(avgs, bestIdx, worstIdx, best, worst, winRate, names, { bestLabel, worstLabel, winLabel }) {
   return [
     {
-      label: 'Best Avg',
+      label: bestLabel,
       value: best != null ? `${best >= 0 ? '+' : ''}${best.toFixed(1)}%` : '—',
       valueClass: 'text-emerald-500',
       sub: bestIdx >= 0 ? names[bestIdx] : '',
     },
     {
-      label: 'Worst Avg',
+      label: worstLabel,
       value: worst != null ? `${worst >= 0 ? '+' : ''}${worst.toFixed(1)}%` : '—',
       valueClass: worst != null && worst < 0 ? 'text-red-500' : 'text-emerald-500',
       sub: worstIdx >= 0 ? names[worstIdx] : '',
@@ -111,11 +112,12 @@ function buildStatGroup(avgs, bestIdx, worstIdx, best, worst, winRate, names, wi
 }
 
 export function ChartSeasonalityPanel({ quarterlyHeatmap, monthlyHeatmap, symbol }) {
+  const t = useTranslations("chartSeasonality");
   if (quarterlyHeatmap.rows.length === 0 && monthlyHeatmap.rows.length === 0) {
     return (
       <Card>
         <CardContent className="text-xs text-muted-foreground py-6 text-center">
-          Seasonality data unavailable for {symbol}.
+          {t("unavailable", { symbol })}
         </CardContent>
       </Card>
     );
@@ -139,8 +141,16 @@ export function ChartSeasonalityPanel({ quarterlyHeatmap, monthlyHeatmap, symbol
   const mWinRate = mAvgs.length ? Math.round((mAvgs.filter((v) => v > 0).length / mAvgs.length) * 100) : null;
   const qNames = ['Q1', 'Q2', 'Q3', 'Q4'];
 
-  const qGroup = buildStatGroup(qAvgs, bestQIdx, worstQIdx, bestQ, worstQ, qWinRate, qNames, 'Q Win Rate');
-  const mGroup = buildStatGroup(mAvgs, bestMIdx, worstMIdx, bestM, worstM, mWinRate, MONTH_NAMES, 'M Win Rate');
+  const qGroup = buildStatGroup(qAvgs, bestQIdx, worstQIdx, bestQ, worstQ, qWinRate, qNames, {
+    bestLabel: t("bestAvg"),
+    worstLabel: t("worstAvg"),
+    winLabel: t("qWinRate"),
+  });
+  const mGroup = buildStatGroup(mAvgs, bestMIdx, worstMIdx, bestM, worstM, mWinRate, MONTH_NAMES, {
+    bestLabel: t("bestAvg"),
+    worstLabel: t("worstAvg"),
+    winLabel: t("mWinRate"),
+  });
 
   return (
     <div className="space-y-3">
@@ -162,7 +172,7 @@ export function ChartSeasonalityPanel({ quarterlyHeatmap, monthlyHeatmap, symbol
       <Accordion type="multiple" defaultValue={['quarterly', 'monthly']}>
         <AccordionItem value="quarterly" className="border-b-0">
           <AccordionTrigger className="py-3 text-sm font-semibold hover:no-underline">
-            Quarterly Returns
+            {t("quarterlyReturns")}
           </AccordionTrigger>
           <AccordionContent className="pb-4">
             <HeatmapTable
@@ -171,13 +181,17 @@ export function ChartSeasonalityPanel({ quarterlyHeatmap, monthlyHeatmap, symbol
               textClass="text-2xs"
               padClass="px-2"
               wrapClass="overflow-x-auto -mx-4 px-4"
+              yearLabel={t("year")}
+              totalLabel={t("total")}
+              avgLabel={t("avg")}
+              probLabel={t("prob")}
             />
           </AccordionContent>
         </AccordionItem>
 
         <AccordionItem value="monthly" className="border-b-0">
           <AccordionTrigger className="py-3 text-sm font-semibold hover:no-underline">
-            Monthly Returns
+            {t("monthlyReturns")}
           </AccordionTrigger>
           <AccordionContent className="pb-4">
             <HeatmapTable
@@ -186,6 +200,10 @@ export function ChartSeasonalityPanel({ quarterlyHeatmap, monthlyHeatmap, symbol
               textClass="text-3xs"
               padClass="px-1"
               wrapClass="overflow-x-auto"
+              yearLabel={t("year")}
+              totalLabel={t("total")}
+              avgLabel={t("avg")}
+              probLabel={t("prob")}
             />
           </AccordionContent>
         </AccordionItem>

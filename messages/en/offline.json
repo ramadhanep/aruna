@@ -1,0 +1,7 @@
+{
+  "offline": {
+    "title": "You're offline",
+    "description": "It looks like you lost your internet connection. Some features may still work from cache.",
+    "retry": "Try Again"
+  }
+}

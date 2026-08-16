@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { Trash2, Plus, X, GripVertical } from "lucide-react";
 import {
   Dialog,
@@ -16,6 +17,7 @@ import { formatTickerDisplay, cn } from "@/lib/utils";
 import { DURATION, EASE } from "@/lib/motion";
 
 export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave }) {
+  const t = useTranslations();
   const [items, setItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -204,7 +206,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent variant="fullscreen" closeButtonPosition="right">
         <DialogHeader className="p-6 pb-4">
-          <DialogTitle className="text-base font-semibold">Manage Watchlist</DialogTitle>
+          <DialogTitle className="text-base font-semibold">{t("manageWatchlistDialog.title")}</DialogTitle>
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto px-4">
@@ -212,7 +214,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
           <div className="relative mb-4">
             <div className="relative">
               <Input
-                placeholder="Search ticker..."
+                placeholder={t("manageWatchlistDialog.searchPlaceholder")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery((e.target.value || '').toUpperCase())}
                 className="pr-10"
@@ -224,7 +226,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
                     setSearchResults([]);
                   }}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  aria-label="Clear search"
+                  aria-label={t("manageWatchlistDialog.clearSearch")}
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -253,7 +255,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
 
           {/* Watchlist Items */}
           <div className="space-y-2">
-            <p className="text-xs text-muted-foreground mb-2">Drag to reorder</p>
+            <p className="text-xs text-muted-foreground mb-2">{t("manageWatchlistDialog.dragToReorder")}</p>
             <div ref={listRef} className="space-y-2">
               {items.map((item, index) => (
                 <div
@@ -277,7 +279,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
                         handleMove(index, 1);
                       }
                     }}
-                    aria-label={`Reorder ${formatTickerDisplay(item.symbol)}`}
+                    aria-label={t("manageWatchlistDialog.reorder", { symbol: formatTickerDisplay(item.symbol) })}
                     className="p-1.5 rounded hover:bg-accent cursor-grab touch-none"
                   >
                     <GripVertical className="size-4 text-muted-foreground" />
@@ -290,7 +292,7 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
                   <button
                     onClick={() => handleRemove(item.symbol)}
                     className="text-red-600 hover:text-red-600 transition-colors"
-                    aria-label={`Remove ${formatTickerDisplay(item.symbol)}`}
+                    aria-label={t("manageWatchlistDialog.remove", { symbol: formatTickerDisplay(item.symbol) })}
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -301,15 +303,15 @@ export function ManageWatchlistDialog({ open, onOpenChange, watchlist, onSave })
 
           {items.length === 0 && (
             <div className="text-center py-8 text-muted-foreground">
-              <p>No symbols in watchlist</p>
-              <p className="text-sm mt-1">Search and add symbols above</p>
+              <p>{t("manageWatchlistDialog.emptyTitle")}</p>
+              <p className="text-sm mt-1">{t("manageWatchlistDialog.emptyHint")}</p>
             </div>
           )}
         </div>
 
         <DialogFooter className="p-6 pt-4 border-t">
           <Button onClick={handleSave}>
-            Done
+            {t("common.done")}
           </Button>
         </DialogFooter>
       </DialogContent>

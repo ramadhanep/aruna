@@ -1,0 +1,43 @@
+{
+  "accountSidebar": {
+    "profile": "Profile",
+    "guestMode": "You're browsing in guest mode",
+    "signInToSync": "Sign in to sync watchlist & portfolio",
+    "mode": "Mode",
+    "synced": "Synced",
+    "guest": "Guest",
+    "server": "Server",
+    "connected": "Connected",
+    "offline": "Offline",
+    "signInPrompt": "Sign in with Google to sync your watchlist and portfolio securely.",
+    "signInWithGoogle": "Sign in with Google",
+    "appearance": "Appearance",
+    "appearanceHint": "Pick the look that feels best on your device. Light stays bright, dark saves battery.",
+    "light": "Light",
+    "dark": "Dark",
+    "visualMode": "Visual Mode",
+    "visualModeHint": "Lite mode skips ticker logo images to keep it lighter.",
+    "lite": "Lite",
+    "pro": "Pro",
+    "dataPrivacy": "Data & Privacy",
+    "clearData": "Clear Data",
+    "clearDataHint": "Remove watchlist & portfolio items from your account.",
+    "signOut": "Sign out",
+    "logOutTitle": "Log out?",
+    "logOutDesc": "We'll sign you out of this device. You can sign back in anytime to sync your data again.",
+    "loggingOut": "Logging out…",
+    "logOut": "Log out",
+    "providerWarning": "Provider credentials are not configured. Remote sync will be disabled until you add them.",
+    "language": "Language",
+    "languageHint": "Choose your preferred language for the app.",
+    "accountTitle": "Account",
+    "accountDesc": "Account settings, appearance, and data management.",
+    "version": "Version {version}",
+    "errSignIn": "Unable to start Google sign-in. Please try again.",
+    "errProvider": "Provider credentials are missing. Add them to your environment to enable sign-in.",
+    "errSignOut": "Failed to log out. Please try again."
+  },
+  "accountPage": {
+    "redirecting": "Redirecting..."
+  }
+}

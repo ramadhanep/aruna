@@ -1,0 +1,13 @@
+{
+  "discussion": {
+    "title": "Diskusi",
+    "anonymous": "Anonim",
+    "signInToChat": "Masuk untuk chat...",
+    "typeMessage": "Ketik pesan...",
+    "noMessagesYet": "Belum ada pesan",
+    "startConversation": "Mulai percakapan!",
+    "failedToSend": "Gagal mengirim pesan",
+    "failedToDelete": "Gagal menghapus pesan",
+    "deleteConfirm": "Hapus pesan ini?"
+  }
+}
