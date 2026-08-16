@@ -1,16 +1,6 @@
-const resolveOrigin = () => {
-  const fallback = process.env.NEXT_PUBLIC_APP_URL || process.env.APP_URL || 'http://localhost:3000';
-  try {
-    return new URL(fallback).origin;
-  } catch {
-    return 'http://localhost:3000';
-  }
-};
-
 export async function GET() {
   const appName = process.env.NEXT_PUBLIC_APP_NAME || 'Aruna';
   const version = process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0';
-  const origin = resolveOrigin();
 
   const manifest = {
     id: '/',
@@ -31,18 +21,13 @@ export async function GET() {
     categories: ['finance', 'productivity', 'business'],
     prefer_related_applications: false,
     icons: [
-      {
-        src: '/aruna.png',
-        sizes: '192x192',
-        type: 'image/png',
-        purpose: 'any',
-      },
-      {
-        src: '/aruna.png',
-        sizes: '512x512',
-        type: 'image/png',
-        purpose: 'maskable',
-      },
+      { src: '/aruna.png', sizes: '256x256', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-32.png', sizes: '32x32', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-180.png', sizes: '180x180', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      { src: '/icons/icon-maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+      { src: '/icons/icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
     ],
     shortcuts: [
       {
@@ -50,21 +35,21 @@ export async function GET() {
         short_name: 'Chart',
         description: 'Jump directly to the election-cycle chart view.',
         url: '/chart?cycle=normal',
-        icons: [{ src: '/aruna.png', sizes: '192x192', type: 'image/png' }],
+        icons: [{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
       },
       {
         name: 'Screeners',
         short_name: 'Explore',
         description: 'Review the latest IDX, US, and crypto signals.',
         url: '/',
-        icons: [{ src: '/aruna.png', sizes: '192x192', type: 'image/png' }],
+        icons: [{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
       },
       {
         name: 'MSCI Tracker',
         short_name: 'MSCI',
         description: 'Track Indonesian stocks following MSCI indices.',
         url: '/msci',
-        icons: [{ src: '/aruna.png', sizes: '192x192', type: 'image/png' }],
+        icons: [{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
       },
       ...(process.env.NEXT_PUBLIC_MONEY_FLOW_ENABLED !== "false"
         ? [{
@@ -72,7 +57,7 @@ export async function GET() {
             short_name: 'Flow',
             description: 'Monitor broker accumulation and weekly top picks.',
             url: '/money-flow',
-            icons: [{ src: '/aruna.png', sizes: '192x192', type: 'image/png' }],
+            icons: [{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
           }]
         : []),
       {
@@ -80,15 +65,7 @@ export async function GET() {
         short_name: 'Portfolio',
         description: 'Update your holdings while offline.',
         url: '/portfolio-tracker',
-        icons: [{ src: '/aruna.png', sizes: '192x192', type: 'image/png' }],
-      },
-    ],
-    screenshots: [
-      {
-        src: `${origin}/aruna.png`,
-        sizes: '1024x1024',
-        type: 'image/png',
-        form_factor: 'wide',
+        icons: [{ src: '/icons/icon-192.png', sizes: '192x192', type: 'image/png' }],
       },
     ],
     edge_side_panel: {

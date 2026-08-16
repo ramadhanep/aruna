@@ -57,7 +57,7 @@ routes remain unthrottled.
 Schema changes are applied directly via Supabase SQL Editor. No migration tool (Prisma, Drizzle) is configured. `supabase/setup.sql` is the source of truth but must be kept in sync manually.
 
 ### Service Worker Versioning
-`public/sw.js` `VERSION` is now aligned with `package.json` (`1.7.56`). Rule:
+`public/sw.js` `VERSION` is now aligned with `package.json` (`1.8.0`). Rule:
 bump `VERSION` on every service-worker change or users keep the old worker
 until it is manually updated.
 

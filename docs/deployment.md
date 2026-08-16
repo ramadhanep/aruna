@@ -102,7 +102,7 @@ runtime secrets stay in Vercel project settings).
 ## PWA Deployment Considerations
 
 - Service worker at `public/sw.js` — `VERSION` must stay in sync with the app
-  version in `package.json` (currently `1.7.56`) and be bumped on every cache
+  version in `package.json` (currently `1.8.0`) and be bumped on every cache
   strategy change.
 - Manifest generated dynamically at `/manifest.json` (`src/app/manifest.json/route.js`).
 - Offline fallback at `/offline`.

@@ -48,7 +48,7 @@ Pattern to reuse (matches the existing `.pb-safe` in `globals.css`):
 
 ## Service worker discipline
 
-Any change to caching behavior in `public/sw.js` requires bumping `const VERSION` (currently `'1.3.42'`, line 1) — stale service workers otherwise keep serving old cached app shells indefinitely after a deploy, since `activate` only purges caches not in `KNOWN_CACHES` for the *new* version string. This is a hard rule from `CLAUDE.md`, not a suggestion.
+Any change to caching behavior in `public/sw.js` requires bumping `const VERSION` (currently `'1.8.0'`, line 1) — stale service workers otherwise keep serving old cached app shells indefinitely after a deploy, since `activate` only purges caches not in `KNOWN_CACHES` for the *new* version string. This is a hard rule from `CLAUDE.md`, not a suggestion.
 
 ## What NOT to do
 

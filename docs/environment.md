@@ -22,7 +22,7 @@
 | `API_ALLOWED_ORIGINS` | — | Middleware CORS allowlist | Comma-separated origins |
 | `VERCEL_URL` | Auto-set by Vercel | Middleware CORS, cron base URL | Automatically injected |
 | `NEXT_PUBLIC_APP_NAME` | `"Aruna"` | Layout, manifest | Set via `next.config.mjs` |
-| `NEXT_PUBLIC_APP_VERSION` | `"1.7.56"` | Account sidebar version display | Set via `next.config.mjs` |
+| `NEXT_PUBLIC_APP_VERSION` | `"1.8.0"` | Account sidebar version display | Set via `next.config.mjs` |
 
 ## Configuration Loading
 
