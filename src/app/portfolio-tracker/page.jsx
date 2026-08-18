@@ -87,6 +87,7 @@ function AddAssetForm({
             <Input
               id="symbolSearch"
               value={symbolQuery}
+              disabled={editingIndex != null}
               onChange={(e) => { setSymbolQuery(e.target.value); setForm(f => ({ ...f, symbol: e.target.value })); }}
               placeholder={t("searchTicker", { examples: "AAPL, BBCA.JK" })}
             />
@@ -1010,7 +1011,7 @@ export default function PortfolioTrackerPage() {
           setDialogOpen(true);
         }}
       >
-        <DialogContent className="fixed max-w-none m-0 h-[86vh] lg:h-auto lg:max-h-[85vh] lg:w-[540px] lg:rounded-3xl lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 rounded-t-3xl p-0 flex flex-col mt-auto" closeButtonPosition="right">
+        <DialogContent className="fixed max-w-none m-0 h-[86vh] lg:h-auto lg:max-h-[85vh] lg:w-[540px] lg:rounded-3xl lg:top-1/2 lg:left-1/2 lg:-translate-x-1/2 lg:-translate-y-1/2 rounded-t-3xl p-0 flex flex-col mt-auto" closeButtonPosition="right" onOpenAutoFocus={(event) => { if (editingIndex != null) event.preventDefault(); }}>
           <div className="flex items-center gap-2 p-4 border-b">
             <DialogTitle className="text-base">{editingIndex != null ? tModal("editTitle") : tModal("title")}</DialogTitle>
           </div>
