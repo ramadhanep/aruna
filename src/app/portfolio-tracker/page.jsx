@@ -303,6 +303,7 @@ export default function PortfolioTrackerPage() {
   // Search debounce
   useEffect(() => {
     const handle = setTimeout(async () => {
+      if (editingIndex != null) return;
       if (justSelectedRef.current) {
         justSelectedRef.current = false;
         return;
@@ -314,7 +315,7 @@ export default function PortfolioTrackerPage() {
       setLoadingSearch(false);
     }, 300);
     return () => clearTimeout(handle);
-  }, [symbolQuery]);
+  }, [symbolQuery, editingIndex]);
 
   function resetForm() {
     setForm({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '', type: 'digital', category: '', cashCurrency: 'IDR' });
