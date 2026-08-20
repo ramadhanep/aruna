@@ -9,8 +9,11 @@
     "server": "Server",
     "connected": "Terhubung",
     "offline": "Offline",
-    "signInPrompt": "Masuk dengan Google untuk menyinkronkan daftar pantauan dan portofolio dengan aman.",
-    "signInWithGoogle": "Masuk dengan Google",
+    "signInPrompt": "Masuk untuk menyinkronkan daftar pantauan dan portofolio dengan aman.",
+    "continueWithGoogle": "Lanjut dengan Google",
+    "continueWithEmail": "Lanjut dengan email",
+    "errSignIn": "Gagal memulai login Google. Silakan coba lagi.",
+    "errProvider": "Kredensial provider tidak ada. Tambahkan ke environment untuk mengaktifkan login.",
     "appearance": "Tampilan",
     "appearanceHint": "Pilih tampilan yang paling nyaman di perangkatmu. Light tetap terang, dark hemat baterai.",
     "light": "Light",
@@ -33,8 +36,6 @@
     "accountTitle": "Akun",
     "accountDesc": "Pengaturan akun, tampilan, dan pengelolaan data.",
     "version": "Versi {version}",
-    "errSignIn": "Gagal memulai login Google. Silakan coba lagi.",
-    "errProvider": "Kredensial provider tidak ada. Tambahkan ke environment untuk mengaktifkan login.",
     "errSignOut": "Gagal keluar. Silakan coba lagi."
   },
   "accountPage": {

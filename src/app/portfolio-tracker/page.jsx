@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { Command, CommandItem, CommandList } from '@/components/ui/command';
-import { Plus, MoreVertical, Pencil, Trash2, Loader2, CreditCard, TrendingUp, ArrowUpDown, Check, Eye, EyeClosed } from 'lucide-react';
+import { Plus, MoreVertical, Pencil, Trash2, Loader2, CreditCard, TrendingUp, ArrowUpDown, Check, Eye, EyeClosed, LogIn } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/auth-provider';
 import { searchSymbols, fetchLatestQuote } from '@/lib/api-client';
@@ -20,7 +20,6 @@ import { TickerAvatar } from '@/components/ticker-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatTickerDisplay, formatIDR, formatByCurrency, getChangeTone } from '@/lib/utils';
 import { MOTION, DURATION_CLASS } from '@/lib/motion';
-import { GoogleGlyph } from '@/components/google-glyph';
 import { loadPortfolio, savePortfolio } from '@/lib/portfolio-storage';
 import { computeHoldingsMetrics, sortHoldings, computePortfolioSummary, computeDigitalAllocation, computeCashTypeAllocation, formatValue } from '@/lib/portfolio-metrics';
 import { usePortfolioData, getDefaultPortfolio } from '@/hooks/use-portfolio-data';
@@ -222,12 +221,9 @@ export default function PortfolioTrackerPage() {
     user,
     loading: authLoading,
     syncPortfolio,
-    signInWithGoogle,
     supabaseConfigured,
   } = useAuth();
   const isAuthenticated = Boolean(user);
-  const [authError, setAuthError] = useState(null);
-  const [signingIn, setSigningIn] = useState(false);
   const [holdingsSort, setHoldingsSort] = useState('alpha');
   const [currency, setCurrency] = useState(() => { const d = loadPortfolio(); return d?.currency ?? 'IDR'; });
   const [isPortfolioHidden, setIsPortfolioHidden] = useState(() => { const d = loadPortfolio(); return d?.visibilityHidden ?? false; });
@@ -251,21 +247,9 @@ export default function PortfolioTrackerPage() {
     refreshPrices, refreshFxRates,
   } = usePortfolioData();
 
-  const handleGoogleSignIn = useCallback(async () => {
-    setAuthError(null);
-    setSigningIn(true);
-    try {
-      await signInWithGoogle('/portfolio-tracker');
-    } catch (error) {
-      console.error('Failed to start Google sign-in', error);
-      setAuthError(
-        supabaseConfigured
-          ? t("signInError")
-          : t("signInNotConfigured")
-      );
-      setSigningIn(false);
-    }
-  }, [signInWithGoogle, supabaseConfigured, t]);
+  const handleGoToSignIn = () => {
+    router.push(`/signin?redirect=${encodeURIComponent('/portfolio-tracker')}`);
+  };
 
   // Pull to refresh handler
   const handleRefresh = useCallback(async () => {
@@ -785,16 +769,13 @@ export default function PortfolioTrackerPage() {
             </div>
             <Button
               type="button"
-              onClick={handleGoogleSignIn}
-              disabled={signingIn || !supabaseConfigured}
+              onClick={handleGoToSignIn}
+              disabled={!supabaseConfigured}
               className="w-full justify-center gap-2 rounded-full bg-foreground text-[12px] font-semibold text-background hover:bg-foreground/90 h-9"
             >
-              {signingIn ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GoogleGlyph />}
-              {signingIn ? t("connecting") : t("syncWithGoogle")}
+              <LogIn className="h-3.5 w-3.5" />
+              {t("signIn")}
             </Button>
-            {authError && (
-              <p className="text-1xs text-red-500 text-center">{authError}</p>
-            )}
           </div>
         )}
 
@@ -882,12 +863,11 @@ export default function PortfolioTrackerPage() {
                   {!isAuthenticated && supabaseConfigured && (
                     <Button
                       variant="outline"
-                      onClick={handleGoogleSignIn}
-                      disabled={signingIn}
+                      onClick={handleGoToSignIn}
                       className="rounded-full text-xs h-9 gap-2"
                     >
-                      {signingIn ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GoogleGlyph />}
-                      {t("signInWithGoogle")}
+                      <LogIn className="h-3.5 w-3.5" />
+                      {t("signIn")}
                     </Button>
                   )}
                 </div>

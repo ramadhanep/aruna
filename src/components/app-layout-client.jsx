@@ -9,12 +9,14 @@ import { HeaderAccountMenu } from "@/components/header-account-menu";
 import { AccountSidebar } from "@/components/account-sidebar";
 import { MobileBottomNav } from "@/components/mobile-bottom-nav";
 import { DesktopNavbar } from "@/components/desktop-navbar";
+import { useAuth } from "@/components/auth-provider";
 import { MOTION } from "@/lib/motion";
 
 export function AppLayoutClient({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const { user, loading } = useAuth();
   const isLandingPage = pathname === "/";
 
   const mobileBackHeaderRoutes = {
@@ -43,6 +45,18 @@ export function AppLayoutClient({ children }) {
   const hideDefaultMobileChrome = hideDefaultMobileChromeRoutes.has(pathname);
   const hideDesktopNavbar = hideDesktopNavbarRoutes.has(pathname);
 
+  const openAccountMenu = () => {
+    if (loading) return;
+    if (user) {
+      setSidebarOpen(true);
+      return;
+    }
+    const target = pathname && pathname !== "/" && pathname !== "/signin"
+      ? `/signin?redirect=${encodeURIComponent(pathname)}`
+      : "/signin";
+    router.push(target);
+  };
+
   return (
     <>
       <AccountSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -50,14 +64,14 @@ export function AppLayoutClient({ children }) {
       <div className="flex flex-col min-h-screen relative w-full overflow-x-hidden">
         {/* Desktop Top Navbar (Hidden on mobile/tablet) */}
         {!hideDesktopNavbar && (
-          <DesktopNavbar onOpenAccountSidebar={() => setSidebarOpen(true)} />
+          <DesktopNavbar onOpenAccountSidebar={openAccountMenu} />
         )}
         
         {/* Mobile Header (Hidden on lg+) */}
         {!hideDefaultMobileChrome && (
           <header className="pt-safe lg:hidden relative z-40 shrink-0 border-b border-border bg-background/95 backdrop-blur">
             <div className="mx-auto max-w-[768px] flex h-14 items-center justify-between gap-3 px-4">
-              <HeaderAccountMenu onOpenSidebar={() => setSidebarOpen(true)} />
+              <HeaderAccountMenu onOpenSidebar={openAccountMenu} />
               <div className="flex flex-1 items-center justify-center gap-1.5">
                 <Image src="/aruna.png" alt="aruna" width={20} height={20} className="size-5" />
                 <h1 className="text-lg font-bold tracking-tight">aruna</h1>

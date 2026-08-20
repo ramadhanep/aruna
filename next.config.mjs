@@ -15,6 +15,7 @@ const nextConfig = {
     'localhost',
     '127.0.0.1',
     '192.168.1.10',
+    '100.93.180.5',
   ],
   env: {
     NEXT_PUBLIC_APP_NAME: 'Aruna',

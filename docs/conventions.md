@@ -14,7 +14,7 @@ Any component using `useSearchParams()` must be wrapped in `<Suspense>` at the p
 
 ## Auth Provider Conventions
 
-- `useAuth()` hook provides: `user`, `session`, `loading`, `supabaseConfigured`, `signInWithGoogle`, `signOut`, `syncWatchlist`, `syncPortfolio`, `refreshRemoteWatchlist`, `refreshRemotePortfolio`, `clearRemoteData`, `deleteAccount`.
+- `useAuth()` hook provides: `user`, `session`, `loading`, `supabaseConfigured`, `signInWithGoogle`, `signInWithEmail`, `signUpWithEmail`, `resetPasswordForEmail`, `updatePassword`, `recoveryActive`, `signOut`, `syncWatchlist`, `syncPortfolio`, `refreshRemoteWatchlist`, `refreshRemotePortfolio`, `clearRemoteData`, `deleteAccount`.
 - Session storage key: `aruna_auth` (in localStorage).
 - Profile upsert on sign-in automatically.
 - Watchlist/portfolio sync: local-first, remote on write.

@@ -13,6 +13,7 @@ import { GoogleGlyph } from "@/components/google-glyph";
 import {
   Loader2,
   LogOut,
+  Mail,
   Moon,
   Sun,
   UserRound,
@@ -44,10 +45,10 @@ function AccountSidebarContent() {
   const searchParams = useSearchParams();
   const { theme, setTheme } = useTheme();
   const { mode, setMode } = useAppearanceMode();
-  const [authError, setAuthError] = useState(null);
   const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [signOutError, setSignOutError] = useState(null);
+  const [authError, setAuthError] = useState(null);
   const [locale, setLocale] = useState(getCookieLocale);
   const isClient = useSyncExternalStore(
     () => () => {},
@@ -110,6 +111,13 @@ function AccountSidebarContent() {
           : t("accountSidebar.errProvider")
       );
     }
+  };
+
+  const handleEmailSignIn = () => {
+    const path = redirectParam
+      ? `/signin?redirect=${encodeURIComponent(redirectParam)}`
+      : "/signin";
+    router.push(path);
   };
 
   const handleSignOut = async () => {
@@ -188,10 +196,19 @@ function AccountSidebarContent() {
                       className="w-full justify-center gap-3 rounded-full bg-foreground text-[12px] font-semibold text-background hover:bg-foreground/90"
                     >
                       <GoogleGlyph />
-                      <span>{t("accountSidebar.signInWithGoogle")}</span>
+                      <span>{t("accountSidebar.continueWithGoogle")}</span>
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={handleEmailSignIn}
+                      className="w-full justify-center gap-3 rounded-full text-[12px] font-semibold"
+                    >
+                      <Mail className="h-3.5 w-3.5" />
+                      <span>{t("accountSidebar.continueWithEmail")}</span>
                     </Button>
                     {authError ? (
-                      <div className="rounded-2xl bg-red-600/15 px-3 py-2 text-1xs text-red-100">
+                      <div className="rounded-2xl bg-red-600/15 px-3 py-2 text-1xs text-red-600 dark:text-red-200">
                         {authError}
                       </div>
                     ) : null}

@@ -14,6 +14,8 @@
 - ✅ Community discussion chat with stock mentions
 - ✅ PWA support (service worker, manifest, offline page)
 - ✅ Google OAuth authentication
+- ✅ Email/password sign-in, sign-up, and password reset (`components/email-password-form.jsx`)
+- ✅ Live USD/IDR exchange rate for MSCI calculations (Yahoo proxy + cache, 15_800 fallback)
 - ✅ Mobile-first responsive design
 - ✅ Dark/light theme switching
 - ✅ Symbol search dialog with history
@@ -59,7 +61,6 @@
 
 ## Planned
 
-- 📋 Live USD/IDR exchange rate for MSCI calculations
 - 📋 Full API rate limiting (all routes, not just screeners)
 - 📋 Database migrations tooling
 - 📋 External error monitoring (Sentry or similar) — deferred beyond Phase 7

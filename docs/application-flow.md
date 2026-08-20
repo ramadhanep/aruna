@@ -70,8 +70,8 @@ Same as guest, plus:
 ### First-Time Visitor
 1. All routes are browsable without authentication — no trial or pricing gate.
 2. Sign-in is required for write actions (watchlist/portfolio sync, discussions).
-3. Signs in with Google OAuth.
-4. Callback lands on `/account?redirect=<original-path>`.
+3. Signs in with Google OAuth or email/password (`/signin`).
+4. Google callback lands on `/account?redirect=<original-path>`; email/password session arrives via `onAuthStateChange`.
 5. `account/page.jsx` redirects to original path (or `/portfolio-tracker`).
 
 ## Data Flow

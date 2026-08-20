@@ -35,7 +35,7 @@
 │   │   │   └── page.jsx
 │   │   ├── tools/                   # Mobile-friendly tools menu
 │   │   │   └── page.jsx
-│   │   ├── signin/                  # Google sign-in page
+│   │   ├── signin/                  # Google/email sign-in page
 │   │   │   └── page.jsx
 │   │   ├── account/                 # OAuth callback redirect stub
 │   │   │   └── page.jsx

@@ -25,6 +25,11 @@ const AuthContext = createContext({
   remotePortfolioUpdatedAt: null,
   portfolioLoaded: false,
   signInWithGoogle: async () => {},
+  signInWithEmail: async () => {},
+  signUpWithEmail: async () => {},
+  resetPasswordForEmail: async () => {},
+  updatePassword: async () => {},
+  recoveryActive: false,
   signOut: async () => {},
   syncWatchlist: async () => null,
   syncPortfolio: async () => null,
@@ -46,6 +51,7 @@ export function AuthProvider({ children }) {
   const [remotePortfolio, setRemotePortfolio] = useState(null);
   const [remotePortfolioUpdatedAt, setRemotePortfolioUpdatedAt] = useState(null);
   const [portfolioLoaded, setPortfolioLoaded] = useState(false);
+  const [recoveryActive, setRecoveryActive] = useState(false);
 
   useEffect(() => {
     if (!supabase) return;
@@ -89,6 +95,7 @@ export function AuthProvider({ children }) {
       if (!isMounted) return;
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
+      setRecoveryActive(event === "PASSWORD_RECOVERY");
       if (holdLoading && event !== "SIGNED_OUT") {
         setLoading(false);
         if (callbackTimeout) clearTimeout(callbackTimeout);
@@ -258,6 +265,63 @@ export function AuthProvider({ children }) {
     [supabase]
   );
 
+  const signInWithEmail = useCallback(
+    async (email, password) => {
+      if (!supabase) {
+        throw new Error("Supabase is not configured");
+      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+    },
+    [supabase]
+  );
+
+  const signUpWithEmail = useCallback(
+    async (email, password) => {
+      if (!supabase) {
+        throw new Error("Supabase is not configured");
+      }
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : null;
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: origin ? `${origin}/account` : undefined,
+        },
+      });
+      if (error) throw error;
+      return data;
+    },
+    [supabase]
+  );
+
+  const resetPasswordForEmail = useCallback(
+    async (email) => {
+      if (!supabase) {
+        throw new Error("Supabase is not configured");
+      }
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : null;
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: origin ? `${origin}/signin?recovery=1` : undefined,
+      });
+      if (error) throw error;
+    },
+    [supabase]
+  );
+
+  const updatePassword = useCallback(
+    async (newPassword) => {
+      if (!supabase) {
+        throw new Error("Supabase is not configured");
+      }
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+    },
+    [supabase]
+  );
+
   const signOut = useCallback(async () => {
     if (!supabase) return;
     try {
@@ -405,6 +469,11 @@ export function AuthProvider({ children }) {
       remotePortfolioUpdatedAt,
       portfolioLoaded,
       signInWithGoogle,
+      signInWithEmail,
+      signUpWithEmail,
+      resetPasswordForEmail,
+      updatePassword,
+      recoveryActive,
       signOut,
       syncWatchlist,
       syncPortfolio,
@@ -425,6 +494,11 @@ export function AuthProvider({ children }) {
       remotePortfolioUpdatedAt,
       portfolioLoaded,
       signInWithGoogle,
+      signInWithEmail,
+      signUpWithEmail,
+      resetPasswordForEmail,
+      updatePassword,
+      recoveryActive,
       signOut,
       syncWatchlist,
       syncPortfolio,

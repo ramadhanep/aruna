@@ -1400,6 +1400,7 @@ const renderNewsTab = () => {
             >
               <CardHeader className="flex items-start gap-3 px-1 pb-2">
                 {thumbnail ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- external RSS thumbnails, arbitrary domains; Image optimizer can't serve them
                   <img
                     src={thumbnail}
                     alt={title}

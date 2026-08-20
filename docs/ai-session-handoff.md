@@ -388,8 +388,43 @@ Product decisions recorded this phase:
 
 ## Next Recommended Task
 
-Release to production: deploy, then walk the manual verification checklist in
-the Phase 7 assessment (error boundary on bad symbol, 429 behavior, health
-probe, PWA offline cold-launch to `/explore`, sw.js update flow). Then retire
-the remaining Known Issues (live FX rate, full rate limiting,
+Retire the remaining Known Issues (full API rate limiting,
 external monitoring) as prioritized in `docs/roadmap.md`.
+
+---
+
+## Phase 9 Record — Email/Password Authentication
+
+**Summary**: Added email/password sign-in, sign-up, and password reset alongside
+Google OAuth. Architecture preserved; new code reuses the existing AuthProvider
+session pipeline. Verified with `npm run lint` (0 errors) and `npm run build`
+(pass, 28 routes).
+
+See `docs/authentication.md` for the updated flows.
+
+## Files Modified (Phase 9)
+
+| File | Change |
+|---|---|
+| `src/lib/auth-errors.js` | **New** — `getAuthErrorKey()` maps Supabase auth error messages to i18n keys (tested in `tests/unit/auth-errors.test.js`, 9 tests) |
+| `src/components/email-password-form.jsx` | **New** — shared sign-in/sign-up/forgot/reset form with Google button; used by `/signin` and account sidebar |
+| `src/components/auth-provider.jsx` | Added `signInWithEmail`, `signUpWithEmail`, `resetPasswordForEmail`, `updatePassword`, `recoveryActive` (PASSWORD_RECOVERY event); all exposed via context |
+| `src/app/signin/page.jsx` | Renders `EmailPasswordForm`; recovery-mode skip-redirect guard |
+| `src/components/account-sidebar.jsx` | Google-only button replaced with `EmailPasswordForm`; dead `handleGoogleSignIn` + error state removed |
+| `messages/en|id/account.json` | Removed dead `signInWithGoogle`/`errSignIn`/`errProvider` keys |
+| `messages/en|id/signin.json` | New form keys — email/password/validation/error/recovery strings |
+| Docs | `authentication.md`, `roadmap.md` (email/password + live USD/IDR done), `architecture-decisions.md`, `conventions.md`, `folder-structure.md`, `application-flow.md`, `state-management.md` |
+
+## Validation Results (Phase 9)
+
+- `npm run lint`: **0 errors / 1 pre-existing warning** (chart `img`).
+- `npx vitest run`: **123 passed** (incl. new `auth-errors` suite).
+- `npm run build`: **passes** — 28 routes + `ƒ Proxy (Middleware)`.
+- Browser check pending: sign-in, sign-up (email-confirm path), forgot-password
+  email, reset-link landing on `/signin?recovery=1`, and error banners.
+- Supabase dashboard setup required: Email provider must be enabled (Auth →
+  Providers → Email) before email login works.
+
+## Blockers for Next Phase
+
+- None. Phase 9 scope complete; manual browser verification recommended.

@@ -26,6 +26,11 @@ const {
   portfolioLoaded,         // Boolean
   // Actions
   signInWithGoogle,
+  signInWithEmail,
+  signUpWithEmail,
+  resetPasswordForEmail,
+  updatePassword,
+  recoveryActive,
   signOut,
   syncWatchlist,
   syncPortfolio,

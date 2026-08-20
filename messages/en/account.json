@@ -9,8 +9,11 @@
     "server": "Server",
     "connected": "Connected",
     "offline": "Offline",
-    "signInPrompt": "Sign in with Google to sync your watchlist and portfolio securely.",
-    "signInWithGoogle": "Sign in with Google",
+    "signInPrompt": "Sign in to sync your watchlist and portfolio securely.",
+    "continueWithGoogle": "Continue with Google",
+    "continueWithEmail": "Continue with email",
+    "errSignIn": "Unable to start Google sign-in. Please try again.",
+    "errProvider": "Provider credentials are missing. Add them to your environment to enable sign-in.",
     "appearance": "Appearance",
     "appearanceHint": "Pick the look that feels best on your device. Light stays bright, dark saves battery.",
     "light": "Light",
@@ -33,8 +36,6 @@
     "accountTitle": "Account",
     "accountDesc": "Account settings, appearance, and data management.",
     "version": "Version {version}",
-    "errSignIn": "Unable to start Google sign-in. Please try again.",
-    "errProvider": "Provider credentials are missing. Add them to your environment to enable sign-in.",
     "errSignOut": "Failed to log out. Please try again."
   },
   "accountPage": {

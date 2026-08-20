@@ -108,7 +108,7 @@
 
 **Tradeoffs**:
 - Tied to Supabase ecosystem.
-- Google-only OAuth — no email/password, Apple, or other providers.
+- Google + email/password — no Apple or other OAuth providers.
 - Mostly client-side auth (`getSupabaseBrowserClient()`), but `/api/discussions`
   POST/DELETE are the exception — they use `@supabase/ssr`'s
   `createServerClient()` with `cookies()` (`next/headers`) to read the real
