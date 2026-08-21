@@ -34,7 +34,7 @@ const TTL_BY_TIMEFRAME = {
 // dead weight on the (free-tier) database.
 const RETENTION_MS = 3 * 24 * 60 * 60 * 1000;
 
-export function getMarketDataTtl(timeframe) {
+function getMarketDataTtl(timeframe) {
   return TTL_BY_TIMEFRAME[timeframe] ?? 60_000;
 }
 

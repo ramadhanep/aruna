@@ -82,7 +82,7 @@ export const cycleMetaMap = {
   post: { label: 'Post-Election Year', lineKey: 'postElection' },
 };
 
-export const DAY_IN_MS = 24 * 60 * 60 * 1000;
+const DAY_IN_MS = 24 * 60 * 60 * 1000;
 
 export const NORMAL_TIMEFRAME_OPTIONS = [
   { value: '15m', label: '15m' },
@@ -111,7 +111,7 @@ export const TP_FALLBACK_META = [
   { reason: 'Momentum Target', sellPercent: 30, action: 'Exit Remaining Position' },
 ];
 
-export const INFO_TAB_QUERY_LOOKUP = {
+const INFO_TAB_QUERY_LOOKUP = {
   tradingplan: 'trading-plan',
   keystats: 'keystats',
   analysis: 'analysis',

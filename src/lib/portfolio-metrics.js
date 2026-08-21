@@ -47,7 +47,7 @@ export function formatValue(usdAmount, currency, idrPerUsd, sgdPerUsd) {
 }
 
 // ponytail: digital entries flagged isCash (stablecoins) count as cash; per-symbol slices if throughput of categories matters
-export function isCashLike(entry) {
+function isCashLike(entry) {
   return entry.type === 'cash' || entry.isCash === true;
 }
 

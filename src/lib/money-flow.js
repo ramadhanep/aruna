@@ -8,7 +8,7 @@ export const MONEY_FLOW_TIMEFRAMES = {
   quarterly: { label: "Quarterly", days: 90 },
 };
 
-export const MONEY_FLOW_SORT_FIELDS = {
+const MONEY_FLOW_SORT_FIELDS = {
   score: "money_flow_score",
   volume_spike: "volume_spike",
   price_change: "price_change_1m",
@@ -218,7 +218,7 @@ function getChartPrices(chartData) {
     });
 }
 
-export function processPriceData(chartData) {
+function processPriceData(chartData) {
   const prices = getChartPrices(chartData);
 
   if (!prices.length) {
@@ -406,7 +406,7 @@ export function classifySignal(score) {
   return "Distribution";
 }
 
-export function normalizeBrokerSummary(netData, grossData) {
+function normalizeBrokerSummary(netData, grossData) {
   const brokerSummaryNet = netData?.data?.broker_summary || {};
   const brokerSummaryGross = grossData?.data?.broker_summary || {};
   const brokerMap = new Map();
@@ -466,7 +466,7 @@ export function normalizeBrokerSummary(netData, grossData) {
     .sort((a, b) => b.net_value - a.net_value);
 }
 
-export function processGrossTotals(grossData) {
+function processGrossTotals(grossData) {
   const summary = grossData?.data?.broker_summary || {};
   const totalBuy = (summary.brokers_buy || []).reduce((sum, item) => sum + toNumber(item.bval, 0), 0);
   const totalSell = (summary.brokers_sell || []).reduce((sum, item) => sum + Math.abs(toNumber(item.sval, 0)), 0);
@@ -672,7 +672,7 @@ function generateSummary(result) {
   return lines.join("\n\n");
 }
 
-export function buildSmartMoneyAnalysis({ detector, priceData, brokerSummary, grossTotals, screenerSnapshot }) {
+function buildSmartMoneyAnalysis({ detector, priceData, brokerSummary, grossTotals, screenerSnapshot }) {
   const brokerInventory = analyzeBrokerInventory(brokerSummary);
   const brokerCost = analyzeBrokerCost(brokerSummary, priceData.current);
   const concentration = analyzeBrokerConcentration(brokerSummary);
@@ -697,7 +697,7 @@ export function buildSmartMoneyAnalysis({ detector, priceData, brokerSummary, gr
   return result;
 }
 
-export function buildReasonLines(report) {
+function buildReasonLines(report) {
   const reasons = [];
 
   if (String(report.market_phase || "").includes("Accumulation")) {
