@@ -1,5 +1,6 @@
 import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge"
+import { isCryptoSymbol, toBybitSymbol } from "@/lib/bybit";
 
 export function cn(...inputs) {
   return twMerge(clsx(inputs));
@@ -47,6 +48,7 @@ export function getStableColorFromLabel(label) {
  */
 export function formatTickerDisplay(symbol) {
   if (!symbol || typeof symbol !== 'string') return symbol || '';
+  if (isCryptoSymbol(symbol)) return toBybitSymbol(symbol);
   return symbol.replace(/\.JK$/i, '');
 }
 

@@ -53,6 +53,7 @@ Response: `{ data: prices[], events?, meta }`
 > **Quote-metadata bug fix:** the `quote()` call that resolves logos is
 > best-effort — if it fails, logo auto-resolution is skipped gracefully
 > (`quoteMeta?.market`) instead of throwing a null-dereference.
+> **Crypto:** symbols (`*-USD`/`*-USDT`/native `*USDT`) are served live from Bybit public klines — no cache; Yahoo is only a fallback (e.g. unsupported intervals `5d`/`90m`).
 
 ### `POST /api/quotes`
 
@@ -68,9 +69,10 @@ Response: `{ quotes: { [symbol]: { price, change, changePercent, chartData[], ch
 > **Caching:** stale-while-revalidate per `(symbol, timeframe)` in the
 > `quote_cache` table (TTL 60 s, row keyed by `cached_at`). Fresh rows are
 > served as-is; expired rows are served instantly and refreshed after the
-> response (`after()`). Only true misses block on a provider — crypto symbols
-> (`*-USD`/`*-USDT`) go to Bybit public API, everything else to Yahoo;
-> concurrent requests for the same symbol are deduped in-flight.
+> response (`after()`). Crypto symbols (`*-USD`/`*-USDT`/native `*USDT`) skip
+> the cache entirely and always fetch live from Bybit public API (~200 ms);
+> fiat symbols only block on a true miss against Yahoo. Concurrent requests
+> for the same symbol are deduped in-flight.
 > Response `meta` includes `cached` (served from cache) and `fetched` (from
 > Yahoo). The cache is best-effort — any Supabase failure falls back to a live
 > fetch, and stale rows are pruned on write (3-day retention). Free-tier

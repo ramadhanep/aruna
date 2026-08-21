@@ -281,28 +281,32 @@ export async function POST(request) {
             );
         }
 
-        // Serve cached quotes (fresh as-is, stale instantly + background
-        // refresh); only fetch true misses from Yahoo.
-        const { fresh, stale } = await readMarketDataCache(CACHE_TABLE, uniqueSymbols, timeframe);
-        const misses = uniqueSymbols.filter((symbol) => !fresh.has(symbol) && !stale.has(symbol));
+        // Crypto quotes are always fetched live from Bybit (~200 ms) and
+        // never touch the cache; only fiat symbols use stale-while-revalidate.
+        const fiatSymbols = uniqueSymbols.filter((symbol) => !isCryptoSymbol(symbol));
+        const { fresh, stale } = await readMarketDataCache(CACHE_TABLE, fiatSymbols, timeframe);
+        const misses = fiatSymbols.filter((symbol) => !fresh.has(symbol) && !stale.has(symbol));
 
-        // Fetch missing quotes with concurrency control, deduped in-flight.
-        const tasks = misses.map((symbol) => () => fetchQuoteWithProvider(symbol, timeframe));
+        // Fetch missing + all crypto with concurrency control, deduped in-flight.
+        const tasks = [...misses, ...uniqueSymbols.filter((symbol) => isCryptoSymbol(symbol))].map(
+            (symbol) => () => fetchQuoteWithProvider(symbol, timeframe)
+        );
         const results = await promisePool(tasks, CONCURRENCY_LIMIT);
 
         const fetchedResults = results.filter(Boolean);
 
-        // Refresh cache for everything we fetched from Yahoo (best-effort).
+        // Refresh cache for what we fetched from Yahoo/Bybit-fallback (best-effort,
+        // fiat symbols only).
         await writeMarketDataCache(
             CACHE_TABLE,
             timeframe,
-            fetchedResults.map((result) => ({ symbol: result.symbol, payload: result })),
+            fetchedResults.filter((result) => !isCryptoSymbol(result.symbol)).map((result) => ({ symbol: result.symbol, payload: result })),
             quoteSignature
         );
 
-        // Stale-while-revalidate: refresh expired rows after the response is
-        // sent so the next poll finds fresh rows without blocking anyone.
-        const staleSymbols = uniqueSymbols.filter((symbol) => stale.has(symbol));
+        // Stale-while-revalidate: refresh expired fiat rows after the response
+        // is sent so the next poll finds fresh rows without blocking anyone.
+        const staleSymbols = fiatSymbols.filter((symbol) => stale.has(symbol));
         if (staleSymbols.length > 0) {
             after(async () => {
                 const refreshTasks = staleSymbols.map((symbol) => () => fetchQuoteWithProvider(symbol, timeframe));

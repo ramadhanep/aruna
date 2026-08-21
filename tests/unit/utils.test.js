@@ -33,7 +33,12 @@ describe('utils', () => {
 
     it('leaves non-IDX symbols untouched', () => {
       expect(formatTickerDisplay('AAPL')).toBe('AAPL');
-      expect(formatTickerDisplay('BTC-USD')).toBe('BTC-USD');
+    });
+
+    it('converts crypto symbols to native Bybit form', () => {
+      expect(formatTickerDisplay('BTC-USD')).toBe('BTCUSDT');
+      expect(formatTickerDisplay('SOL-USDT')).toBe('SOLUSDT');
+      expect(formatTickerDisplay('BTCUSDT')).toBe('BTCUSDT');
     });
 
     it('handles empty input', () => {

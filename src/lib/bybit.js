@@ -11,12 +11,21 @@ import { computeTimeframeChange, downsampleSeries } from '@/lib/chart-helpers';
 
 const BYBIT_BASE = 'https://api.bybit.com';
 
-const CRYPTO_SYMBOL_RE = /^[A-Z0-9]{2,20}-USD(T)?$/i;
+// Accepts both conventions:
+//   Yahoo style:  BTC-USD, SOL-USDT
+//   Native style: BTCUSDT (stored/displayed form)
+const CRYPTO_YAHOO_RE = /^[A-Z0-9]{2,20}-USD(T)?$/i;
+const CRYPTO_NATIVE_RE = /^[A-Z0-9]{2,20}USDT$/i;
 
 export function isCryptoSymbol(symbol) {
-  return typeof symbol === 'string' && CRYPTO_SYMBOL_RE.test(symbol.trim());
+  if (typeof symbol === 'string') {
+    const s = symbol.trim();
+    if (CRYPTO_YAHOO_RE.test(s) || CRYPTO_NATIVE_RE.test(s)) return true;
+  }
+  return false;
 }
 
+// BTC-USD -> BTCUSDT; BTCUSDT passes through unchanged.
 export function toBybitSymbol(symbol) {
   return symbol.trim().replace(/-USD(T)?$/i, 'USDT').toUpperCase();
 }
@@ -175,6 +184,85 @@ export async function fetchBybitSeriesPayload(symbolRaw, timeframe, lookbackDays
       interval: timeframe === 'D' || timeframe === 'W' || timeframe === 'M' ? '1d' : '60m',
       timeframe,
       range: timeframe,
+      provider: 'bybit',
+    },
+  };
+}
+
+// Yahoo interval -> Bybit kline interval. '5d'/'90m' unsupported -> caller
+// falls back to Yahoo.
+const FINANCE_INTERVAL_MAP = {
+  '1m': '1',
+  '5m': '5',
+  '15m': '15',
+  '30m': '30',
+  '60m': '60',
+  '1h': '60',
+  '1d': 'D',
+  '1wk': 'W',
+  '1mo': 'M',
+};
+
+const INTERVAL_SECONDS = {
+  '1': 60,
+  '5': 300,
+  '15': 900,
+  '30': 1800,
+  '60': 3600,
+  D: 86_400,
+  W: 604_800,
+  M: 2_592_000,
+};
+
+/**
+ * Chart-page payload for a crypto symbol, shaped like buildFinancePayload()
+ * output in /api/finance (data rows carry date/OHLCV + adjclose=close).
+ */
+export async function fetchBybitFinancePayload(symbolRaw, interval, startSec, endSec) {
+  const symbol = symbolRaw.toUpperCase();
+  const bybitInterval = FINANCE_INTERVAL_MAP[interval];
+  if (!bybitInterval) {
+    throw new Error(`Bybit: unsupported interval ${interval}`);
+  }
+
+  const limit = Math.min(1000, Math.max(2, Math.ceil((endSec - startSec) / INTERVAL_SECONDS[bybitInterval])));
+  const result = await bybitGet('/v5/market/kline', {
+    category: 'spot',
+    symbol: toBybitSymbol(symbol),
+    interval: bybitInterval,
+    limit: String(limit),
+  });
+  const points = normalizeKlineRows(result?.list);
+  if (points.length === 0) {
+    throw new Error(`Bybit: no klines for ${symbol}`);
+  }
+
+  const nativeSymbol = toBybitSymbol(symbol);
+  const data = points.map((point) => ({
+    date: point.date,
+    open: point.open,
+    high: point.high,
+    low: point.low,
+    close: point.close,
+    volume: point.volume,
+    adjclose: point.close,
+  }));
+  const lastClose = points[points.length - 1].close;
+
+  return {
+    data,
+    meta: {
+      symbol: nativeSymbol,
+      name: nativeSymbol,
+      logo: null,
+      currency: 'USD',
+      exchangeName: 'BYBIT',
+      fullExchangeName: 'Bybit Spot',
+      instrumentType: 'CRYPTOCURRENCY',
+      regularMarketPrice: lastClose,
+      previousClose: points.length > 1 ? points[points.length - 2].close : null,
+      marketState: 'REGULAR',
+      dataGranularity: interval,
       provider: 'bybit',
     },
   };

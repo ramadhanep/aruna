@@ -27,7 +27,9 @@
 **Endpoints used**:
 - `GET /v5/market/kline` — spot candles; mapped to the same payload shapes as Yahoo (`fetchBybitQuotePayload`, `fetchBybitSeriesPayload`).
 
-**Symbol mapping**: `BTC-USD` → `BTCUSDT` (quote currency replaced with USDT). Unknown pairs throw and callers fall back to Yahoo.
+**Symbol handling**: both `BTC-USD` (Yahoo style) and `BTCUSDT` (native) are accepted everywhere; `formatTickerDisplay()` renders crypto as native (`BTCUSDT`). Unknown pairs throw and callers fall back to Yahoo.
+
+**Realtime**: `/api/quotes` and `/api/finance` always fetch crypto live from Bybit — crypto rows never enter the response cache.
 
 **Limits**: 1000-candle cap per kline request (no pagination); 8 s fetch timeout.
 

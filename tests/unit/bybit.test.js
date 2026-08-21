@@ -14,6 +14,12 @@ describe('bybit', () => {
       expect(isCryptoSymbol('SOL-USDT')).toBe(true);
     });
 
+    it('detects native Bybit pairs', () => {
+      expect(isCryptoSymbol('BTCUSDT')).toBe(true);
+      expect(isCryptoSymbol('ethusdt')).toBe(true);
+      expect(isCryptoSymbol('1000PEPEUSDT')).toBe(true);
+    });
+
     it('rejects stocks, IDX, and non-crypto input', () => {
       expect(isCryptoSymbol('AAPL')).toBe(false);
       expect(isCryptoSymbol('BBRI.JK')).toBe(false);
@@ -27,6 +33,11 @@ describe('bybit', () => {
     it('maps USD and USDT quote currencies to USDT spot pairs', () => {
       expect(toBybitSymbol('BTC-USD')).toBe('BTCUSDT');
       expect(toBybitSymbol('sol-usdt')).toBe('SOLUSDT');
+    });
+
+    it('passes native symbols through unchanged', () => {
+      expect(toBybitSymbol('BTCUSDT')).toBe('BTCUSDT');
+      expect(toBybitSymbol('1000pepeusdt')).toBe('1000PEPEUSDT');
     });
   });
 

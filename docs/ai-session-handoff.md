@@ -442,3 +442,10 @@ See `docs/authentication.md` for the updated flows.
 **Verified live (dev)**: stale rows served in 45–166 ms then refreshed in background; PEPE-USD quote via BYBIT exch tag; BTC-USD series 15M/2H/W/M via bybit, D from warm cache.
 
 **Next candidates**: paginate Bybit klines if long crypto history needed; consider Binance geo-block moot (Bybit chosen); watch Supabase row growth (3-day retention prune unchanged).
+
+## Follow-up: native Bybit symbols + realtime crypto (2026-08-22)
+
+- `isCryptoSymbol()` now accepts BOTH `BTC-USD` and native `BTCUSDT`; storage keeps legacy form, display converts via `formatTickerDisplay()`.
+- `/api/quotes`: crypto skips cache entirely — always live Bybit (~200 ms), fiat unchanged (SWR + cache).
+- `/api/finance` (chart page): new `fetchBybitFinancePayload()` serves crypto charts from Bybit klines (interval map 1m/5m/15m/30m/60m/1h→1d/1wk/1mo; '5d'/'90m' fall back to Yahoo). No cache for crypto.
+- Tests updated: utils display mapping + bybit native pairs (137 total).
