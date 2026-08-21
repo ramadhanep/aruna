@@ -2,6 +2,7 @@ import { after } from 'next/server';
 import yahooFinance from '@/lib/yahoo-finance';
 import { encodePayload } from '@/lib/secure-payload';
 import { readMarketDataCache, writeMarketDataCache, dedupeInflight } from '@/lib/market-data-cache';
+import { isCryptoSymbol, fetchBybitSeriesPayload } from '@/lib/bybit';
 
 const CACHE_TABLE = 'price_series_cache';
 
@@ -210,6 +211,26 @@ async function fetchSeriesPayload(symbol, config, timeframeParam) {
     };
 }
 
+// Provider dispatch for series data: crypto goes to Bybit public API, other
+// symbols to Yahoo. Bybit failures fall back to Yahoo transparently.
+const CRYPTO_AGG_INTERVAL = { '15M': '15m', '1H': '1h', '2H': '1h', '4H': '1h', D: '1d', W: '1wk', M: '1mo' };
+
+async function fetchSeriesWithProvider(symbol, config, timeframeParam) {
+  if (isCryptoSymbol(symbol)) {
+    try {
+      return await fetchBybitSeriesPayload(
+        symbol,
+        timeframeParam,
+        config.lookbackDays,
+        (points) => aggregateCandles(points, config.groupSize ?? 1, CRYPTO_AGG_INTERVAL[timeframeParam] ?? config.interval)
+      );
+    } catch (error) {
+      console.warn(`[price-series] Bybit failed for ${symbol}, falling back to Yahoo:`, error.message);
+    }
+  }
+  return fetchSeriesPayload(symbol, config, timeframeParam);
+}
+
 export async function GET(request) {
   const { searchParams } = new URL(request.url);
   const symbol = searchParams.get('symbol');
@@ -249,7 +270,7 @@ export async function GET(request) {
     if (stalePayload) {
       after(async () => {
         try {
-          const payload = await fetchSeriesPayload(symbol, config, timeframeParam);
+          const payload = await fetchSeriesWithProvider(symbol, config, timeframeParam);
           if (payload) {
             await writeMarketDataCache(CACHE_TABLE, timeframeParam, [{ symbol, payload }], seriesSignature);
           }
@@ -260,7 +281,7 @@ export async function GET(request) {
       return Response.json({ payload: encodePayload(stalePayload) });
     }
 
-    const payload = await fetchSeriesPayload(symbol, config, timeframeParam);
+    const payload = await fetchSeriesWithProvider(symbol, config, timeframeParam);
     if (!payload) {
       return Response.json(
         { payload: encodePayload({ error: 'No price data for requested timeframe' }) },

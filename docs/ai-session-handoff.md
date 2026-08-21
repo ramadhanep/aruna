@@ -428,3 +428,17 @@ See `docs/authentication.md` for the updated flows.
 ## Blockers for Next Phase
 
 - None. Phase 9 scope complete; manual browser verification recommended.
+
+## Session: Cache SWR + Bybit crypto provider (2026-08-22)
+
+**Problem**: 60 s watchlist polling == 60 s quote TTL → ~0% cache hit rate; every refresh blocked on Yahoo (1–3 s+).
+
+**Fixes shipped**
+1. **SWR everywhere** — `readMarketDataCache()` now returns `{ fresh, stale }`; stale rows served instantly and revalidated post-response via `after('next/server')` + `dedupeInflight`. Routes updated: quotes, price-series, finance (`buildFinancePayload()` extracted for background reuse), msci.
+2. **Longer series TTLs** — D 15 min → 60 min, W 1 h → 6 h, M 6 h → 24 h. Quote TTL stays 60 s (SWR hides the miss).
+3. **Bybit public API for crypto** — new `src/lib/bybit.js`: `isCryptoSymbol()`, `toBybitSymbol()` (`BTC-USD`→`BTCUSDT`), kline fetch (8 s timeout, 1000-candle cap), quote/series payload builders matching Yahoo shapes. Quotes route dispatches per-symbol (crypto→Bybit, else Yahoo) via `fetchQuoteWithProvider()`; price-series via `fetchSeriesWithProvider()`. Any Bybit failure falls back to Yahoo. Crypto logos now `null` (TickerAvatar initials fallback) — old path fetched a logo per symbol from Yahoo, defeating the speedup.
+4. Shared helpers moved to lib: `downsampleSeries`, `computeTimeframeChange` (quotes route → `chart-helpers.js`). Tests: `tests/unit/bybit.test.js` (7).
+
+**Verified live (dev)**: stale rows served in 45–166 ms then refreshed in background; PEPE-USD quote via BYBIT exch tag; BTC-USD series 15M/2H/W/M via bybit, D from warm cache.
+
+**Next candidates**: paginate Bybit klines if long crypto history needed; consider Binance geo-block moot (Bybit chosen); watch Supabase row growth (3-day retention prune unchanged).

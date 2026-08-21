@@ -18,6 +18,19 @@
 
 **Logging**: Dev-only raw response logging via `writeYahooRawLog()` to `logs/yahoo/` directory.
 
+## Bybit (Public Market Data)
+
+**Purpose**: Fast, keyless crypto quotes and klines for `*-USD`/`*-USDT` symbols.
+
+**Integration**: Direct REST calls to `https://api.bybit.com/v5/market/*` via `src/lib/bybit.js`. No API key — public endpoints only.
+
+**Endpoints used**:
+- `GET /v5/market/kline` — spot candles; mapped to the same payload shapes as Yahoo (`fetchBybitQuotePayload`, `fetchBybitSeriesPayload`).
+
+**Symbol mapping**: `BTC-USD` → `BTCUSDT` (quote currency replaced with USDT). Unknown pairs throw and callers fall back to Yahoo.
+
+**Limits**: 1000-candle cap per kline request (no pagination); 8 s fetch timeout.
+
 ## Supabase
 
 **Purpose**: Authentication, PostgreSQL database, file storage.

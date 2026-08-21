@@ -338,3 +338,52 @@ export function getQuarterDateRange(quarter) {
     default: return [1, 365];
   }
 }
+
+// Max points kept for mini-chart sparklines.
+export const MAX_CHART_POINTS = 180;
+
+export function downsampleSeries(points, maxPoints = MAX_CHART_POINTS) {
+  if (!Array.isArray(points) || points.length <= maxPoints) {
+    return points;
+  }
+  const step = (points.length - 1) / (maxPoints - 1);
+  const sampled = [];
+  for (let i = 0; i < maxPoints; i++) {
+    const index = Math.round(i * step);
+    sampled.push(points[index]);
+  }
+  return sampled;
+}
+
+// Percent change of `price` over the timeframe: vs previous close for 1D,
+// vs the first point for ranges, vs all-time high for ATH.
+export function computeTimeframeChange(timeframe, currentPrice, previousClosePrice, validSeries) {
+  if (typeof currentPrice !== 'number' || !Number.isFinite(currentPrice)) {
+    return null;
+  }
+
+  if (timeframe === '1D') {
+    if (typeof previousClosePrice !== 'number' || previousClosePrice === 0) {
+      return null;
+    }
+    return ((currentPrice - previousClosePrice) / previousClosePrice) * 100;
+  }
+
+  if (!Array.isArray(validSeries) || validSeries.length < 2) {
+    return null;
+  }
+
+  if (timeframe === 'ATH') {
+    const highest = Math.max(...validSeries.map((point) => point.price).filter((value) => Number.isFinite(value)));
+    if (!Number.isFinite(highest) || highest <= 0) {
+      return null;
+    }
+    return ((currentPrice - highest) / highest) * 100;
+  }
+
+  const basePrice = validSeries[0]?.price;
+  if (typeof basePrice !== 'number' || basePrice <= 0) {
+    return null;
+  }
+  return ((currentPrice - basePrice) / basePrice) * 100;
+}
