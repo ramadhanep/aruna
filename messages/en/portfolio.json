@@ -44,6 +44,8 @@
     "lot": "Lot",
     "averagePrice": "Average Price",
     "pricePerUnit": "Price per {unit} in native currency",
+    "countAsCash": "Count as cash",
+    "countAsCashHint": "Stablecoins like USDT/USDC are counted as cash instead of digital assets.",
     "category": "Category",
     "categoryPlaceholder": "e.g., Bank BCA, Gopay, etc.",
     "totalCashNote": "Total cash in selected currency",

@@ -46,6 +46,11 @@ export function formatValue(usdAmount, currency, idrPerUsd, sgdPerUsd) {
   return { primary: formatUSD(usdAmount), secondary: formatIDR(idrAmount), tertiary: formatSGD(sgdAmount) };
 }
 
+// ponytail: digital entries flagged isCash (stablecoins) count as cash; per-symbol slices if throughput of categories matters
+export function isCashLike(entry) {
+  return entry.type === 'cash' || entry.isCash === true;
+}
+
 export function computeHoldingsMetrics(entries, priceMap, fxRate, sgdPerUsd) {
   return entries.map((entry, index) => {
     const isCash = entry.type === 'cash';
@@ -108,8 +113,8 @@ export function sortHoldings(holdingsWithMetrics, sortKey) {
 }
 
 export function computePortfolioSummary(entries, priceMap, fxRate) {
-  const digitalEntries = entries.filter((e) => e.type !== 'cash');
-  const cashEntries = entries.filter((e) => e.type === 'cash');
+  const digitalEntries = entries.filter((e) => !isCashLike(e));
+  const cashEntries = entries.filter((e) => isCashLike(e));
 
   const digitalCost = digitalEntries.reduce((sum, e) => {
     const effective = getEffectiveAmount(e.amount, e.unit);
@@ -126,7 +131,10 @@ export function computePortfolioSummary(entries, priceMap, fxRate) {
   const digitalPnL = digitalMarket - digitalCost;
 
   const totalCash = cashEntries.reduce((sum, e) => {
-    return sum + e.avgPrice * e.amount;
+    if (e.type === 'cash') return sum + e.avgPrice * e.amount;
+    // digital entry flagged as cash (stablecoin): value at market like any holding
+    const price = priceMap[e.symbol] != null ? priceMap[e.symbol] : e.avgPrice;
+    return sum + toUSD(e.symbol, price, fxRate) * getEffectiveAmount(e.amount, e.unit);
   }, 0);
 
   const totalNetWorth = digitalMarket + totalCash;
@@ -135,7 +143,7 @@ export function computePortfolioSummary(entries, priceMap, fxRate) {
 
 export function computeDigitalAllocation(holdingsWithMetrics, logoMap) {
   return holdingsWithMetrics
-    .filter((h) => !h.isCash)
+    .filter((h) => !isCashLike(h.entry))
     .map((h) => ({
       name: formatTickerDisplay(h.entry.symbol),
       symbol: h.entry.symbol,
@@ -147,9 +155,9 @@ export function computeDigitalAllocation(holdingsWithMetrics, logoMap) {
 export function computeCashTypeAllocation(holdingsWithMetrics) {
   const totals = new Map();
   holdingsWithMetrics
-    .filter((h) => h.isCash)
+    .filter((h) => isCashLike(h.entry))
     .forEach((h) => {
-      const code = h.entry.cashCurrency || 'USD';
+      const code = h.entry.cashCurrency || h.entry.symbol || 'USD';
       totals.set(code, (totals.get(code) || 0) + h.currentValueUSD);
     });
   return [...totals.entries()].map(([code, value]) => ({ name: code, value }));

@@ -155,6 +155,20 @@ function AddAssetForm({
             />
             <p className="text-xs text-muted-foreground">{t("pricePerUnit", { unit: effectiveUnit === 'lot' ? t("lot") : t("share") })}</p>
           </div>
+
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <input
+                id="isCash"
+                type="checkbox"
+                checked={form.isCash}
+                onChange={(e) => setForm(f => ({ ...f, isCash: e.target.checked }))}
+                className="h-4 w-4 accent-emerald-700"
+              />
+              <Label htmlFor="isCash">{t("countAsCash")}</Label>
+            </div>
+            <p className="text-xs text-muted-foreground">{t("countAsCashHint")}</p>
+          </div>
         </>
       ) : (
         <>
@@ -232,7 +246,7 @@ export default function PortfolioTrackerPage() {
   const [symbolQuery, setSymbolQuery] = useState('');
   const [symbolResults, setSymbolResults] = useState([]);
   const [assetType, setAssetType] = useState('digital');
-  const [form, setForm] = useState({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '', type: 'digital', category: '', cashCurrency: 'IDR' });
+  const [form, setForm] = useState({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '', type: 'digital', category: '', cashCurrency: 'IDR', isCash: false });
   const justSelectedRef = React.useRef(false);
   const [loadingSearch, setLoadingSearch] = useState(false);
   const containerRef = React.useRef(null);
@@ -302,7 +316,7 @@ export default function PortfolioTrackerPage() {
   }, [symbolQuery, editingIndex]);
 
   function resetForm() {
-    setForm({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '', type: 'digital', category: '', cashCurrency: 'IDR' });
+    setForm({ symbol: '', name: '', amount: '', unit: 'share', avgPrice: '', type: 'digital', category: '', cashCurrency: 'IDR', isCash: false });
     setSymbolQuery('');
     setSymbolResults([]);
     setEditingIndex(null);
@@ -362,7 +376,8 @@ export default function PortfolioTrackerPage() {
       avgPrice: isCash ? '' : String(e.avgPrice),
       type: e.type || 'digital',
       category: e.category || '',
-      cashCurrency: e.cashCurrency || 'IDR'
+      cashCurrency: e.cashCurrency || 'IDR',
+      isCash: Boolean(e.isCash)
     });
     setSymbolQuery(e.symbol || '');
     setAssetType(e.type || 'digital');
@@ -460,7 +475,7 @@ export default function PortfolioTrackerPage() {
       }
 
       const unit = form.unit;
-      const entry = { symbol: form.symbol, name: form.name, amount: amountNum, unit, avgPrice: avgPriceNum, type: 'digital' };
+      const entry = { symbol: form.symbol, name: form.name, amount: amountNum, unit, avgPrice: avgPriceNum, type: 'digital', ...(form.isCash && { isCash: true }) };
       setEntries((prev) => {
         const next = [...prev];
         if (targetIndex != null && targetIndex >= 0 && targetIndex < next.length) {
@@ -914,8 +929,13 @@ export default function PortfolioTrackerPage() {
                             logo={logoMap[entry.symbol]}
                           />
                           <div className="flex flex-col justify-start">
-                            <p className="font-semibold text-xs truncate">
+                            <p className="font-semibold text-xs truncate flex items-center gap-1">
                               {formatTickerDisplay(entry.symbol)}
+                              {entry.isCash && (
+                                <span className="shrink-0 rounded bg-emerald-700/10 px-1 py-0.5 text-[10px] font-medium text-emerald-800 dark:text-emerald-500">
+                                  {tModal("cash")}
+                                </span>
+                              )}
                             </p>
                             <p className="text-xs text-muted-foreground mt-0.5">
                               {isPortfolioHidden ? hiddenPrimaryToken : `${entry.amount} ${entry.unit}`}

@@ -49,11 +49,11 @@ const MARKET_CATEGORIES = [
     marketClose: [16, 0],
     symbols: [
       { symbol: "NVDA", label: "NVIDIA Corporation", logo: `${SUPABASE_STORAGE_BASE}/us/NVDA.svg` },
-      { symbol: "AVGO", label: "Broadcom Inc.", logo: `${SUPABASE_STORAGE_BASE}/us/AVGO.svg` },
+      { symbol: "AAPL", label: "Apple Inc.", logo: `${SUPABASE_STORAGE_BASE}/us/AAPL.svg` },
       { symbol: "MU", label: "Micron Technology", logo: `${SUPABASE_STORAGE_BASE}/us/MU.svg` },
       { symbol: "SNDK", label: "Sandisk Corporation", logo: `${SUPABASE_STORAGE_BASE}/us/SNDK.svg` },
-      { symbol: "ARM", label: "Arm Holdings plc", logo: `${SUPABASE_STORAGE_BASE}/us/ARM.svg` },
-      { symbol: "BE", label: "Bloom Energy Corporation", logo: `${SUPABASE_STORAGE_BASE}/us/BE.svg` },
+      { symbol: "AVGO", label: "Broadcom Inc.", logo: `${SUPABASE_STORAGE_BASE}/us/AVGO.svg` },
+      { symbol: "META", label: "Meta Platforms, Inc.", logo: `${SUPABASE_STORAGE_BASE}/us/META.svg` },
     ],
   },
   {

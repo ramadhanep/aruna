@@ -91,6 +91,13 @@ describe('portfolio-metrics', () => {
       expect(metrics[0].currentValueUSD).toBe(1500);
       expect(metrics[0].pnl).toBe(0);
     });
+
+    it('prices digital entries flagged as cash like normal holdings', () => {
+      const entries = [{ type: 'digital', symbol: 'USDT-USD', amount: 1000, unit: 'share', avgPrice: 1, isCash: true }];
+      const metrics = computeHoldingsMetrics(entries, { 'USDT-USD': 1 }, FX_RATE, 1.3);
+      expect(metrics[0].isCash).toBe(false);
+      expect(metrics[0].currentValueUSD).toBe(1000);
+    });
   });
 
   describe('sortHoldings', () => {
@@ -132,6 +139,18 @@ describe('portfolio-metrics', () => {
       expect(summary.totalCash).toBe(500);
       expect(summary.totalNetWorth).toBeCloseTo(summary.digitalMarket + 500, 6);
     });
+
+    it('counts digital entries flagged as cash toward totalCash at market value', () => {
+      const entries = [
+        { type: 'stock', symbol: 'AAPL', amount: 10, unit: 'unit', avgPrice: 100 },
+        { type: 'digital', symbol: 'USDT-USD', amount: 1000, unit: 'share', avgPrice: 1, isCash: true },
+        { type: 'cash', amount: 500, avgPrice: 1 },
+      ];
+      const summary = computePortfolioSummary(entries, { AAPL: 120, 'USDT-USD': 1 }, FX_RATE);
+      expect(summary.digitalMarket).toBeCloseTo(1200, 6);
+      expect(summary.totalCash).toBeCloseTo(1500, 6);
+      expect(summary.totalNetWorth).toBeCloseTo(2700, 6);
+    });
   });
 
   describe('computeDigitalAllocation', () => {
@@ -150,7 +169,12 @@ describe('portfolio-metrics', () => {
     });
 
     it('excludes cash entries', () => {
-      const holdings = [{ isCash: true, entry: { symbol: 'Cash' }, currentValueUSD: 100 }];
+      const holdings = [{ isCash: true, entry: { type: 'cash', symbol: 'Cash' }, currentValueUSD: 100 }];
+      expect(computeDigitalAllocation(holdings, {})).toEqual([]);
+    });
+
+    it('excludes digital entries flagged as cash', () => {
+      const holdings = [{ isCash: false, entry: { type: 'digital', symbol: 'USDT-USD', isCash: true }, currentValueUSD: 1000 }];
       expect(computeDigitalAllocation(holdings, {})).toEqual([]);
     });
   });
@@ -158,14 +182,25 @@ describe('portfolio-metrics', () => {
   describe('computeCashTypeAllocation', () => {
     it('groups cash by currency', () => {
       const holdings = [
-        { isCash: true, entry: { cashCurrency: 'IDR' }, currentValueUSD: 40 },
-        { isCash: true, entry: { cashCurrency: 'IDR' }, currentValueUSD: 35 },
-        { isCash: true, entry: { cashCurrency: 'USD' }, currentValueUSD: 25 },
+        { isCash: true, entry: { type: 'cash', cashCurrency: 'IDR' }, currentValueUSD: 40 },
+        { isCash: true, entry: { type: 'cash', cashCurrency: 'IDR' }, currentValueUSD: 35 },
+        { isCash: true, entry: { type: 'cash', cashCurrency: 'USD' }, currentValueUSD: 25 },
       ];
       const result = computeCashTypeAllocation(holdings);
       expect(result).toEqual([
         { name: 'IDR', value: 75 },
         { name: 'USD', value: 25 },
+      ]);
+    });
+
+    it('groups digital entries flagged as cash by symbol', () => {
+      const holdings = [
+        { isCash: false, entry: { type: 'digital', symbol: 'USDT-USD', isCash: true }, currentValueUSD: 1000 },
+        { isCash: true, entry: { type: 'cash', cashCurrency: 'USD' }, currentValueUSD: 500 },
+      ];
+      expect(computeCashTypeAllocation(holdings)).toEqual([
+        { name: 'USDT-USD', value: 1000 },
+        { name: 'USD', value: 500 },
       ]);
     });
   });

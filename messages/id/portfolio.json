@@ -44,6 +44,8 @@
     "lot": "Lot",
     "averagePrice": "Harga Rata-rata",
     "pricePerUnit": "Harga per {unit} dalam mata uang asal",
+    "countAsCash": "Hitung sebagai kas",
+    "countAsCashHint": "Stablecoin seperti USDT/USDC dihitung sebagai kas, bukan aset digital.",
     "category": "Kategori",
     "categoryPlaceholder": "cth: Bank BCA, Gopay, dll.",
     "totalCashNote": "Total kas dalam mata uang terpilih",
