@@ -18,14 +18,14 @@ const TTL_BY_TIMEFRAME = {
   '2Y': 60_000,
   '5Y': 60_000,
   ATH: 60_000,
-  // /api/price-series
+  // /api/price-series — intraday candles move fast; daily+ barely change
   '15M': 60_000,
   '1H': 60_000,
   '2H': 60_000,
   '4H': 60_000,
-  D: 15 * 60_000,
-  W: 60 * 60_000,
-  M: 6 * 60 * 60_000,
+  D: 60 * 60_000,
+  W: 6 * 60 * 60_000,
+  M: 24 * 60 * 60_000,
 };
 
 // Hard retention window; rows older than this are pruned on every write so
@@ -38,22 +38,19 @@ function getMarketDataTtl(timeframe) {
   return TTL_BY_TIMEFRAME[timeframe] ?? 60_000;
 }
 
-function isFresh(row, ttlMs) {
-  if (!row) return false;
-  const cachedAt = Date.parse(row.cached_at);
-  if (!Number.isFinite(cachedAt)) return false;
-  return Date.now() - cachedAt < ttlMs;
-}
-
 /**
- * Read fresh cached payloads for a set of symbols sharing one timeframe.
- * Returns Map<symbol, payload>. Best-effort: returns an empty map on any
- * missing config, network failure, or stale/missing rows.
+ * Read cached payloads for a set of symbols sharing one timeframe, split by
+ * freshness. `fresh` rows are inside the TTL and served as-is; `stale` rows
+ * are past the TTL but inside the retention window — callers serve them
+ * immediately (stale-while-revalidate) and refresh in the background.
+ * Returns { fresh: Map<symbol, payload>, stale: Map<symbol, payload> }.
+ * Best-effort: empty maps on any missing config, network failure, or bad rows.
  */
 export async function readMarketDataCache(table, symbols, timeframe) {
   const client = getSupabaseServiceRoleClient();
+  const empty = { fresh: new Map(), stale: new Map() };
   if (!client || !Array.isArray(symbols) || symbols.length === 0) {
-    return new Map();
+    return empty;
   }
 
   try {
@@ -65,20 +62,24 @@ export async function readMarketDataCache(table, symbols, timeframe) {
 
     if (error || !Array.isArray(data)) {
       console.warn(`[market-data-cache] read failed for ${table}:`, error?.message ?? 'unexpected response');
-      return new Map();
+      return empty;
     }
 
     const ttlMs = getMarketDataTtl(timeframe);
-    const result = new Map();
+    const oldestUsable = Date.now() - RETENTION_MS;
+    const now = Date.now();
+    const fresh = new Map();
+    const stale = new Map();
     data.forEach((row) => {
-      if (row && row.payload != null && isFresh(row, ttlMs)) {
-        result.set(row.symbol, row.payload);
-      }
+      if (!row || row.payload == null) return;
+      const cachedAt = Date.parse(row.cached_at);
+      if (!Number.isFinite(cachedAt) || cachedAt < oldestUsable) return;
+      (now - cachedAt < ttlMs ? fresh : stale).set(row.symbol, row.payload);
     });
-    return result;
+    return { fresh, stale };
   } catch (error) {
     console.warn(`[market-data-cache] read failed for ${table}:`, error.message);
-    return new Map();
+    return empty;
   }
 }
 

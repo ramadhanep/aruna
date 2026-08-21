@@ -2458,7 +2458,7 @@ const renderNewsTab = () => {
                             <img
                               src="/anteck.gif"
                               alt="IDX"
-                              className="absolute w-16 h-16 lg:w-24 lg:h-24 object-contain opacity-50 rounded-md"
+                              className="absolute w-16 h-16 lg:w-24 lg:h-24 object-contain opacity-25 rounded-md"
                               style={{ bottom: '3.5rem', right: '5.5rem' }}
                             />
                           </div>

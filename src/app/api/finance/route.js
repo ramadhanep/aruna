@@ -1,3 +1,4 @@
+import { after } from 'next/server';
 import yahooFinance from '@/lib/yahoo-finance';
 import { encodePayload } from '@/lib/secure-payload';
 import { writeYahooRawLog } from '@/lib/yahoo-raw-log';
@@ -72,20 +73,67 @@ export async function GET(request) {
     );
   }
 
-  // Best-effort cache: reuse a fresh row instead of re-hitting Yahoo for the
-  // same (symbol, interval, start, end) within the TTL. Never a hard dep —
-  // any cache miss/error falls through to a live fetch below.
+  // Stale-while-revalidate cache: fresh rows are served as-is, stale rows are
+  // served instantly and refreshed after the response is sent. Never a hard
+  // dep — any cache miss/error falls through to a live fetch below.
   const cacheKey = financeCacheKey(interval, start, end);
   try {
-    const cachedMap = await readMarketDataCache(CACHE_TABLE, [symbol], cacheKey);
-    const cachedPayload = cachedMap.get(symbol);
-    if (cachedPayload) {
-      return Response.json({ payload: encodePayload(cachedPayload) });
+    const { fresh, stale } = await readMarketDataCache(CACHE_TABLE, [symbol], cacheKey);
+    const hit = fresh.get(symbol) ?? stale.get(symbol);
+    if (hit) {
+      if (!fresh.has(symbol)) {
+        after(async () => {
+          try {
+            const payload = await buildFinancePayload(symbol, interval, start, end, events, includePrePost);
+            if (payload) {
+              await writeMarketDataCache(CACHE_TABLE, cacheKey, [{ symbol, payload }], financeSignature);
+            }
+          } catch {
+            // best-effort — stale row stays for the next request
+          }
+        });
+      }
+      return Response.json({ payload: encodePayload(hit) });
     }
   } catch {
     // cache read failed — continue to live fetch
   }
 
+  try {
+    const payload = await buildFinancePayload(symbol, interval, start, end, events, includePrePost);
+
+    // Cache the resolved payload (incl. logo) — best-effort, never breaks the
+    // response. Falls back silently so a cache outage never breaks the API.
+    await writeMarketDataCache(
+      CACHE_TABLE,
+      cacheKey,
+      [{ symbol, payload }],
+      financeSignature
+    );
+
+    return Response.json({ payload: encodePayload(payload) });
+  } catch (error) {
+    console.error('Error fetching Yahoo Finance chart data:', error);
+
+    // Provide more specific error messages
+    let message = error?.message || 'Failed to fetch data from Yahoo Finance';
+    let status = 500;
+
+    if (message.includes('No data found')) {
+      message = 'Symbol may be invalid, delisted, or no data available for the requested period';
+      status = 404;
+    } else if (message.includes('Invalid cookie')) {
+      message = 'Yahoo Finance API session error. Please try again.';
+    }
+
+    return Response.json({ payload: encodePayload({ error: message }) }, { status });
+  }
+}
+
+// Fetch + normalize the finance payload for one symbol. Throws on failure;
+// errors mentioning "No data found" are mapped to 404 by the route.
+async function buildFinancePayload(symbol, interval, start, end, events, includePrePost) {
+  const cacheKey = financeCacheKey(interval, start, end);
   let quoteMeta = null;
   try {
     quoteMeta = await yahooFinance.quote(symbol, {
@@ -135,12 +183,9 @@ export async function GET(request) {
       payload: result,
     });
 
-    // Handle empty results
+    // Handle empty results — throw so the route maps it to a 404
     if (!result?.quotes || result.quotes.length === 0) {
-      return Response.json(
-        { payload: encodePayload({ error: 'No data available for the specified period. Symbol may be invalid or delisted.' }) },
-        { status: 404 }
-      );
+      throw new Error('No data found for the specified period. Symbol may be invalid or delisted.');
     }
 
     // Extract quotes data (array format by default)
@@ -213,30 +258,9 @@ export async function GET(request) {
       },
     };
 
-    // Cache the resolved payload (incl. logo) — best-effort, never breaks the
-    // response. Falls back silently so a cache outage never breaks the API.
-    await writeMarketDataCache(
-      CACHE_TABLE,
-      cacheKey,
-      [{ symbol, payload }],
-      financeSignature
-    );
-
-    return Response.json({ payload: encodePayload(payload) });
+    return payload;
   } catch (error) {
-    console.error('Error fetching Yahoo Finance chart data:', error);
-
-    // Provide more specific error messages
-    let message = error?.message || 'Failed to fetch data from Yahoo Finance';
-    let status = 500;
-
-    if (message.includes('No data found')) {
-      message = 'Symbol may be invalid, delisted, or no data available for the requested period';
-      status = 404;
-    } else if (message.includes('Invalid cookie')) {
-      message = 'Yahoo Finance API session error. Please try again.';
-    }
-
-    return Response.json({ payload: encodePayload({ error: message }) }, { status });
+    console.error('[finance] Failed to build payload:', error);
+    throw error;
   }
 }

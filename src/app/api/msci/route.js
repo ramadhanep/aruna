@@ -18,10 +18,10 @@ const FALLBACK_USD_TO_IDR = 15_800;
  */
 async function getUsdToIdr() {
   try {
-    const cached = await readMarketDataCache('quote_cache', [FX_SYMBOL], '1D');
-    const fresh = cached.get(FX_SYMBOL);
-    if (fresh && Number.isFinite(fresh.price) && fresh.price > 0) {
-      return fresh.price;
+    const { fresh } = await readMarketDataCache('quote_cache', [FX_SYMBOL], '1D');
+    const cachedRate = fresh.get(FX_SYMBOL);
+    if (cachedRate && Number.isFinite(cachedRate.price) && cachedRate.price > 0) {
+      return cachedRate.price;
     }
   } catch {
     // fall through to live fetch

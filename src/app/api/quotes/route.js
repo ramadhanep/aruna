@@ -1,3 +1,4 @@
+import { after } from 'next/server';
 import yahooFinance from '@/lib/yahoo-finance';
 import { encodePayload } from '@/lib/secure-payload';
 import { ensureUsLogo } from '@/lib/logo-cache';
@@ -306,9 +307,10 @@ export async function POST(request) {
             );
         }
 
-        // Serve fresh cached quotes where possible; only fetch misses from Yahoo.
-        const cachedMap = await readMarketDataCache(CACHE_TABLE, uniqueSymbols, timeframe);
-        const misses = uniqueSymbols.filter((symbol) => !cachedMap.has(symbol));
+        // Serve cached quotes (fresh as-is, stale instantly + background
+        // refresh); only fetch true misses from Yahoo.
+        const { fresh, stale } = await readMarketDataCache(CACHE_TABLE, uniqueSymbols, timeframe);
+        const misses = uniqueSymbols.filter((symbol) => !fresh.has(symbol) && !stale.has(symbol));
 
         // Fetch missing quotes with concurrency control, deduped in-flight.
         const tasks = misses.map(
@@ -327,9 +329,33 @@ export async function POST(request) {
             quoteSignature
         );
 
-        // Build results map: fresh cache first, then live fetches override.
+        // Stale-while-revalidate: refresh expired rows after the response is
+        // sent so the next poll finds fresh rows without blocking anyone.
+        const staleSymbols = uniqueSymbols.filter((symbol) => stale.has(symbol));
+        if (staleSymbols.length > 0) {
+            after(async () => {
+                const refreshTasks = staleSymbols.map(
+                    (symbol) => () =>
+                        dedupeInflight(`quote:${timeframe}:${symbol}`, () => fetchSymbolQuote(symbol, timeframe))
+                );
+                const refreshed = (await promisePool(refreshTasks, CONCURRENCY_LIMIT)).filter(Boolean);
+                if (refreshed.length > 0) {
+                    await writeMarketDataCache(
+                        CACHE_TABLE,
+                        timeframe,
+                        refreshed.map((result) => ({ symbol: result.symbol, payload: result })),
+                        quoteSignature
+                    );
+                }
+            });
+        }
+
+        // Build results map: cache first, then live fetches override.
         const quotesMap = {};
-        cachedMap.forEach((payload, symbol) => {
+        fresh.forEach((payload, symbol) => {
+            quotesMap[symbol] = payload;
+        });
+        stale.forEach((payload, symbol) => {
             quotesMap[symbol] = payload;
         });
         fetchedResults.forEach((result) => {
@@ -342,7 +368,7 @@ export async function POST(request) {
                 meta: {
                     requested: uniqueSymbols.length,
                     resolved: Object.keys(quotesMap).length,
-                    cached: cachedMap.size,
+                    cached: fresh.size + stale.size,
                     fetched: fetchedResults.length,
                     provider: 'yahoo-finance2',
                     timeframe,

@@ -1,3 +1,4 @@
+import { after } from 'next/server';
 import yahooFinance from '@/lib/yahoo-finance';
 import { encodePayload } from '@/lib/secure-payload';
 import { readMarketDataCache, writeMarketDataCache, dedupeInflight } from '@/lib/market-data-cache';
@@ -125,31 +126,7 @@ function aggregateCandles(points = [], groupSize = 1, interval) {
   return aggregated;
 }
 
-export async function GET(request) {
-  const { searchParams } = new URL(request.url);
-  const symbol = searchParams.get('symbol');
-  const timeframeParam = (
-    searchParams.get('timeframe') ||
-    searchParams.get('range') ||
-    'D'
-  ).toUpperCase();
-
-  if (!symbol) {
-    return Response.json({ payload: encodePayload({ error: 'Missing symbol parameter' }) }, { status: 400 });
-  }
-
-  const config = TIMEFRAME_CONFIG[timeframeParam];
-  if (!config) {
-    return Response.json(
-      {
-        payload: encodePayload({
-          error: `Unsupported timeframe. Use one of ${Object.keys(TIMEFRAME_CONFIG).join(', ')}`,
-        }),
-      },
-      { status: 400 }
-    );
-  }
-
+async function fetchSeriesPayload(symbol, config, timeframeParam) {
   const now = new Date();
   const lookbackDays = config.lookbackDays ?? 365;
   let period1 = new Date(now.getTime() - lookbackDays * DAY_IN_MS);
@@ -164,32 +141,21 @@ export async function GET(request) {
     }
   }
 
-  try {
-    // Serve from cache when a fresh row exists for (symbol, timeframe).
-    const cached = await readMarketDataCache(CACHE_TABLE, [symbol], timeframeParam);
-    const cachedPayload = cached.get(symbol);
-    if (cachedPayload) {
-      return Response.json({ payload: encodePayload(cachedPayload) });
-    }
+  const result = await dedupeInflight(`series:${timeframeParam}:${symbol}`, () =>
+    yahooFinance.chart(symbol, {
+      period1,
+      period2: now,
+      interval: config.interval,
+      includePrePost: true,
+    })
+  );
 
-    const result = await dedupeInflight(`series:${timeframeParam}:${symbol}`, () =>
-      yahooFinance.chart(symbol, {
-        period1,
-        period2: now,
-        interval: config.interval,
-        includePrePost: true,
-      })
-    );
+  const quotes = result?.quotes ?? [];
+  if (quotes.length === 0) {
+    return null;
+  }
 
-    const quotes = result?.quotes ?? [];
-    if (quotes.length === 0) {
-      return Response.json(
-        { payload: encodePayload({ error: 'No price data for requested timeframe' }) },
-        { status: 404 }
-      );
-    }
-
-    const rawPoints = quotes
+  const rawPoints = quotes
       .map((quote) => {
         if (!quote?.date) return null;
         const timestamp = quote.date.getTime();
@@ -231,7 +197,7 @@ export async function GET(request) {
     const processedPoints = aggregateCandles(rawPoints, config.groupSize ?? 1, config.interval);
     const data = processedPoints.length > 0 ? processedPoints : rawPoints;
 
-    const payload = {
+    return {
       data,
       meta: {
         symbol: result?.meta?.symbol ?? symbol,
@@ -242,6 +208,65 @@ export async function GET(request) {
         provider: 'yahoo-finance2',
       },
     };
+}
+
+export async function GET(request) {
+  const { searchParams } = new URL(request.url);
+  const symbol = searchParams.get('symbol');
+  const timeframeParam = (
+    searchParams.get('timeframe') ||
+    searchParams.get('range') ||
+    'D'
+  ).toUpperCase();
+
+  if (!symbol) {
+    return Response.json({ payload: encodePayload({ error: 'Missing symbol parameter' }) }, { status: 400 });
+  }
+
+  const config = TIMEFRAME_CONFIG[timeframeParam];
+  if (!config) {
+    return Response.json(
+      {
+        payload: encodePayload({
+          error: `Unsupported timeframe. Use one of ${Object.keys(TIMEFRAME_CONFIG).join(', ')}`,
+        }),
+      },
+      { status: 400 }
+    );
+  }
+
+  try {
+    // Stale-while-revalidate: fresh rows are served as-is; stale rows are
+    // served instantly and refreshed after the response is sent. Only true
+    // misses block on Yahoo.
+    const { fresh, stale } = await readMarketDataCache(CACHE_TABLE, [symbol], timeframeParam);
+    const freshPayload = fresh.get(symbol);
+    if (freshPayload) {
+      return Response.json({ payload: encodePayload(freshPayload) });
+    }
+
+    const stalePayload = stale.get(symbol);
+    if (stalePayload) {
+      after(async () => {
+        try {
+          const payload = await fetchSeriesPayload(symbol, config, timeframeParam);
+          if (payload) {
+            await writeMarketDataCache(CACHE_TABLE, timeframeParam, [{ symbol, payload }], seriesSignature);
+          }
+        } catch {
+          // best-effort — stale row stays for the next request
+        }
+      });
+      return Response.json({ payload: encodePayload(stalePayload) });
+    }
+
+    const payload = await fetchSeriesPayload(symbol, config, timeframeParam);
+    if (!payload) {
+      return Response.json(
+        { payload: encodePayload({ error: 'No price data for requested timeframe' }) },
+        { status: 404 }
+      );
+    }
 
     // Cache the series for (symbol, timeframe) — best-effort.
     await writeMarketDataCache(CACHE_TABLE, timeframeParam, [{ symbol, payload }], seriesSignature);
