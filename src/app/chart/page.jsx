@@ -55,6 +55,11 @@ import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { AnalystGaugeChart } from "@/components/analyst-gauge-chart";
 import { ChartTradingPlanPanel } from "@/components/chart-trading-plan-panel";
 import { ChartSeasonalityPanel } from "@/components/chart-seasonality-panel";
+import { ChartNewsTab } from './chart-news-tab';
+import { ChartProfileTab } from './chart-profile-tab';
+import { ChartKeyStatsTab } from './chart-keystats-tab';
+import { ChartAnalysisTab } from './chart-analysis-tab';
+import { ChartFinancialsTab } from './chart-financials-tab';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -1063,491 +1068,9 @@ function ElectionCyclePageContent() {
     });
   }, [redirectToSignIn, symbol, syncWatchlist, canUseProtectedActions]);
 
-  const renderProfileTab = () => {
-    if (fundamentalsLoading) {
-      return (
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">{t('companyProfile')}</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-3">
-              {[...Array(6)].map((_, idx) => (
-                <div key={idx} className="space-y-2">
-                  <div className="h-3 w-20 rounded-full" />
-                  <div className="h-4 w-24 rounded-full" />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-      );
-    }
 
-    const profileInfo = fundamentals?.profile;
-    const extendedProfile = fundamentals?.assetProfile;
-    if (!profileInfo && !extendedProfile) {
-      return (
-        <Card>
-          <CardContent className="text-xs text-muted-foreground">
-            {t('companyProfileUnavailable', { symbol })}
-          </CardContent>
-        </Card>
-      );
-    }
 
-    const locationParts = [
-      extendedProfile?.address1,
-      extendedProfile?.city,
-      extendedProfile?.state,
-      extendedProfile?.country,
-    ].filter(Boolean);
-    const headquarters = locationParts.join(', ');
-    const websiteRaw = extendedProfile?.website;
-    const website = websiteRaw
-      ? websiteRaw.startsWith('http')
-        ? websiteRaw
-        : `https://${websiteRaw}`
-      : null;
-    const officers = Array.isArray(extendedProfile?.companyOfficers)
-      ? extendedProfile.companyOfficers.filter((officer) => officer?.name).slice(0, 6)
-      : [];
-    const governance = fundamentals?.governance;
 
-    const keyFacts = [
-      { label: t('exchange'), value: profileInfo?.exchange },
-      { label: t('quoteType'), value: formatQuoteType(profileInfo?.quoteType) },
-      { label: t('marketState'), value: formatMarketState(profileInfo?.marketState) },
-      { label: t('sector'), value: extendedProfile?.sector || profileInfo?.sector },
-      { label: t('industry'), value: extendedProfile?.industry || profileInfo?.industry },
-      { label: t('country'), value: extendedProfile?.country || null },
-      { label: t('phone'), value: extendedProfile?.phone || null },
-      {
-        label: t('employees'),
-        value:
-          extendedProfile?.fullTimeEmployees != null
-            ? Number(extendedProfile.fullTimeEmployees).toLocaleString('en-US')
-            : null,
-      },
-      { label: t('headquarters'), value: headquarters || null },
-      {
-        label: t('website'),
-        value: website ? (
-          <a
-            href={website}
-            target="_blank"
-            rel="noreferrer"
-            className="text-emerald-600 hover:underline"
-          >
-            {websiteRaw}
-          </a>
-        ) : null,
-      },
-      {
-        label: t('investorRelations'),
-        value: extendedProfile?.irWebsite ? (
-          <a
-            href={extendedProfile.irWebsite}
-            target="_blank"
-            rel="noreferrer"
-            className="text-emerald-600 hover:underline"
-          >
-            {t('irSite')}
-          </a>
-        ) : null,
-      },
-    ].filter((item) => item.value);
-
-    return (
-      <div className="space-y-4">
-        {keyFacts.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm mb-2">{t('companyProfile')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <dl className="grid grid-cols-1 gap-3 text-xs sm:grid-cols-2">
-                {keyFacts.map((fact) => (
-                  <div key={fact.label} className="space-y-1">
-                    <dt className="text-muted-foreground">{fact.label}</dt>
-                    <dd className="text-xs font-medium text-foreground">{fact.value}</dd>
-                  </div>
-                ))}
-              </dl>
-            </CardContent>
-          </Card>
-        )}
-
-        {extendedProfile?.longBusinessSummary && (
-          <Card className="mt-4 pt-4">
-            <CardHeader>
-              <CardTitle className="text-sm mb-2">{t('companyBackground')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-xs leading-relaxed text-muted-foreground whitespace-pre-line">
-                {extendedProfile.longBusinessSummary}
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {governance && Object.values(governance).some((value) => value != null) && (
-          <Card className="mt-4 pt-4">
-            <CardHeader>
-              <CardTitle className="text-sm mb-2">{t('governanceRisk')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {[
-                  { label: t('overallRisk'), value: governance.overallRisk },
-                  { label: t('auditRisk'), value: governance.auditRisk },
-                  { label: t('boardRisk'), value: governance.boardRisk },
-                  { label: t('compensationRisk'), value: governance.compensationRisk },
-                  { label: t('shareholderRights'), value: governance.shareHolderRightsRisk },
-                ]
-                  .filter((item) => item.value != null)
-                  .map((item) => {
-                    const score = Number(item.value);
-                    const pct = Math.min(100, (score / 10) * 100);
-                    const color = score <= 3 ? 'bg-emerald-500' : score <= 6 ? 'bg-amber-500' : 'bg-red-500';
-                    const textColor = score <= 3 ? 'text-emerald-500' : score <= 6 ? 'text-amber-500' : 'text-red-500';
-                    return (
-                      <div key={item.label} className="space-y-1">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-muted-foreground">{item.label}</span>
-                          <span className={`font-bold ${textColor}`}>{score} / 10</span>
-                        </div>
-                        <Progress value={pct} className="h-1.5 bg-muted" indicatorClassName={color} />
-                      </div>
-                    );
-                  })}
-                {governance.governanceEpochDate && (
-                  <p className="text-2xs text-muted-foreground pt-1">
-                    {t('asOf', {
-                      date: formatTimestamp(Number(governance.governanceEpochDate) * 1000, { dateOnly: true }) ?? '—',
-                    })}
-                  </p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {officers.length > 0 && (
-          <Card className="mt-4 pt-4">
-            <CardHeader>
-              <CardTitle className="text-sm mb-2">{t('leadership')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {officers.map((officer, idx) => (
-                <div key={`${officer.name}-${idx}`} className="">
-                  <p className="text-xs font-semibold dark:text-white/70 text-black/70">{officer.name}</p>
-                  <p className="text-xs text-muted-foreground">{officer.title || t('executive')}</p>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    );
-  };
-
-const renderNewsTab = () => {
-    if (newsLoading) {
-      return (
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm mb-2">{t('news')}</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 space-y-3">
-              {[...Array(3)].map((_, idx) => (
-                <div key={idx} className="space-y-2">
-                  <Skeleton className="h-3 w-32 rounded-full" />
-                  <Skeleton className="h-4 w-24 rounded-full" />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-      );
-    }
-
-    if (!news || news.length === 0) {
-      return (
-        <Card>
-          <CardContent className="text-xs text-muted-foreground">
-            {t('noNews', { symbol })}
-          </CardContent>
-        </Card>
-      );
-    }
-
-    return (
-      <div className="space-y-4">
-        {news.slice(0, 10).map((item, idx) => {
-          const title = item.title || '—';
-          const publisher = item.publisher || '—';
-          const time = item.providerPublishTime ? new Date(item.providerPublishTime).toLocaleDateString('en-US') : '—';
-          const link = item.link || '#';
-          const thumbnail = item.thumbnail?.resolutions?.[0]?.url || null;
-
-          return (
-            <Card
-              key={idx}
-              className="hover:cursor-pointer hover:shadow-sm transition-shadow"
-              onClick={() => window.open(link, '_blank', 'noopener,noreferrer')}
-              style={{ cursor: 'pointer' }}
-            >
-              <CardHeader className="flex items-start gap-3 px-1 pb-2">
-                {thumbnail ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- external RSS thumbnails, arbitrary domains; Image optimizer can't serve them
-                  <img
-                    src={thumbnail}
-                    alt={title}
-                    className="rounded-lg w-14 h-14 object-cover flex-shrink-0"
-                  />
-                ) : null}
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="text-xs font-medium text-foreground truncate line-clamp-2">{title}</CardTitle>
-                  <CardDescription className="text-[0.7rem] text-muted-foreground mt-1">
-                    {publisher} • {time}
-                  </CardDescription>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-1">
-                <p className="text-[0.75rem] text-muted-foreground line-clamp-2">
-                  {item.description || ''}
-                </p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-    );
-  };
-
-  const renderKeyStatsTab = () => {
-    if (fundamentalsLoading) {
-      return (
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm mb-2">{t('summary')}</CardTitle>
-            </CardHeader>
-            <CardContent className="grid grid-cols-2 gap-3">
-              {[...Array(6)].map((_, idx) => (
-                <div key={idx} className="space-y-2">
-                  <Skeleton className="h-3 w-20 rounded-full" />
-                  <Skeleton className="h-4 w-24 rounded-full" />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-          <div className="grid gap-2 grid-cols-1">
-            {[...Array(2)].map((_, idx) => (
-              <Card key={idx} className="h-full">
-                <CardHeader>
-                  <Skeleton className="h-4 w-32 rounded-full" />
-                </CardHeader>
-                <CardContent>
-                  <Skeleton className="h-[220px] rounded-xl" />
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      );
-    }
-
-    const marketData = fundamentals?.marketData || null;
-    const spread =
-      marketData?.bid != null && marketData?.ask != null
-        ? Number(marketData.ask) - Number(marketData.bid)
-        : null;
-    const spreadPct =
-      spread != null && displayedPrice != null && Number(displayedPrice) !== 0
-        ? (spread / Number(displayedPrice)) * 100
-        : null;
-    const snapshotRows = marketData
-      ? [
-        { label: t('marketState'), value: formatMarketState(marketData.marketState) },
-        { label: t('quoteSource'), value: marketData.quoteSourceName || null },
-        { label: 'Bid', value: formatPlainNumber(marketData.bid) },
-        { label: 'Ask', value: formatPlainNumber(marketData.ask) },
-        { label: 'Bid Size', value: formatQuantityValue(marketData.bidSize) },
-        { label: 'Ask Size', value: formatQuantityValue(marketData.askSize) },
-        {
-          label: 'Spread',
-          value:
-            spread != null && Number.isFinite(spread)
-              ? `${formatPlainNumber(spread)}${spreadPct != null ? ` (${spreadPct.toFixed(3)}%)` : ''}`
-              : null,
-        },
-        { label: t('timezone'), value: marketData.exchangeTimezoneName?.replace(/_/g, ' ') || null },
-        { label: t('regularSession'), value: formatTimestamp(marketData.regularMarketTime) || null },
-        { label: t('preMarket'), value: formatTimestamp(marketData.preMarketTime) || null },
-        { label: t('postMarket'), value: formatTimestamp(marketData.postMarketTime) || null },
-        { label: t('analystSummary'), value: marketData.averageAnalystRating || null },
-      ].filter((item) => item.value && item.value !== '—')
-      : [];
-
-    return (
-      <div className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm mb-2">{t('summary')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {summaryStats.length > 0 ? (
-              <dl className="grid grid-cols-2 gap-3">
-                {summaryStats.map((item) => (
-                  <div key={item.label} className="space-y-1">
-                    <dt className="text-xs text-muted-foreground">{item.label}</dt>
-                    <dd className="text-xs font-medium">{item.value}</dd>
-                  </div>
-                ))}
-              </dl>
-            ) : (
-              <p className="text-xs text-muted-foreground">
-                {t('summaryUnavailable', { symbol })}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {snapshotRows.length > 0 && (
-          <Card className="mt-8">
-            <CardHeader>
-              <CardTitle className="text-sm mb-2">{t('tradingSnapshot')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableBody>
-                  {snapshotRows.map((item) => (
-                    <TableRow key={item.label}>
-                      <TableCell className="py-2 text-xs text-muted-foreground">{item.label}</TableCell>
-                      <TableCell className="py-2 text-xs font-semibold text-right text-foreground">{item.value}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        )}
-
-        {(hasEarningsAnalysis || hasRevenueAnalysis) ? (
-          <div className="grid gap-2 grid-cols-1">
-            {hasEarningsAnalysis && latestEarningsPoint && (
-              <div className="relative">
-                <Card className="h-full mt-4">
-                  <CardHeader className="gap-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-1">
-                        <CardTitle className="text-sm mb-4">{t('earningsResults')}</CardTitle>
-                        <p className="text-xs text-muted-foreground">
-                          <span className="font-semibold text-foreground">
-                            {latestEarningsPoint.periodLabel}
-                          </span>{' '}
-                          • {t('estimate')}{' '}
-                          <span className="font-medium text-muted-foreground">
-                            {formatSignedEarnings(latestEarningsPoint.estimate)}
-                          </span>{' '}
-                          • {t('actual')}{' '}
-                          <span className="font-medium text-emerald-700">
-                            {formatSignedEarnings(latestEarningsPoint.actual)}
-                          </span>
-                        </p>
-                        {latestEarningsOutcome ? (
-                          <p
-                            className={`text-xs font-semibold ${latestEarningsOutcome.tone === 'beat'
-                              ? 'text-emerald-700'
-                              : 'text-red-600'
-                              }`}
-                          >
-                            {latestEarningsOutcome.label}
-                          </p>
-                        ) : null}
-                      </div>
-                      <Badge className="px-3 py-1 uppercase tracking-wide">
-                        {t('normalized')}
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent className={SECONDARY_CHART_HEIGHT_CLASS}>
-                    <LazyEarningsChart
-                      data={earningsChartData}
-                      secondaryColor={secondaryChartColor}
-                      formatEarningsValue={formatEarningsValue}
-                      renderEarningsTick={renderEarningsTick}
-                      renderEstimateDot={renderEstimateDot}
-                      renderActualDot={renderActualDot}
-                      earningsTooltipFormatter={earningsTooltipFormatter}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {hasRevenueAnalysis && (
-              <div className="relative">
-                <Card className="h-full">
-                  <CardHeader className="gap-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex flex-col">
-                        <CardTitle className="text-sm mb-4">{t('revenueVsEarnings')}</CardTitle>
-                        {latestRevenuePoint && (
-                          <p className="text-xs text-muted-foreground">
-                            <span style={{ color: primaryChartColor }}>
-                              {t('revenue')} {formatRevenueValue(latestRevenuePoint.revenue)}
-                            </span>{' '}
-                            •{' '}
-                            <span style={{ color: secondaryChartColor }}>
-                              {t('earnings')} {formatRevenueValue(latestRevenuePoint.earnings)}
-                            </span>
-                          </p>
-                        )}
-                      </div>
-                      <div className="inline-flex items-center gap-1 rounded-full border bg-muted/40 p-0.5">
-                        <SegmentedControl
-                          value={revenuePeriod}
-                          onValueChange={setRevenuePeriod}
-                          variant="ghost"
-                          className="px-2 py-1 text-xs rounded-full"
-                          activeClassName="bg-foreground text-background hover:bg-foreground/90 dark:hover:bg-foreground/90 shadow-sm"
-                          inactiveClassName="text-foreground hover:bg-accent hover:text-accent-foreground"
-                          options={[
-                            { value: 'annual', label: t('annual'), disabled: !hasAnnualRevenue },
-                            { value: 'quarterly', label: t('quarterly') },
-                          ]}
-                        />
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className={SECONDARY_CHART_HEIGHT_CLASS}>
-                    <LazyRevenueChart
-                      data={revenueChartData}
-                      primaryColor={primaryChartColor}
-                      secondaryColor={secondaryChartColor}
-                      analysisCurrency={analysisCurrency}
-                      compactNumberFormatter={compactNumberFormatter}
-                      revenueTooltipFormatter={revenueTooltipFormatter}
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="text-xs text-muted-foreground">
-              {t('earningsRevenueUnavailable')}
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    );
-  };
 
   const renderAnalysisTab = () => {
     if (fundamentalsLoading) {
@@ -2593,15 +2116,65 @@ const renderNewsTab = () => {
                       dateLabel={screeningSignalDateLabel}
                       lotEligible={lotEligible}
                       currencyCode={currencyCode}
-formatPriceValue={(v) => formatPriceValue(v, symbol)}
-        formatDetailedCurrency={(v) => formatDetailedCurrency(v, currencyFractionDigits)}
+                      formatPriceValue={(v) => formatPriceValue(v, symbol)}
+                      formatDetailedCurrency={(v) => formatDetailedCurrency(v, currencyFractionDigits)}
                     />
                   )}
-                  {infoTab === 'profile' && renderProfileTab()}
-                  {infoTab === 'keystats' && renderKeyStatsTab()}
+
+                  {infoTab === 'profile' && (
+                    <ChartProfileTab
+                      t={t}
+                      symbol={symbol}
+                      fundamentalsLoading={fundamentalsLoading}
+                      fundamentals={fundamentals}
+                      formatQuoteType={formatQuoteType}
+                      formatMarketState={formatMarketState}
+                      formatTimestamp={formatTimestamp}
+                    />
+                  )}
+                  {infoTab === 'keystats' && (
+                    <ChartKeyStatsTab
+                      t={t}
+                      symbol={symbol}
+                      fundamentalsLoading={fundamentalsLoading}
+                      fundamentals={fundamentals}
+                      displayedPrice={displayedPrice}
+                      formatMarketState={formatMarketState}
+                      formatTimestamp={formatTimestamp}
+                      formatPlainNumber={formatPlainNumber}
+                      formatQuantityValue={formatQuantityValue}
+                      summaryStats={summaryStats}
+                      recommendationData={recommendationData}
+                      revenueChartData={revenueChartData}
+                      analysisCurrency={analysisCurrency}
+                      currencyCode={currencyCode}
+                      currencyFractionDigits={currencyFractionDigits}
+                      compactNumberFormatter={compactNumberFormatter}
+                      formatDetailedCurrency={formatDetailedCurrency}
+                      formatRevenueValue={formatRevenueValue}
+                      formatSignedEarnings={formatSignedEarnings}
+                      latestEarningsPoint={latestEarningsPoint}
+                      latestEarningsOutcome={latestEarningsOutcome}
+                      latestRevenuePoint={latestRevenuePoint}
+                      earningsChartData={earningsChartData}
+                      revenuePeriod={revenuePeriod}
+                      setRevenuePeriod={setRevenuePeriod}
+                      hasAnnualRevenue={hasAnnualRevenue}
+                      hasEarningsAnalysis={hasEarningsAnalysis}
+                      hasRevenueAnalysis={hasRevenueAnalysis}
+                      earningsTooltipFormatter={earningsTooltipFormatter}
+                      revenueTooltipFormatter={revenueTooltipFormatter}
+                      renderEarningsTick={renderEarningsTick}
+                      renderEstimateDot={renderEstimateDot}
+                      renderActualDot={renderActualDot}
+                      formatEarningsValue={formatEarningsValue}
+                      secondaryChartColor={secondaryChartColor}
+                      primaryChartColor={primaryChartColor}
+                    />
+                  )}
                   {infoTab === 'analysis' && renderAnalysisTab()}
                   {infoTab === 'financials' && renderFinancialsTab()}
-                  {infoTab === 'news' && renderNewsTab()}
+                  {infoTab === 'news' && <ChartNewsTab t={t} symbol={symbol} newsLoading={newsLoading} news={news} />}
                   {infoTab === 'seasonality' && (
                     <ChartSeasonalityPanel
                       quarterlyHeatmap={quarterlyHeatmap}
