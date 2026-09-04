@@ -236,9 +236,6 @@ function ElectionCyclePageContent() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      if (!areWatchlistsEqual(DEFAULT_WATCHLIST, watchlist)) {
-        setWatchlist(getDefaultWatchlist());
-      }
       return;
     }
 
@@ -248,6 +245,8 @@ function ElectionCyclePageContent() {
 
     if (Array.isArray(remoteWatchlist)) {
       if (!areWatchlistsEqual(remoteWatchlist, watchlist)) {
+        // Mirrors a remote (Supabase) store into local optimistic state, not derived render state.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setWatchlist(remoteWatchlist);
       }
       return;
@@ -273,7 +272,6 @@ function ElectionCyclePageContent() {
 
   useEffect(() => {
     if (!isAuthenticated) {
-      setPortfolioEntries([]);
       return;
     }
 
@@ -282,6 +280,8 @@ function ElectionCyclePageContent() {
     }
 
     if (Array.isArray(remotePortfolio)) {
+      // Mirrors a remote (Supabase) store into local optimistic state, not derived render state.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setPortfolioEntries(remotePortfolio);
       return;
     }
@@ -410,8 +410,9 @@ function ElectionCyclePageContent() {
     });
   }, [chartData.chartArray, quarterFilter, scaleChoice]);
 
-  const portfolioPosition = useMemo(() => {
-    if (!symbol || !Array.isArray(portfolioEntries) || portfolioEntries.length === 0) {
+  const effectivePortfolioEntries = isAuthenticated ? portfolioEntries : [];
+  const portfolioPosition = (() => {
+    if (!symbol || !Array.isArray(effectivePortfolioEntries) || effectivePortfolioEntries.length === 0) {
       return null;
     }
     const normalizedSymbol = symbol.toUpperCase();
@@ -419,7 +420,7 @@ function ElectionCyclePageContent() {
     let totalLots = 0;
     let totalCost = 0;
 
-    portfolioEntries.forEach((entry) => {
+    effectivePortfolioEntries.forEach((entry) => {
       if (!entry || typeof entry.symbol !== 'string') return;
       if (entry.symbol.toUpperCase() !== normalizedSymbol) return;
       const amount = Number(entry.amount);
@@ -443,7 +444,7 @@ function ElectionCyclePageContent() {
     const parsedFallback = fallbackPrice != null ? Number(fallbackPrice) : null;
     const latestPriceCandidate =
       typeof symbolInfo?.currentPrice === 'number'
-        ? symbolInfo.currentPrice
+        ? symbolInfo?.currentPrice
         : parsedFallback;
     const latestPrice = Number.isFinite(latestPriceCandidate) ? latestPriceCandidate : null;
     const averagePrice = totalCost > 0 ? totalCost / totalShares : null;
@@ -461,7 +462,7 @@ function ElectionCyclePageContent() {
       pnl,
       pnlPct,
     };
-  }, [portfolioEntries, symbol, symbolInfo?.currentPrice, fundamentals?.price]);
+  })();
 
   const hasPortfolioPosition = Boolean(portfolioPosition);
 
@@ -475,15 +476,10 @@ function ElectionCyclePageContent() {
       ? latestNormalPoint.price
       : symbolInfo?.currentPrice ?? null;
 
-  const displayedChange = useMemo(() => {
-    if (symbolInfo?.dailyChange == null || symbolInfo?.dailyChangePct == null) {
-      return null;
-    }
-    return {
-      value: symbolInfo.dailyChange,
-      pct: symbolInfo.dailyChangePct
-    };
-  }, [symbolInfo?.dailyChange, symbolInfo?.dailyChangePct]);
+  const displayedChange =
+    symbolInfo?.dailyChange == null || symbolInfo?.dailyChangePct == null
+      ? null
+      : { value: symbolInfo.dailyChange, pct: symbolInfo.dailyChangePct };
 
   const renderTimeframeButtons = ({ includeFullscreenToggle = false } = {}) => (
     <>
@@ -647,7 +643,7 @@ function ElectionCyclePageContent() {
       typeof displayedPrice === 'number'
         ? displayedPrice
         : typeof symbolInfo?.currentPrice === 'number'
-          ? symbolInfo.currentPrice
+          ? symbolInfo?.currentPrice
           : null;
     const relativeVolume =
       marketData.regularMarketVolume != null && marketData.averageDailyVolume3Month
@@ -1046,9 +1042,10 @@ function ElectionCyclePageContent() {
   }, []);
 
   const MarketStateIcon = marketStateInfo?.Icon;
+  const effectiveWatchlist = isAuthenticated ? watchlist : DEFAULT_WATCHLIST;
   const isFavorite = useMemo(
-    () => watchlist.some((item) => item.symbol === symbol),
-    [watchlist, symbol]
+    () => effectiveWatchlist.some((item) => item.symbol === symbol),
+    [effectiveWatchlist, symbol]
   );
 
   const toggleFavorite = useCallback(() => {
