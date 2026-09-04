@@ -4,6 +4,8 @@ import { encodePayload } from '@/lib/secure-payload';
 import { ensureUsLogo } from '@/lib/logo-cache';
 import { getIdxLogoUrl, getUsLogoUrl } from '@/lib/supabase-storage';
 import { readMarketDataCache, writeMarketDataCache, dedupeInflight } from '@/lib/market-data-cache';
+import { isCryptoSymbol, fetchBybitQuotePayload } from '@/lib/bybit';
+import { computeTimeframeChange, downsampleSeries } from '@/lib/chart-helpers';
 
 const CACHE_TABLE = 'quote_cache';
 
@@ -37,7 +39,6 @@ const DAY_IN_MS = 24 * 60 * 60 * 1000;
 const MAX_SYMBOLS = 50;
 // Concurrency limit for Yahoo Finance calls
 const CONCURRENCY_LIMIT = 10;
-const MAX_CHART_POINTS = 180;
 const DEFAULT_TIMEFRAME = '1D';
 
 const TIMEFRAME_CONFIG = {
@@ -74,50 +75,6 @@ function getPeriodRange(timeframe) {
         period2: now,
         interval: config.interval,
     };
-}
-
-function downsampleSeries(points, maxPoints = MAX_CHART_POINTS) {
-    if (!Array.isArray(points) || points.length <= maxPoints) {
-        return points;
-    }
-    const step = (points.length - 1) / (maxPoints - 1);
-    const sampled = [];
-    for (let i = 0; i < maxPoints; i++) {
-        const index = Math.round(i * step);
-        sampled.push(points[index]);
-    }
-    return sampled;
-}
-
-function computeTimeframeChange(timeframe, currentPrice, previousClosePrice, validSeries) {
-    if (typeof currentPrice !== 'number' || !Number.isFinite(currentPrice)) {
-        return null;
-    }
-
-    if (timeframe === '1D') {
-        if (typeof previousClosePrice !== 'number' || previousClosePrice === 0) {
-            return null;
-        }
-        return ((currentPrice - previousClosePrice) / previousClosePrice) * 100;
-    }
-
-    if (!Array.isArray(validSeries) || validSeries.length < 2) {
-        return null;
-    }
-
-    if (timeframe === 'ATH') {
-        const highest = Math.max(...validSeries.map((point) => point.price).filter((value) => Number.isFinite(value)));
-        if (!Number.isFinite(highest) || highest <= 0) {
-            return null;
-        }
-        return ((currentPrice - highest) / highest) * 100;
-    }
-
-    const basePrice = validSeries[0]?.price;
-    if (typeof basePrice !== 'number' || basePrice <= 0) {
-        return null;
-    }
-    return ((currentPrice - basePrice) / basePrice) * 100;
 }
 
 /**
@@ -264,6 +221,23 @@ async function fetchSymbolQuote(symbol, timeframe = DEFAULT_TIMEFRAME) {
     }
 }
 
+// Provider dispatch for one symbol's quote: crypto goes to Bybit public API
+// (fast, keyless), everything else to Yahoo. Any Bybit failure falls back to
+// Yahoo so a provider outage never drops a row.
+function fetchQuoteWithProvider(symbol, timeframe) {
+    return dedupeInflight(`quote:${timeframe}:${symbol}`, async () => {
+        if (isCryptoSymbol(symbol)) {
+            try {
+                const lookbackDays = TIMEFRAME_CONFIG[timeframe]?.lookbackDays ?? 10;
+                return await fetchBybitQuotePayload(symbol, timeframe, lookbackDays);
+            } catch (error) {
+                console.warn(`[quotes] Bybit failed for ${symbol}, falling back to Yahoo:`, error.message);
+            }
+        }
+        return fetchSymbolQuote(symbol, timeframe);
+    });
+}
+
 /**
  * Batch quotes endpoint.
  * POST /api/quotes
@@ -307,37 +281,35 @@ export async function POST(request) {
             );
         }
 
-        // Serve cached quotes (fresh as-is, stale instantly + background
-        // refresh); only fetch true misses from Yahoo.
-        const { fresh, stale } = await readMarketDataCache(CACHE_TABLE, uniqueSymbols, timeframe);
-        const misses = uniqueSymbols.filter((symbol) => !fresh.has(symbol) && !stale.has(symbol));
+        // Crypto quotes are always fetched live from Bybit (~200 ms) and
+        // never touch the cache; only fiat symbols use stale-while-revalidate.
+        const fiatSymbols = uniqueSymbols.filter((symbol) => !isCryptoSymbol(symbol));
+        const { fresh, stale } = await readMarketDataCache(CACHE_TABLE, fiatSymbols, timeframe);
+        const misses = fiatSymbols.filter((symbol) => !fresh.has(symbol) && !stale.has(symbol));
 
-        // Fetch missing quotes with concurrency control, deduped in-flight.
-        const tasks = misses.map(
-            (symbol) => () =>
-                dedupeInflight(`quote:${timeframe}:${symbol}`, () => fetchSymbolQuote(symbol, timeframe))
+        // Fetch missing + all crypto with concurrency control, deduped in-flight.
+        const tasks = [...misses, ...uniqueSymbols.filter((symbol) => isCryptoSymbol(symbol))].map(
+            (symbol) => () => fetchQuoteWithProvider(symbol, timeframe)
         );
         const results = await promisePool(tasks, CONCURRENCY_LIMIT);
 
         const fetchedResults = results.filter(Boolean);
 
-        // Refresh cache for everything we fetched from Yahoo (best-effort).
+        // Refresh cache for what we fetched from Yahoo/Bybit-fallback (best-effort,
+        // fiat symbols only).
         await writeMarketDataCache(
             CACHE_TABLE,
             timeframe,
-            fetchedResults.map((result) => ({ symbol: result.symbol, payload: result })),
+            fetchedResults.filter((result) => !isCryptoSymbol(result.symbol)).map((result) => ({ symbol: result.symbol, payload: result })),
             quoteSignature
         );
 
-        // Stale-while-revalidate: refresh expired rows after the response is
-        // sent so the next poll finds fresh rows without blocking anyone.
-        const staleSymbols = uniqueSymbols.filter((symbol) => stale.has(symbol));
+        // Stale-while-revalidate: refresh expired fiat rows after the response
+        // is sent so the next poll finds fresh rows without blocking anyone.
+        const staleSymbols = fiatSymbols.filter((symbol) => stale.has(symbol));
         if (staleSymbols.length > 0) {
             after(async () => {
-                const refreshTasks = staleSymbols.map(
-                    (symbol) => () =>
-                        dedupeInflight(`quote:${timeframe}:${symbol}`, () => fetchSymbolQuote(symbol, timeframe))
-                );
+                const refreshTasks = staleSymbols.map((symbol) => () => fetchQuoteWithProvider(symbol, timeframe));
                 const refreshed = (await promisePool(refreshTasks, CONCURRENCY_LIMIT)).filter(Boolean);
                 if (refreshed.length > 0) {
                     await writeMarketDataCache(
@@ -370,7 +342,7 @@ export async function POST(request) {
                     resolved: Object.keys(quotesMap).length,
                     cached: fresh.size + stale.size,
                     fetched: fetchedResults.length,
-                    provider: 'yahoo-finance2',
+                    provider: 'bybit+yahoo-finance2',
                     timeframe,
                 },
             }),

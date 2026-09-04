@@ -44,14 +44,16 @@ Yahoo Finance OHLCV proxy with logo auto-upload.
 
 Response: `{ data: prices[], events?, meta }`
 
-> **Caching:** responses are cached per `(symbol, interval, start, end)` in the
-> `price_series_cache` table (TTL 60 s). The chart fetch is deduped in-flight, so
-> concurrent requests for the same key share one Yahoo call. Cache misses hit
-> Yahoo; best-effort — any cache failure falls back to a live fetch.
+> **Caching:** stale-while-revalidate per `(symbol, interval, start, end)` in the
+> `price_series_cache` table (TTL 60 s). Fresh rows served as-is; expired rows
+> served instantly and refreshed after the response (`after()`). The chart fetch
+> is deduped in-flight. Cache misses hit Yahoo; best-effort — any cache failure
+> falls back to a live fetch.
 >
 > **Quote-metadata bug fix:** the `quote()` call that resolves logos is
 > best-effort — if it fails, logo auto-resolution is skipped gracefully
 > (`quoteMeta?.market`) instead of throwing a null-dereference.
+> **Crypto:** symbols (`*-USD`/`*-USDT`/native `*USDT`) are served live from Bybit public klines — no cache; Yahoo is only a fallback (e.g. unsupported intervals `5d`/`90m`).
 
 ### `POST /api/quotes`
 
@@ -64,9 +66,13 @@ Batch quote fetch (up to 50 symbols) with mini-chart data.
 
 Response: `{ quotes: { [symbol]: { price, change, changePercent, chartData[], chartTimestamps[], logo, meta } }, meta }`
 
-> **Caching:** responses are cached per `(symbol, timeframe)` in the
-> `quote_cache` table (TTL 60 s, row keyed by `cached_at`). Only cache misses
-> hit Yahoo; concurrent requests for the same symbol are deduped in-flight.
+> **Caching:** stale-while-revalidate per `(symbol, timeframe)` in the
+> `quote_cache` table (TTL 60 s, row keyed by `cached_at`). Fresh rows are
+> served as-is; expired rows are served instantly and refreshed after the
+> response (`after()`). Crypto symbols (`*-USD`/`*-USDT`/native `*USDT`) skip
+> the cache entirely and always fetch live from Bybit public API (~200 ms);
+> fiat symbols only block on a true miss against Yahoo. Concurrent requests
+> for the same symbol are deduped in-flight.
 > Response `meta` includes `cached` (served from cache) and `fetched` (from
 > Yahoo). The cache is best-effort — any Supabase failure falls back to a live
 > fetch, and stale rows are pruned on write (3-day retention). Free-tier
@@ -85,7 +91,7 @@ Price series data with multiple timeframe support.
 
 Response: `{ data: [{ timestamp, date, price, open, high, low, close, volume }], meta }`
 
-> **Caching:** responses are cached per `(symbol, timeframe)` in the
+> **Caching:** stale-while-revalidate per `(symbol, timeframe)` in the
 > `price_series_cache` table. TTL varies by timeframe: 60 s for intraday
 > (`15M`/`1H`/`2H`/`4H`), 15 min for `D`, 1 h for `W`, 6 h for `M`. Cache
 > misses hit Yahoo; in-flight requests are deduped. Best-effort (see `/api/quotes`).

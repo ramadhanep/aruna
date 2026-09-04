@@ -5,6 +5,7 @@ import { writeYahooRawLog } from '@/lib/yahoo-raw-log';
 import { ensureUsLogo } from '@/lib/logo-cache';
 import { getIdxLogoUrl, getUsLogoUrl } from '@/lib/supabase-storage';
 import { readMarketDataCache, writeMarketDataCache, dedupeInflight } from '@/lib/market-data-cache';
+import { isCryptoSymbol, fetchBybitFinancePayload } from '@/lib/bybit';
 
 // ponytail: finance takes arbitrary date ranges (unlike the fixed timeframes of
 // /api/quotes and /api/price-series), so the cache key encodes interval + bounds.
@@ -71,6 +72,17 @@ export async function GET(request) {
       { payload: encodePayload({ error: `Invalid interval. Must be one of: ${validIntervals.join(', ')}` }) },
       { status: 400 }
     );
+  }
+
+  // Crypto charts come live from Bybit public API — no cache, Yahoo only as
+  // a fallback if Bybit fails (e.g. unsupported interval like '5d'/'90m').
+  if (isCryptoSymbol(symbol)) {
+    try {
+      const payload = await fetchBybitFinancePayload(symbol, interval, start, end);
+      return Response.json({ payload: encodePayload(payload) });
+    } catch (error) {
+      console.warn(`[finance] Bybit failed for ${symbol}, falling back to Yahoo:`, error.message);
+    }
   }
 
   // Stale-while-revalidate cache: fresh rows are served as-is, stale rows are

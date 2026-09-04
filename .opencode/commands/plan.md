@@ -2,7 +2,7 @@
 description: Combine drift/debt/UI reports into a phased maintenance plan
 ---
 
-Read `docs/DOCS_DRIFT_REPORT.md`, `docs/TECH_DEBT.md`, and `docs/UI_AUDIT.md` (run `/docs-audit` and `/audit` first if any are missing — tell the user which is missing rather than guessing at their contents).
+Read `docs/TECH_DEBT.md` and `docs/UI_AUDIT.md` (run `/audit` first if any are missing — tell the user which is missing rather than guessing at their contents).
 
 Synthesize all three into `docs/MAINTENANCE_PLAN.md`, organized into phases. Group by dependency and blast radius, not by source report — e.g. a docs fix that unblocks correct tech-debt understanding goes before the tech-debt item it affects.
 
@@ -12,7 +12,7 @@ For each phase:
 - **Depends on**: prior phase name, or "none".
 
 Ordering heuristics specific to this project:
-- Doc corrections that other docs/CLAUDE.md rules depend on (e.g. the `/api/discussions` encoding claim, since `CLAUDE.md` states it as an architectural exception other work will assume) come first — fixing the doc is cheap and prevents every later phase from inheriting a wrong assumption.
+- Doc corrections that other docs/OPENCODE.md rules depend on (e.g. the `/api/discussions` encoding claim, since `OPENCODE.md` states it as an architectural exception other work will assume) come first — fixing the doc is cheap and prevents every later phase from inheriting a wrong assumption.
 - Architecture/tech-debt fixes that touch shared code (`src/lib/*`, `src/middleware.js`) come before UI polish, since UI work in the same files would conflict.
 - PWA safe-area/viewport fixes are low-risk, high-visible-impact — good early "quick win" phase.
 - Large page refactors (`chart/page.jsx`, `explore/page.jsx`, `portfolio-tracker/page.jsx`) are their own late phase — high effort, do after quicker wins build confidence.

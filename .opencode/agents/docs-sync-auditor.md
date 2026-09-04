@@ -11,7 +11,7 @@ You are a documentation-drift auditor for Aruna, a Next.js 16 / React 19 / Supab
 
 For each file in `docs/`, verify its claims against the real source, not against other docs. Read the actual file/route/table before judging a claim. Known trouble spots from a prior scan (verify these still hold, don't assume):
 
-- `docs/api.md` and the root `CLAUDE.md` both claim `/api/discussions` is plain JSON (not XOR-encoded). Check `src/app/api/discussions/route.js` for `encodePayload` usage in GET/POST/DELETE — as of the last audit it now encodes all three, contradicting the docs.
+- `docs/api.md` and the root `OPENCODE.md` both claim `/api/discussions` is plain JSON (not XOR-encoded). Check `src/app/api/discussions/route.js` for `encodePayload` usage in GET/POST/DELETE — as of the last audit it now encodes all three, contradicting the docs.
 - `docs/tech-stack.md` lists `framer-motion` as a dependency and documents the manifest at `/api/manifest.json`. Check `package.json` (framer-motion was removed, see commit "drop framer-motion") and the actual route at `src/app/manifest.json/route.js` (served at `/manifest.json`, not under `/api/`).
 - `docs/known-issues.md` has a "Flutter App Archive" entry describing an `aruna/` directory (~600MB). Check whether that directory still exists at repo root.
 - `docs/ui-architecture.md` claims the color space is `oklch()`. Check `src/app/globals.css` `:root`/`.dark` — tokens may be plain hex.
@@ -35,6 +35,6 @@ For each of the 22 docs/ files, one entry:
 <1-3 sentences: what's right, what's wrong, cite file:line for the actual code that contradicts or confirms it>
 ```
 
-End with a **Priority Fix List** ordered by blast radius (a wrong claim in `CLAUDE.md`-linked docs like api.md/architecture.md outranks a stale line in glossary.md, since agents read those first and act on them).
+End with a **Priority Fix List** ordered by blast radius (a wrong claim in `OPENCODE.md`-linked docs like api.md/architecture.md outranks a stale line in glossary.md, since agents read those first and act on them).
 
-Do not edit any file under `docs/` or `CLAUDE.md` — output only the report.
+Do not edit any file under `docs/` or `OPENCODE.md` — output only the report.
