@@ -1072,27 +1072,31 @@ function ElectionCyclePageContent() {
 
 
 
+function renderLoadingAnalytics() {
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">{t('analystRating')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-3">
+            {[...Array(4)].map((_, idx) => (
+              <div key={idx} className="space-y-2">
+                <Skeleton className="h-3 w-24 rounded-full" />
+                <Skeleton className="h-3 w-full rounded-full" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
   const renderAnalysisTab = () => {
     if (fundamentalsLoading) {
-      return (
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm">{t('analystRating')}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3">
-                {[...Array(4)].map((_, idx) => (
-                  <div key={idx} className="space-y-2">
-                    <Skeleton className="h-3 w-24 rounded-full" />
-                    <Skeleton className="h-3 w-full rounded-full" />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      );
+      return renderLoadingAnalytics();
     }
 
     if (!recommendationData && revenueChartData.length === 0) {
@@ -2217,7 +2221,7 @@ function ElectionCyclePageContent() {
             setPortfolioDialogOpen(false);
             router.push('/portfolio-tracker');
           } catch (error) {
-            console.warn('Failed to sync portfolio', error);
+            console.error('Failed to sync portfolio', error);
           }
         }}
       />

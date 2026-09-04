@@ -2,9 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { SegmentedControl } from '@/components/ui/segmented-control';
+
 import { AnalystGaugeChart } from '@/components/analyst-gauge-chart';
 
 export function ChartKeyStatsTab({
