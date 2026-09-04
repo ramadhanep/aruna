@@ -20,6 +20,7 @@ import { SegmentedControl } from "@/components/ui/segmented-control";
 import { SectionHeader } from "@/components/section-header";
 import { usePullToRefresh } from "@/hooks/use-pull-to-refresh";
 import { cn, formatPercent, formatPriceTrim, formatTickerDisplay, getChangeTone } from "@/lib/utils";
+import { isWithinMarketHours } from "@/lib/market-hours";
 import { toast } from "sonner";
 
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
@@ -188,31 +189,6 @@ function getTimeframeChange(quote, timeframe) {
   const basePrice = data[idx];
   if (typeof basePrice !== "number" || basePrice === 0) return null;
   return ((price - basePrice) / basePrice) * 100;
-}
-
-function isWithinMarketHours(timeZone, openHour, openMinute, closeHour, closeMinute) {
-  try {
-    const formatter = new Intl.DateTimeFormat("en-US", {
-      timeZone,
-      hour: "numeric",
-      minute: "numeric",
-      weekday: "short",
-      hour12: false,
-    });
-    const parts = formatter.formatToParts(new Date());
-    const get = (type) => parts.find((part) => part.type === type)?.value;
-    const hour = Number(get("hour"));
-    const minute = Number(get("minute"));
-    const weekday = (get("weekday") || "").slice(0, 3).toLowerCase();
-    if (weekday === "sat" || weekday === "sun") return false;
-    const totalMinutes = hour * 60 + minute;
-    const open = openHour * 60 + openMinute;
-    const close = closeHour * 60 + closeMinute;
-    return totalMinutes >= open && totalMinutes <= close;
-  } catch (error) {
-    console.warn("Failed to evaluate market hours", error);
-    return false;
-  }
 }
 
 function getCategoryDisplayOrder() {

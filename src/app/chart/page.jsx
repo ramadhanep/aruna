@@ -113,7 +113,7 @@ function ChartSidebarSkeleton({ hasPortfolioPosition }) {
         </Card>
       )}
       <Skeleton className="h-10 w-full rounded-xl" />
-      <div className="flex gap-2 overflow-x-auto hide-scrollbar border-b border-border/30 pb-1">
+      <div className="flex gap-2 overflow-x-auto scrollbar-hide border-b border-border/30 pb-1">
         {["w-24", "w-12", "w-16", "w-14", "w-16", "w-16"].map((width, idx) => (
           <Skeleton key={`tab-${idx}`} className={`h-7 ${width} rounded-full shrink-0`} />
         ))}
@@ -2671,7 +2671,7 @@ const renderNewsTab = () => {
                 <Tabs value={infoTab} onValueChange={setInfoTab} className="w-full">
                   <TabsList
                     variant="line"
-                    className="justify-start gap-2 overflow-x-auto flex-nowrap whitespace-nowrap border-b border-border/30 pb-1 hide-scrollbar w-full h-auto p-0 text-1xs"
+                    className="justify-start gap-2 overflow-x-auto flex-nowrap whitespace-nowrap border-b border-border/30 pb-1 scrollbar-hide w-full h-auto p-0 text-1xs"
                   >
                     {infoTabs.map((tab) => (
                       <TabsTrigger

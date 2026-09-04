@@ -549,40 +549,6 @@ export function MarketBubbles({ fullScreen = false }) {
           </svg>
 
           <ArunaWatermark className="absolute bottom-4 right-4" />
-
-          <style jsx global>{`
-            @keyframes bubble-float-0 {
-              0%, 100% { transform: translate(0, 0); }
-              25% { transform: translate(1.5px, -2px); }
-              50% { transform: translate(-1px, 1px); }
-              75% { transform: translate(2px, 1.5px); }
-            }
-            @keyframes bubble-float-1 {
-              0%, 100% { transform: translate(0, 0); }
-              20% { transform: translate(-1.5px, 1.5px); }
-              40% { transform: translate(1px, -1px); }
-              60% { transform: translate(-0.5px, 2px); }
-              80% { transform: translate(1.5px, -0.5px); }
-            }
-            @keyframes bubble-float-2 {
-              0%, 100% { transform: translate(0, 0); }
-              33% { transform: translate(2px, 1px); }
-              66% { transform: translate(-1.5px, -1.5px); }
-            }
-            @keyframes bubble-float-3 {
-              0%, 100% { transform: translate(0, 0); }
-              25% { transform: translate(-2px, -1px); }
-              50% { transform: translate(1.5px, 2px); }
-              75% { transform: translate(0.5px, -1.5px); }
-            }
-            @keyframes bubble-float-4 {
-              0%, 100% { transform: translate(0, 0); }
-              20% { transform: translate(1px, 2px); }
-              40% { transform: translate(-2px, 0.5px); }
-              60% { transform: translate(1.5px, -1px); }
-              80% { transform: translate(-0.5px, 1.5px); }
-            }
-          `}</style>
         </div>
       </div>
     );

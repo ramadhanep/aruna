@@ -4,8 +4,9 @@ import { useEffect, useState, useRef } from "react";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { TickerAvatar } from "./ticker-avatar";
-import { fetchEncodedJson } from "@/lib/api-client";
+import { fetchBatchQuotes } from "@/lib/api-client";
 import { formatPriceTrim, formatTickerDisplay, getChangeTone } from "@/lib/utils";
+import { isWithinMarketHours } from "@/lib/market-hours";
 import { DURATION_CLASS } from "@/lib/motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SectionHeader } from "@/components/section-header";
@@ -35,31 +36,6 @@ function TrendingItem({ symbol, quote }) {
       </div>
     </Link>
   );
-}
-
-function isWithinMarketHours(timeZone, openHour, openMinute, closeHour, closeMinute) {
-  try {
-    const formatter = new Intl.DateTimeFormat("en-US", {
-      timeZone,
-      hour: "numeric",
-      minute: "numeric",
-      weekday: "short",
-      hour12: false,
-    });
-    const parts = formatter.formatToParts(new Date());
-    const get = (type) => parts.find((part) => part.type === type)?.value;
-    const hour = Number(get("hour"));
-    const minute = Number(get("minute"));
-    const weekday = (get("weekday") || "").slice(0, 3).toLowerCase();
-    if (weekday === "sat" || weekday === "sun") return false;
-    const totalMinutes = hour * 60 + minute;
-    const open = openHour * 60 + openMinute;
-    const close = closeHour * 60 + closeMinute;
-    return totalMinutes >= open && totalMinutes <= close;
-  } catch (error) {
-    console.warn("Failed to evaluate market hours", error);
-    return false;
-  }
 }
 
 function getTrendingOrder() {
@@ -118,19 +94,15 @@ export function TrendingMarquee({ supabase }) {
           const symbols = ordered.map((item) => item.symbol);
 
           try {
-            const { response, data: quotesData } = await fetchEncodedJson('/api/quotes', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ symbols }),
-            });
+            const batchQuotes = await fetchBatchQuotes(symbols);
 
-            if (response.ok && quotesData?.quotes) {
+            if (batchQuotes && Object.keys(batchQuotes).length) {
               const quotesMap = {};
               // Map batch response (keyed by uppercase symbol) to original symbols
               ordered.forEach((item) => {
                 const upperSymbol = item.symbol.toUpperCase();
-                if (quotesData.quotes[upperSymbol]) {
-                  quotesMap[item.symbol] = quotesData.quotes[upperSymbol];
+                if (batchQuotes[upperSymbol]) {
+                  quotesMap[item.symbol] = batchQuotes[upperSymbol];
                 }
               });
               setQuotes(quotesMap);

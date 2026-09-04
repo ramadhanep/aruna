@@ -353,3 +353,36 @@ Zero loading states for route transitions. Users see blank content during naviga
 18. Add aria-labels to icon buttons (11.1)
 19. Clean up dead code (12)
 20. Remove cmdk dependency (3.3)
+
+---
+
+## Progress Log
+
+### Phase 1: Quick Wins ✅ (commit 296e9b3)
+- [x] Fundamentals API sequential → Promise.all (2.2)
+- [x] Money-flow API sequential → Promise.all (2.3)
+- [x] 7 API routes → singleton Supabase client (2.4)
+- [x] React.memo on TickerRow + MiniChart (1.1, 1.3)
+- [x] loadPortfolio() double-call fixed (7.1)
+- [x] window.open noopener (9.2)
+
+### Phase 2: Core Performance ✅ (commit 9c686a9)
+- [x] Fundamentals API in-memory cache with 5-min TTL (2.1)
+- [x] React.memo on MoneyFlowCard, AnalystGaugeChart, TickerAvatar (1.1)
+- [x] MarketBubbles drag throttled with requestAnimationFrame (1.4)
+- [x] MarketBubbles dynamic import for lazy loading (3.2)
+- [ ] Split AuthProvider context — skipped (too risky for quick pass)
+
+### Phase 3: Architecture (in progress)
+- [x] Extract isWithinMarketHours to `src/lib/market-hours.js` (5.1)
+- [x] Extract batch-quote fetch in trending-marquee to use `fetchBatchQuotes` (5.3)
+- [x] Move styled JSX keyframes to globals.css (6.2)
+- [x] Remove duplicate scrollbar-hide CSS utilities (6.1)
+- [ ] Split chart/page.jsx God Component (2775 lines)
+- [ ] Add loading.jsx to route segments
+
+### Phase 4: Polish (pending)
+- [ ] Error feedback for sync failures
+- [ ] aria-labels on icon buttons
+- [ ] Dead code cleanup
+- [ ] Remove cmdk dependency
