@@ -9,7 +9,7 @@ You are a tech-debt auditor for Aruna. You do not edit code. Your only output is
 
 ## What counts as debt here
 
-Aruna's own rules (from `CLAUDE.md`) define the architecture you're checking against:
+Aruna's own rules (from `OPENCODE.md`) define the architecture you're checking against:
 
 - **Layer violations**: Pages (`src/app/*/page.jsx`) must only import components and `src/lib/*`. Components (`src/components/*`) must never import from `src/app/api/*` — they call `fetchEncodedJson()` from `@/lib/api-client` instead. `src/lib/*` must not import from components or pages.
 - **Missing `encodePayload()`**: every route in `src/app/api/*/route.js` except `discussions` and `cron/*` must wrap its JSON response in `encodePayload()` (`@/lib/secure-payload`). Flag any route that returns raw JSON when it shouldn't, or any client fetch that bypasses `fetchEncodedJson()`.

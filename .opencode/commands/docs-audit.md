@@ -2,9 +2,9 @@
 description: Audit docs/ against actual code and produce a drift report
 ---
 
-Run the `docs-sync-auditor` agent over the full `docs/` directory (all 22 files) plus the root `CLAUDE.md`. It is read-only — it must not edit any doc or source file.
+Run the `docs-sync-auditor` agent over the public `docs/` directory. It is read-only — it must not edit any doc or source file.
 
-Its output is `docs/DOCS_DRIFT_REPORT.md`.
+Its output is a docs drift summary for the current tree.
 
 After it finishes:
 1. Read the report back and summarize the verdict counts (accurate / stale / aspirational / wrong) in your reply.

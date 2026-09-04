@@ -3,7 +3,7 @@ description: Summarize maintenance progress (full or incremental)
 argument-hint: [full|incremental]
 ---
 
-Produce `docs/PROGRESS_REPORT.md` summarizing progress against `docs/MAINTENANCE_PLAN.md`.
+Produce a progress summary for the current maintenance work.
 
 Mode is "$ARGUMENTS" (default: incremental if omitted).
 

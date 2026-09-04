@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(rtk wc *)",
+      "Bash(rtk proxy *)",
+      "Bash(rtk lint *)",
+      "Bash(awk 'NR==1399,NR==1462' src/app/explore/page.jsx)",
+      "Bash(rtk git *)",
+      "Bash(awk '{print $NF}')",
+      "Bash(python3 *)",
+      "Bash(/usr/bin/grep *)"
+    ]
+  }
+}

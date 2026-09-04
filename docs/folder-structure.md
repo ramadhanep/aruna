@@ -2,7 +2,7 @@
 
 ```
 /
-├── CLAUDE.md                        # AI entry point — read first
+├── OPENCODE.md                      # AI entry point — read first
 ├── docs/                            # Project documentation
 ├── src/                             # Application source code
 │   ├── proxy.js                      # Request interception (CORS + screener rate limit) — renamed from middleware.js in Next 16
