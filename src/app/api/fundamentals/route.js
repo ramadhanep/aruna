@@ -525,7 +525,9 @@ export async function GET(request) {
     source: { provider: 'yahoo-finance2' },
   };
 
-  setCachedFundamentals(symbolKey, responseData);
+  if (quote && summaryModules) {
+    setCachedFundamentals(symbolKey, responseData);
+  }
 
   return Response.json({
     payload: encodePayload(responseData),
