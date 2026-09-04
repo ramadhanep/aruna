@@ -22,8 +22,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import dynamic from 'next/dynamic';
-const LazyEarningsChart = dynamic(() => import('@/components/recharts/earnings-chart').then((m) => m.EarningsChart), { ssr: false });
-const LazyRevenueChart = dynamic(() => import('@/components/recharts/revenue-chart').then((m) => m.RevenueChart), { ssr: false });
 const LazySeasonalityChart = dynamic(() => import('@/components/recharts/seasonality-chart').then((m) => m.SeasonalityChart), { ssr: false });
 import { Loader2, Sun, MoonStar, Clock3, Fullscreen, ArrowLeft, Settings, CandlestickChart, LineChart, BarChart2 } from "lucide-react";
 import { Tooltip as RadixTooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
@@ -58,8 +56,6 @@ import { ChartSeasonalityPanel } from "@/components/chart-seasonality-panel";
 import { ChartNewsTab } from './chart-news-tab';
 import { ChartProfileTab } from './chart-profile-tab';
 import { ChartKeyStatsTab } from './chart-keystats-tab';
-
-import { ChartFinancialsTab } from './chart-financials-tab';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -69,7 +65,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const CHART_HEIGHT_CLASS = "h-[380px] lg:h-[500px]";
-const SECONDARY_CHART_HEIGHT_CLASS = "h-[260px]";
 
 function ChartMainSkeleton() {
   return (
