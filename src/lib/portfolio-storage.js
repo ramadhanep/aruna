@@ -28,7 +28,9 @@ function read(key) {
 
 function write(key, value) {
   try { localStorage.setItem(key, value); }
-  catch (e) { console.warn('Failed to write portfolio key', key, e); }
+  catch {
+    // ponytail: storage quota / private-mode ceiling; ignore persistence write failures.
+  }
 }
 
 export function loadPortfolio() {

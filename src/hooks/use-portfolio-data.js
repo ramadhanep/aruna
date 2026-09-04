@@ -141,7 +141,9 @@ export function usePortfolioData() {
   useEffect(() => {
     (async () => {
       try { await refreshFxRates(); }
-      catch (e) { console.warn('FX rate fetch failed', e); }
+      catch {
+        // ponytail: FX fetch failure only degrades currency conversions; retry on next refresh.
+      }
     })();
   }, [refreshFxRates]);
 
