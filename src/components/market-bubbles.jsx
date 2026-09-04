@@ -23,6 +23,7 @@ export function MarketBubbles({ fullScreen = false }) {
   const hasMovedRef = useRef(false);
   const svgRef = useRef(null);
   const containerRef = useRef(null);
+  const dragRafRef = useRef(null);
 
   useEffect(() => {
     const updateDimensions = () => {
@@ -256,7 +257,11 @@ export function MarketBubbles({ fullScreen = false }) {
     const newX = dragInfoRef.current.bubbleStartX + deltaX;
     const newY = dragInfoRef.current.bubbleStartY + deltaY;
 
-    setBubblePositions(prev => {
+    // Throttle position updates to one per animation frame
+    if (dragRafRef.current) return;
+    dragRafRef.current = requestAnimationFrame(() => {
+      dragRafRef.current = null;
+      setBubblePositions(prev => {
       const newPositions = { ...prev };
       const draggedCode = dragInfoRef.current.code;
 
@@ -297,6 +302,7 @@ export function MarketBubbles({ fullScreen = false }) {
 
       return newPositions;
     });
+    });
   }, [isDragging, packedBubbles, dimensions]);
 
   const handlePointerUp = useCallback(() => {
@@ -321,6 +327,10 @@ export function MarketBubbles({ fullScreen = false }) {
         window.removeEventListener('pointerup', handlePointerUp);
         window.removeEventListener('touchmove', handlePointerMove);
         window.removeEventListener('touchend', handlePointerUp);
+        if (dragRafRef.current) {
+          cancelAnimationFrame(dragRafRef.current);
+          dragRafRef.current = null;
+        }
       };
     }
   }, [isDragging, handlePointerMove, handlePointerUp]);

@@ -2,6 +2,26 @@ import yahooFinance from '@/lib/yahoo-finance';
 import { encodePayload } from '@/lib/secure-payload';
 import { writeYahooRawLog } from '@/lib/yahoo-raw-log';
 
+// In-memory cache for fundamentals (5 min TTL). Key: symbol, Value: { data, expiresAt }
+const fundamentalsCache = new Map();
+const FUNDAMENTALS_TTL = 5 * 60 * 1000;
+
+function getCachedFundamentals(symbol) {
+  const entry = fundamentalsCache.get(symbol);
+  if (entry && Date.now() < entry.expiresAt) return entry.data;
+  fundamentalsCache.delete(symbol);
+  return null;
+}
+
+function setCachedFundamentals(symbol, data) {
+  // Cap cache size to prevent memory leaks
+  if (fundamentalsCache.size > 200) {
+    const oldest = fundamentalsCache.keys().next().value;
+    fundamentalsCache.delete(oldest);
+  }
+  fundamentalsCache.set(symbol, { data, expiresAt: Date.now() + FUNDAMENTALS_TTL });
+}
+
 const toPlainValue = (value) => {
   if (value == null) return null;
   if (typeof value === 'object') {
@@ -110,6 +130,12 @@ export async function GET(request) {
   }
 
   const symbolKey = symbol.trim().toUpperCase();
+
+  // Check cache first
+  const cached = getCachedFundamentals(symbolKey);
+  if (cached) {
+    return Response.json({ payload: encodePayload(cached) });
+  }
 
   const modules = [
     'earnings',
@@ -479,25 +505,29 @@ export async function GET(request) {
     trailingAnnualDividendYield: simplifiedSummaryDetail.trailingAnnualDividendYield ?? null,
   } : null;
 
+  const responseData = {
+    profile,
+    price,
+    valuations,
+    analysis,
+    assetProfile: simplifiedAssetProfile,
+    summaryDetail: simplifiedSummaryDetail,
+    keyStatistics: simplifiedKeyStatistics,
+    financialData: simplifiedFinancialData,
+    recommendations,
+    calendarData,
+    upgrades,
+    marketData,
+    governance,
+    financialHealth,
+    keyStatsExtras,
+    dividendInfo,
+    source: { provider: 'yahoo-finance2' },
+  };
+
+  setCachedFundamentals(symbolKey, responseData);
+
   return Response.json({
-    payload: encodePayload({
-      profile,
-      price,
-      valuations,
-      analysis,
-      assetProfile: simplifiedAssetProfile,
-      summaryDetail: simplifiedSummaryDetail,
-      keyStatistics: simplifiedKeyStatistics,
-      financialData: simplifiedFinancialData,
-      recommendations,
-      calendarData,
-      upgrades,
-      marketData,
-      governance,
-      financialHealth,
-      keyStatsExtras,
-      dividendInfo,
-      source: { provider: 'yahoo-finance2' },
-    }),
+    payload: encodePayload(responseData),
   });
 }

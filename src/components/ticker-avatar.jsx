@@ -2,10 +2,10 @@
 
 /* eslint-disable @next/next/no-img-element */
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import { useAppearanceMode } from "@/components/appearance-mode-provider";
 
-export function TickerAvatar({
+export const TickerAvatar = memo(function TickerAvatar({
   symbol,
   logo,
   size = "default", // "xs" | "sm" | "default"
@@ -49,4 +49,4 @@ export function TickerAvatar({
       )}
     </div>
   );
-}
+});

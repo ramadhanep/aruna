@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { TrendingUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -34,7 +34,7 @@ function RiskBadge({ level }) {
   return <Badge variant={RISK_VARIANTS[risk] || "success"}>{risk}</Badge>;
 }
 
-export function MoneyFlowCard({ report, isExpandedView = false }) {
+export const MoneyFlowCard = memo(function MoneyFlowCard({ report, isExpandedView = false }) {
   const t = useTranslations("moneyFlowCard");
   const [isNetView, setIsNetView] = useState(true);
 
@@ -359,4 +359,4 @@ export function MoneyFlowCard({ report, isExpandedView = false }) {
       </Card>
     </AccordionItem>
   );
-}
+});

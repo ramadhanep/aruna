@@ -1,10 +1,12 @@
 "use client";
 
+import { memo } from "react";
+
 /**
  * Semicircle gauge chart for analyst rating.
  * score: 1 (Strong Buy) → 5 (Strong Sell), matching Yahoo Finance's recommendationMean scale.
  */
-export function AnalystGaugeChart({ score }) {
+export const AnalystGaugeChart = memo(function AnalystGaugeChart({ score }) {
   const cx = 120, cy = 104, r = 78, trackW = 15;
   const toPoint = (a, rad) => ({
     x: cx + rad * Math.cos(a),
@@ -74,4 +76,4 @@ export function AnalystGaugeChart({ score }) {
       )}
     </svg>
   );
-}
+});

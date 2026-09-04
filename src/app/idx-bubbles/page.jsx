@@ -1,7 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import { MarketBubbles } from "@/components/market-bubbles";
+import dynamic from "next/dynamic";
+
+const MarketBubbles = dynamic(() => import("@/components/market-bubbles").then(mod => mod.MarketBubbles), {
+  ssr: false,
+  loading: () => <div className="fixed inset-0 w-screen h-screen bg-background animate-pulse" />,
+});
 
 export default function IdxBubblesPage() {
   // Lock scroll while fullscreen mode is active
