@@ -336,4 +336,4 @@ All API responses are XOR-encoded (except health, cron, and manifest).
 
 ## License
 
-Private — not for redistribution.
+[CC0 1.0 Universal](LICENSE) — Public Domain. No restrictions on use, modification, or distribution.
