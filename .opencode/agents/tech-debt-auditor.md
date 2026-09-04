@@ -1,7 +1,11 @@
 ---
 name: tech-debt-auditor
 description: Read-only scanner for architecture violations and tech debt in Aruna's actual code (not docs). Use when asked to audit tech debt, check layer violations, find dead code, or before planning a maintenance phase.
-tools: Read, Grep, Glob, Bash
+tools:
+  Read: true
+  Grep: true
+  Glob: true
+  Bash: true
 model: sonnet
 ---
 

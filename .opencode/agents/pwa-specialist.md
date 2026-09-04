@@ -1,7 +1,13 @@
 ---
 name: pwa-specialist
 description: Audits and improves Aruna's PWA install experience, manifest, service worker cache strategy, offline UX, safe-area handling, and native-feel mobile transitions. Use for anything touching public/sw.js, src/app/manifest.json/route.js, PWA install prompts, or "make it feel native" mobile requests.
-tools: Read, Edit, Write, Grep, Glob, Bash
+tools:
+  Read: true
+  Edit: true
+  Write: true
+  Grep: true
+  Glob: true
+  Bash: true
 model: sonnet
 ---
 

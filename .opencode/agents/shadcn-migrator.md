@@ -1,7 +1,12 @@
 ---
 name: ui-migrator
 description: Migrates Aruna UI toward primitives-first, one page or component at a time. Use when asked to convert hand-rolled Tailwind markup to primitives.
-tools: Read, Edit, Grep, Glob, Bash
+tools:
+  Read: true
+  Edit: true
+  Grep: true
+  Glob: true
+  Bash: true
 model: sonnet
 ---
 

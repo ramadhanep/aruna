@@ -7,7 +7,7 @@ import { useAuth } from "@/components/auth-provider";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Lock, Download, Flame, Globe, Zap, ArrowUpRight, ArrowDownRight, Gem, Magnet, Rotate3D, Axe, MessageCircleMore, Droplets } from "lucide-react";
+import { Loader2, Lock, Download, Flame, Globe, Zap, ArrowUpRight, ArrowDownRight, Gem, Magnet, Rotate3D, Axe, MessageCircleMore, Droplets, TreePine } from "lucide-react";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { SUPABASE_STORAGE_BASE } from "@/lib/supabase-storage";
 import { MOTION, DURATION_CLASS } from "@/lib/motion";
@@ -418,9 +418,9 @@ function MarketSymbolCard({ item, marketTimeframe }) {
   );
 }
 
-function ToolCard({ href, icon, title, subtitle, trailing }) {
+function ToolCard({ href, icon, title, subtitle, trailing, external, className: outerClass }) {
   const t = useTranslations();
-  const className = "group card-hover flex items-center justify-between gap-3 rounded-xl";
+  const className = cn("group card-hover flex items-center justify-between gap-3 rounded-xl", outerClass);
   const content = (
     <>
       <div className="flex items-center gap-3">
@@ -435,6 +435,9 @@ function ToolCard({ href, icon, title, subtitle, trailing }) {
       <span className="whitespace-nowrap text-xs font-medium text-foreground">{trailing ?? t("explore.open")}</span>
     </>
   );
+  if (external) {
+    return <a href={href} target="_blank" rel="noopener noreferrer" className={className}>{content}</a>;
+  }
   if (href.startsWith("#")) {
     return <a href={href} className={className}>{content}</a>;
   }
@@ -1108,6 +1111,18 @@ export default function ExplorePage() {
         </div>
       )}
 
+      {/* ───── Easeason Banner ───── */}
+      <a
+        href="https://easeason.vercel.app/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="hidden md:block w-full rounded-xl bg-foreground px-4 py-3 text-center text-1xs text-background transition-opacity hover:opacity-80"
+      >
+        <span className="font-semibold">New tool</span>{" "}
+        — Seasonal research & visualization for how assets move throughout the year, including U.S. election-cycle patterns.{" "}
+        <span className="underline decoration-dotted underline-offset-2">Try Easeason →</span>
+      </a>
+
       {/* ───── Market Pulse Ticker Strip ───── */}
       <section className="w-full overflow-x-auto scrollbar-hide -mx-1 px-1">
         <div className="hidden md:flex items-center gap-3 min-w-max">
@@ -1207,6 +1222,15 @@ export default function ExplorePage() {
 
         {/* Compact widgets */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <ToolCard
+            href="https://easeason.vercel.app/"
+            icon={<TreePine className="h-4 w-4" />}
+            title="Easeason"
+            subtitle="Seasonal asset research & election-cycle patterns"
+            external
+            className="md:hidden"
+          />
+
           <ToolCard
             href="/msci"
             icon={<Magnet className="h-4 w-4" />}

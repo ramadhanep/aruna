@@ -1,7 +1,12 @@
 ---
 name: ui-polish-specialist
 description: Tailwind cleanup, shimmer/skeleton loading states, and microinteraction polish for Aruna's mobile-first UI. Use when asked to clean up Tailwind class sprawl, add loading states, smooth transitions, or review UI for "generic AI slop" aesthetics. Can edit code when run via /execute-phase; otherwise treat as read+report.
-tools: Read, Edit, Grep, Glob, Bash
+tools:
+  Read: true
+  Edit: true
+  Grep: true
+  Glob: true
+  Bash: true
 model: sonnet
 ---
 

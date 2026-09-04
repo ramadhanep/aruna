@@ -21,8 +21,12 @@ export default async function ToolsPage() {
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {TOOLS_ITEMS.map((item) => {
           const Icon = item.icon;
+          const linkProps = item.external
+            ? { href: item.url, target: "_blank", rel: "noopener noreferrer" }
+            : { href: item.url };
+          const LinkComponent = item.external ? "a" : Link;
           return (
-            <Link key={item.url} href={item.url} className="group">
+            <LinkComponent key={item.url} {...linkProps} className="group">
               <Card className="h-full border-border/40 transition-colors hover:border-border/70 hover:bg-muted/20">
                 <CardContent className="flex items-center justify-between gap-3 p-4">
                   <div className="flex items-start gap-3">

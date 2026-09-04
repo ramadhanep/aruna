@@ -117,12 +117,16 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
             {toolsOpen && (
               <div className={`absolute top-full left-0 mt-2 w-64 rounded-lg border border-border bg-popover py-2 z-50 animate-in fade-in slide-in-from-top-2 ${DURATION_CLASS.fast} shadow-lg shadow-black/10`}>
                 {TOOLS_ITEMS.map((item) => {
-                  const isActive = pathname === item.url;
+                  const isActive = !item.external && pathname === item.url;
                   const Icon = item.icon;
+                  const linkProps = item.external
+                    ? { href: item.url, target: "_blank", rel: "noopener noreferrer" }
+                    : { href: item.url };
+                  const LinkComponent = item.external ? "a" : Link;
                   return (
-                    <Link
+                    <LinkComponent
                       key={item.url}
-                      href={item.url}
+                      {...linkProps}
                       onClick={() => setToolsOpen(false)}
                       className={cn(
                         "flex items-center gap-3 px-3.5 py-2.5 mx-1 rounded-md text-[13px] transition-colors",
@@ -136,7 +140,7 @@ export function DesktopNavbar({ onOpenAccountSidebar }) {
                         <p className="font-medium text-foreground">{item.title}</p>
                         <p className="text-1xs text-muted-foreground">{item.desc}</p>
                       </div>
-                    </Link>
+                    </LinkComponent>
                   );
                 })}
               </div>

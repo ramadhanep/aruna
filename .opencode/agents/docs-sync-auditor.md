@@ -1,7 +1,11 @@
 ---
 name: docs-sync-auditor
 description: Read-only auditor that compares every file in docs/ against the actual Aruna codebase and reports drift. Use when asked to check whether docs are accurate, run a docs audit, or before planning any maintenance phase (stale docs mislead every downstream decision).
-tools: Read, Grep, Glob, Bash
+tools:
+  Read: true
+  Grep: true
+  Glob: true
+  Bash: true
 model: sonnet
 ---
 

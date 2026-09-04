@@ -368,6 +368,19 @@ export default function HomePage() {
         <TrendingMarquee supabase={supabase} />
       </div>
 
+      <div className="lg:col-span-12">
+        <a
+          href="https://easeason.vercel.app/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden md:block w-full rounded-xl bg-foreground px-4 py-3 text-center text-1xs text-background transition-opacity hover:opacity-80"
+        >
+          <span className="font-semibold">New tool</span>{" "}
+          — Seasonal research & visualization for how assets move throughout the year, including U.S. election-cycle patterns.{" "}
+          <span className="underline decoration-dotted underline-offset-2">Try Easeason →</span>
+        </a>
+      </div>
+
       <div className="lg:col-span-12 lg:grid lg:grid-cols-12 lg:gap-6">
         <div className="lg:col-span-8 flex flex-col gap-4">
           <Card>
