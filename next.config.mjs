@@ -11,11 +11,8 @@ const nextConfig = {
   // 127.0.0.1 are always allowed; add other dev origins used to reach the server
   // (e.g. a .local mDNS hostname or LAN IP) so chunks load in the browser.
   allowedDevOrigins: [
-    'thursday.local',
     'localhost',
     '127.0.0.1',
-    '192.168.1.10',
-    '100.93.180.5',
   ],
   env: {
     NEXT_PUBLIC_APP_NAME: 'Aruna',

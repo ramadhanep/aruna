@@ -65,12 +65,11 @@ Email confirm, sign-up, and password-reset emails embed a `redirect_to` built
 from the browser origin (`window.location.origin`, see `auth-provider.jsx`).
 Supabase Auth rejects any `redirect_to` not in the allowlist with **HTTP 403
 "Redirect URL not allowed"** — this also surfaces as a 403 on the CORS
-preflight. The app passes the live origin so the production domain
-(`aruna.rdyy.me`) works with zero configuration, but any dev/testing origin
-(`.local` mDNS host, LAN IP, Tailscale IP like `100.93.180.5`) must be added
-under **Authentication → URL Configuration → Redirect URLs** (and set as Site
-URL if it is the canonical origin) before those flows return HTTP 200. This is
-dashboard config, not an app bug.
+preflight. The app passes the live origin so the production domain works with
+zero configuration, but any dev/testing origin (`.local` mDNS host, LAN IP,
+Tailscale IP) must be added under **Authentication → URL Configuration →
+Redirect URLs** (and set as Site URL if it is the canonical origin) before
+those flows return HTTP 200. This is dashboard config, not an app bug.
 
 ## Security Considerations
 
