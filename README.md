@@ -1,6 +1,6 @@
 # Aruna
 
-Aruna is a mobile-first stock market analysis app for Indonesian retail investors.
+Aruna is a mobile-first stock market analysis app for retail investors tracking IDX, US equities, and crypto.
 
 It brings together:
 - seasonal chart analysis
