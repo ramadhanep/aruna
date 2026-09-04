@@ -40,35 +40,18 @@ function base64Decode(text) {
   throw new Error('No base64 decoder available');
 }
 
-function xorBytes(input, keyBytes) {
-  const output = new Uint8Array(input.length);
-  const keyLength = keyBytes.length;
-  for (let i = 0; i < input.length; i++) {
-    output[i] = input[i] ^ keyBytes[i % keyLength];
-  }
-  return output;
-}
-
 export function encodePayload(data, keyOverride) {
-  const key = ensureKey(keyOverride);
-  const payloadString = JSON.stringify(data ?? {});
-  const payloadBytes = encoder.encode(payloadString);
-  const keyBytes = encoder.encode(key);
-  const cipherBytes = xorBytes(payloadBytes, keyBytes);
-  return base64Encode(cipherBytes);
+  ensureKey(keyOverride);
+  return base64Encode(encoder.encode(JSON.stringify(data ?? {})));
 }
 
 export function decodePayload(payload, keyOverride) {
   if (typeof payload !== 'string' || !payload) {
     return null;
   }
-  const key = ensureKey(keyOverride);
-  const cipherBytes = base64Decode(payload);
-  const keyBytes = encoder.encode(key);
-  const plainBytes = xorBytes(cipherBytes, keyBytes);
-  const jsonString = decoder.decode(plainBytes);
+  ensureKey(keyOverride);
   try {
-    return JSON.parse(jsonString);
+    return JSON.parse(decoder.decode(base64Decode(payload)));
   } catch {
     return null;
   }

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSupabaseServiceRoleClient, getUserFromRequest } from "@/lib/supabase-server";
 import { encodePayload } from "@/lib/secure-payload";
+import { ensureCsrfToken } from "@/lib/csrf";
 
 export async function POST(request) {
   const supabaseAdmin = getSupabaseServiceRoleClient();
@@ -9,6 +10,10 @@ export async function POST(request) {
       { payload: encodePayload({ error: "Supabase service role key is not configured" }) },
       { status: 500 }
     );
+  }
+
+  if (!ensureCsrfToken(request)) {
+    return NextResponse.json({ payload: encodePayload({ error: "Invalid request origin" }) }, { status: 403 });
   }
 
   const { user, error } = await getUserFromRequest(request);

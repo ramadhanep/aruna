@@ -3,6 +3,7 @@ import { encodePayload } from '@/lib/secure-payload';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { getSupabaseServiceRoleClient } from '@/lib/supabase-server';
+import { ensureCsrfToken } from '@/lib/csrf';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -130,6 +131,13 @@ export async function POST(request) {
       return NextResponse.json(
         { payload: encodePayload({ error: 'Supabase configuration missing' }) },
         { status: 500 }
+      );
+    }
+
+    if (!ensureCsrfToken(request)) {
+      return NextResponse.json(
+        { payload: encodePayload({ error: 'Invalid request origin' }) },
+        { status: 403 }
       );
     }
 
