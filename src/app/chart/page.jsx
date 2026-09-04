@@ -58,7 +58,7 @@ import { ChartSeasonalityPanel } from "@/components/chart-seasonality-panel";
 import { ChartNewsTab } from './chart-news-tab';
 import { ChartProfileTab } from './chart-profile-tab';
 import { ChartKeyStatsTab } from './chart-keystats-tab';
-import { ChartAnalysisTab } from './chart-analysis-tab';
+
 import { ChartFinancialsTab } from './chart-financials-tab';
 import {
   DropdownMenu,
