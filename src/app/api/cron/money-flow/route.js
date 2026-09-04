@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import {
   buildChartUrl,
   buildMarketDetectorUrl,
@@ -12,12 +11,11 @@ import {
   parseScreenerTemplatePayload,
   toNumber,
 } from "@/lib/money-flow";
+import { getSupabaseServiceRoleClient } from "@/lib/supabase-server";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const DEFAULT_SCREENER_TEMPLATE_ID = "5461641";
 
 function buildErrorResponse(message, status = 400) {
@@ -151,7 +149,8 @@ export async function GET(request) {
     });
   }
 
-  if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+  const supabase = getSupabaseServiceRoleClient();
+  if (!supabase) {
     return buildErrorResponse("Supabase configuration missing", 500);
   }
 
@@ -174,8 +173,6 @@ export async function GET(request) {
   if (!screenerUniverse.symbols.length) {
     return buildErrorResponse("Screener template returned empty symbol list", 400);
   }
-
-  const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
   const reportDate = getISODate(new Date());
 

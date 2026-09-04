@@ -239,8 +239,9 @@ export default function PortfolioTrackerPage() {
   } = useAuth();
   const isAuthenticated = Boolean(user);
   const [holdingsSort, setHoldingsSort] = useState('alpha');
-  const [currency, setCurrency] = useState(() => { const d = loadPortfolio(); return d?.currency ?? 'IDR'; });
-  const [isPortfolioHidden, setIsPortfolioHidden] = useState(() => { const d = loadPortfolio(); return d?.visibilityHidden ?? false; });
+  const initialPortfolio = loadPortfolio();
+  const [currency, setCurrency] = useState(() => initialPortfolio?.currency ?? 'IDR');
+  const [isPortfolioHidden, setIsPortfolioHidden] = useState(() => initialPortfolio?.visibilityHidden ?? false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingIndex, setEditingIndex] = useState(null);
   const [symbolQuery, setSymbolQuery] = useState('');

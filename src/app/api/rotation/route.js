@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { encodePayload } from '@/lib/secure-payload';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+import { getSupabaseServiceRoleClient } from '@/lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -15,14 +12,13 @@ export const revalidate = 0;
  */
 export async function GET() {
   try {
-    if (!supabaseUrl || !supabaseServiceKey) {
+    const supabase = getSupabaseServiceRoleClient();
+    if (!supabase) {
       return NextResponse.json(
         { payload: encodePayload({ error: 'Supabase configuration missing' }) },
         { status: 500 }
       );
     }
-
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch top 200 stocks by market cap
     const { data: stocks, error } = await supabase

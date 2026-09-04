@@ -111,23 +111,6 @@ export async function GET(request) {
 
   const symbolKey = symbol.trim().toUpperCase();
 
-  let quote = null;
-  try {
-    quote = await yahooFinance.quote(symbolKey, {
-      lang: 'en-US',
-      region: 'US',
-    });
-    await writeYahooRawLog({
-      endpoint: 'fundamentals-quote',
-      symbol: symbolKey,
-      requestParams: { lang: 'en-US', region: 'US' },
-      payload: quote,
-    });
-  } catch (error) {
-    console.warn(`Failed to fetch quote for ${symbolKey}`, error);
-  }
-
-  let summaryModules = null;
   const modules = [
     'earnings',
     'assetProfile',
@@ -138,41 +121,66 @@ export async function GET(request) {
     'calendarEvents',
     'upgradeDowngradeHistory',
   ];
-  try {
-    summaryModules = await yahooFinance.quoteSummary(symbolKey, {
-      modules,
-    });
-    await writeYahooRawLog({
-      endpoint: 'fundamentals-quoteSummary',
-      symbol: symbolKey,
-      requestParams: { modules },
-      payload: summaryModules,
-    });
-  } catch (error) {
-    if (error?.name === 'FailedYahooValidationError') {
-      // Yahoo schema drift (e.g. a new enum value) fails the whole summary
-      // even though the payload is otherwise usable. Retry without validation
-      // so the fundamentals fetch survives upstream schema changes.
-      console.warn(`Yahoo schema validation failed for ${symbolKey}, retrying without validation`, error);
+
+  // Run both Yahoo Finance calls in parallel — they are independent.
+  const [quote, summaryModules] = await Promise.all([
+    // 1) Quote
+    (async () => {
       try {
-        summaryModules = await yahooFinance.quoteSummary(
-          symbolKey,
-          { modules },
-          { validateResult: false }
-        );
-        await writeYahooRawLog({
-          endpoint: 'fundamentals-quoteSummary-unvalidated',
-          symbol: symbolKey,
-          requestParams: { modules, validateResult: false },
-          payload: summaryModules,
+        const q = await yahooFinance.quote(symbolKey, {
+          lang: 'en-US',
+          region: 'US',
         });
-      } catch (retryError) {
-        console.warn(`Retry without validation also failed for ${symbolKey}`, retryError);
+        await writeYahooRawLog({
+          endpoint: 'fundamentals-quote',
+          symbol: symbolKey,
+          requestParams: { lang: 'en-US', region: 'US' },
+          payload: q,
+        });
+        return q;
+      } catch (error) {
+        console.warn(`Failed to fetch quote for ${symbolKey}`, error);
+        return null;
       }
-    } else {
-      console.warn(`Failed to fetch fundamentals summary for ${symbolKey}`, error);
-    }
-  }
+    })(),
+
+    // 2) QuoteSummary
+    (async () => {
+      try {
+        const s = await yahooFinance.quoteSummary(symbolKey, { modules });
+        await writeYahooRawLog({
+          endpoint: 'fundamentals-quoteSummary',
+          symbol: symbolKey,
+          requestParams: { modules },
+          payload: s,
+        });
+        return s;
+      } catch (error) {
+        if (error?.name === 'FailedYahooValidationError') {
+          console.warn(`Yahoo schema validation failed for ${symbolKey}, retrying without validation`, error);
+          try {
+            const s2 = await yahooFinance.quoteSummary(
+              symbolKey,
+              { modules },
+              { validateResult: false }
+            );
+            await writeYahooRawLog({
+              endpoint: 'fundamentals-quoteSummary-unvalidated',
+              symbol: symbolKey,
+              requestParams: { modules, validateResult: false },
+              payload: s2,
+            });
+            return s2;
+          } catch (retryError) {
+            console.warn(`Retry without validation also failed for ${symbolKey}`, retryError);
+            return null;
+          }
+        }
+        console.warn(`Failed to fetch fundamentals summary for ${symbolKey}`, error);
+        return null;
+      }
+    })(),
+  ]);
 
   const earningsSummary = summaryModules?.earnings ?? null;
   const assetProfile = summaryModules?.assetProfile ?? null;

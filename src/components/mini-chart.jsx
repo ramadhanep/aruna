@@ -1,10 +1,20 @@
-function MiniChart({ data, isPositive, width = 72, height = 36 }) {
+import { memo, useMemo } from "react";
+
+const MiniChart = memo(function MiniChart({ data, isPositive, width = 72, height = 36 }) {
+  const { min, max } = useMemo(() => {
+    if (!Array.isArray(data) || data.length < 2) {
+      return { min: 0, max: 0 };
+    }
+    return {
+      min: Math.min(...data),
+      max: Math.max(...data),
+    };
+  }, [data]);
+
   if (!Array.isArray(data) || data.length < 2) {
     return <div style={{ width, height }} className="rounded-md bg-muted/40" />;
   }
 
-  const min = Math.min(...data);
-  const max = Math.max(...data);
   const range = max - min || 1;
 
   const coordinates = data.map((value, index) => {
@@ -39,6 +49,6 @@ function MiniChart({ data, isPositive, width = 72, height = 36 }) {
       />
     </svg>
   );
-}
+});
 
 export { MiniChart }

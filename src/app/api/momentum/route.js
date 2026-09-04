@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { encodePayload } from '@/lib/secure-payload';
 import { getIdxLogoUrl } from '@/lib/supabase-storage';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+import { getSupabaseServiceRoleClient } from '@/lib/supabase-server';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -40,14 +37,14 @@ function getMomentumStatus(score) {
  */
 export async function GET(request) {
   try {
-    if (!supabaseUrl || !supabaseServiceKey) {
+    const supabase = getSupabaseServiceRoleClient();
+    if (!supabase) {
       return NextResponse.json(
         { payload: encodePayload({ error: 'Supabase configuration missing' }) },
         { status: 500 }
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { searchParams } = new URL(request.url);
     const filter = searchParams.get('filter') || 'all'; // all, bullish, bearish, gainers, losers
 

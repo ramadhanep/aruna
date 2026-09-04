@@ -1,11 +1,10 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { encodePayload } from '@/lib/secure-payload';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
+import { getSupabaseServiceRoleClient } from '@/lib/supabase-server';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 export const dynamic = 'force-dynamic';
@@ -42,14 +41,14 @@ function extractMentions(content) {
  */
 export async function GET(request) {
   try {
-    if (!supabaseUrl || !supabaseServiceKey) {
+    const supabase = getSupabaseServiceRoleClient();
+    if (!supabase) {
       return NextResponse.json(
         { payload: encodePayload({ error: 'Supabase configuration missing' }) },
         { status: 500 }
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '50');
     const offset = parseInt(searchParams.get('offset') || '0');

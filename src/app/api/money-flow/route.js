@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
 import { encodePayload } from "@/lib/secure-payload";
+import { getSupabaseServiceRoleClient } from "@/lib/supabase-server";
 import {
   MONEY_FLOW_TIMEFRAMES,
   buildTopPicks,
@@ -14,8 +14,6 @@ import {
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const MONEY_FLOW_ENABLED = process.env.MONEY_FLOW_ENABLED !== "false";
 
 function getSummaryStats(reports) {
@@ -82,7 +80,8 @@ export async function GET(request) {
   }
 
   try {
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    const supabase = getSupabaseServiceRoleClient();
+    if (!supabase) {
       return NextResponse.json(
         { payload: encodePayload({ error: "Supabase configuration missing" }) },
         { status: 500 }
@@ -102,17 +101,27 @@ export async function GET(request) {
     const limit = Number.isFinite(limitParam) ? Math.max(1, Math.min(limitParam, 200)) : 50;
     const minScore = Number.isFinite(minScoreParam) ? minScoreParam : 0;
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+    // Run both queries in parallel — they are independent.
+    const [reportsResult, weeklyResult] = await Promise.all([
+      supabase
+        .from("money_flow_reports")
+        .select(
+          "id,symbol,report_date,money_flow_score,broker_accdist,top1_percent,top3_percent,top5_percent,total_buyer,total_seller,value,volume,today_volume,avg_volume_20,volume_spike,current_price,price_1m_ago,price_change_1m,price_change_5d,price_change_10d,price_change_20d,price_change_3m,price_range_10d,signal,score_breakdown,broker_summary,broker_inventory,broker_cost_analysis,broker_concentration,absorption_strength,accumulation_persistence,market_phase,manipulation_risk,analysis_summary,screener_id,screener_name,screener_snapshot,created_at"
+        )
+        .gte("report_date", startDate)
+        .eq("timeframe", timeframeKey)
+        .order("report_date", { ascending: false })
+        .limit(5000),
+      supabase
+        .from("weekly_reports")
+        .select("week_start,top_picks,created_at,source_count,min_score,screener_id,screener_name,screener_total_rows,metadata")
+        .order("week_start", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
 
-    const { data, error } = await supabase
-      .from("money_flow_reports")
-      .select(
-        "id,symbol,report_date,money_flow_score,broker_accdist,top1_percent,top3_percent,top5_percent,total_buyer,total_seller,value,volume,today_volume,avg_volume_20,volume_spike,current_price,price_1m_ago,price_change_1m,price_change_5d,price_change_10d,price_change_20d,price_change_3m,price_range_10d,signal,score_breakdown,broker_summary,broker_inventory,broker_cost_analysis,broker_concentration,absorption_strength,accumulation_persistence,market_phase,manipulation_risk,analysis_summary,screener_id,screener_name,screener_snapshot,created_at"
-      )
-      .gte("report_date", startDate)
-      .eq("timeframe", timeframeKey)
-      .order("report_date", { ascending: false })
-      .limit(5000);
+    const { data, error } = reportsResult;
+    const { data: latestWeeklyReport, error: weeklyError } = weeklyResult;
 
     if (error) {
       console.error("Money-flow query failed", error);
@@ -130,13 +139,6 @@ export async function GET(request) {
 
     const sortedReports = sortMoneyFlowReports(reports, sortBy, order);
     const limitedReports = sortedReports.slice(0, limit);
-
-    const { data: latestWeeklyReport, error: weeklyError } = await supabase
-      .from("weekly_reports")
-      .select("week_start,top_picks,created_at,source_count,min_score,screener_id,screener_name,screener_total_rows,metadata")
-      .order("week_start", { ascending: false })
-      .limit(1)
-      .maybeSingle();
 
     if (weeklyError) {
       console.error("Failed to fetch weekly report", weeklyError);

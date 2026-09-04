@@ -1395,7 +1395,7 @@ const renderNewsTab = () => {
             <Card
               key={idx}
               className="hover:cursor-pointer hover:shadow-sm transition-shadow"
-              onClick={() => window.open(link, '_blank')}
+              onClick={() => window.open(link, '_blank', 'noopener,noreferrer')}
               style={{ cursor: 'pointer' }}
             >
               <CardHeader className="flex items-start gap-3 px-1 pb-2">

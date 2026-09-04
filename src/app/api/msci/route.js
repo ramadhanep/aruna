@@ -1,13 +1,10 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import { encodePayload } from '@/lib/secure-payload';
 import { calculateMSCIMetrics, calculateSummaryStats } from '@/lib/msci-calculations';
 import { getIdxLogoUrl } from '@/lib/supabase-storage';
 import yahooFinance from '@/lib/yahoo-finance';
 import { readMarketDataCache, writeMarketDataCache, dedupeInflight } from '@/lib/market-data-cache';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+import { getSupabaseServiceRoleClient } from '@/lib/supabase-server';
 
 const FX_SYMBOL = 'IDR=X';
 const FALLBACK_USD_TO_IDR = 15_800;
@@ -52,7 +49,8 @@ export const revalidate = 0;
  */
 export async function GET(request) {
   try {
-    if (!supabaseUrl || !supabaseServiceKey) {
+    const supabase = getSupabaseServiceRoleClient();
+    if (!supabase) {
       return NextResponse.json(
         { payload: encodePayload({ error: 'Supabase configuration missing' }) },
         { status: 500 }
@@ -61,7 +59,6 @@ export async function GET(request) {
 
     const usdToIdr = await getUsdToIdr();
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const { searchParams } = new URL(request.url);
     const indexFilter = searchParams.get('index'); // 'standard' or 'small_cap'
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { memo } from "react";
 import { useTranslations } from "next-intl";
 import { TrendingUp, TrendingDown, AlertTriangle } from "lucide-react";
 import { TickerAvatar } from "@/components/ticker-avatar";
@@ -7,7 +8,7 @@ import { formatPriceTrim, formatTickerDisplay, getChangeTone } from "@/lib/utils
 import { DURATION_CLASS } from "@/lib/motion";
 import { Badge } from "@/components/ui/badge";
 
-export function TickerRow({
+export const TickerRow = memo(function TickerRow({
   symbol,
   href,
   logo,
@@ -63,4 +64,4 @@ export function TickerRow({
       </div>
     </Link>
   );
-}
+});
