@@ -41,7 +41,7 @@ export default async function ToolsPage() {
                   <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                 </CardContent>
               </Card>
-            </Link>
+            </LinkComponent>
           );
         })}
       </section>
