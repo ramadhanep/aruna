@@ -11,10 +11,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
-import { Command, CommandItem, CommandList } from '@/components/ui/command';
 import { Plus, MoreVertical, Pencil, Trash2, Loader2, CreditCard, TrendingUp, ArrowUpDown, Check, Eye, EyeClosed, LogIn } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { useAuth } from '@/components/auth-provider';
+import { useAuth, useData } from '@/components/auth-provider';
 import { searchSymbols, fetchLatestQuote } from '@/lib/api-client';
 import { TickerAvatar } from '@/components/ticker-avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -92,24 +91,19 @@ function AddAssetForm({
             />
             {loadingSearch && <p className="text-xs text-muted-foreground">{t("searching")}</p>}
             {!loadingSearch && symbolResults.length > 0 && (
-              <Command
-                shouldFilter={false}
-                className="absolute top-full left-0 right-0 z-20 mt-1 max-h-40 overflow-auto rounded-md border border-border bg-popover p-1 shadow-md"
-              >
-                <CommandList className="max-h-none">
-                  {symbolResults.map(r => (
-                    <CommandItem
-                      key={r.symbol}
-                      value={r.symbol}
-                      onSelect={() => handleSelectSymbol(r)}
-                      className="cursor-pointer"
-                    >
-                      <span className="font-medium">{formatTickerDisplay(r.symbol)}</span>{" "}
-                      <span className="text-muted-foreground">{r.name}</span>
-                    </CommandItem>
-                  ))}
-                </CommandList>
-              </Command>
+              <div className="absolute top-full left-0 right-0 z-20 mt-1 max-h-40 overflow-auto rounded-md border border-border bg-popover p-1 shadow-md">
+                {symbolResults.map(r => (
+                  <button
+                    key={r.symbol}
+                    type="button"
+                    onClick={() => handleSelectSymbol(r)}
+                    className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                  >
+                    <span className="font-medium">{formatTickerDisplay(r.symbol)}</span>{" "}
+                    <span className="text-muted-foreground">{r.name}</span>
+                  </button>
+                ))}
+              </div>
             )}
           </div>
 
@@ -234,9 +228,11 @@ export default function PortfolioTrackerPage() {
   const {
     user,
     loading: authLoading,
-    syncPortfolio,
     supabaseConfigured,
   } = useAuth();
+  const {
+    syncPortfolio,
+  } = useData();
   const isAuthenticated = Boolean(user);
   const [holdingsSort, setHoldingsSort] = useState('alpha');
   const initialPortfolio = loadPortfolio();
@@ -295,7 +291,7 @@ export default function PortfolioTrackerPage() {
     if (!dataReady) return;
     savePortfolio({ entries, currency, visibilityHidden: isPortfolioHidden });
     if (isAuthenticated) {
-      syncPortfolio(entries).catch(() => {});
+      syncPortfolio(entries).catch(() => toast.error('Failed to save changes'));
     }
   }, [entries, isAuthenticated, syncPortfolio, dataReady, currency, isPortfolioHidden]);
 

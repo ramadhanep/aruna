@@ -99,10 +99,6 @@ export function getStatusBadge(progress) {
   };
 }
 
-// Re-export shared format functions from utils for backward compatibility
-export { formatMarketCap, formatPrice, formatPercent } from '@/lib/utils';
-
-
 /**
  * Calculate all MSCI metrics for a stock
  * @param {object} stock - Stock object with price and fundamental data

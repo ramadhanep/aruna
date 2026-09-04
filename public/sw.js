@@ -6,6 +6,9 @@ const RUNTIME_CACHE = `aruna-runtime-${VERSION}`;
 const ASSET_CACHE = `aruna-assets-${VERSION}`;
 const OFFLINE_URL = '/offline';
 
+const MAX_RUNTIME_ENTRIES = 100;
+const API_CACHE_TTL_MS = 5 * 60 * 1000;
+
 const APP_SHELL = [
   '/',
   '/?source=pwa',
@@ -69,6 +72,23 @@ const cachePut = async (cacheName, request, response) => {
   await cache.put(request, response);
 };
 
+const trimCache = async (cacheName, maxEntries) => {
+  const cache = await caches.open(cacheName);
+  const keys = await cache.keys();
+  if (keys.length > maxEntries) {
+    await Promise.all(keys.slice(0, keys.length - maxEntries).map((k) => cache.delete(k)));
+  }
+};
+
+const isApiCacheFresh = async (cacheName, request) => {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+  if (!cached) return false;
+  const header = cached.headers.get('sw-cached-at');
+  if (!header) return false;
+  return Date.now() - Number(header) < API_CACHE_TTL_MS;
+};
+
 const handlePageRequest = async (request) => {
   try {
     const response = await fetch(request);
@@ -85,9 +105,23 @@ const handlePageRequest = async (request) => {
 };
 
 const networkFirst = async (cacheName, request) => {
+  if (await isApiCacheFresh(cacheName, request)) {
+    const cached = await caches.open(cacheName).then((c) => c.match(request));
+    if (cached) return cached;
+  }
   try {
     const response = await fetch(request);
-    cachePut(cacheName, request, response.clone());
+    const clone = response.clone();
+    if (clone.ok) {
+      const cache = await caches.open(cacheName);
+      const stamped = new Response(clone.body, {
+        status: clone.status,
+        statusText: clone.statusText,
+        headers: clone.headers,
+      });
+      stamped.headers.set('sw-cached-at', String(Date.now()));
+      await cache.put(request, stamped);
+    }
     return response;
   } catch (error) {
     const cached = await caches.match(request);
@@ -138,6 +172,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   event.respondWith(staleWhileRevalidate(RUNTIME_CACHE, request));
+  event.waitUntil(trimCache(RUNTIME_CACHE, MAX_RUNTIME_ENTRIES));
 });
 
 self.addEventListener('message', (event) => {

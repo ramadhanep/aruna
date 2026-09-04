@@ -7,6 +7,8 @@
     "cancel": "Batal",
     "done": "Selesai",
     "search": "Cari",
-    "back": "Kembali"
+    "back": "Kembali",
+    "syncFailed": "Gagal menyimpan perubahan",
+    "refreshFailed": "Gagal memperbarui data"
   }
 }

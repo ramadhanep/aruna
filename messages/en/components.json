@@ -2,7 +2,8 @@
   "chartHeaderBar": {
     "selectCycles": "Select cycles",
     "addFavorite": "Add {symbol} to favorites",
-    "removeFavorite": "Remove {symbol} from favorites"
+    "removeFavorite": "Remove {symbol} from favorites",
+    "openSearch": "Open search"
   },
   "chartSeasonality": {
     "unavailable": "Seasonality data unavailable for {symbol}.",

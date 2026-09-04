@@ -2,7 +2,8 @@
   "chartHeaderBar": {
     "selectCycles": "Pilih siklus",
     "addFavorite": "Tambahkan {symbol} ke favorit",
-    "removeFavorite": "Hapus {symbol} dari favorit"
+    "removeFavorite": "Hapus {symbol} dari favorit",
+    "openSearch": "Buka pencarian"
   },
   "chartSeasonality": {
     "unavailable": "Data musiman tidak tersedia untuk {symbol}.",

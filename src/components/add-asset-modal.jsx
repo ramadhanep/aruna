@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Command, CommandItem, CommandList } from '@/components/ui/command';
 import { searchSymbols, fetchLatestQuote } from '@/lib/api-client';
 import { formatTickerDisplay } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -155,24 +154,19 @@ export function AddAssetModal({ open, onOpenChange, initialSymbol = '', onSave }
                 />
                 {loadingSearch && <p className="text-xs text-muted-foreground">{t("searching")}</p>}
                 {!loadingSearch && symbolResults.length > 0 && (
-                  <Command
-                    shouldFilter={false}
-                    className="absolute top-full left-0 right-0 z-20 mt-1 max-h-40 overflow-auto rounded-md border border-border bg-popover p-1 shadow-md"
-                  >
-                    <CommandList className="max-h-none">
-                      {symbolResults.map(r => (
-                        <CommandItem
-                          key={r.symbol}
-                          value={r.symbol}
-                          onSelect={() => handleSelectSymbol(r)}
-                          className="cursor-pointer"
-                        >
-                          <span className="font-medium">{formatTickerDisplay(r.symbol)}</span>{" "}
-                          <span className="text-muted-foreground">{r.name}</span>
-                        </CommandItem>
-                      ))}
-                    </CommandList>
-                  </Command>
+                  <div className="absolute top-full left-0 right-0 z-20 mt-1 max-h-40 overflow-auto rounded-md border border-border bg-popover p-1 shadow-md">
+                    {symbolResults.map(r => (
+                      <button
+                        key={r.symbol}
+                        type="button"
+                        onClick={() => handleSelectSymbol(r)}
+                        className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                      >
+                        <span className="font-medium">{formatTickerDisplay(r.symbol)}</span>{" "}
+                        <span className="text-muted-foreground">{r.name}</span>
+                      </button>
+                    ))}
+                  </div>
                 )}
               </div>
 

@@ -371,18 +371,24 @@ Zero loading states for route transitions. Users see blank content during naviga
 - [x] React.memo on MoneyFlowCard, AnalystGaugeChart, TickerAvatar (1.1)
 - [x] MarketBubbles drag throttled with requestAnimationFrame (1.4)
 - [x] MarketBubbles dynamic import for lazy loading (3.2)
-- [ ] Split AuthProvider context — skipped (too risky for quick pass)
+- [x] Split AuthProvider context — done in Phase 5 (1.2)
 
-### Phase 3: Architecture (in progress)
+### Phase 3: Architecture ✅
 - [x] Extract isWithinMarketHours to `src/lib/market-hours.js` (5.1)
 - [x] Extract batch-quote fetch in trending-marquee to use `fetchBatchQuotes` (5.3)
 - [x] Move styled JSX keyframes to globals.css (6.2)
 - [x] Remove duplicate scrollbar-hide CSS utilities (6.1)
-- [ ] Split chart/page.jsx God Component (2775 lines)
-- [ ] Add loading.jsx to route segments
+- [x] Extract format callbacks to `src/lib/chart-formatters.js` (4) — 2677 lines remain
+- [x] Add loading.jsx to route segments (10.3) — all 14 routes
 
-### Phase 4: Polish (pending)
-- [ ] Error feedback for sync failures
-- [ ] aria-labels on icon buttons
-- [ ] Dead code cleanup
-- [ ] Remove cmdk dependency
+### Phase 4: Polish ✅
+- [x] Error feedback for sync failures (10.1, 10.2)
+- [x] aria-labels on icon buttons (11.1)
+- [x] Dead code cleanup (12)
+- [x] Remove cmdk dependency (3.3)
+
+### Phase 5: Additional Polish ✅
+- [x] Consolidate explore page state — grouped 15 useState into market/pwa/refresh (1.5)
+- [x] Split AuthProvider context into AuthContext + DataContext (1.2)
+- [x] Remove redundant .font-semibold CSS override (6.3)
+- [x] Service worker cache limits + API TTL expiry (8.1, 8.2)

@@ -354,10 +354,6 @@ button[data-slot="dialog-close"].ring-offset-background {
   display: none;
 }
 
-.font-semibold {
-  font-weight: 600;
-}
-
 /* Profit/Loss semantic colors */
 :root {
   --profit: #10b981;

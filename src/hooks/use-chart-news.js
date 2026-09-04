@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { fetchEncodedJson } from '@/lib/api-client';
+import { toast } from 'sonner';
 
 export function useChartNews(symbol, infoTab) {
   const [news, setNews] = useState(null);
@@ -27,6 +28,7 @@ export function useChartNews(symbol, infoTab) {
         }
       } catch (error) {
         console.warn('Failed to fetch news', error);
+        toast.error('Failed to load news');
         if (!cancelled) {
           setNews(null);
         }

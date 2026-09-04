@@ -28,9 +28,10 @@ const LazySeasonalityChart = dynamic(() => import('@/components/recharts/seasona
 import { Loader2, Sun, MoonStar, Clock3, Fullscreen, ArrowLeft, Settings, CandlestickChart, LineChart, BarChart2 } from "lucide-react";
 import { Tooltip as RadixTooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import { useTheme } from 'next-themes';
+import { toast } from 'sonner';
 import { AddAssetModal } from "@/components/add-asset-modal";
 import { SymbolSearchDialog } from "@/components/header-symbol-search";
-import { useAuth } from "@/components/auth-provider";
+import { useAuth, useData } from "@/components/auth-provider";
 import { NormalCandlestickChart } from "@/components/normal-candlestick-chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useChartState } from '@/hooks/use-chart-state';
@@ -45,7 +46,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DEFAULT_WATCHLIST, getDefaultWatchlist } from "@/lib/default-watchlist";
 import { ArunaWatermark } from "@/components/aruna-watermark";
 import { TickerAvatar } from "@/components/ticker-avatar";
-import { formatTickerDisplay, getChangeTone, formatPrice, formatPriceTrim } from "@/lib/utils";
+import { formatTickerDisplay, getChangeTone, formatPriceTrim } from "@/lib/utils";
+import { formatPriceValue, formatPlainNumber, formatDetailedCurrency, formatQuantityValue, formatCompactCurrency, formatRatio, formatPercentage, formatTooltipDate, formatNormalTimestamp, formatPeriodLabel } from "@/lib/chart-formatters";
 import { MOTION } from "@/lib/motion";
 import { ChartHeaderBar } from "@/components/chart-header-bar";
 import { SegmentedControl } from "@/components/ui/segmented-control";
@@ -138,13 +140,15 @@ function ElectionCyclePageContent() {
   const {
     supabase,
     user,
+  } = useAuth();
+  const {
     remoteWatchlist,
     watchlistLoaded,
     syncWatchlist,
     remotePortfolio,
     portfolioLoaded,
     syncPortfolio,
-  } = useAuth();
+  } = useData();
   const isAuthenticated = Boolean(user);
 
   const chartState = useChartState();
@@ -610,44 +614,6 @@ function ElectionCyclePageContent() {
       ? filteredNormalChartData.length > 0 || normalSeriesLoading || normalSeriesError
       : hasCycleChartData);
 
-  const formatTooltipDate = (dayOfYear) => {
-    const date = new Date(2000, 0, 1);
-    date.setDate(date.getDate() + dayOfYear - 1);
-    return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-  };
-
-  const formatNormalTimestamp = useCallback(
-    (timestamp) => {
-      const date = new Date(Number(timestamp));
-      if (Number.isNaN(date.getTime())) return '';
-      if (normalTimeframe === '15m') {
-        return date.toLocaleString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-          minute: '2-digit',
-        });
-      }
-      if (normalTimeframe === '1h' || normalTimeframe === '2h' || normalTimeframe === '4h') {
-        return date.toLocaleString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          hour: 'numeric',
-        });
-      }
-      if (normalTimeframe === 'M') {
-        return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-      }
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    },
-    [normalTimeframe]
-  );
-
-  const formatPriceValue = useCallback(
-    (value) => formatPriceTrim(value, symbol, { fallback: '-' }),
-    [symbol]
-  );
-
   const currencyCode = fundamentals?.profile?.currency || symbolInfo?.currency || 'USD';
   const currencyFractionDigits = useMemo(
     () => (currencyCode === 'IDR' ? 0 : 2),
@@ -662,55 +628,6 @@ function ElectionCyclePageContent() {
       }),
     []
   );
-
-  const formatPlainNumber = useCallback((value) => {
-    if (value == null || value === '') return '—';
-    const numeric = Number(value);
-    if (Number.isFinite(numeric)) {
-      return formatPrice(numeric, {
-        locale: 'en-US',
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-        zeroIsEmpty: false,
-      });
-    }
-    return String(value);
-  }, []);
-
-  const formatDetailedCurrency = useCallback((value) => {
-    if (value == null || Number.isNaN(Number(value))) return '—';
-    return Number(value).toLocaleString('en-US', {
-      minimumFractionDigits: currencyFractionDigits,
-      maximumFractionDigits: currencyFractionDigits,
-    });
-  }, [currencyFractionDigits]);
-
-  const formatQuantityValue = useCallback((value) => {
-    if (value == null || Number.isNaN(Number(value))) return '—';
-    return Number(value).toLocaleString('en-US', {
-      maximumFractionDigits: 2,
-    });
-  }, []);
-
-  const formatCompactCurrency = useCallback(
-    (value) => {
-      if (value == null || Number.isNaN(Number(value))) return '—';
-      const numeric = Number(value);
-      return `${compactNumberFormatter.format(numeric)} ${currencyCode}`;
-    },
-    [compactNumberFormatter, currencyCode]
-  );
-
-  const formatRatio = useCallback((value) => {
-    if (value == null || Number.isNaN(Number(value))) return '—';
-    return Number(value).toFixed(2);
-  }, []);
-
-  const formatPercentage = useCallback((value) => {
-    if (value == null || Number.isNaN(Number(value))) return '—';
-    const numeric = Number(value);
-    return `${numeric >= 0 ? '+' : ''}${numeric.toFixed(1)}%`;
-  }, []);
 
   const quickStats = useMemo(() => {
     if (!fundamentals) return [];
@@ -745,8 +662,8 @@ function ElectionCyclePageContent() {
         : null;
 
     const stats = [
-      { label: 'Market Cap', value: formatCompactCurrency(valuations.marketCap) },
-      { label: 'Enterprise Value', value: formatCompactCurrency(valuations.enterpriseValue) },
+      { label: 'Market Cap', value: formatCompactCurrency(valuations.marketCap, compactNumberFormatter, currencyCode) },
+      { label: 'Enterprise Value', value: formatCompactCurrency(valuations.enterpriseValue, compactNumberFormatter, currencyCode) },
       { label: 'P/E (TTM)', value: formatRatio(valuations.trailingPe) },
       { label: 'Forward P/E', value: formatRatio(valuations.forwardPe) },
       { label: 'P/B', value: formatRatio(valuations.priceToBook) },
@@ -800,7 +717,7 @@ function ElectionCyclePageContent() {
       { label: t('open'), value: formatPlainNumber(priceInfo.open) },
     ];
     return stats.filter((item) => item.value && item.value !== '—');
-  }, [fundamentals, formatCompactCurrency, formatRatio, formatPlainNumber, displayedPrice, symbolInfo?.currentPrice, t]);
+  }, [fundamentals, compactNumberFormatter, currencyCode, displayedPrice, symbolInfo?.currentPrice, t]);
 
   const currentYtdReturn = useMemo(() => {
     const currentLine = rawLinesData.find((entry) => entry.key === 'current');
@@ -844,7 +761,7 @@ function ElectionCyclePageContent() {
       });
     }
     return entries;
-  }, [cycleSummary, currentYtdReturn, formatPercentage, isNormalView, t]);
+  }, [cycleSummary, currentYtdReturn, isNormalView, t]);
 
   const summaryStats = useMemo(() => {
     if (!cycleSummaryStats.length && !quickStats.length) {
@@ -921,22 +838,6 @@ function ElectionCyclePageContent() {
 
   const analysisCurrency = fundamentals?.analysis?.currency || currencyCode;
 
-  const formatPeriodLabel = useCallback((period) => {
-    if (!period) return '';
-    const raw = String(period).toUpperCase();
-    const compact = raw.replace(/\s+/g, '');
-    const flippedQuarterMatch = compact.match(/^(\d)Q(\d{2,4})$/) || compact.match(/^Q(\d)(\d{2,4})$/);
-    if (flippedQuarterMatch) {
-      const [, quarter, yearGroup] = flippedQuarterMatch;
-      const fullYear = yearGroup.length === 2 ? `20${yearGroup}` : yearGroup;
-      return `Q${quarter} ${fullYear}`;
-    }
-    if (/^Q\d/.test(raw) && /FY/.test(raw)) return raw.replace(/\s+/g, ' ').trim();
-    if (/FY\d{2,4}/.test(raw)) return raw.replace(/ /g, ' ');
-    if (/^\d{4}$/.test(raw)) return `${raw.slice(-2)}`;
-    return raw.replace(/(\d{4})/g, ' $1').replace(/\s+/g, ' ').trim();
-  }, []);
-
   const earningsChartData = useMemo(() => {
     const series = fundamentals?.analysis?.earnings?.quarterly;
     if (!series || series.length === 0) return [];
@@ -960,7 +861,7 @@ function ElectionCyclePageContent() {
             : null,
       };
     });
-  }, [fundamentals, formatPeriodLabel]);
+  }, [fundamentals]);
 
   const revenueChartData = useMemo(() => {
     const series =
@@ -974,7 +875,7 @@ function ElectionCyclePageContent() {
       revenue: entry.revenue != null ? Number(entry.revenue) : null,
       earnings: entry.earnings != null ? Number(entry.earnings) : null,
     }));
-  }, [fundamentals, revenuePeriod, formatPeriodLabel]);
+  }, [fundamentals, revenuePeriod]);
 
   const hasEarningsAnalysis = earningsChartData.length > 0;
   const hasRevenueAnalysis = revenueChartData.length > 0;
@@ -1157,7 +1058,7 @@ function ElectionCyclePageContent() {
           prev.length > 0 ? Math.max(...prev.map((item) => Number(item.order) || 0)) + 1 : 1;
         next = [...prev, { symbol, order: nextOrder }];
       }
-      syncWatchlist(next).catch(() => { });
+      syncWatchlist(next).catch(() => toast.error('Failed to save changes'));
       return next;
     });
   }, [redirectToSignIn, symbol, syncWatchlist, canUseProtectedActions]);
@@ -1785,7 +1686,7 @@ const renderNewsTab = () => {
                 <div className="rounded-xl bg-red-500/8 p-3 text-center">
                   <p className="text-2xs font-semibold text-red-500 uppercase tracking-wider">Low</p>
                   <p className="text-sm font-bold text-foreground mt-1">
-                    {lowTarget != null ? formatDetailedCurrency(lowTarget) : '—'}
+                    {lowTarget != null ? formatDetailedCurrency(lowTarget, currencyFractionDigits) : '—'}
                   </p>
                   {lowTarget != null && currentPrice != null && (
                     <p className={`text-2xs mt-0.5 font-medium ${lowTarget >= currentPrice ? 'text-emerald-600' : 'text-red-500'}`}>
@@ -1796,7 +1697,7 @@ const renderNewsTab = () => {
                 <div className="rounded-xl bg-emerald-500/8 p-3 text-center ring-1 ring-emerald-500/20">
                   <p className="text-2xs font-semibold text-emerald-600 uppercase tracking-wider">Average</p>
                   <p className="text-sm font-bold text-foreground mt-1">
-                    {averageTarget != null ? formatDetailedCurrency(averageTarget) : '—'}
+                    {averageTarget != null ? formatDetailedCurrency(averageTarget, currencyFractionDigits) : '—'}
                   </p>
                   {averageTarget != null && currentPrice != null && (
                     <p className={`text-2xs mt-0.5 font-medium ${averageTarget >= currentPrice ? 'text-emerald-600' : 'text-red-500'}`}>
@@ -1807,7 +1708,7 @@ const renderNewsTab = () => {
                 <div className="rounded-xl bg-emerald-500/8 p-3 text-center">
                   <p className="text-2xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">High</p>
                   <p className="text-sm font-bold text-foreground mt-1">
-                    {highTarget != null ? formatDetailedCurrency(highTarget) : '—'}
+                    {highTarget != null ? formatDetailedCurrency(highTarget, currencyFractionDigits) : '—'}
                   </p>
                   {highTarget != null && currentPrice != null && (
                     <p className={`text-2xs mt-0.5 font-medium ${highTarget >= currentPrice ? 'text-emerald-600' : 'text-red-500'}`}>
@@ -1850,8 +1751,8 @@ const renderNewsTab = () => {
                   )}
                 </div>
                 <div className="flex justify-between text-2xs text-muted-foreground px-2">
-                  <span>Current: {currentPrice != null ? `${formatDetailedCurrency(currentPrice)} ${currencyCode}` : '—'}</span>
-                  <span>Target: {averageTarget != null ? `${formatDetailedCurrency(averageTarget)} ${currencyCode}` : '—'}</span>
+                  <span>Current: {currentPrice != null ? `${formatDetailedCurrency(currentPrice, currencyFractionDigits)} ${currencyCode}` : '—'}</span>
+                  <span>Target: {averageTarget != null ? `${formatDetailedCurrency(averageTarget, currencyFractionDigits)} ${currencyCode}` : '—'}</span>
                 </div>
               </div>
             </CardContent>
@@ -2435,9 +2336,9 @@ const renderNewsTab = () => {
                           ema={normalCandlestickSeries.ema}
                           meta={normalCandlestickSeries.meta}
                           markers={buySignalMarkers}
-                          formatTimestamp={formatNormalTimestamp}
+                          formatTimestamp={(ts) => formatNormalTimestamp(ts, normalTimeframe)}
                           currency={symbolInfo?.currency}
-                          formatPrice={formatPriceValue}
+                          formatPrice={(v) => formatPriceValue(v, symbol)}
                           isDark={resolvedTheme === 'dark'}
                           showTimeScale={isIntradayTimeframe}
                           showSeconds={normalTimeframe === '15m'}
@@ -2529,6 +2430,7 @@ const renderNewsTab = () => {
                         size="icon"
                         className="absolute top-5 left-5"
                         onClick={() => setNormalFullscreenOpen(false)}
+                        aria-label="Close fullscreen"
                       >
                         <ArrowLeft className="size-6 text-muted-foreground" />
                       </Button>
@@ -2546,9 +2448,9 @@ const renderNewsTab = () => {
                         ema={normalCandlestickSeries.ema}
                         meta={normalCandlestickSeries.meta}
                         markers={buySignalMarkers}
-                        formatTimestamp={formatNormalTimestamp}
+                        formatTimestamp={(ts) => formatNormalTimestamp(ts, normalTimeframe)}
                         currency={symbolInfo?.currency}
-                        formatPrice={formatPriceValue}
+                        formatPrice={(v) => formatPriceValue(v, symbol)}
                         isDark={resolvedTheme === 'dark'}
                         showTimeScale={isIntradayTimeframe}
                         showSeconds={normalTimeframe === '15m'}
@@ -2609,7 +2511,7 @@ const renderNewsTab = () => {
                       </p>
                       <p className="text-xl font-semibold">
                         {portfolioPosition.marketValue != null
-                          ? `${formatDetailedCurrency(portfolioPosition.marketValue)} ${currencyCode}`
+                          ? `${formatDetailedCurrency(portfolioPosition.marketValue, currencyFractionDigits)} ${currencyCode}`
                           : '—'}
                       </p>
                       <p className="text-1xs text-muted-foreground">Market Value</p>
@@ -2629,7 +2531,7 @@ const renderNewsTab = () => {
                     <p className="text-1xs text-muted-foreground">Average Price</p>
                     <p>
                       {portfolioPosition.averagePrice != null
-                        ? `${formatDetailedCurrency(portfolioPosition.averagePrice)} ${currencyCode}`
+                        ? `${formatDetailedCurrency(portfolioPosition.averagePrice, currencyFractionDigits)} ${currencyCode}`
                         : '—'}
                     </p>
                   </div>
@@ -2645,7 +2547,7 @@ const renderNewsTab = () => {
                       }
                     >
                       {portfolioPosition.pnl != null
-                        ? `${portfolioPosition.pnl >= 0 ? '+' : ''}${formatDetailedCurrency(portfolioPosition.pnl)} ${currencyCode}`
+                        ? `${portfolioPosition.pnl >= 0 ? '+' : ''}${formatDetailedCurrency(portfolioPosition.pnl, currencyFractionDigits)} ${currencyCode}`
                         : '—'}
                     </p>
                   </div>
@@ -2691,8 +2593,8 @@ const renderNewsTab = () => {
                       dateLabel={screeningSignalDateLabel}
                       lotEligible={lotEligible}
                       currencyCode={currencyCode}
-                      formatPriceValue={formatPriceValue}
-                      formatDetailedCurrency={formatDetailedCurrency}
+formatPriceValue={(v) => formatPriceValue(v, symbol)}
+        formatDetailedCurrency={(v) => formatDetailedCurrency(v, currencyFractionDigits)}
                     />
                   )}
                   {infoTab === 'profile' && renderProfileTab()}

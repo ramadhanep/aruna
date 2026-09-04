@@ -22,6 +22,7 @@ export function ChartHeaderBar({
           onClick={onSearchOpen}
           role="button"
           tabIndex={0}
+          aria-label={t('openSearch')}
           onKeyDown={(event) => {
             if (event.key === 'Enter' || event.key === ' ') {
               event.preventDefault();

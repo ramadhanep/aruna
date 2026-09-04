@@ -512,23 +512,32 @@ export default function ExplorePage() {
   const [msciLoading, setMsciLoading] = useState(true);
   const [rotationData, setRotationData] = useState(null);
   const [rotationLoading, setRotationLoading] = useState(true);
-  const [showInstallButton, setShowInstallButton] = useState(() => {
+  const [market, setMarket] = useState({ tab: "us", timeframe: "1W", quotes: {}, loading: false });
+  const [loading, setLoading] = useState(true);
+  const [refresh, setRefresh] = useState({ isRefreshing: false, manualLoading: { idx: false, us: false, crypto: false } });
+  const [categoryDisplayOrder] = useState(() => getCategoryDisplayOrder());
+  const showInstallButtonInit = () => {
     if (typeof window === "undefined") return false;
     const isStandalone = window.matchMedia("(display-mode: standalone)").matches ||
       window.navigator.standalone === true;
     return !isStandalone;
-  });
-  const [activeMarketTab, setActiveMarketTab] = useState("us");
-  const [marketTimeframe, setMarketTimeframe] = useState("1W");
-  const [activeMarketQuotes, setActiveMarketQuotes] = useState({});
-  const [activeMarketLoading, setActiveMarketLoading] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [manualLoading, setManualLoading] = useState({ idx: false, us: false, crypto: false });
-  const [categoryDisplayOrder] = useState(() => getCategoryDisplayOrder());
+  };
+  const [pwa, setPwa] = useState({ showInstallButton: showInstallButtonInit(), deferredPrompt: null });
   const coreQuoteRequestRef = useRef(0);
   const activeMarketQuoteRequestRef = useRef(0);
+
+  // Backwards-compatible views from grouped state
+  const { tab: activeMarketTab, timeframe: marketTimeframe, quotes: activeMarketQuotes, loading: activeMarketLoading } = market;
+  const { showInstallButton, deferredPrompt } = pwa;
+  const { isRefreshing, manualLoading } = refresh;
+  const setActiveMarketTab = (v) => setMarket(m => ({ ...m, tab: v }));
+  const setMarketTimeframe = (v) => setMarket(m => ({ ...m, timeframe: v }));
+  const setActiveMarketQuotes = (v) => setMarket(m => ({ ...m, quotes: typeof v === 'function' ? v(m.quotes) : v }));
+  const setActiveMarketLoading = (v) => setMarket(m => ({ ...m, loading: v }));
+  const setShowInstallButton = (v) => setPwa(p => ({ ...p, showInstallButton: v }));
+  const setDeferredPrompt = (v) => setPwa(p => ({ ...p, deferredPrompt: v }));
+  const setIsRefreshing = (v) => setRefresh(r => ({ ...r, isRefreshing: v }));
+  const setManualLoading = (v) => setRefresh(r => ({ ...r, manualLoading: typeof v === 'function' ? v(r.manualLoading) : v }));
 
   const loadCoreQuotesForSnapshots = useCallback(async (snapshotMap) => {
     const requestId = ++coreQuoteRequestRef.current;
@@ -587,6 +596,7 @@ export default function ExplorePage() {
       });
     } catch (error) {
       console.warn("Failed to fetch core quotes", error);
+      toast.error("Failed to refresh data");
     }
   }, []);
 
@@ -699,6 +709,7 @@ export default function ExplorePage() {
       setRotationData(data);
     } catch (error) {
       console.warn("Failed to load rotation data", error);
+      toast.error("Failed to refresh data");
       setRotationData(null);
     } finally {
       setRotationLoading(false);
@@ -931,13 +942,6 @@ export default function ExplorePage() {
       lastUpdated: rotationData?.lastUpdated || null,
     };
   }, [rotationData]);
-
-  const topMoversPreview = useMemo(() => {
-    return {
-      bestGainer: breakoutInsights.bestGainer,
-      bestLoser: breakoutInsights.bestLoser,
-    };
-  }, [breakoutInsights]);
 
   const marketCategoryData = useMemo(() => {
     return MARKET_CATEGORIES.map((cat) => ({
@@ -1280,16 +1284,16 @@ export default function ExplorePage() {
             title={t("explore.topMoversTitle")}
             subtitle={
               <span>
-                {topMoversPreview.bestGainer ? (
+                {breakoutInsights.bestGainer ? (
                   <>
-                    {t("explore.topMoversGainer")} <span className="text-emerald-500 font-medium">{formatTickerDisplay(topMoversPreview.bestGainer.symbol)}</span>
+                    {t("explore.topMoversGainer")} <span className="text-emerald-500 font-medium">{formatTickerDisplay(breakoutInsights.bestGainer.symbol)}</span>
                   </>
                 ) : (
                   t("explore.topMoversFallback")
                 )}
-                {topMoversPreview.bestLoser ? (
+                {breakoutInsights.bestLoser ? (
                   <>
-                    {" · "}{t("explore.topMoversLoser")} <span className="text-red-500 font-medium">{formatTickerDisplay(topMoversPreview.bestLoser.symbol)}</span>
+                    {" · "}{t("explore.topMoversLoser")} <span className="text-red-500 font-medium">{formatTickerDisplay(breakoutInsights.bestLoser.symbol)}</span>
                   </>
                 ) : null}
               </span>

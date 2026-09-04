@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { fetchEncodedJson } from '@/lib/api-client';
+import { toast } from 'sonner';
 
 export function useChartFundamentals(symbol, infoTab) {
   const [fundamentals, setFundamentals] = useState(null);
@@ -44,6 +45,7 @@ export function useChartFundamentals(symbol, infoTab) {
         }
       } catch (error) {
         console.warn('Failed to fetch fundamentals', error);
+        toast.error('Failed to load data');
         if (!cancelled) {
           setFundamentals(null);
         }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuth } from '@/components/auth-provider';
+import { toast } from 'sonner';
+import { useAuth, useData } from '@/components/auth-provider';
 import { loadPortfolio } from '@/lib/portfolio-storage';
 import { fetchEncodedJson, fetchLatestQuote, fetchBatchQuotes } from '@/lib/api-client';
 
@@ -21,10 +22,12 @@ export function usePortfolioData() {
   const {
     user,
     loading: authLoading,
+  } = useAuth();
+  const {
     remotePortfolio,
     portfolioLoaded,
     syncPortfolio,
-  } = useAuth();
+  } = useData();
 
   const [entries, setEntries] = useState([]);
   const [priceMap, setPriceMap] = useState({});
@@ -129,7 +132,7 @@ export function usePortfolioData() {
       const guestEntries = data?.entries ?? [];
       if (guestEntries.length > 0) {
         guestSyncedRef.current = true;
-        syncPortfolio(guestEntries).catch(() => null);
+        syncPortfolio(guestEntries).catch(() => toast.error('Failed to save changes'));
       }
     }
   }, [isAuthenticated, portfolioLoaded, remotePortfolio, syncPortfolio]);

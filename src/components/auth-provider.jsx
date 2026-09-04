@@ -11,6 +11,7 @@ import {
 import { getSupabaseBrowserClient } from "@/lib/supabase-browser";
 import { fetchEncodedJson } from "@/lib/api-client";
 import { getDefaultWatchlist } from "@/lib/default-watchlist";
+import { toast } from "sonner";
 
 const AuthContext = createContext({
   supabase: null,
@@ -18,12 +19,6 @@ const AuthContext = createContext({
   session: null,
   loading: true,
   supabaseConfigured: false,
-  remoteWatchlist: null,
-  remoteWatchlistUpdatedAt: null,
-  watchlistLoaded: false,
-  remotePortfolio: null,
-  remotePortfolioUpdatedAt: null,
-  portfolioLoaded: false,
   signInWithGoogle: async () => {},
   signInWithEmail: async () => {},
   signUpWithEmail: async () => {},
@@ -31,12 +26,21 @@ const AuthContext = createContext({
   updatePassword: async () => {},
   recoveryActive: false,
   signOut: async () => {},
+  deleteAccount: async () => {},
+});
+
+const DataContext = createContext({
+  remoteWatchlist: null,
+  remoteWatchlistUpdatedAt: null,
+  watchlistLoaded: false,
+  remotePortfolio: null,
+  remotePortfolioUpdatedAt: null,
+  portfolioLoaded: false,
   syncWatchlist: async () => null,
   syncPortfolio: async () => null,
   refreshRemoteWatchlist: async () => {},
   refreshRemotePortfolio: async () => {},
   clearRemoteData: async () => {},
-  deleteAccount: async () => {},
 });
 
 export function AuthProvider({ children }) {
@@ -153,6 +157,7 @@ export function AuthProvider({ children }) {
       }
     } catch (error) {
       console.warn("Failed to upsert profile", error);
+      toast.error('Failed to save profile');
     }
   }, [supabase, user]);
 
@@ -193,6 +198,7 @@ export function AuthProvider({ children }) {
       return data?.items ?? null;
     } catch (error) {
       console.warn("Failed to load remote watchlist", error);
+      toast.error('Failed to load watchlist');
       setRemoteWatchlist(null);
       setRemoteWatchlistUpdatedAt(null);
       return null;
@@ -222,6 +228,7 @@ export function AuthProvider({ children }) {
       return data?.entries ?? null;
     } catch (error) {
       console.warn("Failed to load remote portfolio", error);
+      toast.error('Failed to load portfolio');
       setRemotePortfolio(null);
       setRemotePortfolioUpdatedAt(null);
       return null;
@@ -328,6 +335,7 @@ export function AuthProvider({ children }) {
       await supabase.auth.signOut();
     } catch (error) {
       console.warn("Failed to sign out", error);
+      toast.error('Failed to sign out');
     } finally {
       setRemoteWatchlist(null);
       setRemoteWatchlistUpdatedAt(null);
@@ -455,19 +463,13 @@ export function AuthProvider({ children }) {
     }
   }, [session, signOut]);
 
-  const value = useMemo(
+  const authValue = useMemo(
     () => ({
       supabase,
       user,
       session,
       loading,
       supabaseConfigured: Boolean(supabase),
-      remoteWatchlist,
-      remoteWatchlistUpdatedAt,
-      watchlistLoaded,
-      remotePortfolio,
-      remotePortfolioUpdatedAt,
-      portfolioLoaded,
       signInWithGoogle,
       signInWithEmail,
       signUpWithEmail,
@@ -475,11 +477,6 @@ export function AuthProvider({ children }) {
       updatePassword,
       recoveryActive,
       signOut,
-      syncWatchlist,
-      syncPortfolio,
-      refreshRemoteWatchlist,
-      refreshRemotePortfolio,
-      clearRemoteData,
       deleteAccount,
     }),
     [
@@ -487,12 +484,6 @@ export function AuthProvider({ children }) {
       user,
       session,
       loading,
-      remoteWatchlist,
-      remoteWatchlistUpdatedAt,
-      watchlistLoaded,
-      remotePortfolio,
-      remotePortfolioUpdatedAt,
-      portfolioLoaded,
       signInWithGoogle,
       signInWithEmail,
       signUpWithEmail,
@@ -500,18 +491,50 @@ export function AuthProvider({ children }) {
       updatePassword,
       recoveryActive,
       signOut,
+      deleteAccount,
+    ]
+  );
+
+  const dataValue = useMemo(
+    () => ({
+      remoteWatchlist,
+      remoteWatchlistUpdatedAt,
+      watchlistLoaded,
+      remotePortfolio,
+      remotePortfolioUpdatedAt,
+      portfolioLoaded,
       syncWatchlist,
       syncPortfolio,
       refreshRemoteWatchlist,
       refreshRemotePortfolio,
       clearRemoteData,
-      deleteAccount,
+    }),
+    [
+      remoteWatchlist,
+      remoteWatchlistUpdatedAt,
+      watchlistLoaded,
+      remotePortfolio,
+      remotePortfolioUpdatedAt,
+      portfolioLoaded,
+      syncWatchlist,
+      syncPortfolio,
+      refreshRemoteWatchlist,
+      refreshRemotePortfolio,
+      clearRemoteData,
     ]
   );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider value={authValue}>
+      <DataContext.Provider value={dataValue}>{children}</DataContext.Provider>
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
   return useContext(AuthContext);
+}
+
+export function useData() {
+  return useContext(DataContext);
 }

@@ -6,7 +6,6 @@ import { useTranslations } from "next-intl";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { Search, Loader2, Clock } from "lucide-react";
 import { searchSymbols } from "@/lib/api-client";
 import { formatTickerDisplay, cn } from "@/lib/utils";
@@ -135,54 +134,64 @@ export function SymbolSearchDialog({ open, onOpenChange, onSelect, trigger }) {
           />
         </div>
 
-        <Command className="mt-2 flex-1 min-h-0 max-h-full overflow-hidden rounded-md border bg-background">
-          <CommandList>
-            {loading && (
-              <div className="flex items-center justify-center py-6 text-muted-foreground text-sm">
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {t("searching")}
+        <div className="mt-2 flex-1 min-h-0 max-h-full overflow-auto rounded-md border bg-background">
+          {loading && (
+            <div className="flex items-center justify-center py-6 text-muted-foreground text-sm">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              {t("searching")}
+            </div>
+          )}
+
+          {!query && history.length > 0 && (
+            <div className="p-1">
+              <div className="flex items-center justify-between px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                <span className="flex items-center gap-2">
+                  <Clock className="h-3.5 w-3.5" /> {t("recent")}
+                </span>
+                <Button variant="ghost" size="sm" className="text-xs h-7" onClick={clearHistory}>
+                  {t("clear")}
+                </Button>
               </div>
-            )}
+              {history.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => handleSelect(item)}
+                  className="flex w-full items-center rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                >
+                  {formatTickerDisplay(item)}
+                </button>
+              ))}
+            </div>
+          )}
 
-            {!query && history.length > 0 && (
-              <CommandGroup
-                heading={
-                  <span className="flex items-center justify-between pr-2">
-                    <span className="flex items-center gap-2">
-                      <Clock className="h-3.5 w-3.5" /> {t("recent")}
-                    </span>
-                    <Button variant="ghost" size="sm" className="text-xs h-7" onClick={clearHistory}>
-                      {t("clear")}
-                    </Button>
+          {!loading && results.length > 0 && (
+            <div className="p-1">
+              <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                {t("results")}
+              </div>
+              {results.map((item) => (
+                <button
+                  key={item.symbol}
+                  type="button"
+                  onClick={() => handleSelect(item.symbol)}
+                  className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm hover:bg-accent hover:text-accent-foreground"
+                >
+                  <span className="flex-1">
+                    <p className="text-sm font-semibold uppercase">{formatTickerDisplay(item.symbol)}</p>
+                    {item.name && <p className="text-xs text-muted-foreground line-clamp-1">{item.name}</p>}
                   </span>
-                }
-              >
-                {history.map((item) => (
-                  <CommandItem key={item} value={item} onSelect={() => handleSelect(item)}>
-                    {formatTickerDisplay(item)}
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
+                </button>
+              ))}
+            </div>
+          )}
 
-            {!loading && results.length > 0 && (
-              <CommandGroup heading={t("results")}>
-                {results.map((item) => (
-                  <CommandItem key={item.symbol} value={item.symbol} onSelect={() => handleSelect(item.symbol)}>
-                    <span className="flex-1">
-                      <p className="text-sm font-semibold uppercase">{formatTickerDisplay(item.symbol)}</p>
-                      {item.name && <p className="text-xs text-muted-foreground line-clamp-1">{item.name}</p>}
-                    </span>
-                  </CommandItem>
-                ))}
-              </CommandGroup>
-            )}
-
-            {query.trim() && !loading && !results.length && (
-              <CommandEmpty>{t("noMatches", { query: query.trim() })}</CommandEmpty>
-            )}
-          </CommandList>
-        </Command>
+          {query.trim() && !loading && !results.length && (
+            <div className="py-6 text-center text-sm text-muted-foreground">
+              {t("noMatches", { query: query.trim() })}
+            </div>
+          )}
+        </div>
 
         <Button variant="outline" className="w-full text-sm mt-2" onClick={() => handleOpenChange(false)}>
           {t("cancel")}

@@ -14,7 +14,7 @@ import {
   formatMarketCap,
   formatPrice,
   formatPercent,
-} from "@/lib/msci-calculations";
+} from "@/lib/utils";
 import { TickerAvatar } from "@/components/ticker-avatar";
 import { formatTickerDisplay } from "@/lib/utils";
 

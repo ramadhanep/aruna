@@ -8,7 +8,7 @@ import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/com
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { ManageWatchlistDialog } from "@/components/manage-watchlist-dialog";
-import { useAuth } from "@/components/auth-provider";
+import { useAuth, useData } from "@/components/auth-provider";
 import { fetchBatchQuotes } from "@/lib/api-client";
 import { MiniChart } from "@/components/mini-chart";
 import { TickerRowSkeleton } from "@/components/ticker-row-skeleton";
@@ -18,6 +18,7 @@ import { TrendingMarquee } from "@/components/trending-marquee";
 import { formatTickerDisplay } from "@/lib/utils";
 import { MOTION, DURATION_CLASS } from "@/lib/motion";
 import { SectionHeader } from "@/components/section-header";
+import { toast } from "sonner";
 
 function areWatchlistsEqual(a = [], b = []) {
   if (a.length !== b.length) return false;
@@ -57,10 +58,12 @@ export default function HomePage() {
     supabase,
     user,
     loading: authLoading,
+  } = useAuth();
+  const {
     remoteWatchlist,
     watchlistLoaded,
     syncWatchlist,
-  } = useAuth();
+  } = useData();
   const isAuthenticated = Boolean(user);
   const canUseProtectedActions = isAuthenticated;
 
@@ -143,6 +146,7 @@ export default function HomePage() {
         await loadQuotes();
       } catch (e) {
         console.warn('Auto refresh failed', e);
+        toast.error('Failed to refresh data');
       } finally {
         polling = false;
       }
@@ -195,7 +199,7 @@ export default function HomePage() {
         setWatchlist(defaults);
         setWatchlistReady(true);
         syncWatchlist(defaults)
-          .catch(() => null)
+          .catch(() => toast.error('Failed to save changes'))
           .finally(() => {
             remoteDefaultSeedRef.current = false;
           });
@@ -236,6 +240,7 @@ export default function HomePage() {
       await loadQuotes();
     } catch (e) {
       console.warn('Refresh failed', e);
+      toast.error('Failed to refresh data');
     } finally {
       setIsRefreshing(false);
       setPullDistance(0);
@@ -525,7 +530,7 @@ export default function HomePage() {
           if (!isAuthenticated) {
             writeStoredWatchlist(newWatchlist);
           }
-          syncWatchlist(newWatchlist).catch(() => { });
+          syncWatchlist(newWatchlist).catch(() => toast.error('Failed to save changes'));
         }}
       />
     </div>
